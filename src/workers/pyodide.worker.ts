@@ -15,10 +15,12 @@
  *
  * All public computations obtain a lifecycle-safe executor through `requirePyodide`,
  * which throws until initialization succeeds. Computation namespaces and unexpected
- * result proxies are explicitly destroyed without conversion; initialization uses
+ * result proxies are explicitly destroyed without conversion. Request namespaces
+ * are cleared, retained Python exceptions are released, and cyclic garbage is
+ * collected after execution; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.29.4` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.29.5` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -81,7 +83,7 @@ type LifecycleSafePyodideRuntime = {
   readonly ffi: {
     readonly PyProxy: { [Symbol.hasInstance](value: unknown): boolean };
   };
-  runPython(code: string): unknown;
+  runPython(code: string, options?: { readonly globals?: DestroyablePyProxy }): unknown;
   runPythonAsync(
     code: string,
     options?: { readonly globals?: DestroyablePyProxy },
@@ -127,17 +129,33 @@ function rejectUnexpectedPyProxy(
   return result;
 }
 
-/** Executes initialization code in persistent globals and rejects leaked result proxies. */
+/** Releases Pyodide's last-exception roots and collects cycles in an isolated cleanup namespace. */
+function collectPythonGarbage(runtime: LifecycleSafePyodideRuntime): void {
+  runtime.runPython(`exec("""
+import gc
+import sys
+for name in ('last_exc', 'last_type', 'last_value', 'last_traceback'):
+    if hasattr(sys, name):
+        delattr(sys, name)
+gc.collect()
+""", {})`);
+}
+
+/** Executes initialization in persistent globals and releases exception roots even on failure. */
 function createInitializationExecutor(
   runtime: LifecycleSafePyodideRuntime,
 ): (code: string) => Promise<unknown> {
   return async (code: string): Promise<unknown> => {
-    const result = await runtime.runPythonAsync(code);
-    return rejectUnexpectedPyProxy(runtime, result, "initialization");
+    try {
+      const result = await runtime.runPythonAsync(code);
+      return rejectUnexpectedPyProxy(runtime, result, "initialization");
+    } finally {
+      collectPythonGarbage(runtime);
+    }
   };
 }
 
-/** Executes one computation in a disposable shallow copy of the initialized globals. */
+/** Executes in copied globals, then clears function/callback cycles, destroys the proxy and collects Python garbage. */
 function createComputationExecutor(
   runtime: LifecycleSafePyodideRuntime,
 ): (code: string) => Promise<unknown> {
@@ -147,7 +165,15 @@ function createComputationExecutor(
       const result = await runtime.runPythonAsync(code, { globals: scopedGlobals });
       return rejectUnexpectedPyProxy(runtime, result, "computation");
     } finally {
-      scopedGlobals.destroy();
+      try {
+        runtime.runPython("globals().clear()", { globals: scopedGlobals });
+      } finally {
+        try {
+          scopedGlobals.destroy();
+        } finally {
+          collectPythonGarbage(runtime);
+        }
+      }
     }
   };
 }
@@ -289,7 +315,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
       ]);
 
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.4-py3-none-any.whl`;
+      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.5-py3-none-any.whl`;
 
       await _init(createInitializationExecutor(pyodide), wheelUrl, onProgress);
       await emitInitProgress(onProgress, 100, "Ready");

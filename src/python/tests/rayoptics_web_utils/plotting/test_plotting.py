@@ -53,7 +53,26 @@ class TestPlotFunctionSignatures:
 
 
 class TestPlotLensLayout:
-    """Tests for the plot_lens_layout function."""
+    """Layout options are preserved and failures release registered figures."""
+
+    def test_closes_figure_when_plot_fails(self, monkeypatch):
+        import matplotlib.pyplot as plt
+        import pytest
+        from rayoptics_web_utils.plotting import plotting
+
+        fig = plt.figure()
+
+        def fail_plot():
+            raise RuntimeError("plot failed")
+
+        monkeypatch.setattr(fig, "plot", fail_plot, raising=False)
+        monkeypatch.setattr(plotting.plt, "figure", lambda **kwargs: fig)
+        try:
+            with pytest.raises(RuntimeError, match="plot failed"):
+                plotting.plot_lens_layout(object())
+            assert not plt.fignum_exists(fig.number)
+        finally:
+            plt.close(fig)
 
     def test_plot_lens_layout_uses_default_interactive_layout_options(self, monkeypatch, cooke_triplet):
         from rayoptics_web_utils.plotting import plotting
@@ -78,6 +97,7 @@ class TestPlotLensLayout:
             return "encoded-layout"
 
         monkeypatch.setattr(plotting.plt, "figure", fake_figure)
+        monkeypatch.setattr(plotting.plt, "close", lambda fig: None)
         monkeypatch.setattr(plotting, "_fig_to_base64", fake_fig_to_base64)
 
         result = plotting.plot_lens_layout(cooke_triplet, is_dark=True)
@@ -131,6 +151,7 @@ class TestPlotLensLayout:
             return "encoded-ray-fans"
 
         monkeypatch.setattr(plotting.plt, "figure", fake_figure)
+        monkeypatch.setattr(plotting.plt, "close", lambda fig: None)
         monkeypatch.setattr(plotting, "RayFan", fake_rayfan)
         monkeypatch.setattr(plotting, "RayFanBundle", fake_rayfan_bundle)
         monkeypatch.setattr(plotting, "_fig_to_base64", fake_fig_to_base64)

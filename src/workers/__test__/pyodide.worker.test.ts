@@ -760,6 +760,7 @@ describe("init", () => {
     const runPythonAsync = jest.fn().mockResolvedValue(undefined);
     jest.mocked(loadPyodideModule).mockResolvedValueOnce(createPyodideModule);
     jest.mocked(loadPyodide).mockResolvedValueOnce({
+      runPython: jest.fn(),
       loadPackage,
       runPythonAsync,
       ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
@@ -796,6 +797,7 @@ describe("init", () => {
       return undefined;
     });
     jest.mocked(loadPyodide).mockResolvedValueOnce({
+      runPython: jest.fn(),
       loadPackage: jest.fn().mockResolvedValue(undefined),
       runPythonAsync,
       ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
@@ -818,6 +820,7 @@ describe("init", () => {
       return undefined;
     });
     jest.mocked(loadPyodide).mockResolvedValueOnce({
+      runPython: jest.fn(),
       loadPackage,
       runPythonAsync,
       ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
@@ -840,6 +843,7 @@ describe("init", () => {
     const loadPackage = jest.fn().mockResolvedValue(undefined);
     const runPythonAsync = jest.fn().mockResolvedValue(undefined);
     jest.mocked(loadPyodide).mockResolvedValueOnce({
+      runPython: jest.fn(),
       loadPackage,
       runPythonAsync,
       ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
@@ -884,6 +888,7 @@ describe("init", () => {
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(unexpectedResult);
     jest.mocked(loadPyodide).mockResolvedValueOnce({
+      runPython: jest.fn(),
       loadPackage: jest.fn().mockResolvedValue(undefined),
       runPythonAsync,
       ffi: { PyProxy: { [Symbol.hasInstance]: (value: unknown) => value === unexpectedResult } },
@@ -1021,6 +1026,32 @@ describe("public worker guards before initialization", () => {
 describe("Pyodide computation executor lifecycle", () => {
   afterEach(() => {
     _resetPyodideForTesting();
+  });
+
+  /** Request cleanup breaks globals cycles and clears traceback roots before collecting Python garbage. */
+  it.each([false, true])("reclaims Python request state after execution (failure=%s)", async (fails) => {
+    const scopedGlobals = { destroy: jest.fn() };
+    const runPython = jest.fn().mockReturnValue(scopedGlobals);
+    const error = new Error("original Python failure");
+    _setPyodideForTesting({
+      runPython,
+      runPythonAsync: fails ? jest.fn().mockRejectedValue(error) : jest.fn().mockResolvedValue("{}"),
+      ffi: { PyProxy: { [Symbol.hasInstance]: () => false } },
+    });
+
+    if (fails) {
+      await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toBe(error);
+    } else {
+      await expect(getFirstOrderData(allSphericalOpticalModel)).resolves.toEqual({});
+    }
+
+    expect(runPython).toHaveBeenCalledWith("globals().clear()", { globals: scopedGlobals });
+    expect(runPython).toHaveBeenLastCalledWith(expect.stringContaining("gc.collect()"));
+    const cleanup = runPython.mock.calls.at(-1)?.[0] as string;
+    expect(cleanup).toContain("last_exc");
+    expect(cleanup).toContain("last_value");
+    expect(cleanup).toContain("last_traceback");
+    expect(scopedGlobals.destroy.mock.invocationCallOrder[0]).toBeLessThan(runPython.mock.invocationCallOrder.at(-1) ?? 0);
   });
 
   it("passes copied globals to runPythonAsync and destroys them after success", async () => {
