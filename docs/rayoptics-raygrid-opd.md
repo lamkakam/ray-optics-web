@@ -1,87 +1,109 @@
-# RayGrid and OPD Implementation in rayoptics
+# RayGrid and OPD implementation
 
-Investigation of the `RayGrid` class and wavefront/OPD calculation in
-rayoptics (v0.27.7). Key source files:
+This description follows the inspected RayOptics **0.9.8** source installed in
+the project venv, together with the web application's shared grid factory.
+Relevant upstream symbols (paths relative to the installed `rayoptics` package):
 
-- `rayoptics/raytr/analyses.py` — `RayGrid` class (line 585)
-- `rayoptics/raytr/waveabr.py` — OPD and reference sphere calculations
-- `rayoptics/raytr/trace.py` — `trace_base`, `setup_pupil_coords`
-- `rayoptics/raytr/opticalspec.py` — `ray_start_from_osp` (pupil → ray start)
+- `raytr/analyses.py`: `RayGrid`, `trace_wavefront`, `focus_wavefront`
+- `raytr/waveabr.py`: `calculate_reference_sphere`, `wave_abr_pre_calc_finite_pup`, `wave_abr_calc`
+- `raytr/trace.py`: `setup_pupil_coords`, `trace_base`
+- `raytr/opticalspec.py`: `ray_start_from_osp`
 
-## 1. Wavefront evaluation surface when `foc = 0`
+## Image point and wavefront reference
 
-**The wavefront is evaluated at the image surface** (the chief ray's
-intersection with the last surface).
+For finite image space, the image point defines the **center of the reference
+sphere**. It is not a statement that OPD is evaluated on the image surface.
+Wave aberration compares optical paths using the exit-side reference sphere
+and chief-ray/EIC construction. The image surface locates the sphere center;
+the reference sphere supplies the wavefront comparison geometry.
 
-When `foc=0` and no explicit `image_pt_2d` is given, `calculate_reference_sphere`
-(`waveabr.py:53-56`) computes:
-
-```python
-dist = foc / cr.ray[-1][mc.d][2]          # = 0 when foc = 0
-image_pt = cr.ray[-1][mc.p] + dist * cr.ray[-1][mc.d]  # chief ray hit on image
-```
-
-`cr.ray[-1]` is the chief ray segment at the image interface, so `image_pt`
-equals the chief ray's intersection point on the image plane. The reference
-sphere is then centered on this point.
-
-The `foc` parameter represents a defocus shift along the chief ray direction
-from the nominal image point.
-
-## 2. Surface on which pupil coordinates are defined
-
-**Entrance pupil plane in object space** (not the stop surface directly).
-
-`trace_base` (`trace.py:253`) accepts a `pupil` parameter with default
-`pupil_type='rel pupil'` — normalized coordinates on the entrance pupil.
-Inside `ray_start_from_osp` (`opticalspec.py:334-339`), for EPD-based specs:
+With `foc=0` and no image-point override, `calculate_reference_sphere` takes
+the chief ray's local image-surface intersection as the image point. With a
+focus shift it uses:
 
 ```python
-aim_pt = aim_info           # chief ray aim point at entrance pupil
-obj2enp_dist = -(fod.obj_dist + z_enp)   # z_enp = fod.enp_dist
-pt1 = np.array([eprad*pupil[0] + aim_pt[0],
-                eprad*pupil[1] + aim_pt[1],
-                fod.obj_dist + z_enp])    # z position of entrance pupil plane
+dist = foc / cr.ray[-1][mc.d][2]
+image_pt = cr.ray[-1][mc.p] + dist * cr.ray[-1][mc.d]
 ```
 
-The ray is aimed from the object point through a point on the entrance pupil
-plane (at `z = obj_dist + enp_dist`), scaled by the entrance pupil radius.
+Thus `foc` is an axial z shift; the corresponding travel distance along the
+chief ray is `dist`. The sphere radius and direction use the vector between
+the exit-pupil chief-ray point and the image point expressed relative to the
+final optical surface.
 
-The `aim_info` is computed by iterating the chief ray to hit the center of the
-**stop surface** (`trace.py:628-639`), so the entrance pupil coordinates are
-consistent with the aperture stop — but the grid coordinates themselves live
-on the entrance pupil plane in object space.
+The web application's centroid mode starts from the geometric centroid and
+solves a shifted reference sphere for zero fitted transverse OPD slopes,
+retaining image-surface sag and focus. Afocal mode uses a plane-wave reference
+instead. These are different wavefront references from simply centering a
+geometric spot diagram. See
+[image-reference conventions](image-reference-conventions.md).
 
-For the `RayGrid` specifically, the grid range comes from
-`fld.vignetting_bbox(pupil)` which produces vignetted relative pupil
-coordinates in `[-1, 1]`.
+## Normalized pupil labels and sampling
 
-## 3. OPD reference: chief ray
+For relative-pupil tracing, RayOptics interprets normalized pupil coordinates
+through the optical specification and ray aiming. For ordinary object-space
+EPD specifications, the input labels scale the entrance-pupil radius around
+the chief-ray aim point. This is not a universal claim that every pupil
+specification uses a physical entrance-pupil-plane position; angular and
+wide-angle specifications have their own ray-start mappings.
 
-**Yes — OPD is always computed relative to the chief ray.**
+`analyses.trace_wavefront` obtains the field's `vignetting_bbox` and traces a
+regular rectangular grid with `num_rays` samples along each axis. The box
+reflects field vignetting; it need not be the complete `[-1, 1]²` square or a
+full disk. The web factory enables aperture checks and disables a second
+vignetting transformation (`apply_vignetting=False`). Blocked or failed rays
+remain invalid cells. Surviving samples retain their original labels and are
+not expanded to fill the unit disk.
 
-The OPD formula for the finite-pupil case (`waveabr.py:303`):
+`trace_wavefront` returns `(raw_grid, upd_grid)`; `upd_grid` holds per-ray
+OPD preprocessing packages. `focus_wavefront` reuses those packages and
+returns pupil x, pupil y, and OPD. `RayGrid.update_data` arranges the result as
+`rg.grid` with shape `(3, num_rays, num_rays)`.
+
+## OPD calculation and units
+
+The upstream finite OPD calculation uses chief-ray optical paths and equally
+inclined chords (EIC). For the full finite-pupil calculation:
 
 ```python
 opd = -n_obj * e1 - ray_op + n_img * ekp + cr_op - n_img * ep
 ```
 
-where:
+`e1` and `ekp` are object- and image-side EIC distances, `ray_op` and `cr_op`
+are the traced test-ray and chief-ray optical paths, and `ep` accounts for
+the reference sphere. The refractive indices are absolute object- and
+image-space indices. EIC bookkeeping does not make the intermediate
+`p_coord` displacement a conventional normalized Zernike pupil coordinate.
 
-| Term       | Meaning |
-|------------|---------|
-| `ray_op`   | Optical path of the test ray (EIC-based accumulation) |
-| `cr_op`    | Optical path of the chief ray (EIC-based accumulation) |
-| `e1`       | EIC distance at the 1st surface between test ray and chief ray |
-| `ekp`      | EIC distance at the last surface between test ray and chief ray |
-| `ep`       | Distance from exit pupil reference point to the reference sphere |
-| `n_obj`    | Absolute refractive index in object space |
-| `n_img`    | Absolute refractive index in image space |
+Upstream `focus_wavefront` divides physical OPD by
+`opm.nm_to_sys_units(central_wvl)`, even when tracing another wavelength.
+Consequently `rg.grid[2]` is in **central-wavelength waves**. The web factory's
+finite model view supplies object- and image-space refractive indices at the
+traced wavelength without mutating cached first-order data. Its centroid and
+afocal outputs retain the same central-wavelength wave units.
 
-The docstring confirms: _"Returns: opd: OPD of ray **wrt chief ray** at fld"_
-(`waveabr.py:210`).
+The shared web factory is
+[`make_ray_grid`](../src/python/src/rayoptics_web_utils/raygrid/raygrid.py).
+Chief-ray mode preserves the default reference; centroid mode adjusts the
+reference geometry and removes valid-grid mean piston. The underlying use of
+chief-ray path data should not be confused with an assertion that all returned
+wavefronts retain the default chief-ray reference geometry or piston.
 
-This follows the H. H. Hopkins formulation ("Calculation of the Aberrations
-and Image Assessment for a General Optical System",
-[doi:10.1080/713820605](https://doi.org/10.1080/713820605)), where wave
-aberrations are referenced to the chief ray via equally inclined chords (EIC).
+## Conventional Zernike path
+
+[`zernike.py`](../src/python/src/rayoptics_web_utils/zernike/zernike.py) copies
+`rg.grid[0:2]` and scales only OPD by
+`nm_to_sys_units(central_wvl) / nm_to_sys_units(traced_wvl)`.
+Every field, finite or afocal, is fitted using these original normalized labels.
+There is no EIC-coordinate extraction or maximum-radius normalization.
+
+Fitting and RMS, PV, and monochromatic Strehl share finite coordinates and OPD
+inside `x² + y² <= 1`. RMS removes that sample set's mean; coefficient fitting
+retains the referenced OPD. The full-disk assumptions for interpreting
+normalized coefficients as independent RMS contributions are documented in
+[image-reference conventions](image-reference-conventions.md).
+No numerical identity with Zemax or OSLO is implied.
+
+The separate
+[first tilted/decentered surface OPD warning](rayoptics-tilted-or-decentered-first-surface-opd.md)
+still applies. Correct coordinates cannot compensate for invalid traced OPD.

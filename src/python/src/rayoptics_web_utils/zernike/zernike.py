@@ -1,22 +1,16 @@
-"""Fit caller-ordered Zernike terms to RayOptics OPD grids.
+"""Fit caller-ordered Zernike terms to RayOptics normalized-pupil OPD grids.
 
-Python receives explicit ``(n, m)`` terms and is independent of Noll or Fringe
-index ordering. Coefficients and wavefront errors are in waves at the traced
-wavelength. Unnormalized coefficients follow the ATMOS/OSLO convention; dividing
-by ``sqrt((2 - δ[m,0]) * (n + 1))`` gives each term's RMS contribution.
+Python receives explicit ``(n, m)`` terms independently of Noll or Fringe
+ordering. All fields, finite and afocal, retain the original normalized pupil
+labels in ``rg.grid``; EIC preprocessing displacements are not pupil labels.
+Only OPD is converted from central-wavelength waves to traced-wavelength waves.
 
-RayOptics computes OPD with the Hopkins equally inclined chord method. Finite-pupil
-fits use its precomputed exit-pupil ``p_coord`` values, normalized by their maximum
-radial extent, with paraxial exit-pupil radius only as a near-zero fallback.
-Afocal grids do not carry that finite ``grid_pkg`` and instead use their existing
-normalized pupil-coordinate channels. Vignetted, blocked, non-finite, and
-``rho > 1`` samples are excluded.
-
-The model grid is expressed in central-wavelength waves and is scaled through the
-model's wavelength-unit conversion before fitting. ``image_point="chief_ray"``
-preserves the historical reference; ``"centroid"`` uses the shared centroid
-reference. Relative to OSLO, off-axis Z3 may differ through its central-reference-
-ray convention, while small Z1/Z4 offsets can reflect reference-sphere radius.
+Fitting and metrics share finite samples inside the original unit disk, without
+renormalizing surviving samples. Coefficients fit the referenced OPD unchanged;
+RMS removes the selected sample mean independently of the fit. Chief-ray and
+centroid reference geometry remains the shared RayGrid factory's responsibility.
+See ``docs/image-reference-conventions.md`` and the separate topology warning in
+``docs/rayoptics-tilted-or-decentered-first-surface-opd.md``.
 """
 
 import math
@@ -50,7 +44,11 @@ def unnormalized_to_rms_normalized(
     """Convert unnormalized Zernike coefficients to RMS-normalized.
 
     Each coefficient is divided by the Noll normalization factor N_n^m,
-    so each output coefficient directly gives the RMS contribution of that term.
+    so its magnitude gives that term's RMS on a uniformly weighted full unit
+    disk. Independent quadrature contributions require orthogonality on that
+    full disk (and exclude piston for mean-referenced RMS). Clipped, obscured,
+    vignetted, or discretely sampled pupils need not preserve orthogonality;
+    coefficient quadrature need not equal the sampled ``rms_wfe``.
 
     Args:
         coeffs: Zernike coefficients to convert.
@@ -111,8 +109,26 @@ def zernike_polynomial(n: int, m: int, rho: NDArray, theta: NDArray) -> NDArray:
     return Z
 
 
+def _usable_pupil_samples(opd_grid: NDArray) -> tuple[NDArray, NDArray, NDArray]:
+    """Return flattened finite x, y, OPD samples inside the original unit disk.
+
+    Fitting, RMS, PV, and Strehl use this same uniformly weighted selection.
+    Surviving coordinates are never rescaled. Raise ``ValueError`` when no
+    usable pupil samples remain.
+    """
+    px, py, opd = (channel.ravel() for channel in opd_grid)
+    finite = np.isfinite(px) & np.isfinite(py) & np.isfinite(opd)
+    px, py, opd = px[finite], py[finite], opd[finite]
+    mask = px**2 + py**2 <= 1.0
+    if not np.any(mask):
+        raise ValueError("No usable samples remain inside the normalized pupil unit disk.")
+    return px[mask], py[mask], opd[mask]
+
+
 def fit_zernike(opd_grid: NDArray, zernike_terms: list[ZernikeTerm]) -> NDArray:
-    """Fit Zernike polynomials to a RayGrid wavefront.
+    """Fit referenced OPD on finite normalized-pupil samples in the unit disk.
+
+    Piston is not removed before fitting. Empty usable pupils raise ValueError.
 
     Args:
         opd_grid: shape (3, N, N) — [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves.
@@ -121,18 +137,9 @@ def fit_zernike(opd_grid: NDArray, zernike_terms: list[ZernikeTerm]) -> NDArray:
     Returns:
         1-D array of Zernike coefficients in waves, length len(zernike_terms).
     """
-    px = opd_grid[0].ravel()
-    py = opd_grid[1].ravel()
-    opd = opd_grid[2].ravel()
-
-    valid = ~np.isnan(opd)
-    px, py, opd = px[valid], py[valid], opd[valid]
-
+    px, py, opd = _usable_pupil_samples(opd_grid)
     rho = np.sqrt(px**2 + py**2)
     theta = np.arctan2(py, px)
-
-    mask = rho <= 1.0
-    rho, theta, opd = rho[mask], theta[mask], opd[mask]
 
     num_terms = len(zernike_terms)
     Z = np.zeros((len(opd), num_terms))
@@ -163,7 +170,7 @@ def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) 
     """Scale OPD values from the model's central wavelength to wavelength_nm.
 
     Args:
-        opd_grid: Pupil-coordinate and optical-path-difference grid.
+        opd_grid: OPD channel only; coordinates must not be passed here.
         opm: RayOptics optical model.
         wavelength_nm: Wavelength in nanometres.
 
@@ -175,70 +182,24 @@ def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) 
     return np.asarray(opd_grid, dtype=float) * scale
 
 
-def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
-    """Build (3, N, N) grid with exit pupil coordinates and corrected OPD.
+def _normalized_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
+    """Copy original normalized pupil labels and scale only OPD to traced waves.
 
-    For finite image space, extracts pre-computed exit pupil coordinates from
-    RayGrid's upd_grid (populated by wave_abr_pre_calc during trace_wavefront),
-    then normalizes by the maximum extent of exit pupil coordinates
-    (data-driven radius). Afocal RayGrid-compatible results have no grid_pkg,
-    so their already-normalized pupil-coordinate channels are retained.
-
-    This avoids using the paraxial exit pupil radius for ordinary finite data,
-    where it can be very wrong for tilted/decentered systems. In both paths,
-    only the OPD channel is scaled to the requested wavelength.
-
-    Args:
-        rg: RayGrid instance (already traced).
-        opm: OpticalModel instance.
-        wavelength_nm: traced wavelength in nm.
-
-    Returns:
-        (3, N, N) array: [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves.
+    Finite and afocal RayGrid-compatible objects supply the same three-channel
+    grid. ``grid_pkg`` EIC data is irrelevant to conventional Zernike labels.
+    The input grid is unchanged; no pupil-radius normalization is performed.
     """
-    opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
-    grid_pkg = getattr(rg, "grid_pkg", None)
-    if grid_pkg is None:
-        return np.array([rg.grid[0], rg.grid[1], opd_grid], dtype=float)
+    opd = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
+    return np.array([rg.grid[0], rg.grid[1], opd], dtype=float)
 
-    _, upd_grid = grid_pkg
-    n_rows = len(upd_grid)
-    n_cols = len(upd_grid[0])
 
-    exit_px_raw = np.full((n_rows, n_cols), np.nan)
-    exit_py_raw = np.full((n_rows, n_cols), np.nan)
-    has_finite_pupil = False
+def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
+    """Compatibility wrapper returning normalized pupil labels and scaled OPD.
 
-    for i in range(n_rows):
-        for j in range(n_cols):
-            entry = upd_grid[i][j]
-            if entry is None:
-                continue
-            if len(entry) == 4:
-                p_coord = entry[1]
-                exit_px_raw[i, j] = p_coord[0]
-                exit_py_raw[i, j] = p_coord[1]
-                has_finite_pupil = True
-            else:
-                exit_px_raw[i, j] = rg.grid[0][i, j]
-                exit_py_raw[i, j] = rg.grid[1][i, j]
-
-    if has_finite_pupil:
-        valid_mask = ~np.isnan(exit_px_raw) & ~np.isnan(exit_py_raw)
-        rho_raw = np.sqrt(exit_px_raw[valid_mask]**2 + exit_py_raw[valid_mask]**2)
-        if len(rho_raw) > 0 and np.max(rho_raw) > 1e-14:
-            exp_radius = float(np.max(rho_raw))
-        else:
-            fod = opm['analysis_results']['parax_data'].fod
-            exp_radius = abs(fod.exp_radius)
-
-        exit_px = exit_px_raw / exp_radius
-        exit_py = exit_py_raw / exp_radius
-    else:
-        exit_px = exit_px_raw
-        exit_py = exit_py_raw
-
-    return np.array([exit_px, exit_py, opd_grid])
+    Despite the historical name, this does not extract EIC coordinates or
+    reconstruct a physical exit-pupil plane. See ``_normalized_pupil_grid``.
+    """
+    return _normalized_pupil_grid(rg, opm, wavelength_nm)
 
 
 def get_zernike_coefficients(
@@ -251,12 +212,15 @@ def get_zernike_coefficients(
 ) -> dict:
     """Return Zernike and wavefront metrics for one field and wavelength.
 
-    Fits the explicit ordered ``zernike_terms`` against finite EIC exit-pupil
-    coordinates or afocal normalized pupil coordinates using the requested
-    image-point reference. The JSON-safe result contains unnormalized
-    ``coefficients`` and ``rms_normalized_coefficients`` in waves, piston-excluded
-    ``rms_wfe`` and ``pv_wfe`` over ``rho <= 1``, monochromatic ``strehl_ratio``,
-    ``num_terms``, ``field_index``, and ``wavelength_nm``.
+    Fits the ordered ``zernike_terms`` against original normalized pupil labels
+    for all fields and image conjugates using the requested image reference.
+    The JSON-safe result contains unnormalized ``coefficients`` and
+    ``rms_normalized_coefficients`` in traced-wavelength waves, ``rms_wfe``
+    (sample standard deviation with population denominator), ``pv_wfe``,
+    monochromatic ``strehl_ratio``, ``num_terms``, ``field_index``, and
+    ``wavelength_nm``. Fitting and all metrics share finite unit-disk samples;
+    an empty usable pupil raises ValueError. RMS removes the sample mean,
+    independently of coefficient order, piston inclusion, or term count.
 
     Args:
         opm: RayOptics optical model.
@@ -281,21 +245,18 @@ def get_zernike_coefficients(
         image_point=image_point,
     )
 
-    grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
+    grid = _normalized_pupil_grid(rg, opm, wavelength_nm)
 
     num_terms = len(zernike_terms)
     coeffs = fit_zernike(grid, zernike_terms)
     coeffs_list = [float(c) for c in coeffs]
 
-    px = grid[0].ravel()
-    py = grid[1].ravel()
-    opd_flat = grid[2].ravel()
-    valid_mask = ~np.isnan(opd_flat) & (px**2 + py**2 <= 1.0)
-    opd_pupil = opd_flat[valid_mask] - coeffs_list[0]
-    rms_wfe = float(np.sqrt(np.mean(opd_pupil**2)))
+    _, _, opd_pupil = _usable_pupil_samples(grid)
+    centered_opd = opd_pupil - np.mean(opd_pupil)
+    rms_wfe = float(np.sqrt(np.mean(centered_opd**2)))
     pv_wfe = float(np.max(opd_pupil) - np.min(opd_pupil))
     rms_normalized = unnormalized_to_rms_normalized(coeffs_list, zernike_terms)
-    strehl_ratio = _monochromatic_strehl(grid[2])
+    strehl_ratio = _monochromatic_strehl(opd_pupil)
 
     return {
         'coefficients': coeffs_list,

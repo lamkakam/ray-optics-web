@@ -1,125 +1,99 @@
-# Findings: Zernike Coefficient Bug for Tilted Optical Systems
+# Zernike coordinates: historical tilted-system failures and current convention
 
-## Problem
+## Current implementation
 
-Zernike wavefront analysis produces absurd coefficients for the "Tilted Houghton-Herschel 150mm f/8" system (with tilted image surface), while the OPD fan plot for the same system is correct and matches other optical software.
+[`zernike.py`](../src/python/src/rayoptics_web_utils/zernike/zernike.py)
+fits conventional Zernike polynomials in RayOptics' original normalized pupil
+labels, `rg.grid[0]` and `rg.grid[1]`, for every field and for both finite and
+afocal grids. `_normalized_pupil_grid` copies those labels and converts only
+OPD from central-wavelength waves to traced-wavelength waves.
+`_extract_exit_pupil_grid` remains a compatibility wrapper with this same
+behavior; its name no longer describes coordinate extraction.
 
-### On-axis, 546.073nm, Fringe ordering:
+Finite coordinates and OPD with `x² + y² <= 1` define one sample set for the
+fit, RMS, PV, and Strehl. Surviving samples are not recentered or rescaled to
+fill the disk. An empty usable pupil raises a descriptive `ValueError`.
+Aperture checking and the shared grid factory's vignetting handling remain in
+place. Coefficients fit the original referenced OPD; metric RMS is the sampled
+standard deviation, independent of term order, piston inclusion, or term count.
 
-| Metric | Value | Correct? |
-|--------|-------|----------|
-| P-V WFE | 0.1303 waves | Yes |
-| RMS WFE | 0.0548 waves | Yes |
-| Strehl Ratio | 0.9719 | Yes |
-| Z1 (Piston) | -65066 waves | **NO** |
-| Z4 (Defocus) | 53911 waves | **NO** |
-| Z9 (Primary Spherical) | -31603 waves | **NO** |
+See [RayGrid and OPD](rayoptics-raygrid-opd.md) for the tracing path and
+[image-reference conventions](image-reference-conventions.md) for reference
+geometry, metric mean removal, and coefficient normalization assumptions.
+This change does not reconstruct a physical exit-pupil plane or guarantee
+numerical identity with Zemax or OSLO. Recomputed finite-system coefficients
+can change, especially off axis; no stored-data migration is performed.
 
-The OPD fan shows max ~0.3 waves, consistent with other software. P-V and RMS WFE are correct because they are computed directly from the OPD grid, not from Zernike coefficients.
+## Historical failure: paraxial-radius normalization
 
-## Two Code Paths for OPD
+An earlier investigation of the tilted Houghton-Herschel 150 mm f/8 example
+reported these on-axis results at 546.073 nm in Fringe ordering:
 
-### OPD Fan (correct)
+| Quantity | Historical reported value |
+|----------|---------------------------|
+| P-V WFE | 0.1303 waves |
+| RMS WFE | 0.0548 waves |
+| Strehl | 0.9719 |
+| Z1 piston | -65066 waves |
+| Z4 defocus | 53911 waves |
+| Z9 primary spherical | -31603 waves |
 
-- File: `python/src/rayoptics_web_utils/plotting.py:55-81`
-- Uses: `SequentialModel.trace_fan()` + `wave_abr_full_calc()` (single-stage OPD calculation)
-- Pupil coordinates: **entrance pupil** (normalized input grid [-1, 1])
-- Works correctly for all systems including tilted
+That implementation extracted finite OPD preprocessing `p_coord` values and
+divided them by the paraxial `fod.exp_radius`. A poor paraxial radius in a
+significantly tilted system could reject most samples through the unit-disk
+mask, leaving an ill-conditioned fit. A later implementation normalized by
+the maximum sampled EIC radius, with a paraxial fallback near zero. That
+avoided the particular radius failure but still changed the pupil labels.
+Both coordinate schemes are now superseded.
 
-### Zernike Analysis (buggy for tilted systems)
+The old note called RMS correct because it was computed directly from OPD.
+That statement was too broad: the implementation preceding this correction
+subtracted `coefficients[0]` before calculating RMS, so the result depended on
+the fit and assumed piston was first. Historical metric values above are
+observations, not validation of the current RMS definition. PV is unchanged
+by subtraction of a constant; RMS requires subtraction of the sample mean.
 
-- File: `python/src/rayoptics_web_utils/zernike.py:211-272`
-- Uses: `RayGrid` (which calls `analyses.trace_wavefront()` with two-stage `wave_abr_pre_calc` + `wave_abr_calc`)
-- Then: `_extract_exit_pupil_grid()` extracts **exit pupil** coordinates from `upd_grid` and normalizes by `fod.exp_radius`
-- The OPD values in `rg.grid[2]` are correct; only the coordinates used for Zernike fitting are wrong
+## Why EIC displacements are not conventional pupil labels
 
-## Naming Collision: Two `trace_wavefront` Functions
+In RayOptics 0.9.8 `raytr/waveabr.py`,
+`wave_abr_pre_calc_finite_pup` forms `p_coord = eic_exp_pt - cr_exp_pt`.
+Its four-item package contains `pre_opd`, `p_coord`, `b4_pt`, and `b4_dir`.
+These are geometric data used to calculate OPD efficiently on refocus.
+The EIC expansion point depends on the test ray and chief-ray geometry;
+its transverse displacement is not the normalized input label assigned to
+that ray, nor a reconstruction of every ray's intersection with one physical
+exit-pupil plane. Dividing all displacements by their largest radius cannot
+undo field-dependent distortion, shear, or an offset. Clipping can also change
+that largest radius and hence every fitted coordinate.
 
-There are **two different functions** both named `trace_wavefront`:
+The infinite-reference-sphere preprocessing path has a different six-item
+package. Neither package supplies the labels used by the current fit.
+`RayGrid` already preserves the input labels alongside its focused OPD.
 
-1. **`SequentialModel.trace_wavefront()`** in `rayoptics/seq/sequential.py` — simpler method that uses `trace_grid` + `wave_abr_full_calc` and returns entrance pupil coordinates as x,y in the output. The OPD fan doesn't use this directly (it uses `trace_fan`), but they share the same `wave_abr_full_calc` OPD calculation.
+## Historical OSLO comparison
 
-2. **`trace_wavefront()`** in `rayoptics/raytr/analyses.py` — module-level function that `RayGrid` calls. Uses two-stage approach: `trace_ray_grid()` + `wave_abr_pre_calc()` for each ray, returns `(grid, upd_grid)` where `upd_grid` contains pre-computed OPD packages with exit pupil data embedded.
+The earlier Cooke Triplet investigation reported:
 
-## Root Cause
+| Term | Input-label fit | EIC-coordinate fit | Reported OSLO reference |
+|------|-----------------|--------------------|-------------------------|
+| Z7 coma | +0.243 | +0.312 | +0.327 |
+| Z11 spherical | -0.499 | -0.714 | -0.775 |
+| Z12 secondary astigmatism | +0.396 | +0.765 | +0.820 |
 
-`_extract_exit_pupil_grid()` (zernike.py:164-208) normalizes exit pupil coordinates by `fod.exp_radius`:
+These are historical observations, not evidence that EIC coordinates are a
+superior conventional Zernike basis. Agreement in a few coefficients does not
+establish agreement in pupil mapping, sampling, reference geometry, or fitting
+conventions. The former EIC-specific magnitude tests have been replaced by
+independent fits of the same traced wavefront in its normalized labels in
+[`test_zernike.py`](../src/python/tests/rayoptics_web_utils/zernike/test_zernike.py).
+Symmetry, ordering, wavelength, centroid, afocal, and tilted-system regressions
+remain covered.
 
-```python
-fod = opm['analysis_results']['parax_data'].fod
-exp_radius = fod.exp_radius
+## Separate first-surface OPD warning
 
-# ... for each ray in upd_grid:
-p_coord = entry[1]  # exit pupil EIC expansion point
-exit_px[i, j] = p_coord[0] / exp_radius
-exit_py[i, j] = p_coord[1] / exp_radius
-```
-
-`fod.exp_radius` comes from **paraxial ray tracing**, which is unreliable for significantly tilted systems. When `exp_radius` is very small or has the wrong sign, `p_coord / exp_radius` produces enormous coordinate values.
-
-The `fit_zernike()` function (zernike.py:121-152) has a `rho <= 1.0` mask:
-```python
-rho = np.sqrt(px**2 + py**2)
-mask = rho <= 1.0
-rho, theta, opd = rho[mask], theta[mask], opd[mask]
-```
-
-With blown-up coordinates, this mask rejects most/all data points, producing a degenerate least-squares fit with absurd coefficients.
-
-## Why Exit Pupil Coordinates Exist
-
-For rotationally symmetric systems, exit pupil coordinates give more accurate Zernike coefficients than entrance pupil coordinates. This was validated against OSLO for the Cooke Triplet:
-
-| Term | Entrance Pupil | Exit Pupil | OSLO Reference |
-|------|---------------|------------|----------------|
-| Z7 (coma) | +0.243 | +0.312 | +0.327 |
-| Z11 (spherical) | -0.499 | -0.714 | -0.775 |
-| Z12 (sec. astig.) | +0.396 | +0.765 | +0.820 |
-
-These tests exist in `python/tests/test_zernike.py`:
-- `test_exit_pupil_coords_off_axis_z7_coma`
-- `test_exit_pupil_coords_off_axis_z11_spherical`
-- `test_exit_pupil_coords_off_axis_z12`
-
-## `_extract_exit_pupil_grid` Is Not Duplicating Logic
-
-The function does **no ray tracing and no OPD computation**. It is a pure extraction layer that:
-1. Reads pre-computed `p_coord` from `upd_grid` (populated by `wave_abr_pre_calc_finite_pup`)
-2. Normalizes by `exp_radius`
-3. Applies wavelength correction to OPD: `opd_grid[2] *= central_wvl / wavelength_nm`
-4. Handles two cases: finite pupil (4-tuple) and infinite ref sphere / telecentric (6-tuple, falls back to entrance pupil)
-
-No upstream rayoptics function extracts and normalizes exit pupil coordinates from `upd_grid` — this is genuinely new logic.
-
-## Key Data Structures
-
-### `upd_grid` entries (from `wave_abr_pre_calc`)
-
-**Finite pupil** (4-tuple from `wave_abr_pre_calc_finite_pup`):
-- `[0]` pre_opd: focus-independent OPD component
-- `[1]` p_coord: exit pupil coordinates (EIC-based displacement from chief ray)
-- `[2]` b4_pt: ray position after final surface
-- `[3]` b4_dir: ray direction after final surface
-
-**Infinite ref sphere** (6-tuple from `wave_abr_pre_calc_inf_ref`):
-- `[0]` pre_opd, `[1]` W0, `[2-5]` ray/chief-ray position+direction
-
-### `rg.grid` (from `RayGrid.focus_wavefront()`)
-
-Shape `(3, N, N)`:
-- `[0]` = entrance pupil x coordinates (normalized -1 to 1)
-- `[1]` = entrance pupil y coordinates (normalized -1 to 1)
-- `[2]` = OPD in waves (correct for all systems)
-
-## Tilted Houghton-Herschel Prescription
-
-From `lib/exampleSystems.ts:355-467`:
-- EPD=150mm, fields=[0, 0.707, 1]×(-0.5°)
-- 5 wavelengths: 435.835, 486.133, 546.073 (ref), 656.273, 706.519 nm
-- S1 (Stop): R=2022, t=11.2, N-BK7
-- S2: flat, t=10.5, air
-- S3: R=-2022, t=9.9, N-BK7, dec-and-return alpha=5.4°
-- S4: flat, t=1140, air, dec-and-return alpha=5.4° y=1.5
-- S5: R=-2404.5, t=-1050, REFL, bend alpha=3°
-- S6: flat, t=153.195342, REFL, bend alpha=-48°
-- IMG: R=2600, bend alpha=5.66°
+Correct pupil labels cannot repair an incorrect traced OPD. Preserve the dummy
+planar air/reference surface before a first tilted or decentered optical
+surface where required by the
+[first-surface OPD warning](rayoptics-tilted-or-decentered-first-surface-opd.md).
+Transverse ray-fan agreement alone does not validate OPD. The coordinate and
+RMS corrections do not alter this topology issue or the reference geometry.

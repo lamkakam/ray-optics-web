@@ -501,32 +501,26 @@ class TestGetZernikeCoefficients:
         assert abs(coeffs[0] - 0.568) < 0.1, f"Z1 piston = {coeffs[0]}, expected ~0.568"
         assert abs(coeffs[3] - 0.788) < 0.1, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
 
-    def test_exit_pupil_coords_off_axis_z12(self, cooke_triplet):
-        """Full-field: Z12 (secondary astigmatism) should be large with exit pupil coords."""
-        from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
-        coeffs = result['coefficients']
-        assert abs(coeffs[11]) > 0.5, (
-            f"Z12 = {coeffs[11]}, expected > 0.5 with exit pupil coordinates"
-        )
-
-    def test_exit_pupil_coords_off_axis_z7_coma(self, cooke_triplet):
-        """Full-field: Z7 (coma Y) should increase with exit pupil coords."""
-        from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
-        coeffs = result['coefficients']
-        assert abs(coeffs[6]) > 0.28, (
-            f"Z7 = {coeffs[6]}, expected > 0.28 with exit pupil coordinates"
-        )
-
-    def test_exit_pupil_coords_off_axis_z11_spherical(self, cooke_triplet):
-        """Full-field: Z11 (primary spherical) magnitude should increase with exit pupil coords."""
-        from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
-        coeffs = result['coefficients']
-        assert abs(coeffs[10]) > 0.6, (
-            f"Z11 = {coeffs[10]}, expected |Z11| > 0.6 with exit pupil coordinates"
-        )
+    @pytest.mark.parametrize("field_index", [0, 1, 2])
+    @pytest.mark.parametrize("image_point", ["chief_ray", "centroid"])
+    def test_fit_matches_original_normalized_grid(self, cooke_triplet, field_index, image_point):
+        """Fit the same traced wavefront independently in normalized pupil labels."""
+        from rayoptics_web_utils.raygrid import make_ray_grid
+        from rayoptics_web_utils.zernike import get_zernike_coefficients, zernike_polynomial
+        wvl = cooke_triplet['optical_spec']['wvls'].wavelengths[1]
+        grid = make_ray_grid(cooke_triplet, field_index, wvl, num_rays=17,
+                             image_point=image_point).grid
+        x, y, opd = grid
+        mask = np.all(np.isfinite(grid), axis=0) & (x*x + y*y <= 1)
+        rho, theta = np.hypot(x[mask], y[mask]), np.arctan2(y[mask], x[mask])
+        design = np.column_stack([zernike_polynomial(n, m, rho, theta)
+                                  for n, m in NOLL_TERMS_22])
+        scale = cooke_triplet['optical_spec']['wvls'].central_wvl / wvl
+        expected = np.linalg.lstsq(design, opd[mask] * scale, rcond=None)[0]
+        result = get_zernike_coefficients(cooke_triplet, field_index, 1,
+                                         NOLL_TERMS_22, image_point, num_rays=17)
+        np.testing.assert_allclose(result['coefficients'], expected, atol=1e-9)
+        assert result['rms_wfe'] == pytest.approx(np.std(opd[mask] * scale))
 
     def test_rms_normalized_key_exists(self, cooke_triplet):
         """rms_normalized_coefficients key exists and is list[float]."""
@@ -719,3 +713,77 @@ class TestTiltedSystemZernike:
         assert result['strehl_ratio'] > 0.9, (
             f"Strehl = {result['strehl_ratio']}, expected > 0.9"
         )
+
+
+class TestNormalizedPupilMetrics:
+    """Synthetic wavefronts isolate coordinates, sample selection, and metric means."""
+
+    @pytest.fixture
+    def model(self):
+        """Minimal spectral model with central-to-traced wavelength ratio one half."""
+        from types import SimpleNamespace
+
+        class Model:
+            def __getitem__(self, key):
+                return {"wvls": SimpleNamespace(central_wvl=500., wavelengths=[1000.])}
+
+            def nm_to_sys_units(self, wavelength):
+                return wavelength * 1e-6
+
+        return Model()
+
+    @pytest.mark.parametrize("finite", [True, False])
+    def test_distorted_eic_does_not_change_labels_or_known_coefficients(self, model, finite):
+        """Clipped pupils retain their radius and labels despite distorted EIC data."""
+        from types import SimpleNamespace
+        from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid, fit_zernike
+        x, y = np.meshgrid(np.linspace(-.6, .6, 9), np.linspace(-.5, .5, 9))
+        opd = 2 * (0.7 + .3*x - .2*y + .4*(2*(x*x+y*y)-1))
+        original = np.array([x, y, opd])
+        rg = SimpleNamespace(grid=original.copy())
+        if finite:
+            rg.grid_pkg = (None, [[(0, (10 + 3*px + py*py, -4 + py, 0), None, None)
+                                  for px, py in zip(xrow, yrow)] for xrow, yrow in zip(x, y)])
+        grid = _extract_exit_pupil_grid(rg, model, 1000.)
+        np.testing.assert_array_equal(grid[:2], original[:2])
+        np.testing.assert_allclose(grid[2], opd / 2)
+        np.testing.assert_array_equal(rg.grid, original)
+        np.testing.assert_allclose(fit_zernike(grid, [(0,0), (1,1), (1,-1), (2,0)]),
+                                   [.7, .3, -.2, .4], atol=1e-12)
+
+    @pytest.mark.parametrize("terms", [[(0,0)], [(2,0), (0,0), (1,1)],
+                                       [(1,1)], NOLL_TERMS_22[:6]])
+    @pytest.mark.parametrize("include_invalid", [False, True])
+    @pytest.mark.parametrize("piston", [0., 13.])
+    def test_metrics_share_finite_unit_disk_samples_and_ignore_fit(self, model, monkeypatch, terms, piston, include_invalid):
+        """Metric RMS is sampled standard deviation regardless of coefficient piston."""
+        from types import SimpleNamespace
+        from rayoptics_web_utils.zernike import get_zernike_coefficients, fit_zernike
+        x = np.array([[-.6, -.2, .3, .7, 1.2, np.nan, np.inf, 0., 0.]])
+        y = np.array([[0., .2, -.3, .1, 0., 0., 0., 0., 0.]])
+        opd = np.array([[.1, .2, -.3, .45, 99., 44., 22., np.inf, np.nan]]) + piston
+        grid = np.array([x, y, 2*opd])
+        if not include_invalid:
+            grid = grid[:, :, :4]
+        monkeypatch.setattr('rayoptics_web_utils.raygrid.make_ray_grid',
+                            lambda *args, **kwargs: SimpleNamespace(grid=grid))
+        result = get_zernike_coefficients(model, 0, 0, terms)
+        values = opd[0, :4]
+        assert result['rms_wfe'] == pytest.approx(np.std(values))
+        assert result['pv_wfe'] == pytest.approx(np.ptp(values))
+        assert result['strehl_ratio'] == pytest.approx(abs(np.mean(np.exp(2j*np.pi*values)))**2)
+        clean = np.array([x[:, :4], y[:, :4], opd[:, :4]])
+        np.testing.assert_allclose(result['coefficients'], fit_zernike(clean, terms), atol=1e-12)
+
+    @pytest.mark.parametrize("grid", [np.full((3, 2, 2), np.nan),
+                                      np.array([[[2.]], [[0.]], [[1.]]])])
+    def test_empty_pupil_fails_explicitly(self, model, monkeypatch, grid):
+        """Both standalone fitting and the public analysis reject an empty pupil."""
+        from types import SimpleNamespace
+        from rayoptics_web_utils.zernike import get_zernike_coefficients, fit_zernike
+        monkeypatch.setattr('rayoptics_web_utils.raygrid.make_ray_grid',
+                            lambda *args, **kwargs: SimpleNamespace(grid=grid))
+        with pytest.raises(ValueError, match="No usable.*pupil"):
+            fit_zernike(grid, [(0,0)])
+        with pytest.raises(ValueError, match="No usable.*pupil"):
+            get_zernike_coefficients(model, 0, 0, [(0,0)])
