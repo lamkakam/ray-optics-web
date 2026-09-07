@@ -223,6 +223,33 @@ describe("glassMapStore actions", () => {
     expect(store.getState().catalogsData?.Custom.CUSTOM_B).toBeUndefined();
   });
 
+  it("retains a non-Custom selection when deleting a matching Custom label", () => {
+    const store = makeStore();
+    store.getState().setCatalogsData(completeAllCatalogsData({
+      Schott: { CUSTOM_A: mockGlassData },
+      Custom: { CUSTOM_A: mockGlassData },
+    }));
+    const selected = { catalogName: "Schott" as CatalogName, glassName: "CUSTOM_A", data: mockGlassData };
+    store.getState().setSelectedGlass(selected);
+
+    store.getState().deleteCustomGlasses(["CUSTOM_A"]);
+
+    expect(store.getState().selectedGlass).toEqual(selected);
+    expect(store.getState().catalogsData?.Schott.CUSTOM_A).toBeDefined();
+  });
+
+  it("deletes Custom data when no glass is selected", () => {
+    const store = makeStore();
+    store.getState().setCatalogsData(completeAllCatalogsData({
+      Custom: { CUSTOM_A: mockGlassData },
+    }));
+
+    store.getState().deleteCustomGlasses(["CUSTOM_A"]);
+
+    expect(store.getState().selectedGlass).toBeUndefined();
+    expect(store.getState().catalogsData?.Custom.CUSTOM_A).toBeUndefined();
+  });
+
   it("setCatalogsData replaces catalog data and rebuilds lookups", () => {
     const store = makeStore();
     const initialData = completeAllCatalogsData({

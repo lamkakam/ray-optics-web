@@ -114,6 +114,7 @@ describe("ApertureModal", () => {
 
   it.each([
     ["Clear Offset X", "abc"],
+    ["Clear Offset X", "   "],
     ["Clear Offset Y", "Infinity"],
     ["Edge Offset X", "NaN"],
     ["Edge Offset Y", ""],
@@ -790,6 +791,27 @@ describe("ApertureModal", () => {
         offsetY: 0.75,
       },
     });
+  });
+
+  it("preserves an invalid annular obstruction draft when auto aperture changes", async () => {
+    const defaultProps = {
+      isOpen: true,
+      semiDiameter: 8,
+      initialClearAperture: undefined,
+      initialEdgeAperture: undefined,
+      onConfirm: jest.fn(),
+      onClose: jest.fn(),
+    };
+    const { rerender } = render(<ApertureModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
+    const obstruction = screen.getByRole("textbox", { name: "Central Obstruction Radius" });
+    await userEvent.clear(obstruction);
+    await userEvent.type(obstruction, "abc");
+
+    rerender(<ApertureModal {...defaultProps} autoAperture />);
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toHaveValue("abc");
   });
 
   it("displays and disables annular obstruction ratio in read-only auto aperture mode", () => {
