@@ -882,6 +882,7 @@ describe("init", () => {
   });
 
   it("destroys and rejects an unexpected initialization PyProxy result", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const unexpectedResult = { destroy: jest.fn() };
     const runPythonAsync = jest.fn()
       .mockResolvedValueOnce(undefined)
@@ -900,6 +901,10 @@ describe("init", () => {
     );
 
     expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(expect.objectContaining({
+      message: "Pyodide initialization returned an unexpected PyProxy result",
+    }));
+    consoleError.mockRestore();
   });
 
   it.each(["success", "failure"] as const)(
@@ -909,13 +914,14 @@ describe("init", () => {
       const release = jest.fn();
       onProgress[releaseProxy] = release;
       if (outcome === "failure") {
-        jest.mocked(loadPyodide).mockRejectedValueOnce(new Error("load failed"));
-      }
-
-      if (outcome === "success") {
-        await init(onProgress);
-      } else {
+        const error = new Error("load failed");
+        const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+        jest.mocked(loadPyodide).mockRejectedValueOnce(error);
         await expect(init(onProgress)).rejects.toThrow("load failed");
+        expect(consoleError).toHaveBeenCalledWith(error);
+        consoleError.mockRestore();
+      } else {
+        await init(onProgress);
       }
 
       expect(release).toHaveBeenCalledTimes(1);

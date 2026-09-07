@@ -409,6 +409,8 @@ describe("ExampleSystemsPage", () => {
   });
 
   it("shows the app error modal hook after routing when background apply fails", async () => {
+    const error = new Error("failed");
+    const consoleLog = jest.spyOn(console, "log").mockImplementation(() => undefined);
     const layoutDeferred = createDeferred<string>();
     const proxy = makeProxy();
     (proxy.plotLensLayout as jest.Mock).mockReturnValue(layoutDeferred.promise);
@@ -424,9 +426,11 @@ describe("ExampleSystemsPage", () => {
     expect(onError).not.toHaveBeenCalled();
 
     await act(async () => {
-      layoutDeferred.reject(new Error("failed"));
+      layoutDeferred.reject(error);
     });
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
+    expect(consoleLog).toHaveBeenCalledWith("Apply example system failed:", error);
+    consoleLog.mockRestore();
   });
 });
