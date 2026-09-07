@@ -465,8 +465,10 @@ describe("LensEditor", () => {
   });
 
   it("preserves the old computed cache when an auto update fails", async () => {
+    const error = new Error("sd failed");
+    const consoleLog = jest.spyOn(console, "log").mockImplementation(() => undefined);
     const proxy = makeProxy();
-    (proxy.getSurfaceSemiDiameters as jest.Mock).mockRejectedValue(new Error("sd failed"));
+    (proxy.getSurfaceSemiDiameters as jest.Mock).mockRejectedValue(error);
     const { lensStore, onError } = renderLensEditor({ proxy });
     act(() => {
       lensStore.getState().setAutoAperture(true);
@@ -477,6 +479,8 @@ describe("LensEditor", () => {
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
     expect(lensStore.getState().autoSemiDiameters).toEqual({ old: 9 });
+    expect(consoleLog).toHaveBeenCalledWith("Update System failed:", error);
+    consoleLog.mockRestore();
   });
 
   it("Update System passes isDark=false and preserves diffraction grating data in the submitted model when the theme is light", async () => {
@@ -590,12 +594,16 @@ describe("LensEditor", () => {
   });
 
   it("submit error path calls onError", async () => {
+    const error = new Error("compute failed");
+    const consoleLog = jest.spyOn(console, "log").mockImplementation(() => undefined);
     const errorProxy = makeProxy();
-    (errorProxy.plotLensLayout as jest.Mock).mockRejectedValue(new Error("compute failed"));
+    (errorProxy.plotLensLayout as jest.Mock).mockRejectedValue(error);
     const { onError } = renderLensEditor({ proxy: errorProxy });
     const user = userEvent.setup();
     await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() => expect(onError).toHaveBeenCalled());
+    expect(consoleLog).toHaveBeenCalledWith("Update System failed:", error);
+    consoleLog.mockRestore();
   });
 
   it("Seidel button absent before submit", () => {

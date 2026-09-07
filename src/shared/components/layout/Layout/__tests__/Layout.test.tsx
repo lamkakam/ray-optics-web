@@ -29,6 +29,7 @@ jest.mock("@/shared/components/layout/SideNav", () => ({
         <a
           href="/settings"
           onClick={(event) => {
+            event.preventDefault();
             if (onNavigate?.("/settings", event) === false) return;
             onClose();
           }}
@@ -90,7 +91,12 @@ describe("Layout", () => {
   });
 
   it("forwards accepted and blocked navigation through the side nav", async () => {
-    const onNavigate = jest.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
+    let navigationAttempts = 0;
+    const onNavigate = jest.fn((_href: string, event: React.MouseEvent<HTMLAnchorElement>) => {
+      navigationAttempts += 1;
+      expect(event.defaultPrevented).toBe(true);
+      return navigationAttempts > 1;
+    });
     render(<Layout {...defaultProps} onNavigate={onNavigate} />);
     const hamburger = screen.getByRole("button", { name: "Open navigation" });
 

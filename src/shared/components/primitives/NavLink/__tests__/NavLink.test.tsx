@@ -7,10 +7,18 @@ jest.mock("next/link", () => {
   return function MockLink({
     href,
     children,
+    onClick,
     ...props
   }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
     return (
-      <a href={href} {...props}>
+      <a
+        href={href}
+        onClick={(event) => {
+          event.preventDefault();
+          onClick?.(event);
+        }}
+        {...props}
+      >
         {children}
       </a>
     );
@@ -40,7 +48,9 @@ describe("NavLink", () => {
   });
 
   it("click calls onClick", async () => {
-    const handleClick = jest.fn();
+    const handleClick = jest.fn((event: React.MouseEvent<HTMLAnchorElement>) => {
+      expect(event.defaultPrevented).toBe(true);
+    });
     render(<NavLink active={false} href="/settings" onClick={handleClick}>Settings</NavLink>);
     const link = screen.getByRole("link", { name: "Settings" });
     await userEvent.click(link);

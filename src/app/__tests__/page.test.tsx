@@ -17,7 +17,6 @@ import { AnalysisDataStoreProvider } from "@/features/analysis/providers/Analysi
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import {
   GlassMapStoreContext,
-  GlassMapStoreProvider,
 } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { ImagePointProvider, type ImagePoint } from "@/shared/components/providers/ImagePointProvider";
@@ -98,10 +97,18 @@ jest.mock("next/link", () => {
   return function MockLink({
     href,
     children,
+    onClick,
     ...props
   }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
     return (
-      <a href={href} {...props}>
+      <a
+        href={href}
+        onClick={(event) => {
+          event.preventDefault();
+          onClick?.(event);
+        }}
+        {...props}
+      >
         {children}
       </a>
     );
@@ -397,27 +404,15 @@ jest.mock("@/shared/hooks/usePyodide", () => ({
   usePyodide: () => mockUsePyodide(),
 }));
 
-function renderWithStores(node: React.ReactNode) {
-  return render(
-    <ImagePointProvider>
-      <SpecsConfiguratorStoreProvider>
-        <LensEditorStoreProvider>
-          <AnalysisPlotStoreProvider>
-            <AnalysisDataStoreProvider>
-              <LensLayoutImageStoreProvider>
-                <GlassMapStoreProvider>{node}</GlassMapStoreProvider>
-              </LensLayoutImageStoreProvider>
-            </AnalysisDataStoreProvider>
-          </AnalysisPlotStoreProvider>
-        </LensEditorStoreProvider>
-      </SpecsConfiguratorStoreProvider>
-    </ImagePointProvider>
-  );
-}
-
-function renderWithSeededGlassCatalogs(node: React.ReactNode, catalogsData = loadedCatalogsData) {
+/** Renders provider-backed routes with an explicit initial glass-catalog state. */
+function renderWithGlassCatalogs(
+  node: React.ReactNode,
+  catalogsData: AllGlassCatalogsData | undefined,
+) {
   const glassMapStore = createStore(createGlassMapSlice);
-  glassMapStore.getState().setCatalogsData(catalogsData);
+  if (catalogsData !== undefined) {
+    glassMapStore.getState().setCatalogsData(catalogsData);
+  }
 
   return render(
     <ImagePointProvider>
@@ -438,8 +433,31 @@ function renderWithSeededGlassCatalogs(node: React.ReactNode, catalogsData = loa
   );
 }
 
+/** Renders ordinary routes with catalogs already available, avoiding unrelated preload work. */
+function renderWithStores(node: React.ReactNode) {
+  return renderWithGlassCatalogs(node, loadedCatalogsData);
+}
+
+/** Renders catalog-preload lifecycle cases from a deliberately empty store. */
+function renderWithEmptyGlassCatalogs(node: React.ReactNode) {
+  return renderWithGlassCatalogs(node, undefined);
+}
+
+function renderWithSeededGlassCatalogs(node: React.ReactNode, catalogsData = loadedCatalogsData) {
+  return renderWithGlassCatalogs(node, catalogsData);
+}
+
 function renderInAppShell(node: React.ReactNode) {
   return renderWithStores(
+    <OptimizationStoreProvider>
+      <AppShell>{node}</AppShell>
+    </OptimizationStoreProvider>,
+  );
+}
+
+/** Renders AppShell catalog-preload lifecycle cases from an explicitly empty store. */
+function renderInAppShellWithEmptyGlassCatalogs(node: React.ReactNode) {
+  return renderWithEmptyGlassCatalogs(
     <OptimizationStoreProvider>
       <AppShell>{node}</AppShell>
     </OptimizationStoreProvider>,
@@ -613,12 +631,14 @@ describe("app shell routes", () => {
     });
   });
 
-  it("renders shared chrome around route content", () => {
+  it("renders shared chrome around route content without reloading seeded catalogs", () => {
     renderInAppShell(<div>Route body</div>);
 
     expect(screen.getByText("Ray Optics Web")).toBeInTheDocument();
     expect(screen.getByText("Route body")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open navigation" })).toBeInTheDocument();
+    expect(screen.queryByText("Preloading glass catalogs")).not.toBeInTheDocument();
+    expect(mockProxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
   it("shows the Pyodide loading overlay from the app shell layout", () => {
@@ -640,7 +660,7 @@ describe("app shell routes", () => {
   it("shows the glass-catalog preload milestone while catalogs load", () => {
     mockProxy.getAllGlassCatalogsData.mockImplementationOnce(() => new Promise(() => undefined));
 
-    renderInAppShell(<HomePage />);
+    renderInAppShellWithEmptyGlassCatalogs(<HomePage />);
 
     expect(screen.getByText("Preloading glass catalogs")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "Initialization progress" })).toHaveAttribute("aria-valuenow", "90");
@@ -650,7 +670,7 @@ describe("app shell routes", () => {
   it("keeps the initialization overlay visible with the catalog error when preload fails", async () => {
     mockProxy.getAllGlassCatalogsData.mockRejectedValueOnce(new Error("Catalog preload failed"));
 
-    renderInAppShell(
+    renderInAppShellWithEmptyGlassCatalogs(
       <>
         <GlassCatalogStoreProbe />
         <HomePage />
@@ -926,17 +946,15 @@ describe("app shell routes", () => {
       CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {}, Special: {},
     });
 
-    renderInAppShell(
+    renderInAppShellWithEmptyGlassCatalogs(
       <>
         <GlassCatalogStoreProbe />
         <HomePage />
       </>,
     );
 
-    await waitFor(() => {
-      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
-    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    await waitFor(() => expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded"));
+    expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("schott-count")).toHaveTextContent("1");
     expect(screen.getByTestId("lookup-medium")).toHaveTextContent("Schott");
   });
@@ -950,7 +968,7 @@ describe("app shell routes", () => {
     mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce(loadedCatalogsData);
     mockProxy.addUserDefinedGlasses.mockResolvedValueOnce({ PERSISTED: persistedCustomGlassData });
 
-    renderInAppShell(
+    renderInAppShellWithEmptyGlassCatalogs(
       <>
         <GlassCatalogStoreProbe />
         <HomePage />
@@ -961,7 +979,7 @@ describe("app shell routes", () => {
       name: "PERSISTED",
       pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
     }]));
-    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    await waitFor(() => expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded"));
     expect(screen.getByTestId("custom-count")).toHaveTextContent("1");
   });
 
@@ -977,7 +995,7 @@ describe("app shell routes", () => {
     mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce(loadedCatalogsData);
     mockProxy.addUserDefinedGlasses.mockResolvedValueOnce({ VALID: persistedCustomGlassData });
 
-    renderInAppShell(
+    renderInAppShellWithEmptyGlassCatalogs(
       <>
         <GlassCatalogStoreProbe />
         <HomePage />
@@ -985,7 +1003,7 @@ describe("app shell routes", () => {
     );
 
     expect(await screen.findByText(/1 persisted custom glass entry was quarantined: BAD_TYPE/)).toBeInTheDocument();
-    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    await waitFor(() => expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded"));
     expect(screen.getByTestId("custom-count")).toHaveTextContent("1");
     expect(mockQuarantineStoredCustomGlassRow).toHaveBeenCalledWith({ label: "BAD_TYPE", type: "sellmeier", pairs: [] }, "BAD_TYPE");
   });
@@ -1020,11 +1038,15 @@ describe("app shell routes", () => {
   });
 
   it("renders the glass map on the glass-map route", async () => {
-    renderInAppShell(<GlassMapPage />);
+    renderInAppShellWithEmptyGlassCatalogs(
+      <>
+        <GlassCatalogStoreProbe />
+        <GlassMapPage />
+      </>,
+    );
 
-    await waitFor(() => {
-      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(() => expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded"));
+    expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
   });
 
   it("passes MediumSelectorModal route intent from search params into the glass map page", async () => {
@@ -1131,7 +1153,9 @@ describe("app shell routes", () => {
   });
 
   it("opens the shared error modal when the lens editor reports a worker error", async () => {
-    mockGetFirstOrderData.mockRejectedValueOnce(new Error("bad input"));
+    const error = new Error("bad input");
+    const consoleLog = jest.spyOn(console, "log").mockImplementation(() => undefined);
+    mockGetFirstOrderData.mockRejectedValueOnce(error);
     renderInAppShell(<HomePage />);
 
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
@@ -1140,5 +1164,7 @@ describe("app shell routes", () => {
     await waitFor(() => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
+    expect(consoleLog).toHaveBeenCalledWith("Update System failed:", error);
+    consoleLog.mockRestore();
   });
 });

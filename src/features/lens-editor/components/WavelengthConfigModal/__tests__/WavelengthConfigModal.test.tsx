@@ -80,6 +80,7 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("adds a row when add button is clicked", async () => {
+    const user = userEvent.setup();
     render(
       <WavelengthConfigModal
         {...defaultProps}
@@ -88,7 +89,7 @@ describe("WavelengthConfigModal", () => {
       />
     );
     const addBtn = screen.getByLabelText("Add wavelength row");
-    await userEvent.click(addBtn);
+    await user.click(addBtn);
 
     const grid = screen.getByTestId("ag-grid-mock");
     const rows = within(grid).getAllByRole("row");
@@ -96,6 +97,7 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("does not add more than 7 rows", async () => {
+    const user = userEvent.setup();
     const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
     render(
       <WavelengthConfigModal
@@ -105,7 +107,7 @@ describe("WavelengthConfigModal", () => {
       />
     );
     const addBtns = screen.getAllByLabelText("Add wavelength row");
-    await userEvent.click(addBtns[0]);
+    await user.click(addBtns[0]);
 
     const grid = screen.getByTestId("ag-grid-mock");
     const rows = within(grid).getAllByRole("row");
@@ -113,9 +115,10 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("deletes a row when delete button is clicked", async () => {
+    const user = userEvent.setup();
     render(<WavelengthConfigModal {...defaultProps} />);
     const deleteBtns = screen.getAllByLabelText("Delete wavelength row");
-    await userEvent.click(deleteBtns[0]);
+    await user.click(deleteBtns[0]);
 
     const grid = screen.getByTestId("ag-grid-mock");
     const rows = within(grid).getAllByRole("row");
@@ -137,18 +140,20 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("changes reference wavelength when a different radio is clicked", async () => {
+    const user = userEvent.setup();
     render(<WavelengthConfigModal {...defaultProps} />);
     const radios = screen.getAllByRole("radio") as HTMLInputElement[];
-    await userEvent.click(radios[2]);
+    await user.click(radios[2]);
     expect(radios[2].checked).toBe(true);
     expect(radios[1].checked).toBe(false);
   });
 
   it("calls onApply with current draft state when Apply is clicked", async () => {
+    const user = userEvent.setup();
     const onApply = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
 
-    await userEvent.click(screen.getByText("Apply"));
+    await user.click(screen.getByText("Apply"));
     expect(onApply).toHaveBeenCalledWith({
       weights: [
         [486.133, 1],
@@ -180,34 +185,38 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("calls onClose when Cancel is clicked", async () => {
+    const user = userEvent.setup();
     const onClose = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onClose={onClose} />);
 
-    await userEvent.click(screen.getByText("Cancel"));
+    await user.click(screen.getByText("Cancel"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("does not call onApply when Cancel is clicked", async () => {
+    const user = userEvent.setup();
     const onApply = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
 
-    await userEvent.click(screen.getByText("Cancel"));
+    await user.click(screen.getByText("Cancel"));
     expect(onApply).not.toHaveBeenCalled();
   });
 
   it("does not call onClose when Escape is pressed", async () => {
+    const user = userEvent.setup();
     const onClose = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onClose={onClose} />);
 
-    await userEvent.keyboard("{Escape}");
+    await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
   it("does not call onClose when backdrop is clicked", async () => {
+    const user = userEvent.setup();
     const onClose = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onClose={onClose} />);
 
-    await userEvent.click(screen.getByTestId("modal-backdrop"));
+    await user.click(screen.getByTestId("modal-backdrop"));
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
@@ -232,6 +241,7 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("shows add buttons after deleting a row from 7", async () => {
+    const user = userEvent.setup();
     const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
     render(
       <WavelengthConfigModal
@@ -241,7 +251,7 @@ describe("WavelengthConfigModal", () => {
       />
     );
     const deleteBtns = screen.getAllByLabelText("Delete wavelength row");
-    await userEvent.click(deleteBtns[0]);
+    await user.click(deleteBtns[0]);
 
     const addBtns = screen.getAllByLabelText("Add wavelength row");
     addBtns.forEach((btn) => {
@@ -250,6 +260,7 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("adjusts referenceIndex when deleting a row before the reference", async () => {
+    const user = userEvent.setup();
     // Reference is index 1 (587.562), delete index 1 (second row)
     // After deletion: reference should point to what was index 2 (now index 1)
     const onApply = jest.fn();
@@ -262,19 +273,20 @@ describe("WavelengthConfigModal", () => {
     );
     // Delete second row (index 1)
     const deleteBtns = screen.getAllByLabelText("Delete wavelength row");
-    await userEvent.click(deleteBtns[0]); // first delete button is for row index 1
+    await user.click(deleteBtns[0]); // first delete button is for row index 1
 
-    await userEvent.click(screen.getByText("Apply"));
+    await user.click(screen.getByText("Apply"));
     expect(onApply).toHaveBeenCalledWith(
       expect.objectContaining({ referenceIndex: 1 })
     );
   });
 
   it("keeps the current draft while open when parent props change", async () => {
+    const user = userEvent.setup();
     const { rerender } = render(<WavelengthConfigModal {...defaultProps} />);
 
     const radios = screen.getAllByRole("radio") as HTMLInputElement[];
-    await userEvent.click(radios[2]);
+    await user.click(radios[2]);
     expect(radios[2].checked).toBe(true);
 
     rerender(
@@ -301,12 +313,13 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("updates the wavelength when a Fraunhofer symbol is edited", async () => {
+    const user = userEvent.setup();
     const onApply = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
 
     const symbols = screen.getAllByLabelText("Fraunhofer") as HTMLSelectElement[];
-    await userEvent.selectOptions(symbols[0], "g");
-    await userEvent.click(screen.getByText("Apply"));
+    await user.selectOptions(symbols[0], "g");
+    await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -369,6 +382,7 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("inserts the default e-line row after the clicked row", async () => {
+    const user = userEvent.setup();
     const onApply = jest.fn();
     render(
       <WavelengthConfigModal
@@ -379,8 +393,8 @@ describe("WavelengthConfigModal", () => {
       />
     );
 
-    await userEvent.click(screen.getAllByLabelText("Add wavelength row")[0]);
-    await userEvent.click(screen.getByText("Apply"));
+    await user.click(screen.getAllByLabelText("Add wavelength row")[0]);
+    await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -394,6 +408,7 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("moves the reference to the first row when the reference row is deleted", async () => {
+    const user = userEvent.setup();
     const onApply = jest.fn();
     render(
       <WavelengthConfigModal
@@ -403,8 +418,8 @@ describe("WavelengthConfigModal", () => {
       />
     );
 
-    await userEvent.click(screen.getAllByLabelText("Delete wavelength row")[0]);
-    await userEvent.click(screen.getByText("Apply"));
+    await user.click(screen.getAllByLabelText("Delete wavelength row")[0]);
+    await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
       expect.objectContaining({ referenceIndex: 0 })
