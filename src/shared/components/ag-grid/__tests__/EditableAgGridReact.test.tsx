@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import type { ColDef } from "ag-grid-community";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 
 describe("EditableAgGridReact", () => {
@@ -88,5 +88,43 @@ describe("EditableAgGridReact", () => {
     await user.click(screen.getByRole("button", { name: "Rerender columns" }));
 
     expect(valueSetter).toHaveBeenCalledTimes(1);
+  });
+
+  it("synchronizes a committed editor value without a passive-effect render", async () => {
+    const user = userEvent.setup();
+
+    function ControlledEditableGrid() {
+      const [rowData, setRowData] = useState([{ id: "row-1", value: "initial" }]);
+      const columnDefs = useMemo(
+        () => [
+          {
+            field: "value",
+            editable: true,
+            valueSetter: ({ newValue }: { newValue: unknown }) => {
+              setRowData([{ id: "row-1", value: String(newValue).toUpperCase() }]);
+              return true;
+            },
+          },
+        ] satisfies ColDef<{ readonly id: string; readonly value: string }>[],
+        [],
+      );
+
+      return (
+        <EditableAgGridReact
+          rowData={rowData}
+          columnDefs={columnDefs}
+          getRowId={({ data }) => data.id}
+        />
+      );
+    }
+
+    render(<ControlledEditableGrid />);
+    const input = screen.getByRole("textbox");
+
+    await user.clear(input);
+    await user.type(input, "updated");
+    await user.keyboard("{Enter}");
+
+    expect(input).toHaveValue("UPDATED");
   });
 });

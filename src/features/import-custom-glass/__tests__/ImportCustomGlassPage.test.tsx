@@ -1,14 +1,14 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
+import { type ReactNode, useEffect } from "react";
 import { AppShellProvider } from "@/app/AppShellContext";
 import { GlassMapStoreProvider, useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import type { UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
+import ImportCustomGlassPage from "@/features/import-custom-glass/ImportCustomGlassPage";
 import { ImportCustomGlassStoreProvider, useImportCustomGlassStore } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
 import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
-import ImportCustomGlassPage from "@/features/import-custom-glass/ImportCustomGlassPage";
-import type { UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import { useEffect, type ReactNode } from "react";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
@@ -270,7 +270,7 @@ describe("ImportCustomGlassPage", () => {
     renderPage();
 
     const grid = screen.getByTestId("ag-grid-mock");
-    act(() => {
+    await act(() => {
       grid.dispatchEvent(new CustomEvent("mockSortChanged", {
         bubbles: true,
         detail: {

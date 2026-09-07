@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { CustomGlassModal } from "@/features/import-custom-glass/components/CustomGlassModal/CustomGlassModal";
@@ -160,41 +160,48 @@ describe("CustomGlassModal", () => {
 
   it("fills Fraunhofer wavelengths and clears the symbol after manual editing", async () => {
     const user = userEvent.setup();
-    renderModal({ initialLabel: "VALID" });
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const firstRow = coefficientGrid().querySelector("tbody tr");
-    if (!(firstRow instanceof HTMLElement)) {
-      throw new Error("Expected a first coefficient row.");
+    try {
+      renderModal({ initialLabel: "VALID" });
+
+      const firstRow = coefficientGrid().querySelector("tbody tr");
+      if (!(firstRow instanceof HTMLElement)) {
+        throw new Error("Expected a first coefficient row.");
+      }
+      const fraunhofer = within(firstRow).getByRole("combobox", { name: "Fraunhofer" });
+      await user.selectOptions(fraunhofer, "d");
+
+      const updatedFirstRow = coefficientGrid().querySelector("tbody tr");
+      if (updatedFirstRow === null) {
+        throw new Error("Expected the first coefficient row after Fraunhofer selection.");
+      }
+      const wavelength = updatedFirstRow.querySelectorAll("input")[0];
+      expect(wavelength).toHaveValue("587.562");
+
+      await user.clear(wavelength);
+      await user.type(wavelength, "600");
+      await user.keyboard("{Enter}");
+
+      expect(wavelength).toHaveValue("600");
+      const manuallyEditedRow = coefficientGrid().querySelector("tbody tr");
+      expect(manuallyEditedRow?.querySelector("select")).toHaveValue("");
+
+      const updatedFraunhofer = updatedFirstRow.querySelector("select");
+      if (!(updatedFraunhofer instanceof HTMLSelectElement)) {
+        throw new Error("Expected the Fraunhofer selector after manual editing.");
+      }
+      await user.selectOptions(updatedFraunhofer, "d");
+      const selectedFraunhofer = coefficientGrid().querySelector("tbody tr select");
+      if (!(selectedFraunhofer instanceof HTMLSelectElement)) {
+        throw new Error("Expected the Fraunhofer selector after selecting a line.");
+      }
+      await user.selectOptions(selectedFraunhofer, "");
+      await waitFor(() => expect(coefficientGrid().querySelector("tbody tr input")).toHaveValue("587.562"));
+      expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining("A component suspended inside an `act` scope"));
+    } finally {
+      consoleError.mockRestore();
     }
-    const fraunhofer = within(firstRow).getByRole("combobox", { name: "Fraunhofer" });
-    await user.selectOptions(fraunhofer, "d");
-
-    const updatedFirstRow = coefficientGrid().querySelector("tbody tr");
-    if (updatedFirstRow === null) {
-      throw new Error("Expected the first coefficient row after Fraunhofer selection.");
-    }
-    const wavelength = updatedFirstRow.querySelectorAll("input")[0];
-    expect(wavelength).toHaveValue("587.562");
-
-    await user.clear(wavelength);
-    await user.type(wavelength, "600");
-    await user.keyboard("{Enter}");
-
-    expect(wavelength).toHaveValue("600");
-    const manuallyEditedRow = coefficientGrid().querySelector("tbody tr");
-    expect(manuallyEditedRow?.querySelector("select")).toHaveValue("");
-
-    const updatedFraunhofer = updatedFirstRow.querySelector("select");
-    if (!(updatedFraunhofer instanceof HTMLSelectElement)) {
-      throw new Error("Expected the Fraunhofer selector after manual editing.");
-    }
-    await user.selectOptions(updatedFraunhofer, "d");
-    const selectedFraunhofer = coefficientGrid().querySelector("tbody tr select");
-    if (!(selectedFraunhofer instanceof HTMLSelectElement)) {
-      throw new Error("Expected the Fraunhofer selector after selecting a line.");
-    }
-    await user.selectOptions(selectedFraunhofer, "");
-    expect(coefficientGrid().querySelector("tbody tr input")).toHaveValue("587.562");
   });
 
   it("calls onCancel without submitting", async () => {

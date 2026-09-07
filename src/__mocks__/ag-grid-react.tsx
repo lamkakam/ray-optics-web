@@ -8,10 +8,10 @@
  * - Blurs the active mocked grid editor when `columnDefs` identity changes, matching AG Grid editor recreation closely enough for tests to catch focus-loss regressions caused by prop churn.
  * - Models pending text edits with a single-commit lifecycle: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter commits and stops editing, or an active input blur commits when `stopEditingWhenCellsLoseFocus` is `true` and then stops editing; a later blur of an already-finished editor is ignored.
  * - Select editors emit edit-start on focus, commit and emit edit-stop on change, and also emit edit-stop on blur when still editing.
- * - Idle text editors synchronize their displayed value when a value setter refreshes the backing row data.
+ * - Idle text editors synchronize their displayed value during the backing-row render, avoiding a follow-up passive-effect update after a value setter refreshes row data.
  */
 import type React from "react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 interface ColDef {
   headerName?: string;
@@ -137,12 +137,7 @@ function EditableCell({
 }) {
   const [inputValue, setInputValue] = useState(String(value ?? ""));
   const isEditingRef = useRef(false);
-
-  useEffect(() => {
-    if (!isEditingRef.current) {
-      setInputValue(String(value ?? ""));
-    }
-  }, [value]);
+  const displayedValue = isEditingRef.current ? inputValue : String(value ?? "");
 
   const startEditing = () => {
     if (isEditingRef.current) {
@@ -180,7 +175,7 @@ function EditableCell({
   return (
     <input
       type="text"
-      value={inputValue}
+      value={displayedValue}
       onFocus={startEditing}
       onChange={(e) => setInputValue(e.target.value)}
       onBlur={handleBlur}
