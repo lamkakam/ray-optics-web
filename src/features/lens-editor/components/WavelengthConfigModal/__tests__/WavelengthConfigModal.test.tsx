@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WavelengthConfigModal } from "@/features/lens-editor/components/WavelengthConfigModal";
 
@@ -334,13 +334,20 @@ describe("WavelengthConfigModal", () => {
 
   it("updates the symbol for an exact wavelength", async () => {
     const user = userEvent.setup();
-    render(<WavelengthConfigModal {...defaultProps} />);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const wavelength = screen.getAllByRole("textbox")[0];
-    await user.clear(wavelength);
-    await user.type(wavelength, "589.294");
-    await user.keyboard("{Enter}");
-    expect((screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement).value).toBe("D");
+    try {
+      render(<WavelengthConfigModal {...defaultProps} />);
+
+      const wavelength = screen.getAllByRole("textbox")[0];
+      await user.clear(wavelength);
+      await user.type(wavelength, "589.294");
+      await user.keyboard("{Enter}");
+      await waitFor(() => expect((screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement).value).toBe("D"));
+      expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining("A component suspended inside an `act` scope"));
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it("clears the symbol when a wavelength is outside the matching tolerance", async () => {

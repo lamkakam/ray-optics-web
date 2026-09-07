@@ -1,14 +1,14 @@
-import { useState, useCallback } from "react";
-import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
+import { AgGridProvider } from "ag-grid-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { GridRowButtons } from "@/features/lens-editor/components/LensPrescriptionContainer";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-import { FRAUNHOFER_LINES, lookupWavelength, type FraunhoferSymbol } from "@/shared/lib/data/fraunhoferLines";
+import { FRAUNHOFER_LINES, type FraunhoferSymbol, lookupWavelength } from "@/shared/lib/data/fraunhoferLines";
 
 interface WavelengthRow {
   readonly id: string;
@@ -68,6 +68,7 @@ const MAX_ROWS = 7;
  * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for wavelength row insertion and deletion controls.
  * - When a row is deleted, `referenceIndex` is adjusted to remain valid.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending wavelength or weight edits are committed before footer actions such as Apply read the draft rows.
+ * - Keeps the AG Grid column definitions stable while row data changes so active cell editors are not recreated during draft updates.
  * - Keeps the caption outside a `400px`-high grid container at all screen sizes and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
  *
  *
@@ -107,6 +108,10 @@ function WavelengthConfigModalContent({
   const [rows, setRows] = useState<WavelengthRow[]>(() => weightsToRows(initialWeights));
   /** Index of the wavelength used as the reference. */
   const [referenceIndex, setReferenceIndex] = useState(() => initialReferenceIndex);
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  const referenceIndexRef = useRef(referenceIndex);
+  referenceIndexRef.current = referenceIndex;
 
   const addRow = useCallback((afterId: string) => {
     setRows((prev) => {
@@ -154,20 +159,18 @@ function WavelengthConfigModalContent({
     });
   };
 
-  const atLimit = rows.length >= MAX_ROWS;
-
-  const columnDefs: ColDef<WavelengthRow>[] = [
+  const columnDefs = useMemo<ColDef<WavelengthRow>[]>(() => [
     {
       headerName: "",
       width: 100,
       cellRenderer: (params: { data: WavelengthRow | undefined }) => {
         if (!params.data) return undefined;
         const row = params.data;
-        const isFirst = rows.findIndex((r) => r.id === row.id) === 0;
+        const isFirst = rowsRef.current.findIndex((r) => r.id === row.id) === 0;
         return (
           <GridRowButtons
             onAdd={() => addRow(row.id)}
-            addHidden={atLimit}
+            addHidden={rowsRef.current.length >= MAX_ROWS}
             onDelete={!isFirst ? () => handleDeleteRow(row.id) : undefined}
             addLabel="Add wavelength row"
             deleteLabel="Delete wavelength row"
@@ -237,19 +240,19 @@ function WavelengthConfigModalContent({
       width: 100,
       cellRenderer: (params: { data: WavelengthRow | undefined }) => {
         if (!params.data) return undefined;
-        const idx = rows.findIndex((r) => r.id === params.data?.id);
+        const idx = rowsRef.current.findIndex((r) => r.id === params.data?.id);
         return (
           <input
             type="radio"
             name="reference-wavelength"
             aria-label={`Reference wavelength ${idx + 1}`}
-            checked={idx === referenceIndex}
+            checked={idx === referenceIndexRef.current}
             onChange={() => setReferenceIndex(idx)}
           />
         );
       },
     },
-  ];
+  ], [addRow, handleDeleteRow, updateRow]);
 
   return (
     <Modal

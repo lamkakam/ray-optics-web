@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
+import { AgGridProvider } from "ag-grid-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { makeEditablePair } from "@/features/import-custom-glass/lib/customGlassImport";
+import type { EditablePair, ModalMode } from "@/features/import-custom-glass/types/customGlassImport";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
@@ -11,8 +13,6 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import { FRAUNHOFER_LINES } from "@/shared/lib/data/fraunhoferLines";
-import { makeEditablePair } from "@/features/import-custom-glass/lib/customGlassImport";
-import type { EditablePair, ModalMode } from "@/features/import-custom-glass/types/customGlassImport";
 
 interface CustomGlassModalProps {
   /** Selects the `Add Glass` or `Edit Glass` title and duplicate-label behavior. */
@@ -57,6 +57,7 @@ function duplicateWavelengths(rows: readonly EditablePair[]): Set<string> {
  * - The modal-level `Add row`, `Cancel`, and `Confirm` buttons use the Lens Editor responsive sizing rule: shared `Button` size `sm` on `screenLG`, and `xs` on `screenSM`.
  * - Row-level AG Grid delete actions stay fixed at shared `Button` size `xs`.
  * - Duplicate wavelengths are marked with `text-red-600` and a validation message.
+ * - Keeps the AG Grid column definitions stable while row data changes so active cell editors are not recreated during draft updates.
  * - Wraps the coefficient grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this modal only.
  * - Keeps AG Grid touch handling enabled so resizable coefficient-column headers respond to touchscreen drags while native two-axis viewport scrolling remains available.
  *
@@ -80,6 +81,8 @@ export function CustomGlassModal({
   const [label, setLabel] = useState(initialLabel);
   const [rows, setRows] = useState<readonly EditablePair[]>(initialRows);
   const duplicates = duplicateWavelengths(rows);
+  const duplicatesRef = useRef<ReadonlySet<string>>(new Set());
+  duplicatesRef.current = duplicates;
   const trimmedLabel = label.trim();
   const labelExists = existingLabels.has(trimmedLabel) && (mode === "add" || trimmedLabel !== initialLabel);
   const canConfirm = trimmedLabel !== ""
@@ -87,9 +90,9 @@ export function CustomGlassModal({
     && rows.length >= 4
     && rows.every((row) => isPositiveFinite(row.wavelength) && isPositiveFinite(row.refractiveIndex))
     && duplicates.size === 0;
-  const updateRow = (id: string, patch: Partial<EditablePair>) => {
+  const updateRow = useCallback((id: string, patch: Partial<EditablePair>) => {
     setRows((current) => current.map((row) => row.id === id ? { ...row, ...patch } : row));
-  };
+  }, []);
   const modalColumnDefs = useMemo<ColDef<EditablePair>[]>(() => [
     {
       headerName: "",
@@ -140,7 +143,7 @@ export function CustomGlassModal({
       field: "wavelength",
       width: 170,
       editable: true,
-      cellClass: (params) => duplicates.has(String(params.value ?? "").trim()) ? "text-red-600" : undefined,
+      cellClass: (params) => duplicatesRef.current.has(String(params.value ?? "").trim()) ? "text-red-600" : undefined,
       valueSetter: (params) => {
         if (params.data === undefined) {
           return false;
@@ -162,7 +165,7 @@ export function CustomGlassModal({
         return true;
       },
     },
-  ], [duplicates, updateRow]);
+  ], [updateRow]);
 
   return (
     <Modal
