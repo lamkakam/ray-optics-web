@@ -6,7 +6,7 @@
  * - Exposes theme, layout, default column, column width, effective per-header sortable/filter flags, unsorted sort-icon flags, `stopEditingWhenCellsLoseFocus`, `suppressTouch`, and edit lifecycle callback presence as `data-*` attributes for component tests.
  * - Keys rendered rows by AG Grid `getRowId` when provided, otherwise by row object identity, so tests can observe whether replacement row objects preserve or reset active editor state.
  * - Blurs the active mocked grid editor when `columnDefs` identity changes, matching AG Grid editor recreation closely enough for tests to catch focus-loss regressions caused by prop churn.
- * - Models pending text edits: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter is pressed or the input blurs while `stopEditingWhenCellsLoseFocus` is `true`; Enter or blur emits `onCellEditingStopped`.
+ * - Models pending text edits with a single-commit lifecycle: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter commits and stops editing, or an active input blur commits when `stopEditingWhenCellsLoseFocus` is `true` and then stops editing; a later blur of an already-finished editor is ignored.
  * - Select editors emit edit-start on focus, commit and emit edit-stop on change, and also emit edit-stop on blur when still editing.
  * - Idle text editors synchronize their displayed value when a value setter refreshes the backing row data.
  */
@@ -161,6 +161,9 @@ function EditableCell({
   };
 
   const handleBlur = () => {
+    if (!isEditingRef.current) {
+      return;
+    }
     if (stopEditingWhenCellsLoseFocus) {
       commitValue(col, row, value, inputValue);
     }

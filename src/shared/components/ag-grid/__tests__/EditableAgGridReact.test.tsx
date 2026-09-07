@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import type { ColDef } from "ag-grid-community";
+import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 
 describe("EditableAgGridReact", () => {
@@ -41,5 +43,50 @@ describe("EditableAgGridReact", () => {
     );
 
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "false");
+  });
+
+  it("commits an Enter edit only once when column definitions rerender", async () => {
+    const user = userEvent.setup();
+    const valueSetter = jest.fn(() => true);
+    const rowData = [{ value: "initial" }];
+
+    function StatefulEditableGrid() {
+      const [columnDefinitionsVersion, setColumnDefinitionsVersion] = useState(0);
+      const columnDefs = [
+        {
+          headerName: `Value ${columnDefinitionsVersion}`,
+          field: "value",
+          editable: true,
+          valueSetter,
+        },
+      ] satisfies ColDef<{ readonly value: string }>[];
+
+      return (
+        <>
+          <button
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => setColumnDefinitionsVersion((current) => current + 1)}
+          >
+            Rerender columns
+          </button>
+          <EditableAgGridReact<{ readonly value: string }>
+            rowData={rowData}
+            columnDefs={columnDefs}
+          />
+        </>
+      );
+    }
+
+    render(<StatefulEditableGrid />);
+
+    const input = screen.getByRole("textbox");
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, "updated");
+    await user.keyboard("{Enter}");
+    await user.click(screen.getByRole("button", { name: "Rerender columns" }));
+
+    expect(valueSetter).toHaveBeenCalledTimes(1);
   });
 });
