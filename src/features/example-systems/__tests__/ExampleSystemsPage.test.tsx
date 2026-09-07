@@ -23,13 +23,14 @@ import * as exampleSystemsData from "@/features/example-systems/lib/exampleSyste
 
 const mockPush = jest.fn<void, [string]>();
 let mockScreenBreakpoint: ScreenSize = "screenLG";
+let mockTheme: "light" | "dark" = "light";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
-  useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
+  useTheme: () => ({ theme: mockTheme, setTheme: jest.fn() }),
 }));
 
 jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
@@ -111,7 +112,7 @@ function renderPage(overrides?: {
   const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
   const analysisDataStore = createStore<AnalysisDataState>(createAnalysisDataSlice);
   const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);
-  const proxy = overrides?.proxy ?? makeProxy();
+  const proxy = Object.hasOwn(overrides ?? {}, "proxy") ? overrides?.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
   mockScreenBreakpoint = overrides?.screenSize ?? "screenLG";
 
@@ -136,6 +137,7 @@ describe("ExampleSystemsPage", () => {
   beforeEach(() => {
     mockPush.mockReset();
     mockScreenBreakpoint = "screenLG";
+    mockTheme = "light";
   });
 
   it("uses the unprefixed example catalogue directly", () => {
@@ -146,6 +148,17 @@ describe("ExampleSystemsPage", () => {
       expect(screen.getByRole("button", { name })).toBeInTheDocument();
       expect(screen.queryByText(`${index + 1}: ${name}`)).not.toBeInTheDocument();
     });
+  });
+
+  it("shows the placeholder description until an example is selected", async () => {
+    renderPage();
+    const user = userEvent.setup();
+
+    expect(screen.getByText("Select an example system to review its source and apply it to the Lens Editor.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
+
+    expect(screen.queryByText("Select an example system to review its source and apply it to the Lens Editor.")).not.toBeInTheDocument();
   });
 
   it("materializes the air microscope implicit stop for reciprocal reversal", () => {
@@ -351,9 +364,12 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
+    fireEvent.keyDown(screen.getByLabelText("Example systems"), { key: "Enter" });
+    expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
+
     expect(mockPush).toHaveBeenCalledWith("/");
     expect(proxy.getFirstOrderData).toHaveBeenCalledWith(expect.objectContaining<Partial<OpticalModel>>({ setAutoAperture: "autoAperture" }));
-    expect(proxy.plotLensLayout).toHaveBeenCalled();
+    expect(proxy.plotLensLayout).toHaveBeenCalledWith(expect.anything(), false);
     expect(proxy.get3rdOrderSeidelData).toHaveBeenCalled();
     expect(lensStore.getState().autoAperture).toBe(true);
     expect(lensStore.getState().rows.length).toBeGreaterThan(0);
@@ -361,12 +377,14 @@ describe("ExampleSystemsPage", () => {
     expect(lensLayoutImageStore.getState().layoutLoading).toBe(true);
     expect(analysisPlotStore.getState().plotLoading).toBe(true);
     expect(analysisDataStore.getState().firstOrderData).toBeUndefined();
+    expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
 
     await act(async () => {
       firstOrderDeferred.resolve({ efl: 100 });
     });
 
     await waitFor(() => expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Apply" })).not.toBeDisabled());
     expect(specsStore.getState().committedSpecs.pupil.value).toBe(12.5);
     expect(lensLayoutImageStore.getState().layoutLoading).toBe(false);
     expect(analysisPlotStore.getState().plotLoading).toBe(false);
@@ -395,8 +413,26 @@ describe("ExampleSystemsPage", () => {
     await waitFor(() => expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData));
   });
 
+  it("passes the dark theme to lens-layout rendering", async () => {
+    mockTheme = "dark";
+    const { proxy } = renderPage();
+    if (proxy === undefined) {
+      throw new Error("Expected a worker proxy");
+    }
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Load" }));
+
+    await waitFor(() => expect(proxy.plotLensLayout).toHaveBeenCalledWith(expect.anything(), true));
+  });
+
   it("commits first-order data after background example loading finishes", async () => {
     const { proxy, analysisDataStore } = renderPage();
+    if (proxy === undefined) {
+      throw new Error("Expected a worker proxy");
+    }
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
@@ -406,6 +442,36 @@ describe("ExampleSystemsPage", () => {
     await waitFor(() => expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }));
     expect(mockPush).toHaveBeenCalledWith("/");
     expect(proxy.getFirstOrderData).toHaveBeenCalled();
+  });
+
+  it("preserves manual aperture mode when applying a manual-aperture example", async () => {
+    const { lensStore } = renderPage();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Diffraction Grating (Transmissive) Example" }));
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Load" }));
+
+    await waitFor(() => expect(lensStore.getState().autoAperture).toBe(false));
+  });
+
+  it("does not start store work when the worker proxy is unavailable", async () => {
+    const onError = jest.fn();
+    const { lensStore, lensLayoutImageStore, analysisPlotStore } = renderPage({
+      proxy: undefined,
+      onError,
+    });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Load" }));
+
+    expect(mockPush).toHaveBeenCalledWith("/");
+    expect(onError).not.toHaveBeenCalled();
+    expect(lensStore.getState().rows.filter((row) => row.kind === "surface")).toHaveLength(0);
+    expect(lensLayoutImageStore.getState().layoutLoading).toBe(false);
+    expect(analysisPlotStore.getState().plotLoading).toBe(false);
   });
 
   it("shows the app error modal hook after routing when background apply fails", async () => {

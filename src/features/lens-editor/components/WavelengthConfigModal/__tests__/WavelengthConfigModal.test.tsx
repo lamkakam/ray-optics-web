@@ -388,6 +388,28 @@ describe("WavelengthConfigModal", () => {
     );
   });
 
+  it("allows a zero wavelength weight", async () => {
+    const onApply = jest.fn();
+    const user = userEvent.setup();
+    render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
+
+    const weight = screen.getAllByRole("textbox")[1];
+    await user.clear(weight);
+    await user.type(weight, "0");
+    await user.keyboard("{Enter}");
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        weights: [
+          [486.133, 0],
+          [587.562, 1],
+          [656.273, 1],
+        ],
+      })
+    );
+  });
+
   it("inserts the default e-line row after the clicked row", async () => {
     const user = userEvent.setup();
     const onApply = jest.fn();
@@ -401,6 +423,7 @@ describe("WavelengthConfigModal", () => {
     );
 
     await user.click(screen.getAllByLabelText("Add wavelength row")[0]);
+    expect((screen.getAllByLabelText("Fraunhofer")[1] as HTMLSelectElement).value).toBe("e");
     await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
@@ -409,6 +432,27 @@ describe("WavelengthConfigModal", () => {
           [486.133, 1],
           [546.073, 1],
           [656.273, 1],
+        ],
+      })
+    );
+  });
+
+  it("appends the default e-line row after the last row", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
+
+    await user.click(screen.getAllByLabelText("Add wavelength row")[2]);
+    expect((screen.getAllByLabelText("Fraunhofer")[3] as HTMLSelectElement).value).toBe("e");
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        weights: [
+          [486.133, 1],
+          [587.562, 1],
+          [656.273, 1],
+          [546.073, 1],
         ],
       })
     );
@@ -430,6 +474,44 @@ describe("WavelengthConfigModal", () => {
 
     expect(onApply).toHaveBeenCalledWith(
       expect.objectContaining({ referenceIndex: 0 })
+    );
+  });
+
+  it("moves the reference to the first row when the active last row is deleted", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(
+      <WavelengthConfigModal
+        {...defaultProps}
+        initialReferenceIndex={2}
+        onApply={onApply}
+      />
+    );
+
+    await user.click(screen.getAllByLabelText("Delete wavelength row")[1]);
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceIndex: 0 })
+    );
+  });
+
+  it("keeps the reference index when a later row is deleted", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(
+      <WavelengthConfigModal
+        {...defaultProps}
+        initialReferenceIndex={1}
+        onApply={onApply}
+      />
+    );
+
+    await user.click(screen.getAllByLabelText("Delete wavelength row")[1]);
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceIndex: 1 })
     );
   });
 });

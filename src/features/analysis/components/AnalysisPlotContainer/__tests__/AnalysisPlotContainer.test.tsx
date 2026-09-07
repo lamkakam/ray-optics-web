@@ -7,7 +7,7 @@ import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/anal
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
@@ -178,6 +178,15 @@ const astigmatismCurveData: AstigmatismCurveData = {
   unitY: "deg",
 };
 
+const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData = [
+  {
+    wvlIdx: 0,
+    LSA: { x: [-0.1, 0, 0.1], y: [0, 0.5, 1] },
+    unitX: "mm",
+    unitY: "",
+  },
+];
+
 const opdFanData: OpdFanData = [
   {
     fieldIdx: 0,
@@ -289,9 +298,11 @@ function makeSpecsStore(specs: OpticalSpecs): StoreApi<SpecsConfiguratorState> {
   return store;
 }
 
-function makeLensStore(model: OpticalModel): StoreApi<LensEditorState> {
+function makeLensStore(model?: OpticalModel): StoreApi<LensEditorState> {
   const store = createStore<LensEditorState>(createLensEditorSlice);
-  store.getState().setCommittedOpticalModel(model);
+  if (model) {
+    store.getState().setCommittedOpticalModel(model);
+  }
   return store;
 }
 
@@ -310,11 +321,13 @@ function renderComponent(
   mockProxy?: PyodideWorkerAPI,
   onError = jest.fn(),
   analysisDataStore: StoreApi<AnalysisDataState> = makeAnalysisDataStore(),
+  specsStore: StoreApi<SpecsConfiguratorState> = makeSpecsStore(testSpecs),
+  lensStore: StoreApi<LensEditorState> = makeLensStore(testModel),
 ) {
   return (
     render(
-      <SpecsConfiguratorStoreContext.Provider value={makeSpecsStore(testSpecs)}>
-        <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
+      <SpecsConfiguratorStoreContext.Provider value={specsStore}>
+        <LensEditorStoreContext.Provider value={lensStore}>
           <AnalysisDataStoreContext.Provider value={analysisDataStore}>
             <AnalysisPlotStoreContext.Provider value={store}>
               <AnalysisPlotContainer
@@ -402,11 +415,118 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => expect(store.getState().plotLoading).toBe(false));
   });
 
+  it("passes an existing plot-loading state to AnalysisPlotView", () => {
+    store.getState().setPlotLoading(true);
+    renderComponent(testSpecs, testModel, store, makeMockProxy());
+
+    expect(screen.getByText("Loading plot...")).toBeInTheDocument();
+  });
+
+  it("refreshes selector options when committed specs change", () => {
+    const specsStore = makeSpecsStore(testSpecs);
+    renderComponent(
+      testSpecs,
+      testModel,
+      store,
+      makeMockProxy(),
+      jest.fn(),
+      makeAnalysisDataStore(),
+      specsStore,
+    );
+
+    const fieldSelect = screen.getByLabelText("Half-Field");
+    expect(fieldSelect).toContainHTML("14.0°");
+
+    act(() => {
+      specsStore.getState().setCommittedSpecs(testSpecsHeight);
+    });
+
+    expect(fieldSelect).toContainHTML("5.00 mm");
+    expect(fieldSelect).not.toContainHTML("14.0°");
+  });
+
+  it("does not start plot loading when the committed model is unavailable", async () => {
+    store.getState().setPlotLoading(true);
+    const proxy = makeMockProxy();
+    renderComponent(
+      testSpecs,
+      testModel,
+      store,
+      proxy,
+      jest.fn(),
+      makeAnalysisDataStore(),
+      makeSpecsStore(testSpecs),
+      makeLensStore(),
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Plot type"), "opdFan");
+
+    expect(proxy.getOpdFanData).not.toHaveBeenCalled();
+    expect(store.getState().plotLoading).toBe(true);
+  });
+
   it("handleFieldChange: no-op for plot call when fieldDependent === false", async () => {
     store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
     const proxy = makeMockProxy();
     renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
     expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["rayFan", "ray-fan-chart"],
+    ["opdFan", "opd-fan-chart"],
+    ["spotDiagram", "spot-diagram-chart"],
+    ["fieldCurvature", "field-curve-chart"],
+    ["astigmatismCurve", "astigmatism-chart"],
+    ["longitudinalSphericalAberration", "longitudinal-spherical-aberration-chart"],
+    ["geoPSF", "geo-psf-chart"],
+    ["wavefrontMap", "wavefront-map-chart"],
+    ["strehlVsWavelength", "strehl-vs-wavelength-chart"],
+    ["diffractionPSF", "diffraction-psf-chart"],
+    ["diffractionMTF", "diffraction-mtf-chart"],
+  ] as const)("renders the %s chart from its committed store payload", (plotType, testId) => {
+    const analysisDataStore = makeAnalysisDataStore();
+    store.getState().setSelectedPlotType(plotType);
+
+    switch (plotType) {
+      case "rayFan":
+        store.getState().setRayFanData(rayFanData);
+        break;
+      case "opdFan":
+        store.getState().setOpdFanData(opdFanData);
+        break;
+      case "spotDiagram":
+        store.getState().setSpotDiagramData(spotDiagramData);
+        break;
+      case "fieldCurvature":
+        store.getState().setFieldCurvatureData(fieldCurveData);
+        break;
+      case "astigmatismCurve":
+        store.getState().setAstigmatismCurveData(astigmatismCurveData);
+        break;
+      case "longitudinalSphericalAberration":
+        store.getState().setLongitudinalSphericalAberrationData(longitudinalSphericalAberrationData);
+        break;
+      case "geoPSF":
+        store.getState().setGeoPsfData(geoPsfData);
+        break;
+      case "wavefrontMap":
+        store.getState().setWavefrontMapData(wavefrontMapData);
+        break;
+      case "strehlVsWavelength":
+        store.getState().setStrehlVsWavelengthData(strehlVsWavelengthData);
+        break;
+      case "diffractionPSF":
+        store.getState().setDiffractionPsfData(diffractionPsfData);
+        break;
+      case "diffractionMTF":
+        store.getState().setDiffractionMtfData(diffractionMtfData);
+        break;
+    }
+
+    renderComponent(testSpecs, testModel, store, undefined, jest.fn(), analysisDataStore);
+
+    expect(screen.getByTestId(testId)).toBeInTheDocument();
   });
 
   it("renders the surface by surface chart from analysisDataStore instead of loading a PNG", async () => {
@@ -415,6 +535,16 @@ describe("AnalysisPlotContainer", () => {
     renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
 
     expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
+  });
+
+  it("does not reload surface-by-surface data when that plot type is selected", async () => {
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
+
+    await userEvent.selectOptions(screen.getByLabelText("Plot type"), "surfaceBySurface3rdOrder");
+
+    expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
+    expect(store.getState().plotLoading).toBe(false);
   });
 
   it("handleWavelengthChange: updates selectedWavelengthIndex and calls proxy plot fn", async () => {
@@ -427,6 +557,55 @@ describe("AnalysisPlotContainer", () => {
     expect(store.getState().selectedWavelengthIndex).toBe(2);
     await waitFor(() => {
       expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 2, "centroid");
+    });
+  });
+
+  it("uses the latest wavelength when a field is changed after wavelength selection", async () => {
+    store.getState().setSelectedPlotType("wavefrontMap");
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+
+    await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
+    await waitFor(() => {
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 0, 2, "centroid");
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
+    await waitFor(() => {
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 2, "centroid");
+    });
+  });
+
+  it("uses the latest field when a wavelength is changed after field selection", async () => {
+    store.getState().setSelectedPlotType("wavefrontMap");
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+
+    await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
+    await waitFor(() => {
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 0, "centroid");
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
+    await waitFor(() => {
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 2, "centroid");
+    });
+  });
+
+  it("uses the latest selector indices when changing plot type", async () => {
+    store.getState().setSelectedPlotType("wavefrontMap");
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+
+    await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
+    await waitFor(() => {
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 2, "centroid");
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Plot type"), "geoPSF");
+    await waitFor(() => {
+      expect(proxy.getGeoPSFData).toHaveBeenLastCalledWith(testModel, 1, 2);
     });
   });
 
@@ -591,6 +770,25 @@ describe("AnalysisPlotContainer", () => {
     // selectedPlotType is updated in store even without proxy
     expect(store.getState().selectedPlotType).toBe("opdFan");
     // But plotLoading is never set (no async work)
+    expect(store.getState().plotLoading).toBe(false);
+  });
+
+  it("updates the field selection without loading when the proxy is unavailable", async () => {
+    renderComponent(testSpecs, testModel, store, undefined);
+
+    await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
+
+    expect(store.getState().selectedFieldIndex).toBe(1);
+    expect(store.getState().plotLoading).toBe(false);
+  });
+
+  it("updates the wavelength selection without loading when the proxy is unavailable", async () => {
+    store.getState().setSelectedPlotType("wavefrontMap");
+    renderComponent(testSpecs, testModel, store, undefined);
+
+    await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
+
+    expect(store.getState().selectedWavelengthIndex).toBe(2);
     expect(store.getState().plotLoading).toBe(false);
   });
 

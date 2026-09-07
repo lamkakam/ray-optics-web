@@ -441,6 +441,18 @@ describe("FieldConfigModal", () => {
     );
   });
 
+  it("appends a zero-valued row after the last clicked field", async () => {
+    const onApply = jest.fn();
+    render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+    await userEvent.click(screen.getAllByLabelText("Add field row")[2]);
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ relativeFields: [0, 0.7, 1, 0] })
+    );
+  });
+
   it("falls back to zero for a non-numeric maximum field value", async () => {
     const onApply = jest.fn();
     render(<FieldConfigModal {...defaultProps} onApply={onApply} />);

@@ -122,4 +122,18 @@ describe("fieldCurveChartOption", () => {
       interval: isVisibleCategory,
     }));
   });
+
+  it("pairs each field-curve series to its shorter axis", () => {
+    const option = buildFieldCurveOption(
+      {
+        ...fieldCurveData,
+        Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1] },
+      },
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.series[0].data).toEqual([[-0.1, 0], [0, 1]]);
+  });
 });

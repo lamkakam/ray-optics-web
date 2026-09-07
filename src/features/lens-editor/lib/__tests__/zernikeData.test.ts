@@ -53,6 +53,17 @@ describe("nollToNm", () => {
   it("returns (10, 0) for j=56 (highest term)", () => {
     expect(nollToNm(56)).toEqual([10, 0]);
   });
+
+  it.each([
+    [11, [4, 0]],
+    [12, [4, 2]],
+    [13, [4, -2]],
+    [14, [4, 4]],
+    [15, [4, -4]],
+    [16, [5, 1]],
+  ] as const)("handles Noll order boundary j=%i", (j, expected) => {
+    expect(nollToNm(j)).toEqual(expected);
+  });
 });
 
 describe("CLASSICAL_NAMES and classicalName", () => {

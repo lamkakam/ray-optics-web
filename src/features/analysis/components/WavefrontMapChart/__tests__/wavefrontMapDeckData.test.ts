@@ -68,4 +68,42 @@ describe("wavefrontMapDeckData", () => {
     expect(Array.from(prepared.image.data.slice(4, 8))).not.toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255));
     expect(Array.from(prepared.image.data.slice(4, 8))).not.toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[1], 255));
   });
+
+  it("keeps non-finite samples transparent and excludes them from the color range", () => {
+    const prepared = buildWavefrontMapBitmap({
+      ...wavefrontMapData,
+      x: [0, 1, 2],
+      y: [0],
+      z: [[Number.NaN, Number.POSITIVE_INFINITY, 0.5]],
+    });
+
+    expect(prepared.minValue).toBe(0.5);
+    expect(prepared.maxValue).toBe(0.5);
+    expect(Array.from(prepared.image.data.slice(0, 4))).toEqual([0, 0, 0, 0]);
+    expect(Array.from(prepared.image.data.slice(4, 8))).toEqual([0, 0, 0, 0]);
+    expect(Array.from(prepared.image.data.slice(8, 12))).toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255));
+  });
+
+  it("treats missing z rows and empty coordinate grids as transparent finite fallbacks", () => {
+    const missingRow = buildWavefrontMapBitmap({
+      ...wavefrontMapData,
+      x: [0],
+      y: [0],
+      z: [[]],
+    });
+    expect(Array.from(missingRow.image.data)).toEqual([0, 0, 0, 0]);
+
+    const empty = buildWavefrontMapBitmap({
+      ...wavefrontMapData,
+      x: [],
+      y: [],
+      z: [],
+    });
+    expect(empty.image.width).toBe(0);
+    expect(empty.image.height).toBe(0);
+    expect(empty.bounds).toEqual([0, 0, 0, 0]);
+    expect(empty.axisExtent).toBe(1);
+    expect(empty.minValue).toBe(0);
+    expect(empty.maxValue).toBe(0);
+  });
 });

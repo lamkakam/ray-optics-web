@@ -149,4 +149,50 @@ describe("diffractionPsfDeckData", () => {
     expect(formatDiffractionPsfFluxLabel(Math.log10(5e-4))).toBe("5e-4");
     expect(formatDiffractionPsfFluxLabel(-8)).toBe("1e-8");
   });
+
+  it("uses finite fallback metadata when the physical raster has no samples", () => {
+    const prepared = buildDiffractionPsfBitmap({
+      ...diffractionPsfData,
+      x: [],
+      y: [],
+      z: [],
+    });
+
+    expect(prepared.image).toEqual({
+      data: expect.any(Uint8ClampedArray),
+      width: 0,
+      height: 0,
+    });
+    expect(prepared.bounds).toEqual([-0.5, -0.5, 0.5, 0.5]);
+    expect(prepared.axisExtent).toBe(1);
+    expect(prepared.minLogFlux).toBe(DIFFRACTION_PSF_LOG_FLOOR);
+    expect(prepared.maxLogFlux).toBe(DIFFRACTION_PSF_LOG_FLOOR);
+  });
+
+  it("uses unit fallback spacing for a single physical coordinate", () => {
+    const prepared = buildDiffractionPsfBitmap({
+      ...diffractionPsfData,
+      x: [2],
+      y: [-3],
+      z: [[1]],
+    });
+
+    expect(prepared.bounds).toEqual([1.5, -3.5, 2.5, -2.5]);
+    expect(prepared.axisExtent).toBe(3);
+    expect(prepared.maxLogFlux).toBe(0);
+  });
+
+  it("treats a missing raster row as zero flux without changing the physical image size", () => {
+    const prepared = buildDiffractionPsfBitmap({
+      ...diffractionPsfData,
+      x: [0, 1],
+      y: [0, 1],
+      z: [[1]],
+    });
+
+    expect(prepared.image.width).toBe(2);
+    expect(prepared.image.height).toBe(2);
+    expect(Array.from(prepared.image.data.slice(0, 4))).toEqual(interpolateAnalysisHeatmapColor(0));
+    expect(prepared.maxLogFlux).toBe(0);
+  });
 });

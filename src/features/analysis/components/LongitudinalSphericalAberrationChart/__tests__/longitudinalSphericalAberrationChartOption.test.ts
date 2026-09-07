@@ -118,4 +118,30 @@ describe("longitudinalSphericalAberrationChartOption", () => {
     expect(option.legend).toEqual(expect.objectContaining({ left: 104, right: 60 }));
     expect(option.grid).toEqual(expect.objectContaining({ top: 36 }));
   });
+
+  it("uses a wavelength fallback when a series has no matching label", () => {
+    const option = buildLongitudinalSphericalAberrationOption(
+      [{ ...lsaData[0], wvlIdx: 3 }],
+      ["486.1nm"],
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.legend.data).toEqual(["Wavelength 4"]);
+    expect(option.series[0].name).toBe("Wavelength 4");
+  });
+
+  it("keeps an empty worker result renderable without a unit", () => {
+    const option = buildLongitudinalSphericalAberrationOption(
+      [],
+      [],
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis.name).toBe("Longitudinal Focus Shift");
+    expect(option.series).toEqual([]);
+  });
 });

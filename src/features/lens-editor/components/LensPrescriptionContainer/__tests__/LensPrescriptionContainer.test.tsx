@@ -241,6 +241,55 @@ describe("LensPrescriptionContainer", () => {
     });
   });
 
+  it("preserves semi-diameter when a circular clear aperture is confirmed", async () => {
+    const store = createTestStore();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    renderLPC(store);
+    act(() => {
+      store.getState().openApertureModal(surfaceRow.id);
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
+    expect(updatedRow?.kind === "surface" ? updatedRow.semiDiameter : undefined).toBe(10);
+    expect(updatedRow?.kind === "surface" ? updatedRow.clear_aperture : undefined).toEqual({
+      shape: "circular",
+      offsetX: 0,
+      offsetY: 0,
+    });
+  });
+
+  it("pre-populates ApertureModal with the selected surface apertures", () => {
+    const store = createTestStore();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    store.getState().updateRow(surfaceRow.id, {
+      clear_aperture: { shape: "circular", offsetX: 1.5, offsetY: -2.5 },
+      edge_aperture: { shape: "circular", radius: 6, offsetX: -3.5, offsetY: 4.5 },
+    });
+    renderLPC(store);
+
+    act(() => {
+      store.getState().openApertureModal(surfaceRow.id);
+    });
+
+    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue("circular");
+    expect(screen.getByRole("textbox", { name: "Clear Offset X" })).toHaveValue("1.5");
+    expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toHaveValue("-2.5");
+    expect(screen.getByLabelText("Edge Aperture Shape")).toHaveValue("circular");
+    expect(screen.getByRole("textbox", { name: "Radius" })).toHaveValue("6");
+    expect(screen.getByRole("textbox", { name: "Edge Offset X" })).toHaveValue("-3.5");
+    expect(screen.getByRole("textbox", { name: "Edge Offset Y" })).toHaveValue("4.5");
+  });
+
   it("renders DecenterModal when decenterModal is open", () => {
     const { store } = renderLPC();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -404,6 +453,21 @@ describe("LensPrescriptionContainer", () => {
 
     expect(screen.getByLabelText("Catalog")).toHaveValue("Special");
     expect(screen.getByLabelText("Glass")).toHaveValue("air");
+  });
+
+  it("pre-populates MediumSelectorModal with surface row medium values", () => {
+    const { store } = renderLPC();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    act(() => {
+      store.getState().openMediumModal(surfaceRow.id);
+    });
+
+    expect(screen.getByLabelText("Catalog")).toHaveValue("Schott");
+    expect(screen.getByLabelText("Glass")).toHaveValue("N-BK7");
   });
 
   it("commits the pending glass selection into the object row when MediumSelectorModal confirm is clicked", async () => {
@@ -580,6 +644,26 @@ describe("LensPrescriptionContainer", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByText("Diffraction Grating")).toBeInTheDocument();
+  });
+
+  it("pre-populates DiffractionGratingModal with the selected surface grating", () => {
+    const store = createTestStore();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    store.getState().updateRow(surfaceRow.id, {
+      diffractiveElement: { diffractionGrating: { lpmm: 1200, order: 2 } },
+    });
+    renderLPC(store);
+
+    act(() => {
+      store.getState().openDiffractionGratingModal(surfaceRow.id);
+    });
+
+    expect(screen.getByRole("textbox", { name: "lp/mm" })).toHaveValue("1200");
+    expect(screen.getByRole("textbox", { name: "order" })).toHaveValue("2");
   });
 
   it("saves diffraction grating data and closes modal when Confirm is clicked", async () => {

@@ -53,7 +53,11 @@ describe("lens prescription WebMCP tools", () => {
     expect(tools.get("set_lens_prescription")?.annotations?.readOnlyHint).toBe(false);
     for (const tool of tools.values()) {
       expect(tool.inputSchema).toEqual(expect.objectContaining({ type: "object", additionalProperties: false }));
+      expect(tool.annotations?.untrustedContentHint).toBe(false);
     }
+    expect(tools.get("insert_lens_surface")?.annotations?.readOnlyHint).toBe(false);
+    expect(tools.get("update_lens_row")?.annotations?.readOnlyHint).toBe(false);
+    expect(tools.get("delete_lens_surface")?.annotations?.readOnlyHint).toBe(false);
   });
 
   it.each([
@@ -65,6 +69,17 @@ describe("lens prescription WebMCP tools", () => {
     const { execute } = setup();
     const result = await execute("get_lens_prescription", input);
     expect(JSON.parse(String(result))).toEqual(expected);
+  });
+
+  it("reports a semantic error when a valid selector points past the current rows", async () => {
+    const { store, execute } = setup();
+    const before = snapshot(store);
+
+    await expect(execute("get_lens_prescription", { row: 2 })).rejects.toThrow(
+      "Invalid input at /row: 2 does not exist",
+    );
+
+    expect(snapshot(store)).toEqual(before);
   });
 
   it.each([
@@ -121,6 +136,21 @@ describe("lens prescription WebMCP tools", () => {
       expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" }),
       expect.objectContaining({ medium: "User Glass", manufacturer: "Custom" }),
     ]));
+  });
+
+  it("canonicalizes an object medium update through the same resolver as surface updates", async () => {
+    const { store, execute } = setup({ lookupMaps });
+
+    await execute("update_lens_row", {
+      row: "object",
+      values: { medium: "n-bk7", manufacturer: "SCHOTT" },
+    });
+
+    expect(store.getState().rows[0]).toEqual(expect.objectContaining({
+      kind: "object",
+      medium: "N-BK7",
+      manufacturer: "Schott",
+    }));
   });
 
   it("writes both canonical material fields atomically for partial material updates", async () => {
@@ -180,6 +210,17 @@ describe("lens prescription WebMCP tools", () => {
     expect(store.getState().rows[2]).toEqual(expect.objectContaining({ comment: "formerly first", curvatureRadius: 50 }));
   });
 
+  it("rejects insertion after a missing positive surface without mutation", async () => {
+    const { store, execute } = setup();
+    const before = snapshot(store);
+
+    await expect(execute("insert_lens_surface", { after: 2 })).rejects.toThrow(
+      "Invalid input at /after: 2 does not exist",
+    );
+
+    expect(snapshot(store)).toEqual(before);
+  });
+
   it("returns the inserted surface index when inserting after an existing surface", async () => {
     const { store, execute } = setup();
     await execute("set_lens_prescription", {
@@ -222,6 +263,16 @@ describe("lens prescription WebMCP tools", () => {
     await expect(execute("update_lens_row", { row: "image", values: { thickness: 4 } })).rejects.toThrow(/not applicable/i);
   });
 
+  it("rejects fields that are not applicable to the object row", async () => {
+    const { store, execute } = setup();
+    const before = snapshot(store);
+
+    await expect(execute("update_lens_row", { row: "object", values: { comment: "not applicable" } }))
+      .rejects.toThrow(/comment is not applicable to the object row/i);
+
+    expect(snapshot(store)).toEqual(before);
+  });
+
   it("validates the complete update candidate before calling updateRow", async () => {
     const { store, execute } = setup();
     const spy = jest.spyOn(store.getState(), "updateRow");
@@ -252,6 +303,34 @@ describe("lens prescription WebMCP tools", () => {
     expect(store.getState().rows[1]).toEqual(expect.objectContaining({ semiDiameter: 0 }));
   });
 
+  it("does not zero semi-diameter for a circular clear aperture", async () => {
+    const { store, execute } = setup();
+
+    await execute("update_lens_row", {
+      row: 1,
+      values: { clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 } },
+    });
+
+    expect(store.getState().rows[1]).toEqual(expect.objectContaining({ semiDiameter: 10 }));
+  });
+
+  it("allows a semi-diameter edit on a normal manual-aperture surface", async () => {
+    const { store, execute } = setup();
+
+    await execute("update_lens_row", { row: 1, values: { semiDiameter: 4 } });
+
+    expect(store.getState().rows[1]).toEqual(expect.objectContaining({ semiDiameter: 4 }));
+  });
+
+  it("does not add canonical medium fields to unrelated row updates", async () => {
+    const { store, execute } = setup();
+    const spy = jest.spyOn(store.getState(), "updateRow");
+
+    await execute("update_lens_row", { row: 1, values: { comment: "annotated" } });
+
+    expect(spy).toHaveBeenCalledWith(expect.any(String), { comment: "annotated" });
+  });
+
   it("labels unknown custom media with the Custom catalog", async () => {
     const { execute } = setup({ lookupMaps });
 
@@ -268,7 +347,9 @@ describe("lens prescription WebMCP tools", () => {
     expect(store.getState().rows.filter((row) => row.kind === "surface")).toHaveLength(0);
     expect(store.getState().selectedRowId).toBeUndefined();
     expect(result).toEqual(expect.objectContaining({ surface: 1, surfaceCount: 0, systemUpdateRequired: true }));
-    await expect(execute("delete_lens_surface", { surface: 1 })).rejects.toThrow(/does not exist/i);
+    await expect(execute("delete_lens_surface", { surface: 1 })).rejects.toThrow(
+      "Invalid input at /surface: 1 does not exist",
+    );
   });
 
   it("honours execution cancellation before reading or mutating state", async () => {
@@ -281,6 +362,9 @@ describe("lens prescription WebMCP tools", () => {
     await expect(execute("insert_lens_surface", { after: "object" }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
     await expect(execute("update_lens_row", { row: 1, values: { thickness: 6 } }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
     await expect(execute("delete_lens_surface", { surface: 1 }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    await expect(execute("get_lens_prescription", {}, controller.signal)).rejects.toThrow(
+      "Tool execution was cancelled",
+    );
     expect(snapshot(store)).toEqual(before);
   });
 });

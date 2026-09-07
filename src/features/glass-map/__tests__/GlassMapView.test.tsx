@@ -31,6 +31,24 @@ jest.mock("next/link", () => {
   };
 });
 
+jest.mock("@/features/glass-map/components", () => {
+  const actual = jest.requireActual<typeof import("@/features/glass-map/components")>("@/features/glass-map/components");
+
+  function MockGlassScatterPlot(props: React.ComponentProps<typeof actual.GlassScatterPlot>) {
+    return (
+      <div
+        data-testid="glass-scatter-plot-props"
+        data-y-domain-min={props.yDomainMin}
+        data-y-domain-max={props.yDomainMax}
+      >
+        <actual.GlassScatterPlot {...props} />
+      </div>
+    );
+  }
+
+  return { ...actual, GlassScatterPlot: MockGlassScatterPlot };
+});
+
 const rawData: AllGlassCatalogsData = {
   Schott: {
     "N-BK7": {
@@ -182,11 +200,32 @@ describe("GlassMapView", () => {
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
+  it("shows loading indicator when the worker is not ready even if a proxy exists", () => {
+    renderWithStore(<GlassMapView proxy={makeProxy()} isReady={false} />);
+    expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /refractive index/i })).not.toBeInTheDocument();
+  });
+
+  it("shows loading indicator when the proxy is unavailable after readiness", () => {
+    renderWithStore(<GlassMapView proxy={undefined} isReady={true} />);
+    expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /refractive index/i })).not.toBeInTheDocument();
+  });
+
   it("shows loading indicator on first render when isReady=true but catalogsData not yet fetched", () => {
     const proxy = makeProxy();
     renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, makeStore(undefined));
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
     expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
+  });
+
+  it.each(["catalogsData", "lookupMaps"] as const)("keeps loading when %s is unavailable", (missingState) => {
+    const store = makeStore();
+    store.setState({ [missingState]: undefined });
+
+    renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />, store);
+
+    expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
   });
 
   it("does not call getAllGlassCatalogsData on mount when isReady=true", async () => {
@@ -396,6 +435,40 @@ describe("GlassMapView", () => {
     expect(onUseSelectedGlass).toHaveBeenCalledWith(
       expect.objectContaining({ glassName: "N-BK7", catalogName: "Schott" }),
     );
+  });
+
+  it("renders the selected axis labels for every partial-dispersion option", async () => {
+    renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />);
+
+    expect(await screen.findByText("Vd")).toBeInTheDocument();
+    expect(screen.getByText("Nd")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("radio", { name: "e" }));
+    expect(screen.getByText("Ve")).toBeInTheDocument();
+    expect(screen.getByText("Ne")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+    expect(screen.getByText("P_g,F")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("radio", { name: "P_F,e" }));
+    expect(screen.getByText("Ve")).toBeInTheDocument();
+    expect(screen.getByText("P_F,e")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("radio", { name: "P_F,d" }));
+    expect(screen.getByText("P_F,d")).toBeInTheDocument();
+  });
+
+  it("passes fixed refractive-index y bounds and data-driven partial-dispersion bounds", async () => {
+    renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />);
+
+    const plotProps = await screen.findByTestId("glass-scatter-plot-props");
+    expect(plotProps).toHaveAttribute("data-y-domain-min", "1.4");
+    expect(plotProps).toHaveAttribute("data-y-domain-max", "2");
+
+    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+
+    expect(plotProps).not.toHaveAttribute("data-y-domain-min");
+    expect(plotProps).not.toHaveAttribute("data-y-domain-max");
   });
 
   it("applies the newly selected glass instead of the original route glass", async () => {
