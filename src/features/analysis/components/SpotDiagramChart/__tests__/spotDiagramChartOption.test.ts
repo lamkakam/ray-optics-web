@@ -221,4 +221,49 @@ describe("buildSpotDiagramOption", () => {
     expect(option.xAxis).toEqual(expect.objectContaining({ min: 0, max: 0 }));
     expect(option.yAxis).toEqual(expect.objectContaining({ min: 0, max: 0 }));
   });
+
+  it("uses the numeric wavelength range for colors while retaining fallback colors", () => {
+    const option = buildSpotDiagramOption(
+      spotDiagramData,
+      ["1250.25 nm", "unused", "unknown"],
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    const middleColor = ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor((ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1) / 2)];
+    expect(option.series[0]?.itemStyle?.color).toBe(middleColor);
+    expect(option.series[1]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[1]);
+  });
+
+  it("pairs the axis extent using the shorter coordinate array and fills missing plotted ordinates with zero", () => {
+    const option = buildSpotDiagramOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [0.1, 9],
+          y: [0.2],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ],
+      ["587.6 nm"],
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual(expect.objectContaining({ min: -0.2, max: 0.2 }));
+    expect(option.yAxis).toEqual(expect.objectContaining({ min: -0.2, max: 0.2 }));
+    expect(option.series[0]?.data).toEqual([[0.1, 0.2], [9, 0]]);
+  });
+
+  it("falls back to a finite extent and axis names for empty spot data", () => {
+    const option = buildSpotDiagramOption([], [], 400, 400, globalTokens.echarts.text.light);
+
+    expect(option.xAxis).toEqual(expect.objectContaining({ min: -0.000001, max: 0.000001, name: "x" }));
+    expect(option.yAxis).toEqual(expect.objectContaining({ min: -0.000001, max: 0.000001, name: "y" }));
+    expect(option.series).toEqual([]);
+  });
 });

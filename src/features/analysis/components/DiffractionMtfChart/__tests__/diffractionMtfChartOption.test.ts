@@ -73,4 +73,20 @@ describe("diffractionMtfChartOption", () => {
 
     expect(option.yAxis.max).toBe(1.2);
   });
+
+  it("pairs each series to its shorter axis and includes every series in the x range", () => {
+    const option = buildDiffractionMtfOption(
+      {
+        ...diffractionMtfData,
+        Tangential: { x: [0, 10, 20], y: [1, 0.7] },
+        IdealSagittal: { x: [0, 40], y: [1, 0.8] },
+      },
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.series[0].data).toEqual([[0, 1], [10, 0.7]]);
+    expect(option.xAxis.max).toBe(40);
+  });
 });

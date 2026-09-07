@@ -140,4 +140,21 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     expect(formatter(987.6)).toBe("990");
     expect(formatter(1e-8)).toBe("1e-8");
   });
+
+  it("formats tooltip strings, arrays, and omitted display fields without leaking undefined", () => {
+    const option = buildSurfaceBySurface3rdOrderChartOption(
+      surfaceBySurface3rdOrderData,
+      960,
+      540,
+      globalTokens.echarts.text.light,
+    );
+    const formatter = option.tooltip.formatter as (params: unknown) => string;
+
+    expect(formatter({ value: "0.1234", seriesName: "S-I", axisValueLabel: "S1" })).toContain("0.12");
+    expect(formatter({ value: "not numeric", seriesName: "S-I", axisValueLabel: "S1" })).toContain("not numeric");
+    expect(formatter({ value: ["S1", "0.1234"], seriesName: "S-I", axisValueLabel: "S1" })).toContain("0.12");
+    expect(formatter({ value: ["S1", "not numeric"], seriesName: "S-I", axisValueLabel: "S1" })).toContain("not numeric");
+    expect(formatter({})).toBe("<br/>: ");
+    expect(formatter({ value: undefined, seriesName: undefined, axisValueLabel: undefined })).not.toContain("undefined");
+  });
 });

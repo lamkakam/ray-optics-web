@@ -113,6 +113,15 @@ describe("buildGlassLookupMaps", () => {
     expect(result.mediumMap.get("custom:custom_a")).toEqual({ medium: "CUSTOM_A", manufacturer: "Custom" });
     expect(result.customMediumMap.get("custom_a")).toEqual({ medium: "CUSTOM_A", manufacturer: "Custom" });
   });
+
+  it("preserves the stored spelling when a Special catalog contains a built-in medium", () => {
+    const catalogsData = completeAllCatalogsData({ Special: { water: rawGlass } });
+
+    expect(buildGlassLookupMaps(catalogsData).mediumMap.get("water")).toEqual({
+      medium: "water",
+      manufacturer: "",
+    });
+  });
 });
 
 describe("CATALOG_COLOR_MAP", () => {
@@ -206,6 +215,13 @@ describe("computePlotPoints", () => {
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
     expect(bk7.y).toBe(0.41);
+  });
+
+  it("returns points for partialDispersion/e/P_fe: x=Ve, y=P_fe", () => {
+    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "e", "P_fe");
+    const bk7 = points.find((p) => p.glassName === "BK7")!;
+    expect(bk7.x).toBe(63.96);
+    expect(bk7.y).toBe(0.4);
   });
 
   it("excludes disabled catalog", () => {

@@ -169,6 +169,16 @@ describe("lensEditorStore", () => {
       expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
     });
 
+    it("does not update a pending medium when no draft exists", () => {
+      const store = makeStore();
+      const before = store.getState();
+
+      store.getState().updatePendingMediumSelection({ medium: "N-BK7", manufacturer: "Schott" });
+
+      expect(store.getState().pendingMediumSelection).toBe(before.pendingMediumSelection);
+      expect(store.getState().prescriptionRevision).toBe(before.prescriptionRevision);
+    });
+
     it("preserves the target row identity even when an update patch includes id or kind", () => {
       const store = makeStore();
       store.getState().setRows(makeTestRows());
@@ -345,6 +355,8 @@ describe("lensEditorStore", () => {
         expect(newRow.manufacturer).toBe("");
         expect(newRow.semiDiameter).toBe(1);
       }
+      expect(store.getState().prescriptionRevision).toBe(2);
+      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
     });
 
     it("adds a row after the object row", () => {
@@ -477,6 +489,17 @@ describe("lensEditorStore", () => {
       expect(store.getState().prescriptionRevision).toBe(1);
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
     });
+
+    it("closes a modal with an explicit selection when its target row no longer exists", () => {
+      const store = makeStore();
+      store.getState().openMediumModal("missing");
+
+      store.getState().commitPendingMediumSelection({ medium: "N-BK7", manufacturer: "Schott" });
+
+      expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().pendingMediumSelection).toBeUndefined();
+      expect(store.getState().prescriptionRevision).toBe(0);
+    });
   });
 
   describe("deleteRow", () => {
@@ -522,6 +545,7 @@ describe("lensEditorStore", () => {
 
       expect(store.getState().selectedRowId).toBe("s2");
       expect(store.getState().prescriptionRevision).toBe(2);
+      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
     });
   });
 

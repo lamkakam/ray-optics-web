@@ -193,6 +193,23 @@ describe("specsConfiguratorStore", () => {
   });
 
   describe("toOpticalSpecs", () => {
+    it("builds the default optical specs from untouched form state", () => {
+      const store = makeStore();
+
+      expect(store.getState().toOpticalSpecs()).toEqual({
+        pupil: { space: "object", type: "epd", value: 0.5 },
+        field: {
+          space: "object",
+          type: "height",
+          maxField: 0,
+          fields: [0],
+          isRelative: true,
+          isWideAngle: false,
+        },
+        wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
+      });
+    });
+
     it("returns a valid OpticalSpecs from current state", () => {
       const store = makeStore();
       store.getState().loadFromSpecs(sampleSpecs);

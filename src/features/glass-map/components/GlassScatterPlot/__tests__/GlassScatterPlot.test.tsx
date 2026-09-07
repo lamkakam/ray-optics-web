@@ -131,6 +131,31 @@ describe("GlassScatterPlot", () => {
     fireEvent.mouseEnter(screen.getAllByTestId("glass-point")[0]);
 
     expect(screen.getByText("N-BK7")).toBeInTheDocument();
+    expect(screen.getByText("Schott")).toBeInTheDocument();
+  });
+
+  it("does not draw a crosshair for a selected glass that is not in the plotted points", () => {
+    const { container } = render(
+      <GlassScatterPlot
+        {...defaultProps}
+        selectedGlass={{ catalogName: "Hoya", glassName: "N-BK7", data: glassData }}
+      />,
+    );
+
+    expect(container.querySelector("[data-testid='crosshair-h']")).not.toBeInTheDocument();
+    expect(container.querySelector("[data-testid='crosshair-v']")).not.toBeInTheDocument();
+  });
+
+  it("matches selected glasses by both catalog and glass name", () => {
+    const { container } = render(
+      <GlassScatterPlot
+        {...defaultProps}
+        selectedGlass={{ catalogName: "Schott", glassName: "N-ZK7", data: glassData }}
+      />,
+    );
+
+    expect(container.querySelector("[data-testid='crosshair-h']")).not.toBeInTheDocument();
+    expect(container.querySelector("[data-testid='crosshair-v']")).not.toBeInTheDocument();
   });
 
   it("renders crosshair lines when a glass is selected", () => {
@@ -202,7 +227,17 @@ describe("GlassScatterPlot", () => {
       })
     ).toEqual({
       scaleX: 0.97,
-      scaleY: 0.97,
+        scaleY: 0.97,
+      });
+
+    expect(
+      computePinchDelta({
+        offset: [100, 0],
+        lastOffset: [100, 0],
+      })
+    ).toEqual({
+      scaleX: 1.03,
+      scaleY: 1.03,
     });
   });
 
@@ -210,6 +245,39 @@ describe("GlassScatterPlot", () => {
     expect(isSingleTouchGesture(1)).toBe(true);
     expect(isSingleTouchGesture(2)).toBe(false);
     expect(isSingleTouchGesture(3)).toBe(false);
+  });
+
+  it("selects and shows a point on a single-touch tap", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+    const point = screen.getAllByTestId("glass-point")[0];
+    const touch = { identifier: 0, clientX: 10, clientY: 20, target: point };
+
+    fireEvent.touchStart(point, { touches: [touch], targetTouches: [touch], changedTouches: [touch] });
+
+    expect(defaultProps.onPointClick).toHaveBeenCalledWith({
+      catalogName: "Schott",
+      glassName: "N-BK7",
+      data: glassData,
+    });
+    expect(screen.getByText("N-BK7")).toBeInTheDocument();
+  });
+
+  it("does not select or show a point on a multi-touch tap", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+    const point = screen.getAllByTestId("glass-point")[0];
+    const touches = [
+      { identifier: 0, clientX: 10, clientY: 20, target: point },
+      { identifier: 1, clientX: 30, clientY: 40, target: point },
+    ];
+
+    fireEvent.touchStart(point, {
+      touches,
+      targetTouches: touches,
+      changedTouches: [touches[0]],
+    });
+
+    expect(defaultProps.onPointClick).not.toHaveBeenCalled();
+    expect(screen.queryByText("N-BK7")).not.toBeInTheDocument();
   });
 
   it("respects explicit y-domain bounds for refractive-index plots", () => {
@@ -246,5 +314,19 @@ describe("GlassScatterPlot", () => {
     );
 
     expect(Math.max(...values)).toBeLessThan(0.9);
+  });
+
+  it("plots high Abbe values to the left and high y values upward with padded domains", () => {
+    const simplePoints: PlotPoint[] = [
+      { x: 0, y: 0, catalogName: "Schott", glassName: "Low", data: glassData },
+      { x: 100, y: 10, catalogName: "Schott", glassName: "High", data: glassData },
+    ];
+    render(<GlassScatterPlot {...defaultProps} points={simplePoints} />);
+
+    const circles = screen.getAllByTestId("glass-point");
+    expect(Number(circles[0].getAttribute("cx"))).toBeCloseTo(687.2727, 3);
+    expect(Number(circles[0].getAttribute("cy"))).toBeCloseTo(505.9091, 3);
+    expect(Number(circles[1].getAttribute("cx"))).toBeCloseTo(32.7273, 3);
+    expect(Number(circles[1].getAttribute("cy"))).toBeCloseTo(24.0909, 3);
   });
 });

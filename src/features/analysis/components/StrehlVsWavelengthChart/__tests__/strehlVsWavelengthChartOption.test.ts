@@ -51,4 +51,15 @@ describe("strehlVsWavelengthChartOption", () => {
       }),
     ]);
   });
+
+  it("pairs the Strehl series to its shorter axis", () => {
+    const option = buildStrehlVsWavelengthOption(
+      { ...strehlVsWavelengthData, y: [0.72, 0.94] },
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.series[0].data).toEqual([[486.1, 0.72], [587.6, 0.94]]);
+  });
 });

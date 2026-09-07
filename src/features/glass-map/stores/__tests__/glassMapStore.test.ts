@@ -168,6 +168,21 @@ describe("glassMapStore actions", () => {
     });
   });
 
+  it("ignores custom-glass upserts before catalog data is loaded", () => {
+    const store = makeStore();
+    const before = store.getState();
+    const custom = {
+      ...mockGlassData,
+      dispersionCoeffKind: "tabulated" as const,
+      dispersionCoeffs: [[587.56, 1.5168] as const],
+    };
+
+    store.getState().upsertCustomGlasses({ CUSTOM_A: custom });
+
+    expect(store.getState().catalogsData).toBe(before.catalogsData);
+    expect(store.getState().lookupMaps).toBe(before.lookupMaps);
+  });
+
   it("deleteCustomGlasses removes custom data, rebuilds lookups, and clears deleted selection", () => {
     const store = makeStore();
     const custom = { ...mockGlassData, dispersionCoeffKind: "tabulated" as const, dispersionCoeffs: [[587.56, 1.5168] as const] };
@@ -180,6 +195,32 @@ describe("glassMapStore actions", () => {
     expect(store.getState().lookupMaps?.mediumMap.get("custom:custom_a")).toBeUndefined();
     expect(store.getState().lookupMaps?.customMediumMap.get("custom_a")).toBeUndefined();
     expect(store.getState().selectedGlass).toBeUndefined();
+  });
+
+  it("ignores custom-glass deletes before catalog data is loaded", () => {
+    const store = makeStore();
+    const before = store.getState();
+
+    store.getState().deleteCustomGlasses(["CUSTOM_A"]);
+
+    expect(store.getState().catalogsData).toBe(before.catalogsData);
+    expect(store.getState().lookupMaps).toBe(before.lookupMaps);
+    expect(store.getState().selectedGlass).toBeUndefined();
+  });
+
+  it("retains a selected custom glass when deleting another custom label", () => {
+    const store = makeStore();
+    store.getState().setCatalogsData(completeAllCatalogsData({
+      Custom: { CUSTOM_A: mockGlassData, CUSTOM_B: mockGlassData },
+    }));
+    const selected = { catalogName: "Custom" as CatalogName, glassName: "CUSTOM_A", data: mockGlassData };
+    store.getState().setSelectedGlass(selected);
+
+    store.getState().deleteCustomGlasses(["CUSTOM_B"]);
+
+    expect(store.getState().selectedGlass).toEqual(selected);
+    expect(store.getState().catalogsData?.Custom.CUSTOM_A).toBeDefined();
+    expect(store.getState().catalogsData?.Custom.CUSTOM_B).toBeUndefined();
   });
 
   it("setCatalogsData replaces catalog data and rebuilds lookups", () => {

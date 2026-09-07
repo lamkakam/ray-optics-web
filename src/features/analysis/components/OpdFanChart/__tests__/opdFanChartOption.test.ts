@@ -392,4 +392,159 @@ describe("buildOpdFanChartOption", () => {
       expect.objectContaining({ min: 0, max: 0 }),
     ]);
   });
+
+  it("uses stable palette ordering when no wavelength label is numeric", () => {
+    const option = buildOpdFanChartOption(
+      opdFanData,
+      ["reference", "unused", "primary"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.series[0]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[0]);
+    expect(option.series[2]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[1]);
+  });
+
+  it("uses the middle color for one numeric wavelength and preserves fallback colors for unknown labels", () => {
+    const option = buildOpdFanChartOption(
+      opdFanData,
+      ["587.6 nm", "unused", "unknown"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    const middleColor = ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor((ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1) / 2)];
+    expect(option.series[0]?.lineStyle?.color).toBe(middleColor);
+    expect(option.series[2]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[1]);
+    expect(option.series[0]?.itemStyle?.color).toBe(middleColor);
+    expect(option.series[2]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[1]);
+  });
+
+  it("ignores non-finite samples and falls back for an invalid subplot range", () => {
+    const option = buildOpdFanChartOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: { x: [Number.POSITIVE_INFINITY], y: [Number.POSITIVE_INFINITY] },
+          Tangential: { x: [Number.NaN], y: [Number.NEGATIVE_INFINITY] },
+          unitX: "",
+          unitY: "waves",
+        },
+      ],
+      ["587.6 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: -1, max: 1 }),
+      expect.objectContaining({ min: -1, max: 1 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.000001, max: 0.000001 }),
+      expect.objectContaining({ min: -0.000001, max: 0.000001 }),
+    ]);
+  });
+
+  it("uses the default unit label when no OPD samples exist", () => {
+    const option = buildOpdFanChartOption([], [], 800, 400, globalTokens.echarts.text.light);
+
+    expect(option.legend?.data).toEqual([]);
+    expect(option.yAxis[0]?.name).toBe("waves");
+    expect(option.series).toEqual([]);
+  });
+
+  it("parses integer and multi-digit decimal wavelength labels for color ordering", () => {
+    const option = buildOpdFanChartOption(
+      opdFanData.concat({
+        ...opdFanData[0],
+        wvlIdx: 1,
+      }),
+      ["1000", "1000.02 nm", "1000.04 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.series[0]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[0]);
+    expect(option.series[2]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[10]);
+    expect(option.series[4]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[5]);
+  });
+
+  it("uses the wavelength-index fallback label when a series index is missing", () => {
+    const option = buildOpdFanChartOption(
+      [{ ...opdFanData[0], wvlIdx: 4 }],
+      [],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.legend?.data).toEqual(["Wavelength 4"]);
+    expect(option.series[0]?.name).toBe("Wavelength 4");
+  });
+
+  it("uses a fallback color for an unknown label alongside an unequal numeric range", () => {
+    const option = buildOpdFanChartOption(
+      [
+        { ...opdFanData[0], wvlIdx: 0 },
+        { ...opdFanData[1], wvlIdx: 1 },
+        { ...opdFanData[0], wvlIdx: 2 },
+      ],
+      ["486.1 nm", "656.3 nm", "unknown"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.series[0]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[0]);
+    expect(option.series[2]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[10]);
+    expect(option.series[4]?.lineStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[2]);
+  });
+
+  it("falls back for a constant finite subplot range", () => {
+    const option = buildOpdFanChartOption(
+      [{
+        ...opdFanData[0],
+        Tangential: { x: [0, 1], y: [2, 2] },
+        Sagittal: { x: [0, 1], y: [3, 3] },
+      }],
+      ["587.6 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.000001, max: 0.000001 }),
+      expect.objectContaining({ min: -0.000001, max: 0.000001 }),
+    ]);
+  });
+
+  it("ignores non-finite samples when finite samples are also present", () => {
+    const option = buildOpdFanChartOption(
+      [{
+        ...opdFanData[0],
+        Tangential: { x: [0.1, 0.2, Number.POSITIVE_INFINITY], y: [0.2, 0.3, Number.POSITIVE_INFINITY] },
+        Sagittal: { x: [-0.1, -0.2, Number.NEGATIVE_INFINITY], y: [-0.2, -0.3, Number.NEGATIVE_INFINITY] },
+      }],
+      ["587.6 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: -0.2, max: 0.2 }),
+      expect.objectContaining({ min: -0.2, max: 0.2 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: 0.2, max: 0.3 }),
+      expect.objectContaining({ min: -0.3, max: -0.2 }),
+    ]);
+  });
 });

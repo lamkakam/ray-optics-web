@@ -450,6 +450,8 @@ describe("parsePhotonsToPhotosText", () => {
       medium: "1.517",
       manufacturer: "64.166",
     });
+
+    expect(() => result.resolve(3)).toThrow(/no value for focal-length column 4/i);
   });
 
   it("rejects missing required sections", () => {
@@ -509,6 +511,71 @@ describe("parsePhotonsToPhotosText", () => {
     });
   });
 
+  it("accepts an aspherical radius at the configured tolerance boundary", () => {
+    const text = [
+      "[descriptive data]",
+      "title\tTolerance boundary",
+      "[variable distances]",
+      "Focal Length\t50",
+      "F-Number\t4",
+      "Angle of View\t20",
+      "d0\tInfinity",
+      "[lens data]",
+      ["1", "0", "5", "", "20", "", "", ""].join("\t"),
+      "[aspherical data]",
+      ["1", "0.000001", "0"].join("\t"),
+    ].join("\n");
+
+    const result = parsePhotonsToPhotosText(text);
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.surfaces[0].aspherical).toBeDefined();
+  });
+
+  it("ignores malformed rows without a surface key in aspherical data", () => {
+    const text = [
+      "[descriptive data]",
+      "title\tIgnored asphere row",
+      "[variable distances]",
+      "Focal Length\t50",
+      "F-Number\t4",
+      "Angle of View\t20",
+      "d0\tInfinity",
+      "[lens data]",
+      ["1", "0", "5", "", "20", "", "", ""].join("\t"),
+      "[aspherical data]",
+      "\tignored",
+      ["1", "0", "0"].join("\t"),
+    ].join("\n");
+
+    const result = parsePhotonsToPhotosText(text);
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.surfaces[0].aspherical).toEqual({
+      kind: "EvenAspherical",
+      conicConstant: 0,
+      polynomialCoefficients: [],
+    });
+  });
+
+  it("rejects aspherical data that references a missing surface", () => {
+    const text = [
+      "[descriptive data]",
+      "title\tMissing asphere surface",
+      "[variable distances]",
+      "Focal Length\t50",
+      "F-Number\t4",
+      "Angle of View\t20",
+      "d0\tInfinity",
+      "[lens data]",
+      ["1", "0", "5", "", "20", "", "", ""].join("\t"),
+      "[aspherical data]",
+      ["2", "0", "0"].join("\t"),
+    ].join("\n");
+
+    expect(() => parsePhotonsToPhotosText(text)).toThrow(/missing surface 2/i);
+  });
+
   it("uses the inclusive full-angle wide-angle boundary", () => {
     const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" }).replace(
       "Angle of View\t20",
@@ -530,6 +597,18 @@ describe("parsePhotonsToPhotosText", () => {
       pupil: { space: "object", type: "NA", value: 0.5 },
       field: { space: "image", type: "height", maxField: 5, isWideAngle: true },
     });
+  });
+
+  it("does not mark an image-height field wide-angle for an image-space f-number pupil", () => {
+    const result = parsePhotonsToPhotosText(makeNaImageHeightText("0.4").replace(
+      "NA\t0.4",
+      "F-Number\t4",
+    ));
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.specs.pupil).toEqual({ space: "image", type: "f/#", value: 4 });
+    expect(result.model.specs.field).toMatchObject({ type: "height", isWideAngle: false });
   });
 
   it("falls back to an empty object side without removing all-zero-thickness surfaces", () => {
@@ -579,6 +658,20 @@ describe("parsePhotonsToPhotosText", () => {
     const text = readFixture("prime-no-glass-type.txt").replace("\tBf\t", "\tUnknownDistance\t");
 
     expect(() => parsePhotonsToPhotosText(text)).toThrow(/unresolved variable distance/i);
+  });
+
+  it("rejects a required variable with no numeric values", () => {
+    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" })
+      .replace("Focal Length\t50", "Focal Length\t");
+
+    expect(() => parsePhotonsToPhotosText(text)).toThrow(/missing variable distance.*Focal Length/i);
+  });
+
+  it("rejects missing required lens-data cells", () => {
+    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" })
+      .replace("\t100\t5\t\t20\t\t\t", "\t100\t5\t\t\t\t\t");
+
+    expect(() => parsePhotonsToPhotosText(text)).toThrow(/missing lens aperture/i);
   });
 
   it("rejects aspherical radius disagreement", () => {
