@@ -1,3 +1,4 @@
+import type { ColumnState } from "ag-grid-community";
 import { createStore } from "zustand/vanilla";
 import {
   createImportCustomGlassSlice,
@@ -25,6 +26,9 @@ describe("importCustomGlassStore", () => {
       { colId: "nd", sort: "desc", sortIndex: 1 },
       { colId: "unknown", sort: "asc" },
       { colId: "vd" },
+      { sort: "asc" } as unknown as ColumnState,
+      { colId: undefined, sort: "desc" } as unknown as ColumnState,
+      { colId: "", sort: "asc" },
     ]);
 
     expect(store.getState().sortState).toEqual([

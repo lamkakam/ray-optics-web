@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { AppShellProvider } from "@/app/AppShellContext";
 import { GlassMapStoreProvider, useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { ImportCustomGlassStoreProvider, useImportCustomGlassStore } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
@@ -45,22 +45,29 @@ const importedGlass: UserDefinedGlassData = {
   abbeNumberD: 45.2,
 };
 
-function SeedCatalogs({ children }: { readonly children: ReactNode }) {
+function SeedCatalogs({
+  children,
+  customCatalog = { CUSTOM_A: customGlass, CUSTOM_B: importedGlass },
+}: {
+  readonly children: ReactNode;
+  readonly customCatalog?: Record<string, UserDefinedGlassData>;
+}) {
   const store = useGlassMapStore();
 
   useEffect(() => {
     store.getState().setCatalogsData({
-      Custom: {
-        CUSTOM_A: customGlass,
-        CUSTOM_B: importedGlass,
-      },
+      Custom: customCatalog,
     });
-  }, [store]);
+  }, [customCatalog, store]);
 
   return <>{children}</>;
 }
 
-function renderPage(proxy?: Partial<PyodideWorkerAPI>, seedTableState?: true) {
+function renderPage(
+  proxy?: Partial<PyodideWorkerAPI>,
+  seedTableState?: true,
+  customCatalog?: Record<string, UserDefinedGlassData>,
+) {
   function SeedTableState({ children }: { readonly children: ReactNode }) {
     const store = useImportCustomGlassStore();
 
@@ -87,7 +94,7 @@ function renderPage(proxy?: Partial<PyodideWorkerAPI>, seedTableState?: true) {
       >
         <GlassMapStoreProvider>
           <ImportCustomGlassStoreProvider>
-            <SeedCatalogs>
+            <SeedCatalogs customCatalog={customCatalog}>
               <SeedTableState>
                 <ImportCustomGlassPage />
               </SeedTableState>
@@ -128,6 +135,31 @@ function expectImportCustomGlassTouchScroll(wrapper: Element | null) {
   expect(styleText).toContain(".import-custom-glass-touch-scroll .ag-center-cols-viewport");
   expect(styleText).toMatch(/touch-action:\s*pan-x pan-y;/);
   expect(styleText).not.toMatch(/touch-action:\s*pan-y;/);
+}
+
+async function fillCoefficientGrid(user: UserEvent, values: readonly (readonly [string, string])[]) {
+  const addRow = screen.getByRole("button", { name: "Add row" });
+  let addRowAttempts = 0;
+  while (screen.getAllByTestId("ag-grid-mock")[1].querySelectorAll("tbody tr").length < values.length) {
+    if (addRowAttempts >= values.length) {
+      throw new Error("Unable to create the expected coefficient rows.");
+    }
+    addRowAttempts += 1;
+    await user.click(addRow);
+  }
+
+  for (const [rowIndex, [wavelengthValue, refractiveIndexValue]] of values.entries()) {
+    for (const [inputIndex, inputValue] of [wavelengthValue, refractiveIndexValue].entries()) {
+      const row = screen.getAllByTestId("ag-grid-mock")[1].querySelectorAll("tbody tr")[rowIndex];
+      const input = row?.querySelectorAll("input")[inputIndex];
+      if (!(input instanceof HTMLInputElement)) {
+        throw new Error(`Expected coefficient input ${rowIndex}:${inputIndex}.`);
+      }
+      await user.clear(input);
+      await user.type(input, inputValue);
+      await user.keyboard("{Enter}");
+    }
+  }
 }
 
 describe("ImportCustomGlassPage", () => {
@@ -301,6 +333,15 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.getAllByText("0.410000").length).toBeGreaterThan(0);
   });
 
+  it("sorts custom glass rows by label before rendering the table", () => {
+    renderPage(undefined, undefined, { ZETA: customGlass, ALPHA: importedGlass });
+
+    const labels = [...screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")]
+      .map((row) => row.querySelectorAll("td")[1]?.textContent);
+
+    expect(labels).toEqual(["ALPHA", "ZETA"]);
+  });
+
   it("selects and clears every custom glass row from the header checkbox", async () => {
     const user = userEvent.setup();
     const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
@@ -330,6 +371,7 @@ describe("ImportCustomGlassPage", () => {
 
     await user.click(headerCheckbox);
     await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+    expect(screen.getByText("Delete 2 selected custom glasses?")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Delete" }));
 
     await waitFor(() => expect(deleteUserDefinedGlasses).toHaveBeenCalledWith(["CUSTOM_A", "CUSTOM_B"]));
@@ -385,6 +427,9 @@ describe("ImportCustomGlassPage", () => {
 
     expect(await screen.findByRole("dialog", { name: "Custom Glass Persistence Warning" })).toBeInTheDocument();
     expect(screen.getByText(/idb delete failed/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Custom Glass Persistence Warning" })).not.toBeInTheDocument();
   });
 
   it("does not call the worker when delete is canceled", async () => {
@@ -426,6 +471,7 @@ describe("ImportCustomGlassPage", () => {
       pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
     }]));
     expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "Overwrite Custom Glass" })).not.toBeInTheDocument();
   });
 
   it("does not update or add imported conflicts when overwrite is canceled", async () => {
@@ -465,6 +511,9 @@ describe("ImportCustomGlassPage", () => {
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
     expect(addUserDefinedGlasses).not.toHaveBeenCalled();
 
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Invalid Custom Glass JSON" })).not.toBeInTheDocument();
+
     alertSpy.mockRestore();
   });
 
@@ -502,6 +551,7 @@ describe("ImportCustomGlassPage", () => {
     expect(mockUpsertPersistedCustomGlasses.mock.invocationCallOrder[0])
       .toBeGreaterThan(addUserDefinedGlasses.mock.invocationCallOrder[0]);
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).not.toBeInTheDocument();
   });
 
   it("opens the overwrite modal before CSV conflict worker calls", async () => {
@@ -526,6 +576,7 @@ describe("ImportCustomGlassPage", () => {
       pairs: [[486.13, 1.71], [546.07, 1.705], [587.56, 1.7], [656.27, 1.695]],
     }]));
     expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "Overwrite Custom Glass" })).not.toBeInTheDocument();
   });
 
   it("imports valid CSV files and reports rejected CSV files", async () => {
@@ -546,6 +597,7 @@ describe("ImportCustomGlassPage", () => {
     }]));
 
     expect(screen.getByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).toBeInTheDocument();
+    expect(screen.queryByText("LF7.csv")).not.toBeInTheDocument();
     expect(screen.getByText("broken.csv")).toBeInTheDocument();
     expect(screen.getByText(/exactly two columns/i)).toBeInTheDocument();
     expect(screen.getByText("duplicate.csv")).toBeInTheDocument();
@@ -570,5 +622,272 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.getByText(/numeric/i)).toBeInTheDocument();
     expect(addUserDefinedGlasses).not.toHaveBeenCalled();
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).not.toBeInTheDocument();
+  });
+
+  it("completes an add flow, mirrors the worker result into the table, and selects the new glass", async () => {
+    const user = userEvent.setup();
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ NEW_CUSTOM: customGlass });
+    renderPage({ addUserDefinedGlasses });
+
+    await user.click(screen.getByRole("button", { name: "Add Glass" }));
+    await user.type(screen.getByRole("textbox", { name: "Label" }), " NEW_CUSTOM ");
+    await fillCoefficientGrid(user, [
+      ["486.13", "1.522"],
+      ["546.07", "1.518"],
+      ["587.56", "1.5168"],
+      ["656.27", "1.514"],
+    ]);
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      expect(addUserDefinedGlasses).toHaveBeenCalledWith([{
+        name: "NEW_CUSTOM",
+        pairs: [[486.13, 1.522], [546.07, 1.518], [587.56, 1.5168], [656.27, 1.514]],
+      }]);
+      expect(screen.getByRole("checkbox", { name: "Select NEW_CUSTOM" })).toBeChecked();
+    });
+    expect(screen.queryByRole("dialog", { name: "Add Glass" })).not.toBeInTheDocument();
+  });
+
+  it("starts Add Glass with blank coefficient rows even when a table row is selected", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("checkbox", { name: "Select CUSTOM_A" }));
+    await user.click(screen.getByRole("button", { name: "Add Glass" }));
+
+    expect(screen.getByRole("textbox", { name: "Label" })).toHaveValue("");
+    expect(screen.getAllByTestId("ag-grid-mock")[1].querySelectorAll("tbody tr")).toHaveLength(0);
+  });
+
+  it("completes an edit flow and synchronizes the updated glass data", async () => {
+    const user = userEvent.setup();
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({ CUSTOM_A: importedGlass });
+    renderPage({ updateUserDefinedGlasses });
+
+    await user.click(screen.getByRole("checkbox", { name: "Select CUSTOM_A" }));
+    await user.click(screen.getByRole("button", { name: "Edit Glass" }));
+    expect(screen.getByRole("textbox", { name: "Label" })).toHaveValue("CUSTOM_A");
+    const initialRows = screen.getAllByTestId("ag-grid-mock")[1].querySelectorAll("tbody tr");
+    expect(initialRows).toHaveLength(1);
+    expect(initialRows[0]?.querySelectorAll("input")[0]).toHaveValue("587.56");
+    expect(initialRows[0]?.querySelectorAll("input")[1]).toHaveValue("1.5168");
+    await fillCoefficientGrid(user, [
+      ["486.13", "1.722"],
+      ["546.07", "1.718"],
+      ["587.56", "1.7168"],
+      ["656.27", "1.714"],
+    ]);
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      expect(updateUserDefinedGlasses).toHaveBeenCalledWith([{
+        name: "CUSTOM_A",
+        pairs: [[486.13, 1.722], [546.07, 1.718], [587.56, 1.7168], [656.27, 1.714]],
+      }]);
+      expect(screen.getAllByText("1.700000")).toHaveLength(2);
+      expect(screen.getByRole("checkbox", { name: "Select CUSTOM_A" })).toBeChecked();
+    });
+    expect(screen.queryByRole("dialog", { name: "Edit Glass" })).not.toBeInTheDocument();
+  });
+
+  it("completes a delete flow, clears selection, and removes the deleted row", async () => {
+    const user = userEvent.setup();
+    const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
+    renderPage({ deleteUserDefinedGlasses });
+
+    await user.click(screen.getByRole("checkbox", { name: "Select CUSTOM_A" }));
+    await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(deleteUserDefinedGlasses).toHaveBeenCalledWith(["CUSTOM_A"]);
+      expect(screen.queryByRole("checkbox", { name: "Select CUSTOM_A" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Delete Glass" })).toBeDisabled();
+    });
+    expect(screen.queryByRole("dialog", { name: "Delete Custom Glass" })).not.toBeInTheDocument();
+  });
+
+  it("splits mixed imports into update and add worker calls and synchronizes both results", async () => {
+    const user = userEvent.setup();
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({ CUSTOM_A: importedGlass });
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ NEW_CUSTOM: customGlass });
+    renderPage({ updateUserDefinedGlasses, addUserDefinedGlasses });
+
+    await user.upload(screen.getByLabelText("Import custom glass JSON file"), makeJsonFile({
+      version: "1.0",
+      Custom: {
+        CUSTOM_A: { type: "tabulated", data: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]] },
+        NEW_CUSTOM: { type: "tabulated", data: [[587.56, 1.6], [486.13, 1.61], [546.07, 1.605], [656.27, 1.595]] },
+      },
+    }));
+
+    expect(screen.getByRole("dialog", { name: "Overwrite Custom Glass" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Overwrite" }));
+
+    await waitFor(() => {
+      expect(updateUserDefinedGlasses).toHaveBeenCalledWith([{
+        name: "CUSTOM_A",
+        pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+      }]);
+      expect(addUserDefinedGlasses).toHaveBeenCalledWith([{
+        name: "NEW_CUSTOM",
+        pairs: [[587.56, 1.6], [486.13, 1.61], [546.07, 1.605], [656.27, 1.595]],
+      }]);
+      expect(screen.getByRole("checkbox", { name: "Select NEW_CUSTOM" })).toBeInTheDocument();
+      expect(mockUpsertPersistedCustomGlasses).toHaveBeenNthCalledWith(1, [{
+        name: "CUSTOM_A",
+        pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+      }]);
+      expect(mockUpsertPersistedCustomGlasses).toHaveBeenNthCalledWith(2, [{
+        name: "NEW_CUSTOM",
+        pairs: [[587.56, 1.6], [486.13, 1.61], [546.07, 1.605], [656.27, 1.595]],
+      }]);
+      expect(screen.queryByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole("dialog", { name: "Overwrite Custom Glass" })).not.toBeInTheDocument();
+  });
+
+  it("does not call the add worker for an update-only overwrite", async () => {
+    const user = userEvent.setup();
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({ CUSTOM_A: importedGlass });
+    const addUserDefinedGlasses = jest.fn().mockImplementation(() => {
+      throw new Error("Unexpected empty add batch.");
+    });
+    renderPage({ updateUserDefinedGlasses, addUserDefinedGlasses });
+
+    await user.upload(screen.getByLabelText("Import custom glass JSON file"), makeJsonFile({
+      version: "1.0",
+      Custom: {
+        CUSTOM_A: { type: "tabulated", data: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]] },
+      },
+    }));
+    await user.click(screen.getByRole("button", { name: "Overwrite" }));
+
+    await waitFor(() => {
+      expect(updateUserDefinedGlasses).toHaveBeenCalledWith([{
+        name: "CUSTOM_A",
+        pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+      }]);
+      expect(screen.queryByRole("dialog", { name: "Overwrite Custom Glass" })).not.toBeInTheDocument();
+    });
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(mockUpsertPersistedCustomGlasses).toHaveBeenCalledTimes(1);
+    expect(mockUpsertPersistedCustomGlasses).toHaveBeenCalledWith([{
+      name: "CUSTOM_A",
+      pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+    }]);
+  });
+
+  it("guards JSON, CSV, and confirmed delete actions when the worker proxy is unavailable", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const jsonFile = makeJsonFile({ version: "1.0", Custom: {} });
+    const csvFile = makeCsvFile("NEW.csv", "wl,n\n0.48613,1.5\n0.54607,1.5\n0.58756,1.5\n0.65627,1.5\n");
+    await user.upload(screen.getByLabelText("Import custom glass JSON file"), jsonFile);
+    await user.upload(screen.getByLabelText("Import custom glass CSV files"), csvFile);
+
+    expect(jsonFile.text).not.toHaveBeenCalled();
+    expect(csvFile.text).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add Glass" }));
+    await user.type(screen.getByRole("textbox", { name: "Label" }), "NO_WORKER");
+    await fillCoefficientGrid(user, [
+      ["486.13", "1.522"],
+      ["546.07", "1.518"],
+      ["587.56", "1.5168"],
+      ["656.27", "1.514"],
+    ]);
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(screen.getByRole("dialog", { name: "Add Glass" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await user.click(screen.getByRole("checkbox", { name: "Select CUSTOM_A" }));
+    await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+    expect(screen.getByText("Delete 1 selected custom glass?")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(screen.getByRole("dialog", { name: "Delete Custom Glass" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog", { name: "Delete Custom Glass" })).not.toBeInTheDocument();
+  });
+
+  it("continues a CSV import after overwrite and then shows rejected-file details", async () => {
+    const user = userEvent.setup();
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({ CUSTOM_A: importedGlass });
+    renderPage({ updateUserDefinedGlasses });
+
+    await user.upload(screen.getByLabelText("Import custom glass CSV files"), [
+      makeCsvFile("CUSTOM_A.csv", "wl,n\n0.48613,1.71\n0.54607,1.705\n0.58756,1.7\n0.65627,1.695\n"),
+      makeCsvFile("broken.csv", "wl,n,extra\n0.48613,1.522\n"),
+    ]);
+
+    expect(screen.getByRole("dialog", { name: "Overwrite Custom Glass" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Overwrite" }));
+
+    await waitFor(() => {
+      expect(updateUserDefinedGlasses).toHaveBeenCalledWith([{
+        name: "CUSTOM_A",
+        pairs: [[486.13, 1.71], [546.07, 1.705], [587.56, 1.7], [656.27, 1.695]],
+      }]);
+      expect(screen.getByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).toBeInTheDocument();
+      expect(screen.getByText("broken.csv")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).not.toBeInTheDocument();
+  });
+
+  it("shows and closes a persistence warning after a successful add", async () => {
+    const user = userEvent.setup();
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ NEW_CUSTOM: customGlass });
+    mockUpsertPersistedCustomGlass.mockRejectedValue(new Error("idb add failed"));
+    renderPage({ addUserDefinedGlasses });
+
+    await user.click(screen.getByRole("button", { name: "Add Glass" }));
+    await user.type(screen.getByRole("textbox", { name: "Label" }), "NEW_CUSTOM");
+    await fillCoefficientGrid(user, [
+      ["486.13", "1.522"],
+      ["546.07", "1.518"],
+      ["587.56", "1.5168"],
+      ["656.27", "1.514"],
+    ]);
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(await screen.findByRole("dialog", { name: "Custom Glass Persistence Warning" })).toBeInTheDocument();
+    expect(screen.getByText(/idb add failed/)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Select NEW_CUSTOM" })).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Custom Glass Persistence Warning" })).not.toBeInTheDocument();
+  });
+
+  it("shows and closes a persistence warning after a successful import", async () => {
+    const user = userEvent.setup();
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ IMPORTED: customGlass });
+    mockUpsertPersistedCustomGlasses.mockRejectedValue(new Error("idb import failed"));
+    renderPage({ addUserDefinedGlasses });
+
+    await user.upload(screen.getByLabelText("Import custom glass JSON file"), makeJsonFile({
+      version: "1.0",
+      Custom: {
+        IMPORTED: { type: "tabulated", data: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]] },
+      },
+    }));
+
+    expect(await screen.findByRole("dialog", { name: "Custom Glass Persistence Warning" })).toBeInTheDocument();
+    expect(addUserDefinedGlasses).toHaveBeenCalledWith([{
+      name: "IMPORTED",
+      pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+    }]);
+    expect(screen.getByRole("checkbox", { name: "Select IMPORTED" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Custom Glass Persistence Warning" })).not.toBeInTheDocument();
   });
 });
