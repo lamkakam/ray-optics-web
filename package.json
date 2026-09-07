@@ -66,6 +66,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "fake-indexeddb": "^6.2.5",
     "jest": "30.4.2",
     "jest-environment-jsdom": "30.4.1",
     "license-checker-rseidelsohn": "^5.0.1",
