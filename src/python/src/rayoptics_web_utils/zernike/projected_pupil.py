@@ -165,11 +165,71 @@ def _twice_signed_triangle_area(a, b, c) -> float:
     return float(ab[0] * ac[1] - ab[1] * ac[0])
 
 
+def _reject_overlapping_triangles(vertices: NDArray) -> None:
+    """Reject positive-area intersections, allowing shared edges and vertices.
+
+    A spatial tree finds candidate triangles by enclosing circles; bounding
+    boxes and the separating-axis test then discard disjoint interiors.
+    Candidates are processed in batches to bound temporary projection arrays.
+    Coordinates are translated and scaled before testing, with roundoff-sized
+    tolerances so connected cells sharing an edge are not mistaken for overlap.
+    """
+    from scipy.spatial import cKDTree
+
+    vertices = vertices - np.min(vertices, axis=(0, 1))
+    vertices /= np.max(vertices)
+    centers = np.mean(vertices, axis=1)
+    radii = np.max(np.linalg.norm(vertices - centers[:, None, :], axis=2), axis=1)
+    lower = np.min(vertices, axis=1)
+    upper = np.max(vertices, axis=1)
+    tree = cKDTree(centers)
+    tolerance = 64 * np.finfo(float).eps
+    for start in range(0, len(vertices), 256):
+        neighbors = tree.query_ball_point(
+            centers[start:start + 256], radii[start:start + 256] + np.max(radii)
+        )
+        pairs = np.asarray([
+            (index, other)
+            for index, nearby in enumerate(neighbors, start)
+            for other in nearby if other > index
+        ], dtype=int).reshape(-1, 2)
+        if not len(pairs):
+            continue
+        first, second = pairs.T
+        boxes_overlap = np.all(
+            np.minimum(upper[first], upper[second])
+            - np.maximum(lower[first], lower[second]) > tolerance,
+            axis=1,
+        )
+        pairs = pairs[boxes_overlap]
+        for offset in range(0, len(pairs), 4096):
+            first, second = pairs[offset:offset + 4096].T
+            a, b = vertices[first], vertices[second]
+            edges = np.concatenate(
+                [np.roll(a, -1, axis=1) - a, np.roll(b, -1, axis=1) - b], axis=1
+            )
+            axes = np.stack([-edges[..., 1], edges[..., 0]], axis=-1)
+            projection_a = np.einsum("pvc,pac->pva", a, axes)
+            projection_b = np.einsum("pvc,pac->pva", b, axes)
+            overlap = (
+                np.minimum(projection_a.max(axis=1), projection_b.max(axis=1))
+                - np.maximum(projection_a.min(axis=1), projection_b.min(axis=1))
+            )
+            if np.any(np.all(overlap > tolerance * np.linalg.norm(axes, axis=2), axis=1)):
+                raise ProjectedPupilGeometryError(
+                    "Projected pupil contains overlapping mapping branches."
+                )
+
+
 def projected_area_vertex_weights(
     coordinates: NDArray,
     valid: NDArray,
 ) -> NDArray[np.float64]:
     """Distribute connected projected triangle areas to their valid vertices.
+
+    Reject overlapping triangle interiors, including disconnected branches
+    without coincident vertices. Shared boundaries between adjacent cells are
+    permitted; folds and singular cells remain unsupported.
 
     Args:
         coordinates: Floating-point array with shape ``(rows, columns, 2)``.
@@ -232,6 +292,9 @@ def projected_area_vertex_weights(
             "Projected-pupil mapping contains a fold or orientation reversal."
         )
 
+    _reject_overlapping_triangles(np.asarray([
+        [points[index] for index in triangle] for triangle, _ in triangles
+    ]))
     weights = np.zeros(mask.shape, dtype=float)
     for triangle, signed_area in triangles:
         contribution = abs(signed_area) / 3.0

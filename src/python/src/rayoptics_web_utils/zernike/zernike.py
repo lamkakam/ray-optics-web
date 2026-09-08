@@ -319,7 +319,10 @@ def get_zernike_coefficients(
     """Return Zernike coefficients and independently sampled wavefront metrics.
 
     Finite samples use orthographic reference-sphere coordinates and projected
-    area. Afocal samples retain uniform normalized-pupil cells. The JSON-safe
+    area. Afocal samples retain uniform normalized-pupil cells; their coverage
+    is the fraction of sampled unit-disk positions with finite OPD, including
+    blocked disk positions in the denominator and excluding square corners.
+    The JSON-safe
     payload reports reference, normalization, sampling measure, support, fit
     residual/rank/conditioning, and direct weighted mean/RMS/PV. Coefficient
     normalization is the unit-disk RMS convention; coefficient RSS does not
@@ -351,9 +354,10 @@ def get_zernike_coefficients(
     if getattr(rg, "grid_pkg", None) is None:
         grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
         weights = np.ones(grid.shape[1:], dtype=float)
-        valid = np.all(np.isfinite(grid), axis=0) & (
+        disk = np.all(np.isfinite(grid[:2]), axis=0) & (
             np.hypot(grid[0], grid[1]) <= 1.0 + 1.0e-12
         )
+        valid = disk & np.isfinite(grid[2])
         weights = np.where(valid, weights, 0.0)
         sample_metadata = {
             "sampling_measure": "uniform_normalized_input_pupil_cells",
@@ -363,7 +367,7 @@ def get_zernike_coefficients(
             "support_area": float(np.sum(weights)),
             "support_coverage": float(
                 np.count_nonzero(valid)
-                / max(1, np.count_nonzero(np.isfinite(grid[0])))
+                / max(1, np.count_nonzero(disk))
             ),
             "sample_count": int(np.count_nonzero(valid)),
             "boundary_resolution": int(num_rays),

@@ -161,6 +161,34 @@ class TestReferenceSphereGeometry:
 class TestProjectedAreaWeights:
     """Connected mapped cells provide projected-area quadrature."""
 
+    @pytest.mark.parametrize("offset,scale", [((0.25, 0.25), 1.0), ((0.2, 0.2), 0.3)])
+    def test_overlapping_interiors_without_duplicate_vertices_are_rejected(self, offset, scale):
+        """Crossing and contained branches must fail even with distinct vertices."""
+        from rayoptics_web_utils.zernike.projected_pupil import (
+            ProjectedPupilGeometryError,
+            projected_area_vertex_weights,
+        )
+
+        coordinates = np.zeros((2, 5, 2))
+        coordinates[:, :2] = [[[0, 0], [0, 1]], [[1, 0], [1, 1]]]
+        coordinates[:, 3:] = coordinates[:, :2] * scale + offset
+        valid = np.ones((2, 5), dtype=bool)
+        valid[:, 2] = False
+        with pytest.raises(ProjectedPupilGeometryError, match="overlapping"):
+            projected_area_vertex_weights(coordinates, valid)
+
+    def test_disjoint_triangles_with_overlapping_bounding_boxes_are_accepted(self):
+        """Broad-phase bounds alone must not reject separate pupil regions."""
+        from rayoptics_web_utils.zernike.projected_pupil import projected_area_vertex_weights
+
+        coordinates = np.zeros((2, 5, 2))
+        coordinates[0, 0], coordinates[1, 0], coordinates[1, 1] = [0, 0], [1, 0], [0, 1]
+        coordinates[0, 3], coordinates[1, 3], coordinates[1, 4] = [1, 1], [0.6, 1], [1, 0.6]
+        valid = np.zeros((2, 5), dtype=bool)
+        valid[0, [0, 3]] = True
+        valid[1, [0, 1, 3, 4]] = True
+        assert projected_area_vertex_weights(coordinates, valid).sum() == pytest.approx(0.58)
+
     def test_linear_elliptical_mapping_integrates_exact_area(self):
         from rayoptics_web_utils.zernike.projected_pupil import (
             projected_area_vertex_weights,

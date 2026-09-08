@@ -413,7 +413,7 @@ class TestGetZernikeCoefficients:
     def test_afocal_grid_without_grid_pkg_returns_all_terms_and_finite_metrics(
         self, afocal_two_lens
     ):
-        """Afocal pupil-coordinate channels should support Zernike fitting."""
+        """A fully transmitted afocal disk fits terms and reports full coverage."""
         from rayoptics_web_utils.raygrid import make_ray_grid
         from rayoptics_web_utils.zernike import get_zernike_coefficients
 
@@ -447,6 +447,23 @@ class TestGetZernikeCoefficients:
         )
         assert result["reference_kind"] == "afocal_plane_wave"
         assert result["sampling_measure"] == "uniform_normalized_input_pupil_cells"
+        assert result["support_coverage"] == pytest.approx(1.0)
+
+    def test_afocal_coverage_counts_blocked_disk_samples(self, afocal_two_lens, monkeypatch):
+        """Coverage excludes square corners but retains blocked disk cells."""
+        from types import SimpleNamespace
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        axis = np.linspace(-1, 1, 5)
+        xx, yy = np.meshgrid(axis, axis)
+        opd = np.zeros_like(xx)
+        opd[2, 2] = np.nan
+        monkeypatch.setattr(
+            "rayoptics_web_utils.raygrid.make_ray_grid",
+            lambda *args, **kwargs: SimpleNamespace(grid=np.array([xx, yy, opd])),
+        )
+        result = get_zernike_coefficients(afocal_two_lens, 0, 1, [(0, 0)])
+        assert result["support_coverage"] == pytest.approx(12 / 13)
 
     def test_finite_centroid_returns_all_terms_and_finite_metrics(
         self, cooke_triplet
