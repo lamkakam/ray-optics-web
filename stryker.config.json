@@ -6,6 +6,7 @@
     "enableFindRelatedTests": true
   },
   "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
   "mutate": [
     "src/**/*.{ts,tsx}",
     "!src/**/*.{test,spec}.{ts,tsx}",
