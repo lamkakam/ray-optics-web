@@ -58,7 +58,9 @@ interface ZernikeTermsModalProps {
  * - The selected ordering is passed through `onFetchData`; the worker converts it to explicit `(n, m)` terms before calling Python.
  * - Imports `ZernikeData` and `ZernikeOrdering` from `features/lens-editor/types/zernikeData`, and Zernike runtime constants/helpers from `features/lens-editor/lib/zernikeData`.
  * - Summary section displays direct P-V/RMS WFE, fit residual RMS, projected
- *   pupil coverage, and coherent reference-point intensity as `Chip` components.
+ *   pupil coverage, and the displayed `Approx. Strehl` metric as `Chip`
+ *   components. The value uses the existing `strehl_ratio` field and its
+ *   four-decimal formatting.
  * - Uses `<MathJax>` for Zernike notation; context provided by ancestor (`page.tsx`).
  * - **Loading states**:
  * - Initial load (`loading && !data`): shows "Loading…" text, no table.
@@ -75,7 +77,7 @@ interface ZernikeTermsModalProps {
  * - Scrollable table area (`max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto`) — viewport-relative height reserves ~26rem for static overhead (title, dropdowns, summary chips, fixed footer, and modal padding), preventing the table from pushing modal content beyond the dialog height on smaller screens. The clamp keeps at least 5rem of table space when the viewport is tight and caps the table at 32rem on larger screens.
  * - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
  * - First column header is "Noll j" or "Fringe j" depending on ordering
- * - Summary: wrapping flex row of direct wavefront, fit, support, and reference-intensity metrics
+ * - Summary: wrapping flex row of direct wavefront, fit, support, and approximate Strehl metrics
  * - `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
  * - Ok button aligned right
  *
@@ -259,7 +261,7 @@ function ZernikeTermsModalContent({
                 <strong>Pupil Coverage:</strong> {(100 * data.support_coverage).toFixed(1)}%
               </Chip>
               <Chip>
-                <strong>Reference Intensity:</strong> {data.strehl_ratio.toFixed(4)}
+                <strong>Approx. Strehl:</strong> {data.strehl_ratio.toFixed(4)}
               </Chip>
             </div>
             {loading && <LoadingMask />}

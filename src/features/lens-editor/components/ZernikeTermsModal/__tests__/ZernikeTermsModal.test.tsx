@@ -176,7 +176,7 @@ describe("ZernikeTermsModal", () => {
     expect(rows.length).toBe(NUM_FRINGE_TERMS + 1);
   });
 
-  it("shows direct wavefront, fit, support, and reference-intensity metrics", async () => {
+  it("shows direct wavefront, fit, support, and approximate Strehl metrics", async () => {
     const onFetchData = createMockFetchData();
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
@@ -186,7 +186,7 @@ describe("ZernikeTermsModal", () => {
     expect(chips[1]).toHaveTextContent("RMS WFE: 0.0523 waves");
     expect(chips[2]).toHaveTextContent("Fit Residual RMS: 0.0017 waves");
     expect(chips[3]).toHaveTextContent("Pupil Coverage: 94.3%");
-    expect(chips[4]).toHaveTextContent("Reference Intensity: 0.8912");
+    expect(chips[4]).toHaveTextContent("Approx. Strehl: 0.8912");
   });
 
   it("dropdown changes call onFetchData with new indices and current ordering", async () => {

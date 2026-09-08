@@ -10,8 +10,8 @@
  * computations to finish without an Error dialog. OPD Fan is exercised at the
  * 0.707 and full 4 mm fields. Zernike Terms is exercised first with manual
  * aperture dimensions, then again after rebuilding with auto aperture dimensions;
- * its summary must expose direct WFE, fit residual, pupil coverage, and coherent
- * reference-point intensity.
+ * its summary must expose direct WFE, fit residual, pupil coverage, and the
+ * approximate Strehl metric.
  * The immersion objective is also rebuilt at a 0.1 mm Object Height, where its
  * unit Object-NA boundary is unvignetted.
  */
@@ -150,7 +150,7 @@ for (const objective of forwardObjectiveCases) {
       await expect(zernikeDialog.getByText("RMS WFE:")).toBeVisible();
       await expect(zernikeDialog.getByText("Fit Residual RMS:")).toBeVisible();
       await expect(zernikeDialog.getByText("Pupil Coverage:")).toBeVisible();
-      await expect(zernikeDialog.getByText("Reference Intensity:")).toBeVisible();
+      await expect(zernikeDialog.getByText("Approx. Strehl:")).toBeVisible();
       await zernikeDialog.getByRole("button", { name: "Ok", exact: true }).click();
       await expect(zernikeDialog).toBeHidden();
     };
