@@ -1,22 +1,25 @@
-"""Fit caller-ordered Zernike terms to RayOptics OPD grids.
+"""Fit caller-ordered Zernike terms to explicit wavefront samples.
 
 Python receives explicit ``(n, m)`` terms and is independent of Noll or Fringe
 index ordering. Coefficients and wavefront errors are in waves at the traced
 wavelength. Unnormalized coefficients follow the ATMOS/OSLO convention; dividing
 by ``sqrt((2 - δ[m,0]) * (n + 1))`` gives each term's RMS contribution.
 
-RayOptics computes OPD with the Hopkins equally inclined chord method. Finite-pupil
-fits use its precomputed exit-pupil ``p_coord`` values, normalized by their maximum
-radial extent, with paraxial exit-pupil radius only as a near-zero fallback.
-Afocal grids do not carry that finite ``grid_pkg`` and instead use their existing
-normalized pupil-coordinate channels. Vignetted, blocked, non-finite, and
-``rho > 1`` samples are excluded.
+RayOptics computes OPD with the Hopkins equally inclined chord method. Finite
+fits intersect outgoing rays with the same physical reference sphere, use a
+chief-ray-centred enclosing projected circle, and integrate connected cells by
+orthographically projected area. Afocal grids retain their documented uniform
+normalized-pupil sampling path. Vignetted, blocked, non-finite, and unsupported
+projected branches are excluded or rejected explicitly.
 
 The model grid is expressed in central-wavelength waves and is scaled through the
 model's wavelength-unit conversion before fitting. ``image_point="chief_ray"``
 preserves the historical reference; ``"centroid"`` uses the shared centroid
-reference. Relative to OSLO, off-axis Z3 may differ through its central-reference-
-ray convention, while small Z1/Z4 offsets can reflect reference-sphere radius.
+reference. Sampled RMS is the weighted standard deviation of accepted OPD and
+does not depend on the fitted piston or requested term list. ``strehl_ratio`` is
+the coherent intensity at the chosen reference point under a uniform scalar
+amplitude assumption, not a searched peak Strehl. No OSLO ordering or
+minimum-RMS reference optimization is implied.
 """
 
 import math
@@ -31,8 +34,8 @@ ZernikeTerm = tuple[int, int]
 def noll_norm_factor(n: int, m: int) -> float:
     """Noll normalization factor N_n^m = sqrt((2 - δ_{m,0})(n + 1)).
 
-    The RMS-normalized Zernike polynomial is Z̃ = N · Z_unnorm.
-    To convert unnormalized coefficients to RMS-normalized: c_rms = c / N.
+    The unit-disk RMS-normalized polynomial is Z̃ = N · Z_unnorm.
+    To convert unnormalized coefficients to that convention: c_rms = c / N.
 
     Args:
         n: Radial Zernike order.
@@ -49,8 +52,9 @@ def unnormalized_to_rms_normalized(
 ) -> list[float]:
     """Convert unnormalized Zernike coefficients to RMS-normalized.
 
-    Each coefficient is divided by the Noll normalization factor N_n^m,
-    so each output coefficient directly gives the RMS contribution of that term.
+    Each coefficient is divided by the Noll normalization factor N_n^m. The
+    result is the conventional unit-disk RMS normalization; partial support
+    does not make these independent measured RMS contributions.
 
     Args:
         coeffs: Zernike coefficients to convert.
@@ -59,8 +63,11 @@ def unnormalized_to_rms_normalized(
     Returns:
         RMS-normalized Zernike coefficients.
     """
+    if len(coeffs) != len(zernike_terms):
+        raise ValueError("Coefficients and Zernike terms must have the same length.")
+    validated_terms = _validated_zernike_terms(zernike_terms)
     result = []
-    for coeff, (n, m) in zip(coeffs, zernike_terms):
+    for coeff, (n, m) in zip(coeffs, validated_terms, strict=True):
         result.append(coeff / noll_norm_factor(n, abs(m)))
     return result
 
@@ -111,52 +118,154 @@ def zernike_polynomial(n: int, m: int, rho: NDArray, theta: NDArray) -> NDArray:
     return Z
 
 
-def fit_zernike(opd_grid: NDArray, zernike_terms: list[ZernikeTerm]) -> NDArray:
-    """Fit Zernike polynomials to a RayGrid wavefront.
+def _validated_zernike_terms(zernike_terms) -> list[ZernikeTerm]:
+    """Return validated tuple terms from Python or JSON-decoded pair sequences."""
+    if not zernike_terms:
+        raise ValueError("At least one Zernike term is required.")
+    validated: list[ZernikeTerm] = []
+    for term in zernike_terms:
+        if not isinstance(term, (list, tuple)) or len(term) != 2:
+            raise ValueError("Each Zernike term must be a two-item (n, m) pair.")
+        n, m = term
+        if (
+            isinstance(n, bool)
+            or isinstance(m, bool)
+            or not isinstance(n, (int, np.integer))
+            or not isinstance(m, (int, np.integer))
+            or n < 0
+        ):
+            raise ValueError(
+                "Zernike radial and azimuthal orders must be valid integers."
+            )
+        validated.append((int(n), int(m)))
+    if len(set(validated)) != len(validated):
+        raise ValueError("Zernike terms must not contain duplicate entries.")
+    for n, m in validated:
+        if abs(m) > n:
+            raise ValueError("Zernike azimuthal order must not exceed radial order.")
+        if (n - abs(m)) % 2 != 0:
+            raise ValueError("Zernike radial and azimuthal orders must have even parity.")
+    return validated
+
+
+def _fit_zernike_details(
+    opd_grid: NDArray,
+    zernike_terms: list[ZernikeTerm],
+    weights: NDArray | None = None,
+) -> tuple[NDArray, float, int, float]:
+    """Fit validated samples and return coefficients, residual, rank, and condition."""
+    validated_terms = _validated_zernike_terms(zernike_terms)
+    grid = np.asarray(opd_grid, dtype=float)
+    if grid.ndim < 2 or grid.shape[0] != 3:
+        raise ValueError(
+            "OPD grid must have a leading coordinate dimension of length 3."
+        )
+    px = grid[0].ravel()
+    py = grid[1].ravel()
+    opd = grid[2].ravel()
+    if weights is None:
+        sample_weights = np.ones_like(opd)
+    else:
+        weight_array = np.asarray(weights, dtype=float)
+        if weight_array.shape != grid.shape[1:]:
+            raise ValueError("Zernike weights must match the OPD sample shape.")
+        sample_weights = weight_array.ravel()
+        if np.any(sample_weights < 0.0):
+            raise ValueError("Zernike quadrature weights must not be negative.")
+
+    finite_coordinates = np.isfinite(px) & np.isfinite(py)
+    valid = (
+        finite_coordinates
+        & np.isfinite(opd)
+        & np.isfinite(sample_weights)
+        & (sample_weights > 0.0)
+    )
+    if np.any(np.isfinite(opd) & ~finite_coordinates):
+        raise ValueError("Finite OPD samples require finite pupil coordinates.")
+    if np.any(np.isfinite(opd) & finite_coordinates & ~np.isfinite(sample_weights)):
+        raise ValueError("Finite OPD samples require finite quadrature weights.")
+    rho = np.hypot(px, py)
+    valid &= rho <= 1.0 + 1.0e-12
+    px, py, opd = px[valid], py[valid], opd[valid]
+    sample_weights = sample_weights[valid]
+    rho = np.hypot(px, py)
+    theta = np.arctan2(py, px)
+    if len(opd) < len(validated_terms):
+        raise ValueError("Insufficient valid samples for the requested Zernike terms.")
+
+    design = np.column_stack(
+        [zernike_polynomial(n, m, rho, theta) for n, m in validated_terms]
+    )
+    root_weight = np.sqrt(sample_weights)
+    weighted_design = design * root_weight[:, np.newaxis]
+    weighted_opd = opd * root_weight
+    coeffs, _, rank, singular_values = np.linalg.lstsq(
+        weighted_design, weighted_opd, rcond=None
+    )
+    if rank != len(validated_terms):
+        raise ValueError(
+            f"Zernike design matrix is rank deficient ({rank} < {len(validated_terms)})."
+        )
+    if singular_values[-1] <= 0.0:
+        raise ValueError("Zernike design matrix has invalid singular values.")
+    condition = float(singular_values[0] / singular_values[-1])
+    if not np.isfinite(condition) or condition > 1.0e12:
+        raise ValueError(f"Zernike design matrix is ill-conditioned ({condition:.3e}).")
+    fitted_residual = opd - design @ coeffs
+    residual_rms = float(
+        np.sqrt(np.average(fitted_residual * fitted_residual, weights=sample_weights))
+    )
+    return coeffs, residual_rms, int(rank), condition
+
+
+def fit_zernike(
+    opd_grid: NDArray,
+    zernike_terms: list[ZernikeTerm],
+    weights: NDArray | None = None,
+) -> NDArray:
+    """Fit Zernike polynomials by weighted QR/SVD least squares.
 
     Args:
         opd_grid: shape (3, N, N) — [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves.
-        zernike_terms: explicit ordered (n, m) terms to fit.
+        zernike_terms: Explicit ordered ``(n, m)`` terms to fit.
+        weights: Optional positive quadrature weights matching the sample grid.
 
     Returns:
         1-D array of Zernike coefficients in waves, length len(zernike_terms).
     """
-    px = opd_grid[0].ravel()
-    py = opd_grid[1].ravel()
-    opd = opd_grid[2].ravel()
-
-    valid = ~np.isnan(opd)
-    px, py, opd = px[valid], py[valid], opd[valid]
-
-    rho = np.sqrt(px**2 + py**2)
-    theta = np.arctan2(py, px)
-
-    mask = rho <= 1.0
-    rho, theta, opd = rho[mask], theta[mask], opd[mask]
-
-    num_terms = len(zernike_terms)
-    Z = np.zeros((len(opd), num_terms))
-    for index, (n, m) in enumerate(zernike_terms):
-        Z[:, index] = zernike_polynomial(n, m, rho, theta)
-
-    coeffs, _, _, _ = np.linalg.lstsq(Z, opd, rcond=None)
-    return coeffs
+    return _fit_zernike_details(opd_grid, zernike_terms, weights)[0]
 
 
-def _monochromatic_strehl(opd_waves: NDArray) -> float:
-    """Strehl = |mean(exp(i·2π·W))|² over valid pupil points.
+def _monochromatic_strehl(
+    opd_waves: NDArray,
+    weights: NDArray | None = None,
+) -> float:
+    """Return coherent reference-point intensity for uniform scalar amplitude.
 
     Args:
         opd_waves: Optical path differences in waves.
+        weights: Optional positive integration weights matching ``opd_waves``.
 
     Returns:
         Monochromatic Strehl ratio, or `0.0` when no samples are valid.
     """
-    valid = opd_waves[~np.isnan(opd_waves)]
-    if len(valid) == 0:
+    opd_array = np.asarray(opd_waves, dtype=float)
+    if weights is None:
+        weight_array = np.ones_like(opd_array)
+    else:
+        weight_array = np.asarray(weights, dtype=float)
+        if weight_array.shape != opd_array.shape:
+            raise ValueError("Strehl weights must match OPD samples.")
+    valid = (
+        np.isfinite(opd_array)
+        & np.isfinite(weight_array)
+        & (weight_array > 0.0)
+    )
+    if not np.any(valid):
         return 0.0
-    phase = np.exp(1j * 2 * np.pi * valid)
-    return float(np.abs(np.mean(phase)) ** 2)
+    phase = np.exp(1j * 2 * np.pi * opd_array[valid])
+    coherent_mean = np.average(phase, weights=weight_array[valid])
+    return float(np.abs(coherent_mean) ** 2)
 
 
 def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray:
@@ -176,17 +285,12 @@ def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) 
 
 
 def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
-    """Build (3, N, N) grid with exit pupil coordinates and corrected OPD.
+    """Return the existing normalized grid for the separate afocal path.
 
-    For finite image space, extracts pre-computed exit pupil coordinates from
-    RayGrid's upd_grid (populated by wave_abr_pre_calc during trace_wavefront),
-    then normalizes by the maximum extent of exit pupil coordinates
-    (data-driven radius). Afocal RayGrid-compatible results have no grid_pkg,
-    so their already-normalized pupil-coordinate channels are retained.
-
-    This avoids using the paraxial exit pupil radius for ordinary finite data,
-    where it can be very wrong for tilted/decentered systems. In both paths,
-    only the OPD channel is scaled to the requested wavelength.
+    Finite RayGrid ``p_coord`` values are Hopkins EIC intermediates and are not
+    final pupil coordinates. Finite callers must use
+    ``build_finite_projected_pupil_samples`` so coordinates, OPD, support, and
+    projected-area weights remain one contract.
 
     Args:
         rg: RayGrid instance (already traced).
@@ -196,49 +300,12 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     Returns:
         (3, N, N) array: [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves.
     """
+    if getattr(rg, "grid_pkg", None) is not None:
+        raise ValueError(
+            "Finite Zernike sampling requires the projected-pupil sample contract."
+        )
     opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
-    grid_pkg = getattr(rg, "grid_pkg", None)
-    if grid_pkg is None:
-        return np.array([rg.grid[0], rg.grid[1], opd_grid], dtype=float)
-
-    _, upd_grid = grid_pkg
-    n_rows = len(upd_grid)
-    n_cols = len(upd_grid[0])
-
-    exit_px_raw = np.full((n_rows, n_cols), np.nan)
-    exit_py_raw = np.full((n_rows, n_cols), np.nan)
-    has_finite_pupil = False
-
-    for i in range(n_rows):
-        for j in range(n_cols):
-            entry = upd_grid[i][j]
-            if entry is None:
-                continue
-            if len(entry) == 4:
-                p_coord = entry[1]
-                exit_px_raw[i, j] = p_coord[0]
-                exit_py_raw[i, j] = p_coord[1]
-                has_finite_pupil = True
-            else:
-                exit_px_raw[i, j] = rg.grid[0][i, j]
-                exit_py_raw[i, j] = rg.grid[1][i, j]
-
-    if has_finite_pupil:
-        valid_mask = ~np.isnan(exit_px_raw) & ~np.isnan(exit_py_raw)
-        rho_raw = np.sqrt(exit_px_raw[valid_mask]**2 + exit_py_raw[valid_mask]**2)
-        if len(rho_raw) > 0 and np.max(rho_raw) > 1e-14:
-            exp_radius = float(np.max(rho_raw))
-        else:
-            fod = opm['analysis_results']['parax_data'].fod
-            exp_radius = abs(fod.exp_radius)
-
-        exit_px = exit_px_raw / exp_radius
-        exit_py = exit_py_raw / exp_radius
-    else:
-        exit_px = exit_px_raw
-        exit_py = exit_py_raw
-
-    return np.array([exit_px, exit_py, opd_grid])
+    return np.array([rg.grid[0], rg.grid[1], opd_grid], dtype=float)
 
 
 def get_zernike_coefficients(
@@ -249,14 +316,14 @@ def get_zernike_coefficients(
     image_point: str = "chief_ray",
     num_rays: int = 64,
 ) -> dict:
-    """Return Zernike and wavefront metrics for one field and wavelength.
+    """Return Zernike coefficients and independently sampled wavefront metrics.
 
-    Fits the explicit ordered ``zernike_terms`` against finite EIC exit-pupil
-    coordinates or afocal normalized pupil coordinates using the requested
-    image-point reference. The JSON-safe result contains unnormalized
-    ``coefficients`` and ``rms_normalized_coefficients`` in waves, piston-excluded
-    ``rms_wfe`` and ``pv_wfe`` over ``rho <= 1``, monochromatic ``strehl_ratio``,
-    ``num_terms``, ``field_index``, and ``wavelength_nm``.
+    Finite samples use orthographic reference-sphere coordinates and projected
+    area. Afocal samples retain uniform normalized-pupil cells. The JSON-safe
+    payload reports reference, normalization, sampling measure, support, fit
+    residual/rank/conditioning, and direct weighted mean/RMS/PV. Coefficient
+    normalization is the unit-disk RMS convention; coefficient RSS does not
+    replace measured RMS on partial support.
 
     Args:
         opm: RayOptics optical model.
@@ -281,29 +348,93 @@ def get_zernike_coefficients(
         image_point=image_point,
     )
 
-    grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
+    if getattr(rg, "grid_pkg", None) is None:
+        grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
+        weights = np.ones(grid.shape[1:], dtype=float)
+        valid = np.all(np.isfinite(grid), axis=0) & (
+            np.hypot(grid[0], grid[1]) <= 1.0 + 1.0e-12
+        )
+        weights = np.where(valid, weights, 0.0)
+        sample_metadata = {
+            "sampling_measure": "uniform_normalized_input_pupil_cells",
+            "normalization": "existing_afocal_normalized_pupil",
+            "reference_kind": "afocal_plane_wave",
+            "normalization_radius": 1.0,
+            "support_area": float(np.sum(weights)),
+            "support_coverage": float(
+                np.count_nonzero(valid)
+                / max(1, np.count_nonzero(np.isfinite(grid[0])))
+            ),
+            "sample_count": int(np.count_nonzero(valid)),
+            "boundary_resolution": int(num_rays),
+            "boundary_converged": True,
+        }
+    else:
+        from rayoptics_web_utils.zernike.projected_pupil import (
+            build_finite_projected_pupil_samples,
+        )
+
+        samples = build_finite_projected_pupil_samples(rg, opm, wavelength_nm)
+        grid = samples.grid
+        weights = samples.weights
+        sample_metadata = {
+            "sampling_measure": "projected_reference_sphere_area",
+            "normalization": "chief_ray_centered_enclosing_circle",
+            "reference_kind": "finite_reference_sphere",
+            "reference_length_unit": str(opm.system_spec.dimensions),
+            "reference_radius": float(samples.geometry.radius),
+            "reference_center": [float(value) for value in samples.geometry.center],
+            "reference_pupil_point": [
+                float(value) for value in samples.geometry.pupil_reference
+            ],
+            "reference_x_axis": [float(value) for value in samples.geometry.ex],
+            "reference_y_axis": [float(value) for value in samples.geometry.ey],
+            "reference_z_axis": [float(value) for value in samples.geometry.ez],
+            "normalization_radius": float(samples.normalization_radius),
+            "support_area": float(samples.support_area),
+            "support_coverage": float(samples.support_coverage),
+            "sample_count": int(samples.sample_count),
+            "boundary_resolution": int(samples.boundary_resolution),
+            "boundary_converged": bool(samples.boundary_converged),
+        }
 
     num_terms = len(zernike_terms)
-    coeffs = fit_zernike(grid, zernike_terms)
+    coeffs, fit_residual_rms, fit_rank, condition_number = _fit_zernike_details(
+        grid, zernike_terms, weights
+    )
     coeffs_list = [float(c) for c in coeffs]
 
-    px = grid[0].ravel()
-    py = grid[1].ravel()
     opd_flat = grid[2].ravel()
-    valid_mask = ~np.isnan(opd_flat) & (px**2 + py**2 <= 1.0)
-    opd_pupil = opd_flat[valid_mask] - coeffs_list[0]
-    rms_wfe = float(np.sqrt(np.mean(opd_pupil**2)))
+    weight_flat = weights.ravel()
+    valid_mask = (
+        np.isfinite(opd_flat)
+        & np.isfinite(weight_flat)
+        & (weight_flat > 0.0)
+    )
+    opd_pupil = opd_flat[valid_mask]
+    accepted_weights = weight_flat[valid_mask]
+    weighted_mean = float(np.average(opd_pupil, weights=accepted_weights))
+    centered_opd = opd_pupil - weighted_mean
+    rms_wfe = float(
+        np.sqrt(np.average(centered_opd * centered_opd, weights=accepted_weights))
+    )
     pv_wfe = float(np.max(opd_pupil) - np.min(opd_pupil))
     rms_normalized = unnormalized_to_rms_normalized(coeffs_list, zernike_terms)
-    strehl_ratio = _monochromatic_strehl(grid[2])
+    strehl_ratio = _monochromatic_strehl(grid[2], weights)
 
     return {
         'coefficients': coeffs_list,
         'rms_normalized_coefficients': rms_normalized,
         'rms_wfe': rms_wfe,
         'pv_wfe': pv_wfe,
+        'weighted_mean_wfe': weighted_mean,
+        'fit_residual_rms': fit_residual_rms,
+        'fit_rank': fit_rank,
+        'condition_number': condition_number,
         'strehl_ratio': strehl_ratio,
+        'strehl_assumption': 'uniform_scalar_amplitude_at_reference_point',
         'num_terms': num_terms,
         'field_index': field_index,
         'wavelength_nm': float(wavelength_nm),
+        **sample_metadata,
     }

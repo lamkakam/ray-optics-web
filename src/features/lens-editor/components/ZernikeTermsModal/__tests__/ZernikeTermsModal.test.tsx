@@ -35,10 +35,31 @@ const mockZernikeData: ZernikeData = {
   rms_normalized_coefficients: Array.from({ length: NUM_NOLL_TERMS }, (_, i) => (i + 1) * 0.0005),
   rms_wfe: 0.0523,
   pv_wfe: 0.1842,
+  weighted_mean_wfe: 0.0021,
+  fit_residual_rms: 0.0017,
+  fit_rank: NUM_NOLL_TERMS,
+  condition_number: 12.4,
   strehl_ratio: 0.8912,
+  strehl_assumption: "uniform_scalar_amplitude_at_reference_point",
   num_terms: NUM_NOLL_TERMS,
   field_index: 0,
   wavelength_nm: 587.0,
+  sampling_measure: "projected_reference_sphere_area",
+  normalization: "chief_ray_centered_enclosing_circle",
+  reference_kind: "finite_reference_sphere",
+  reference_length_unit: "mm",
+  reference_radius: 51.2,
+  reference_center: [0, 0, 60.8],
+  reference_pupil_point: [0, 0, 9.6],
+  reference_x_axis: [1, 0, 0],
+  reference_y_axis: [0, 1, 0],
+  reference_z_axis: [0, 0, 1],
+  normalization_radius: 6.5,
+  support_area: 125.1,
+  support_coverage: 0.943,
+  sample_count: 1200,
+  boundary_resolution: 127,
+  boundary_converged: true,
 };
 
 const fieldOptions: SelectOption[] = [
@@ -155,15 +176,17 @@ describe("ZernikeTermsModal", () => {
     expect(rows.length).toBe(NUM_FRINGE_TERMS + 1);
   });
 
-  it("shows P-V WFE, RMS WFE, and Strehl ratio in summary", async () => {
+  it("shows direct wavefront, fit, support, and reference-intensity metrics", async () => {
     const onFetchData = createMockFetchData();
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     const chips = screen.getAllByTestId("chip-mock");
-    expect(chips).toHaveLength(3);
+    expect(chips).toHaveLength(5);
     expect(chips[0]).toHaveTextContent("P-V WFE: 0.1842 waves");
     expect(chips[1]).toHaveTextContent("RMS WFE: 0.0523 waves");
-    expect(chips[2]).toHaveTextContent("Strehl Ratio: 0.8912");
+    expect(chips[2]).toHaveTextContent("Fit Residual RMS: 0.0017 waves");
+    expect(chips[3]).toHaveTextContent("Pupil Coverage: 94.3%");
+    expect(chips[4]).toHaveTextContent("Reference Intensity: 0.8912");
   });
 
   it("dropdown changes call onFetchData with new indices and current ordering", async () => {

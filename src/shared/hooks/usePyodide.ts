@@ -68,7 +68,7 @@ export interface PyodideWorkerAPI {
   getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
   /** Returns third-order Seidel aberration data. */
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
-  /** Returns coefficients for an explicit frontend-selected Zernike ordering. */
+  /** Returns ordered coefficients, direct wavefront metrics, and pupil metadata. */
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
   /** Focuses by monochromatic RMS spot radius. */
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;

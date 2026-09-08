@@ -596,8 +596,8 @@ export async function _getDiffractionMTFData(
 
 /**
  * Converts the requested ordering to explicit Zernike terms, reconstructs them in
- * Python, and parses the returned coefficients. Python receives the explicit term
- * list rather than the ordering name.
+ * Python, and parses coefficients plus direct wavefront and projected-pupil
+ * metadata. Python receives the explicit term list rather than the ordering name.
  *
  * @param numTerms - Number of coefficients; defaults to 37.
  * @param ordering - TypeScript-owned term ordering; defaults to Noll ordering.
