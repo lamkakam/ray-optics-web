@@ -138,6 +138,33 @@ class TestMakeRayGrid:
         rebuilt = result.update_data(build="rebuild")
         assert rebuilt is result
 
+    def test_centroid_grid_refreshes_wavelength_aiming_before_sampling(
+        self, dispersive_image_space_model
+    ):
+        """A centroid grid is independent of the previously traced wavelength."""
+        from rayoptics_web_utils.raygrid import make_ray_grid
+
+        opm = dispersive_image_space_model
+        wavelengths = opm.optical_spec.spectral_region.wavelengths
+        make_ray_grid(
+            opm, fi=1, wavelength_nm=wavelengths[0], num_rays=7,
+            image_point="centroid"
+        )
+        first_d = make_ray_grid(
+            opm, fi=1, wavelength_nm=wavelengths[1], num_rays=7,
+            image_point="centroid"
+        ).grid.copy()
+        make_ray_grid(
+            opm, fi=1, wavelength_nm=wavelengths[2], num_rays=7,
+            image_point="centroid"
+        )
+        second_d = make_ray_grid(
+            opm, fi=1, wavelength_nm=wavelengths[1], num_rays=7,
+            image_point="centroid"
+        ).grid.copy()
+
+        np.testing.assert_allclose(first_d, second_d, equal_nan=True, atol=1.0e-12)
+
     def test_centroid_wavefront_removes_piston_and_both_tilts(self, cooke_triplet):
         """The centroid wavefront reference is a weighted best-fit sphere."""
         from rayoptics_web_utils.raygrid import make_ray_grid
@@ -158,6 +185,31 @@ class TestMakeRayGrid:
         coefficients = np.linalg.lstsq(design, opd[valid], rcond=None)[0]
 
         assert coefficients == pytest.approx([0.0, 0.0, 0.0], abs=1.0e-8)
+
+    def test_tilted_image_reference_uses_complete_global_transform(
+        self, tilted_houghton
+    ):
+        """Sphere centre and exit-pupil reference share one global frame."""
+        from rayoptics_web_utils.raygrid import make_ray_grid
+        from rayoptics_web_utils.zernike.projected_pupil import (
+            reference_sphere_geometry_from_ray_grid,
+        )
+
+        wavelength = tilted_houghton.optical_spec.spectral_region.central_wvl
+        ray_grid = make_ray_grid(
+            tilted_houghton, fi=0, wavelength_nm=wavelength, num_rays=9
+        )
+        geometry = reference_sphere_geometry_from_ray_grid(
+            ray_grid, tilted_houghton
+        )
+        image_rotation, image_translation = tilted_houghton.seq_model.gbl_tfrms[-1]
+        expected_center = image_rotation @ ray_grid.ref_sphere[0] + image_translation
+
+        np.testing.assert_allclose(geometry.center, expected_center, atol=1.0e-10)
+        assert geometry.radius == pytest.approx(
+            np.linalg.norm(geometry.center - geometry.pupil_reference)
+        )
+        assert ray_grid.ref_sphere[2] == pytest.approx(geometry.radius)
 
     def test_afocal_centroid_wavefront_removes_piston_and_both_tilts(
         self, afocal_two_lens

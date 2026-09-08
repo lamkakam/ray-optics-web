@@ -155,6 +155,112 @@ class TestFitZernike:
         for j, c in target.items():
             assert abs(coeffs[j - 1] - c) < 0.02, f"Z{j} = {coeffs[j-1]}, expected {c}"
 
+    def test_weighted_nonuniform_samples_recover_known_mixture(self):
+        """Projected-area weights are applied through weighted least squares."""
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_polynomial
+
+        x = np.array([-0.8, -0.55, -0.1, 0.2, 0.65, 0.9])
+        y = np.array([-0.7, -0.35, 0.05, 0.4, 0.75])
+        xx, yy = np.meshgrid(x, y)
+        rho = np.hypot(xx, yy)
+        theta = np.arctan2(yy, xx)
+        terms = [(2, 0), (0, 0), (1, 1), (2, -2)]
+        target = np.array([0.7, -0.2, 0.35, -0.45])
+        opd = sum(
+            coefficient * zernike_polynomial(n, m, rho, theta)
+            for coefficient, (n, m) in zip(target, terms, strict=True)
+        )
+        opd[rho > 1.0] = np.nan
+        weights = 0.2 + (xx + 1.0) ** 2 + 0.3 * (yy + 1.0)
+        weights[rho > 1.0] = 0.0
+
+        result = fit_zernike(np.array([xx, yy, opd]), terms, weights=weights)
+
+        np.testing.assert_allclose(result, target, atol=1.0e-11)
+
+    @pytest.mark.parametrize(
+        "terms, message",
+        [
+            ([(0, 0), (2, 1)], "parity"),
+            ([(0, 0), (1, 2)], "azimuthal"),
+            ([(0, 0), (0, 0)], "duplicate"),
+        ],
+    )
+    def test_invalid_term_contract_is_rejected(self, terms, message):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        axis = np.linspace(-1.0, 1.0, 5)
+        xx, yy = np.meshgrid(axis, axis)
+        opd = np.zeros_like(xx)
+        opd[np.hypot(xx, yy) > 1.0] = np.nan
+
+        with pytest.raises(ValueError, match=message):
+            fit_zernike(np.array([xx, yy, opd]), terms)
+
+    def test_rank_deficient_fit_is_rejected(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        x = np.linspace(-1.0, 1.0, 7)
+        grid = np.array([x[None, :], np.zeros((1, 7)), np.zeros((1, 7))])
+
+        with pytest.raises(ValueError, match="rank"):
+            fit_zernike(grid, [(0, 0), (1, 1), (1, -1)])
+
+    def test_negative_quadrature_weight_is_rejected(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        axis = np.linspace(-1.0, 1.0, 7)
+        xx, yy = np.meshgrid(axis, axis)
+        opd = np.zeros_like(xx)
+        opd[np.hypot(xx, yy) > 1.0] = np.nan
+        weights = np.ones_like(opd)
+        weights[3, 3] = -1.0
+
+        with pytest.raises(ValueError, match="negative"):
+            fit_zernike(np.array([xx, yy, opd]), [(0, 0)], weights)
+
+    def test_json_decoded_term_pairs_are_accepted(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        axis = np.linspace(-1.0, 1.0, 7)
+        xx, yy = np.meshgrid(axis, axis)
+        opd = np.full_like(xx, 0.4)
+        opd[np.hypot(xx, yy) > 1.0] = np.nan
+
+        coefficients = fit_zernike(np.array([xx, yy, opd]), [[0, 0]])
+
+        assert coefficients == pytest.approx([0.4])
+
+    def test_rotation_covariance_preserves_sine_cosine_pair_norm(self):
+        """Rotating pupil axes mixes a mode pair without changing its norm."""
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_polynomial
+
+        axis = np.linspace(-1.0, 1.0, 41)
+        xx, yy = np.meshgrid(axis, axis)
+        rho = np.hypot(xx, yy)
+        theta = np.arctan2(yy, xx)
+        cosine_coefficient = 0.7
+        sine_coefficient = -0.35
+        opd = (
+            cosine_coefficient * zernike_polynomial(2, 2, rho, theta)
+            + sine_coefficient * zernike_polynomial(2, -2, rho, theta)
+        )
+        opd[rho > 1.0] = np.nan
+        rotation = np.deg2rad(23.0)
+        rotated_x = np.cos(rotation) * xx + np.sin(rotation) * yy
+        rotated_y = -np.sin(rotation) * xx + np.cos(rotation) * yy
+
+        original = fit_zernike(
+            np.array([xx, yy, opd]), [(2, 2), (2, -2)]
+        )
+        rotated = fit_zernike(
+            np.array([rotated_x, rotated_y, opd]), [(2, 2), (2, -2)]
+        )
+
+        assert np.linalg.norm(rotated) == pytest.approx(
+            np.linalg.norm(original), abs=1.0e-12
+        )
+
 
 class TestNollNormFactor:
     """Test Noll normalization factor N_n^m = sqrt((2 - delta_{m,0})(n + 1))."""
@@ -194,6 +300,12 @@ class TestUnnormalizedToRmsNormalized:
         result = unnormalized_to_rms_normalized(coeffs, NOLL_TERMS_22[:5])
         assert abs(result[0] - 2.5) < 1e-12
 
+    def test_rejects_mismatched_coefficient_and_term_lengths(self):
+        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
+
+        with pytest.raises(ValueError, match="same length"):
+            unnormalized_to_rms_normalized([1.0], [(0, 0), (1, 1)])
+
 
 class TestGetZernikeCoefficients:
     """Integration tests with Cooke Triplet model."""
@@ -228,8 +340,8 @@ class TestGetZernikeCoefficients:
         np.testing.assert_allclose(result, expected, equal_nan=True)
         assert result is not opd_grid
 
-    def test_exit_pupil_grid_scales_opd_with_system_unit_wavelength_conversion(self):
-        """OPD scaling should use OpticalModel wavelength unit conversion."""
+    def test_finite_eic_grid_is_rejected_as_final_pupil_coordinates(self):
+        """Finite Hopkins p_coord intermediates cannot enter Zernike fitting."""
         from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
 
         class FakeSpectralRegion:
@@ -256,10 +368,10 @@ class TestGetZernikeCoefficients:
 
         opm = FakeOpticalModel()
 
-        grid = _extract_exit_pupil_grid(FakeRayGrid(), opm, wavelength_nm=1000.0)
+        with pytest.raises(ValueError, match="projected-pupil sample contract"):
+            _extract_exit_pupil_grid(FakeRayGrid(), opm, wavelength_nm=1000.0)
 
-        assert opm.converted_wavelengths == [500.0, 1000.0]
-        assert grid[2, 0, 0] == pytest.approx(2.0 * 600.0 / 1100.0)
+        assert opm.converted_wavelengths == []
 
     def test_afocal_grid_keeps_normalized_coordinates_and_scales_only_opd(self):
         """Afocal coordinates should pass through while OPD changes wavelength."""
@@ -301,7 +413,7 @@ class TestGetZernikeCoefficients:
     def test_afocal_grid_without_grid_pkg_returns_all_terms_and_finite_metrics(
         self, afocal_two_lens
     ):
-        """Afocal pupil-coordinate channels should support Zernike fitting."""
+        """A fully transmitted afocal disk fits terms and reports full coverage."""
         from rayoptics_web_utils.raygrid import make_ray_grid
         from rayoptics_web_utils.zernike import get_zernike_coefficients
 
@@ -333,6 +445,25 @@ class TestGetZernikeCoefficients:
                 [result["rms_wfe"], result["pv_wfe"], result["strehl_ratio"]]
             )
         )
+        assert result["reference_kind"] == "afocal_plane_wave"
+        assert result["sampling_measure"] == "uniform_normalized_input_pupil_cells"
+        assert result["support_coverage"] == pytest.approx(1.0)
+
+    def test_afocal_coverage_counts_blocked_disk_samples(self, afocal_two_lens, monkeypatch):
+        """Coverage excludes square corners but retains blocked disk cells."""
+        from types import SimpleNamespace
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        axis = np.linspace(-1, 1, 5)
+        xx, yy = np.meshgrid(axis, axis)
+        opd = np.zeros_like(xx)
+        opd[2, 2] = np.nan
+        monkeypatch.setattr(
+            "rayoptics_web_utils.raygrid.make_ray_grid",
+            lambda *args, **kwargs: SimpleNamespace(grid=np.array([xx, yy, opd])),
+        )
+        result = get_zernike_coefficients(afocal_two_lens, 0, 1, [(0, 0)])
+        assert result["support_coverage"] == pytest.approx(12 / 13)
 
     def test_finite_centroid_returns_all_terms_and_finite_metrics(
         self, cooke_triplet
@@ -378,6 +509,110 @@ class TestGetZernikeCoefficients:
         assert isinstance(result, dict)
         for key in ['coefficients', 'rms_wfe', 'pv_wfe', 'num_terms', 'field_index', 'wavelength_nm']:
             assert key in result, f"Missing key: {key}"
+
+    def test_finite_result_reports_explicit_sampling_contract(self, cooke_triplet):
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        result = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=1,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22,
+            num_rays=13,
+        )
+
+        assert result["sampling_measure"] == "projected_reference_sphere_area"
+        assert result["normalization"] == "chief_ray_centered_enclosing_circle"
+        assert result["reference_kind"] == "finite_reference_sphere"
+        assert result["reference_length_unit"] == "mm"
+        assert result["reference_radius"] > 0.0
+        assert result["normalization_radius"] > 0.0
+        assert 0.0 < result["support_coverage"] <= 1.0
+        assert result["support_area"] > 0.0
+        assert result["sample_count"] >= len(NOLL_TERMS_22)
+        assert result["fit_rank"] == len(NOLL_TERMS_22)
+        assert np.isfinite(result["condition_number"])
+        assert result["fit_residual_rms"] >= 0.0
+        assert result["boundary_resolution"] >= 13
+        assert isinstance(result["boundary_converged"], bool)
+
+    def test_offset_clipped_pupil_preserves_partial_support(
+        self, sasian_triplet_autoaperture
+    ):
+        """An offset aperture remains partial support inside the enclosing disk."""
+        from rayoptics.elem.surface import Circular
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        stop = sasian_triplet_autoaperture.seq_model.stop_surface
+        sasian_triplet_autoaperture.seq_model.ifcs[stop].clear_apertures = [
+            Circular(radius=1.5, x_offset=0.3)
+        ]
+        result = get_zernike_coefficients(
+            sasian_triplet_autoaperture,
+            field_index=0,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22[:6],
+            num_rays=9,
+        )
+
+        assert result["sample_count"] >= len(NOLL_TERMS_22[:6])
+        assert 0.0 < result["support_coverage"] < 0.7
+        assert result["support_area"] < (
+            np.pi * result["normalization_radius"] ** 2
+        )
+
+    def test_metrics_do_not_depend_on_requested_term_list(self, cooke_triplet):
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        short = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=0,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22[:6],
+            num_rays=13,
+        )
+        long = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=0,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22,
+            num_rays=13,
+        )
+
+        assert short["rms_wfe"] == pytest.approx(long["rms_wfe"], abs=1.0e-12)
+        assert short["pv_wfe"] == pytest.approx(long["pv_wfe"], abs=1.0e-12)
+        assert short["weighted_mean_wfe"] == pytest.approx(
+            long["weighted_mean_wfe"], abs=1.0e-12
+        )
+        assert short["fit_residual_rms"] >= long["fit_residual_rms"]
+
+    def test_piston_location_does_not_change_sampled_metrics(self, cooke_triplet):
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        piston_first = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=0,
+            wvl_index=1,
+            zernike_terms=[(0, 0), (1, 1), (1, -1), (2, 0)],
+            num_rays=13,
+        )
+        piston_last = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=0,
+            wvl_index=1,
+            zernike_terms=[(1, 1), (1, -1), (2, 0), (0, 0)],
+            num_rays=13,
+        )
+
+        assert piston_first["rms_wfe"] == pytest.approx(
+            piston_last["rms_wfe"], abs=1.0e-12
+        )
+        assert piston_first["weighted_mean_wfe"] == pytest.approx(
+            piston_last["weighted_mean_wfe"], abs=1.0e-12
+        )
+        assert piston_first["coefficients"][0] == pytest.approx(
+            piston_last["coefficients"][3], abs=1.0e-12
+        )
 
     def test_coefficients_is_list_of_float(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
@@ -501,32 +736,22 @@ class TestGetZernikeCoefficients:
         assert abs(coeffs[0] - 0.568) < 0.1, f"Z1 piston = {coeffs[0]}, expected ~0.568"
         assert abs(coeffs[3] - 0.788) < 0.1, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
 
-    def test_exit_pupil_coords_off_axis_z12(self, cooke_triplet):
-        """Full-field: Z12 (secondary astigmatism) should be large with exit pupil coords."""
+    def test_full_field_projected_pupil_has_finite_nontrivial_aberration(
+        self, cooke_triplet
+    ):
+        """Physical projected coordinates retain a nontrivial full-field fit."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
-        coeffs = result['coefficients']
-        assert abs(coeffs[11]) > 0.5, (
-            f"Z12 = {coeffs[11]}, expected > 0.5 with exit pupil coordinates"
+
+        result = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=2,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22,
         )
 
-    def test_exit_pupil_coords_off_axis_z7_coma(self, cooke_triplet):
-        """Full-field: Z7 (coma Y) should increase with exit pupil coords."""
-        from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
-        coeffs = result['coefficients']
-        assert abs(coeffs[6]) > 0.28, (
-            f"Z7 = {coeffs[6]}, expected > 0.28 with exit pupil coordinates"
-        )
-
-    def test_exit_pupil_coords_off_axis_z11_spherical(self, cooke_triplet):
-        """Full-field: Z11 (primary spherical) magnitude should increase with exit pupil coords."""
-        from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
-        coeffs = result['coefficients']
-        assert abs(coeffs[10]) > 0.6, (
-            f"Z11 = {coeffs[10]}, expected |Z11| > 0.6 with exit pupil coordinates"
-        )
+        assert np.all(np.isfinite(result["coefficients"]))
+        assert np.linalg.norm(result["coefficients"][4:]) > 0.1
+        assert result["sampling_measure"] == "projected_reference_sphere_area"
 
     def test_rms_normalized_key_exists(self, cooke_triplet):
         """rms_normalized_coefficients key exists and is list[float]."""
@@ -555,23 +780,27 @@ class TestGetZernikeCoefficients:
                 f"Z{j}: rms*N = {reconstructed}, coeff = {coeffs[j-1]}"
             )
 
-    def test_raygrid_checks_apertures_without_reapplying_vignetting(self, cooke_triplet):
+    def test_raygrid_checks_apertures_without_reapplying_vignetting(
+        self, cooke_triplet, monkeypatch
+    ):
         """RayGrid checks apertures but does not transform its vignetted box twice."""
-        from unittest.mock import patch
-        from rayoptics.raytr.analyses import RayGrid as RealRayGrid
+        import rayoptics_web_utils.raygrid.opd_reference as reference_module
         from rayoptics_web_utils.zernike import get_zernike_coefficients
 
         captured_kwargs: dict = {}
+        original_trace = reference_module.trace_ray_grid
 
-        class CapturingRayGrid(RealRayGrid):
-            """Capture construction kwargs while retaining subclass behavior."""
+        def capturing_trace(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return original_trace(*args, **kwargs)
 
-            def __init__(self, *args, **kwargs):
-                captured_kwargs.update(kwargs)
-                super().__init__(*args, **kwargs)
-
-        with patch('rayoptics.raytr.analyses.RayGrid', CapturingRayGrid):
-            get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
+        monkeypatch.setattr(reference_module, "trace_ray_grid", capturing_trace)
+        get_zernike_coefficients(
+            cooke_triplet,
+            field_index=0,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22,
+        )
 
         assert captured_kwargs.get('check_apertures') is True, (
             f"Expected check_apertures=True, got {captured_kwargs.get('check_apertures')}"

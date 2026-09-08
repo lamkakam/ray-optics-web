@@ -22,12 +22,11 @@ from rayoptics_web_utils.raygrid.opd_reference import (
 
 
 def _reference_sphere(opm, chief_ray_pkg, image_point: np.ndarray):
-    """Build a RayOptics reference sphere around a complete local image point.
+    """Build a RayOptics sphere from geometry expressed in one global frame.
 
     Args:
         opm: A RayOptics optical model or compatible wavelength-specific model
-            view. Its sequential model supplies the final image gap and local
-            surface transform.
+            view. Its sequential model supplies global surface transforms.
         chief_ray_pkg: A two-item RayOptics tuple
             ``(chief_ray, chief_exit_pupil_segment)``. The exit-pupil segment
             is a RaySeg-compatible sequence whose point entry is a
@@ -45,22 +44,148 @@ def _reference_sphere(opm, chief_ray_pkg, image_point: np.ndarray):
         translation)`` transform from the final optical surface to the image
         surface, with array shapes ``(3, 3)`` and ``(3,)`` respectively.
     """
-    _, chief_exit_pupil_segment = chief_ray_pkg
+    chief_ray, chief_exit_pupil_segment = chief_ray_pkg
     image_point = np.asarray(image_point, dtype=float)
-    point_after_image_gap = image_point.copy()
-    point_after_image_gap[2] += float(opm.seq_model.gaps[-1].thi)
-    sphere_vector = point_after_image_gap - np.asarray(
+    if image_point.shape != (3,) or not np.all(np.isfinite(image_point)):
+        raise ValueError("Reference-sphere image point must be a finite 3-vector.")
+    seq_model = opm.seq_model
+    last_rotation, last_translation = seq_model.gbl_tfrms[-2]
+    image_rotation, image_translation = seq_model.gbl_tfrms[-1]
+    sphere_center_global = image_rotation @ image_point + image_translation
+    exit_distance = float(chief_exit_pupil_segment[2])
+    chief_last_point = np.asarray(chief_ray.ray[-2][mc.p], dtype=float)
+    chief_last_direction = np.asarray(chief_ray.ray[-2][mc.d], dtype=float)
+    pupil_reference_global = (
+        last_rotation @ (chief_last_point + exit_distance * chief_last_direction)
+        + last_translation
+    )
+    radius = float(np.linalg.norm(sphere_center_global - pupil_reference_global))
+    if not np.isfinite(radius) or radius <= np.finfo(float).eps:
+        raise ValueError("Finite reference sphere has an invalid radius.")
+
+    # RayOptics' Hopkins implementation evaluates p_coord and outgoing
+    # directions in the coordinate frame immediately after the final physical
+    # surface. Transform the globally resolved centre into that frame so its
+    # OPD sphere is exactly the sphere used by projected-pupil sampling.
+    sphere_center_last = last_rotation.T @ (
+        sphere_center_global - last_translation
+    )
+    final_physical_interface = chief_exit_pupil_segment[3]
+    sphere_center_after, _ = waveabr.transform_after_surface(
+        final_physical_interface,
+        (sphere_center_last, chief_last_direction),
+    )
+    sphere_vector_after = sphere_center_after - np.asarray(
         chief_exit_pupil_segment[mc.p], dtype=float
     )
-    radius = float(np.linalg.norm(sphere_vector))
-    if not np.isfinite(radius) or radius <= np.finfo(float).eps:
-        raise ValueError("Centroid reference sphere has an invalid radius.")
+    transformed_radius = float(np.linalg.norm(sphere_vector_after))
+    if not np.isclose(transformed_radius, radius, rtol=1.0e-10, atol=1.0e-12):
+        raise ValueError("Reference-sphere coordinate transforms are inconsistent.")
     return (
         image_point,
-        sphere_vector / radius,
+        sphere_vector_after / radius,
         radius,
-        opm.seq_model.lcl_tfrms[-2],
+        seq_model.lcl_tfrms[-2],
     )
+
+
+def _chief_image_point(chief_ray_pkg, foc: float) -> np.ndarray:
+    """Return the complete chief-ray image point after the requested focus shift."""
+    chief_ray, _ = chief_ray_pkg
+    point = np.asarray(chief_ray.ray[-1][mc.p], dtype=float).copy()
+    direction = np.asarray(chief_ray.ray[-1][mc.d], dtype=float)
+    if point.shape != (3,) or direction.shape != (3,) or not np.all(
+        np.isfinite(np.concatenate([point, direction]))
+    ):
+        raise ValueError("Chief ray does not define a finite image reference.")
+    if abs(float(direction[2])) <= np.finfo(float).eps:
+        raise ValueError("Chief ray is parallel to the focused image surface.")
+    return point + (float(foc) / float(direction[2])) * direction
+
+
+class ChiefRayGrid(RayGrid):
+    """Finite RayGrid whose OPD and projected pupil share one reference sphere."""
+
+    def __init__(self, opt_model, f, wl, foc, num_rays):
+        """Initialize and immediately build a chief-ray-referenced finite grid."""
+        self.opt_model = opt_model
+        self.fld = opt_model.optical_spec.field_of_view.fields[f]
+        self.wvl = wl
+        self.foc = foc
+        self.image_pt_2d = None
+        self.image_delta = None
+        self.num_rays = num_rays
+        self.value_if_none = np.nan
+        self.rt_kwargs = {
+            "check_apertures": True,
+            "apply_vignetting": False,
+            "output_filter": None,
+            "rayerr_filter": None,
+        }
+        self.update_data()
+
+    def update_data(self, **kwargs):
+        """Rebuild rays and Hopkins OPD against the transformed chief sphere."""
+        wavelength_model = model_view_for_wavelength_opd(self.opt_model, self.wvl)
+        _, chief_ray_pkg = trace.setup_pupil_coords(
+            wavelength_model, self.fld, self.wvl, self.foc
+        )
+        # Chief-ray aiming is wavelength dependent and must be refreshed before
+        # pupil rays are launched from the optical specification.
+        self.fld.chief_ray = chief_ray_pkg
+        raw_grid = sample_valid_rays(
+            self.opt_model, self.fld, self.wvl, self.foc, self.num_rays
+        )
+        image_point = _chief_image_point(chief_ray_pkg, self.foc)
+        ref_sphere = _reference_sphere(wavelength_model, chief_ray_pkg, image_point)
+        first_order_data = wavelength_model["analysis_results"]["parax_data"].fod
+        updated_grid = []
+        opd_values = np.full((self.num_rays, self.num_rays), np.nan, dtype=float)
+        central_wavelength = self.opt_model.optical_spec.spectral_region.central_wvl
+        waves_scale = 1.0 / self.opt_model.nm_to_sys_units(central_wavelength)
+        for row_index, row in enumerate(raw_grid):
+            updated_row = []
+            for column_index, (_, _, ray_pkg) in enumerate(row):
+                if ray_pkg is None:
+                    updated_row.append(None)
+                    continue
+                precomputed = waveabr.wave_abr_pre_calc(
+                    first_order_data,
+                    self.fld,
+                    self.wvl,
+                    self.foc,
+                    ray_pkg,
+                    chief_ray_pkg,
+                    ref_sphere,
+                )
+                updated_row.append(precomputed)
+                opd_values[row_index, column_index] = waves_scale * waveabr.wave_abr_calc(
+                    first_order_data,
+                    self.fld,
+                    self.wvl,
+                    self.foc,
+                    ray_pkg,
+                    chief_ray_pkg,
+                    precomputed,
+                    ref_sphere,
+                )
+            updated_grid.append(updated_row)
+
+        grid = np.empty((3, self.num_rays, self.num_rays), dtype=float)
+        for row_index, row in enumerate(raw_grid):
+            for column_index, (pupil_x, pupil_y, _) in enumerate(row):
+                grid[0, row_index, column_index] = pupil_x
+                grid[1, row_index, column_index] = pupil_y
+        grid[2] = opd_values
+        self.grid = grid
+        self.raw_grid = raw_grid
+        self.grid_pkg = (raw_grid, updated_grid)
+        self.image_point = image_point
+        self.ref_sphere = ref_sphere
+        self.chief_ray_pkg = chief_ray_pkg
+        self.fld.chief_ray = chief_ray_pkg
+        self.fld.ref_sphere = ref_sphere
+        return self
 
 
 def _linear_opd_coefficients(raw_grid, opd_values) -> np.ndarray:
@@ -317,33 +442,6 @@ def make_ray_grid(
             opm, fi, wavelength_nm, num_rays=num_rays, image_point=image_point,
         )
 
-    from rayoptics.raytr.analyses import RayGrid as CurrentRayGrid
-
-    class WavelengthRayGrid(CurrentRayGrid):
-        """RayGrid whose finite OPD lookup uses copied wavelength indices."""
-
-        def update_data(self, **kwargs):
-            """Build or refocus without mutating cached first-order data."""
-            original_model = self.opt_model
-            self.opt_model = model_view_for_wavelength_opd(
-                original_model,
-                self.wvl,
-            )
-            try:
-                return super().update_data(**kwargs)
-            finally:
-                self.opt_model = original_model
-
     if image_point == "centroid":
         return CentroidRayGrid(opm, fi, wavelength_nm, foc, num_rays)
-    image_point_kwargs = {}
-    return WavelengthRayGrid(
-        opm,
-        f=fi,
-        wl=wavelength_nm,
-        foc=foc,
-        num_rays=num_rays,
-        check_apertures=True,
-        apply_vignetting=False,
-        **image_point_kwargs,
-    )
+    return ChiefRayGrid(opm, fi, wavelength_nm, foc, num_rays)

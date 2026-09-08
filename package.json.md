@@ -1,5 +1,9 @@
 # `package.json`
 
+## Project metadata
+
+The private `ray-optics-web` application is version `0.44.0` and uses the BSD-3-Clause license.
+
 ## Build behavior
 
 `npm run build` runs the static Next.js export and then executes `postbuild`. Post-build processing runs in this order:
