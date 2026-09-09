@@ -12,8 +12,10 @@
 | build                   | 1.5.1       | MIT                                                | https://build.pypa.io                                                |
 | certifi                 | 2026.6.17   | Mozilla Public License 2.0 (MPL 2.0)               | https://github.com/certifi/python-certifi                            |
 | charset-normalizer      | 3.4.9       | MIT                                                | https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md |
+| click                   | 8.5.0       | BSD-3-Clause                                       | https://github.com/pallets/click/                                    |
 | comm                    | 0.2.3       | BSD License                                        | https://github.com/ipython/comm                                      |
 | contourpy               | 1.3.3       | BSD License                                        | https://github.com/contourpy/contourpy                               |
+| coverage                | 7.16.0      | Apache-2.0                                         | https://github.com/coveragepy/coveragepy                             |
 | cycler                  | 0.12.1      | BSD License                                        | https://matplotlib.org/cycler/                                       |
 | debugpy                 | 1.8.21      | MIT License                                        | https://aka.ms/debugpy                                               |
 | decorator               | 5.3.1       | BSD-2-Clause                                       | UNKNOWN                                                              |
@@ -33,8 +35,14 @@
 | jupyter_core            | 5.9.1       | BSD-3-Clause                                       | https://jupyter.org                                                  |
 | jupyterlab_widgets      | 3.0.16      | BSD License                                        | https://github.com/jupyter-widgets/ipywidgets                        |
 | kiwisolver              | 1.5.0       | BSD License                                        | https://github.com/nucleic/kiwi                                      |
+| libcst                  | 1.9.0       | MIT License                                        | https://github.com/Instagram/LibCST/blob/main/CHANGELOG.md           |
+| linkify-it-py           | 2.2.0       | MIT License                                        | https://github.com/tsutsu3/linkify-it-py                             |
+| markdown-it-py          | 4.2.0       | MIT License                                        | https://github.com/executablebooks/markdown-it-py                    |
 | matplotlib              | 3.10.8      | Python Software Foundation License                 | https://matplotlib.org                                               |
 | matplotlib-inline       | 0.2.2       | BSD-3-Clause                                       | https://github.com/ipython/matplotlib-inline                         |
+| mdit-py-plugins         | 0.6.1       | MIT License                                        | https://github.com/executablebooks/mdit-py-plugins                   |
+| mdurl                   | 0.1.2       | MIT License                                        | https://github.com/executablebooks/mdurl                             |
+| mutmut                  | 3.7.0       | BSD-3-Clause                                       | https://github.com/boxed/mutmut                                      |
 | nest-asyncio2           | 1.7.2       | BSD License                                        | https://github.com/Chaoses-Ib/nest-asyncio2                          |
 | numpy                   | 2.4.3       | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | https://numpy.org                                                    |
 | openpyxl                | 3.1.5       | MIT License                                        | https://openpyxl.readthedocs.io                                      |
@@ -60,10 +68,13 @@
 | rayoptics               | 0.9.8       | BSD 3 Clause                                       | https://github.com/mjhoptics/ray-optics                              |
 | regex                   | 2026.7.10   | Apache-2.0 AND CNRI-Python                         | https://github.com/mrabarnett/mrab-regex                             |
 | requests                | 2.34.2      | Apache Software License                            | https://github.com/psf/requests                                      |
+| rich                    | 15.0.0      | MIT License                                        | https://github.com/Textualize/rich                                   |
 | scipy                   | 1.17.1      | BSD License                                        | https://scipy.org/                                                   |
+| setproctitle            | 1.3.7       | BSD License                                        | https://github.com/dvarrazzo/py-setproctitle                         |
 | shiboken6               | 6.11.1      | LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only      | https://pyside.org                                                   |
 | six                     | 1.17.0      | MIT License                                        | https://github.com/benjaminp/six                                     |
 | stack-data              | 0.6.3       | MIT License                                        | http://github.com/alexmojaki/stack_data                              |
+| textual                 | 8.2.8       | MIT License                                        | https://github.com/Textualize/textual                                |
 | tornado                 | 6.5.7       | Apache Software License                            | http://www.tornadoweb.org/                                           |
 | traitlets               | 5.15.1      | BSD License                                        | https://github.com/ipython/traitlets                                 |
 | transforms3d            | 0.4.2       | BSD License                                        | http://github.com/matthew-brett/transforms3d                         |

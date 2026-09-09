@@ -70,6 +70,26 @@ Progress and scores appear in the console. Mutation runs write `reports/mutation
 bash <project-root>/scripts/run-python-tests.sh
 ```
 
+### Local mutation tests for the internal Python package:
+
+Run Mutmut from `<project-root>/src/python` after initializing the venv:
+
+```bash
+# Full Python package campaign; can take substantially longer than pytest
+.venv/bin/mutmut run
+
+# Focused aperture campaign
+.venv/bin/mutmut run "rayoptics_web_utils.aperture.annular*"
+
+# Summarize results
+.venv/bin/mutmut results
+
+# Interactively browse individual mutants
+.venv/bin/mutmut browse
+```
+
+Mutmut 3.7.0 covers all sources in `src/rayoptics_web_utils` and selects tests from `tests/`. Its `mutants/` cache and working tree are Git-ignored. Mutation testing is local-only, surviving mutants are informational, and no CI workflow or mutation-score gate is configured.
+
 ### E2E tests (Playwright):
 
 ```bash

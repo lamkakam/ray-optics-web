@@ -43,6 +43,7 @@ playwright-report/
 src/python/.venv/
 src/python/src/*.egg-info/
 src/python/build/
+src/python/mutants/
 *.whl
 __pycache__/
 *.pyc

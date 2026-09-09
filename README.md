@@ -127,6 +127,26 @@ Runs use per-test coverage and related-test selection with Stryker's default wor
 
 Console output summarizes progress and scores. Open `reports/mutation/mutation.html` for the interactive report or inspect `reports/mutation/mutation.json` programmatically. Each mutation run overwrites these Git-ignored reports, so copy them elsewhere to retain a result. A dry run checks instrumentation and test compatibility without measuring a mutation score or writing reports. See the [Stryker Jest runner documentation](https://stryker-mutator.io/docs/stryker-js/jest-runner/) for integration details.
 
+Mutmut 3.7.0 runs mutation tests for the complete internal `rayoptics_web_utils` Python package through its existing pytest suite. Run these commands from `src/python/` after initializing the venv. Python mutation testing is local-only and has no CI workflow or mutation-score gate.
+
+```bash
+cd src/python
+
+# Full Python package mutation campaign (potentially lengthy)
+.venv/bin/mutmut run
+
+# Focus on the annular aperture implementation
+.venv/bin/mutmut run "rayoptics_web_utils.aperture.annular*"
+
+# Summarize mutation results
+.venv/bin/mutmut results
+
+# Interactively browse individual mutants
+.venv/bin/mutmut browse
+```
+
+Mutmut stores its generated cache and working tree in the Git-ignored `src/python/mutants/` directory. Surviving mutants are informational for local review. See the [Mutmut configuration documentation](https://redirect.github.com/boxed/mutmut#configuration) for the supported configuration contract.
+
 ## Third-Party Licenses (Including Transitive Deps)
 
 See the [list of third-party TypeScript and JavaScript package licenses](./THIRD-PARTY-LICENSES.md) and the [list of third-party Python package licenses](./THIRD-PARTY-PYTHON-LICENSES.md).
