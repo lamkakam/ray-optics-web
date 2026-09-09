@@ -1020,7 +1020,7 @@ describe("public worker guards before initialization", () => {
       expect.stringContaining("get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')"),
       expect.stringContaining("get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=128, max_dims=1024, image_point='chief_ray')"),
       expect.stringContaining("get_diffraction_mtf_data(_build_opm(), 0, 0, num_rays=128, max_dims=256, image_point='chief_ray')"),
-      expect.stringContaining("get_zernike_coefficients(_build_opm(), 0, 0, zernike_terms=zernike_terms, image_point='chief_ray')"),
+      expect.stringContaining("get_zernike_coefficients(_build_opm(), 0, 0, zernike_terms=zernike_terms, image_point='chief_ray', pupil_space='entrance')"),
       expect.stringContaining("evaluate_optimization_problem(_build_opm(), json.loads("),
       expect.stringContaining("optimize_opm(_build_opm(), _optimization_config, image_point='chief_ray')"),
       expect.stringContaining("optimize_glasses(_build_opm(), _optimization_config, image_point='chief_ray'")

@@ -86,9 +86,9 @@ describe("analysisCache", () => {
     expect(proxy.get3rdOrderSeidelData).toHaveBeenCalledTimes(1);
   });
 
-  it("keys Zernike payloads by field, wavelength, ordering, and term count", async () => {
+  it("keys Zernike payloads by field, wavelength, ordering, term count, and pupil space", async () => {
     const proxy = { getZernikeCoefficients: jest.fn().mockResolvedValue({}) } as unknown as PyodideWorkerAPI;
-    const base = { proxy, model, imagePoint: "chief_ray" as const, fieldIndex: 0, wavelengthIndex: 0, ordering: "noll" as const, numTerms: 37 };
+    const base = { proxy, model, imagePoint: "chief_ray" as const, fieldIndex: 0, wavelengthIndex: 0, ordering: "noll" as const, numTerms: 37, pupilSpace: "entrance" as const };
 
     await loadZernikeData(base);
     await loadZernikeData(base);
@@ -96,7 +96,8 @@ describe("analysisCache", () => {
     await loadZernikeData({ ...base, wavelengthIndex: 1 });
     await loadZernikeData({ ...base, ordering: "fringe", numTerms: 36 });
     await loadZernikeData({ ...base, numTerms: 36 });
+    await loadZernikeData({ ...base, pupilSpace: "exit" });
 
-    expect(proxy.getZernikeCoefficients).toHaveBeenCalledTimes(5);
+    expect(proxy.getZernikeCoefficients).toHaveBeenCalledTimes(6);
   });
 });

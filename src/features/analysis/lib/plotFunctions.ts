@@ -11,7 +11,7 @@ import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/se
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
-import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import { getCachedAnalysis } from "@/features/analysis/lib/analysisCache";
 
@@ -179,15 +179,16 @@ interface LoadZernikeDataParams extends LoadSharedAnalysisParams {
   readonly wavelengthIndex: number;
   readonly ordering: ZernikeOrdering;
   readonly numTerms: number;
+  readonly pupilSpace?: ZernikePupilSpace;
 }
 
-/** Loads one complete Zernike payload keyed by all computation selectors. */
-export function loadZernikeData({ proxy, model, fieldIndex, wavelengthIndex, imagePoint = "chief_ray", ordering, numTerms }: LoadZernikeDataParams): Promise<ZernikeData> {
+/** Loads one complete Zernike payload keyed by all selectors, defaulting to Entrance pupil space. */
+export function loadZernikeData({ proxy, model, fieldIndex, wavelengthIndex, imagePoint = "chief_ray", ordering, numTerms, pupilSpace = "entrance" }: LoadZernikeDataParams): Promise<ZernikeData> {
   return getCachedAnalysis(
     model,
     imagePoint,
-    `zernike:${fieldIndex}:${wavelengthIndex}:${ordering}:${numTerms}`,
-    () => proxy.getZernikeCoefficients(model, fieldIndex, wavelengthIndex, imagePoint, numTerms, ordering),
+    `zernike:${fieldIndex}:${wavelengthIndex}:${ordering}:${numTerms}:${pupilSpace}`,
+    () => proxy.getZernikeCoefficients(model, fieldIndex, wavelengthIndex, imagePoint, numTerms, ordering, pupilSpace),
   );
 }
 

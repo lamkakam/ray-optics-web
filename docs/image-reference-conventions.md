@@ -51,11 +51,17 @@ direction cosines.
 The automatic normalization disk is a chief-ray-centred enclosing circle. Its
 radius is resolved on nested pupil grids while the sphere is frozen.
 
-Connected input-pupil cells are triangulated in projected coordinates. Only
+For Exit sampling, connected input-pupil cells are triangulated in projected coordinates. Only
 fully transmitted triangles contribute, preserving clipping and holes; local
 orientation reversals or singular cells are rejected as unsupported folded
-pupil geometry. Vertex weights integrate projected area `dx dy`. Zernike
-coefficients are therefore weighted least-squares coefficients on the actual
+pupil geometry. Vertex weights integrate projected area `dx dy`.
+
+Pupil sampling space is an independent choice from OPD reference geometry.
+`Entrance` fits the wavelength-scaled OPD on RayOptics' normalized relative
+input-pupil grid with equal weights over finite unit-disk samples. `Exit` uses
+the projected reference-sphere coordinates and projected-area weights described
+above. Both finite choices retain the same finite reference sphere for OPD.
+Exit coefficients are therefore weighted least-squares coefficients on the actual
 transmitted support within the disk. On partial support they are not independent
 full-disk orthogonal aberration contributions.
 

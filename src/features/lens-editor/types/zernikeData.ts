@@ -15,11 +15,14 @@ export interface ZernikeData {
   readonly num_terms: number;
   readonly field_index: number;
   readonly wavelength_nm: number;
+  /** Pupil coordinate space used for fitting and quadrature. */
+  readonly pupil_space: ZernikePupilSpace;
   readonly sampling_measure:
     | "projected_reference_sphere_area"
     | "uniform_normalized_input_pupil_cells";
   readonly normalization:
     | "chief_ray_centered_enclosing_circle"
+    | "normalized_input_pupil"
     | "existing_afocal_normalized_pupil";
   readonly reference_kind: "finite_reference_sphere" | "afocal_plane_wave";
   readonly reference_length_unit?: string;
@@ -39,3 +42,6 @@ export interface ZernikeData {
 
 /** Frontend-selected coefficient indexing convention. */
 export type ZernikeOrdering = "noll" | "fringe";
+
+/** Pupil coordinate space used to sample and fit Zernike polynomials. */
+export type ZernikePupilSpace = "entrance" | "exit";
