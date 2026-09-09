@@ -14,7 +14,7 @@
  * - Enables webpack's module-output experiment for every compilation so App Router browser modules shared through Next.js's development cache preserve `{ type: "module" }` instead of rewriting it to a classic worker.
  * - Explicitly enables module output only for client builds and disables it for server builds, keeping Next's development server and page-data collection CommonJS-compatible.
  * - Assigns the client webpack library to `globalThis._N_E`. This preserves Next.js's client export namespace while avoiding the unqualified `_N_E` assignment that is invalid in strict ES-module workers.
- * - Ignores `node:` and `ws` imports in browser bundles. Pyodide 314's universal npm loader contains these imports behind a Node-runtime guard, but webpack otherwise resolves them (and emits an async `ws` chunk) while building the module worker.
+ * - Ignores `node:` and `ws` imports only in browser bundles. Pyodide 314's universal npm loader contains these imports behind a Node-runtime guard, but webpack otherwise resolves them (and emits an async `ws` chunk) while building the module worker. Server compilations retain native Node module resolution for build-time document rendering.
  * - Suppresses only the expression-dependency warning emitted from `node_modules/pyodide/pyodide.mjs`. Pyodide 314's published bundle omitted the upstream `webpackIgnore` comment and regressed a warning fixed in v0.21.3; the module-and-message filter preserves other webpack warnings and any filters supplied by Next.js.
  */
 import type { NextConfig } from "next";
@@ -55,10 +55,12 @@ const developmentConfig: NextConfig = {
     }
     // Module workers cannot use webpack's default importScripts chunk loader.
     config.optimization.splitChunks = false;
-    // Pyodide's universal loader guards these imports behind its Node runtime check.
-    config.plugins.push(
-      new webpack.IgnorePlugin({ resourceRegExp: /^(?:node:|ws$)/ }),
-    );
+    if (!isServer) {
+      // Pyodide's universal loader guards these imports behind its Node runtime check.
+      config.plugins.push(
+        new webpack.IgnorePlugin({ resourceRegExp: /^(?:node:|ws$)/ }),
+      );
+    }
     // Pyodide 314's published bundle omitted its upstream webpackIgnore comment.
     config.ignoreWarnings = [
       ...(config.ignoreWarnings ?? []),
