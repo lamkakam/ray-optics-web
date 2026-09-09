@@ -446,6 +446,7 @@ class TestGetZernikeCoefficients:
             )
         )
         assert result["reference_kind"] == "afocal_plane_wave"
+        assert result["pupil_space"] == "entrance"
         assert result["sampling_measure"] == "uniform_normalized_input_pupil_cells"
         assert result["support_coverage"] == pytest.approx(1.0)
 
@@ -503,12 +504,34 @@ class TestGetZernikeCoefficients:
             "zernike_terms",
             "image_point",
             "num_rays",
+            "pupil_space",
         ]
         assert sig.parameters["image_point"].default == "chief_ray"
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert isinstance(result, dict)
         for key in ['coefficients', 'rms_wfe', 'pv_wfe', 'num_terms', 'field_index', 'wavelength_nm']:
             assert key in result, f"Missing key: {key}"
+        assert result["pupil_space"] == "entrance"
+        assert result["sampling_measure"] == "uniform_normalized_input_pupil_cells"
+        assert result["normalization"] == "normalized_input_pupil"
+        assert result["normalization_radius"] == 1.0
+        assert "reference_radius" not in result
+
+    def test_invalid_pupil_space_is_rejected(self, cooke_triplet):
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        with pytest.raises(ValueError, match="entrance.*exit"):
+            get_zernike_coefficients(
+                cooke_triplet, 0, 1, [(0, 0)], pupil_space="object"
+            )
+
+    def test_afocal_exit_pupil_space_is_rejected(self, afocal_two_lens):
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        with pytest.raises(ValueError, match="infinite image space"):
+            get_zernike_coefficients(
+                afocal_two_lens, 0, 1, [(0, 0)], pupil_space="exit"
+            )
 
     def test_finite_result_reports_explicit_sampling_contract(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
@@ -519,6 +542,7 @@ class TestGetZernikeCoefficients:
             wvl_index=1,
             zernike_terms=NOLL_TERMS_22,
             num_rays=13,
+            pupil_space="exit",
         )
 
         assert result["sampling_measure"] == "projected_reference_sphere_area"
@@ -553,6 +577,7 @@ class TestGetZernikeCoefficients:
             wvl_index=1,
             zernike_terms=NOLL_TERMS_22[:6],
             num_rays=9,
+            pupil_space="exit",
         )
 
         assert result["sample_count"] >= len(NOLL_TERMS_22[:6])
@@ -747,6 +772,7 @@ class TestGetZernikeCoefficients:
             field_index=2,
             wvl_index=1,
             zernike_terms=NOLL_TERMS_22,
+            pupil_space="exit",
         )
 
         assert np.all(np.isfinite(result["coefficients"]))

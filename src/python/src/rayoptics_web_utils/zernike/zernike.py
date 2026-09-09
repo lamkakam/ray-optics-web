@@ -6,11 +6,10 @@ wavelength. Unnormalized coefficients follow the ATMOS/OSLO convention; dividing
 by ``sqrt((2 - δ[m,0]) * (n + 1))`` gives each term's RMS contribution.
 
 RayOptics computes OPD with the Hopkins equally inclined chord method. Finite
-fits intersect outgoing rays with the same physical reference sphere, use a
-chief-ray-centred enclosing projected circle, and integrate connected cells by
-orthographically projected area. Afocal grids retain their documented uniform
-normalized-pupil sampling path. Vignetted, blocked, non-finite, and unsupported
-projected branches are excluded or rejected explicitly.
+fits may use normalized input-pupil coordinates with uniform sample weights or
+projected reference-sphere coordinates with projected-area weights. Afocal
+grids use only normalized input-pupil sampling. Sampling coordinates do not
+change the OPD reference geometry selected by RayOptics.
 
 The model grid is expressed in central-wavelength waves and is scaled through the
 model's wavelength-unit conversion before fitting. ``image_point="chief_ray"``
@@ -284,13 +283,8 @@ def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) 
     return np.asarray(opd_grid, dtype=float) * scale
 
 
-def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
-    """Return the existing normalized grid for the separate afocal path.
-
-    Finite RayGrid ``p_coord`` values are Hopkins EIC intermediates and are not
-    final pupil coordinates. Finite callers must use
-    ``build_finite_projected_pupil_samples`` so coordinates, OPD, support, and
-    projected-area weights remain one contract.
+def _extract_normalized_input_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
+    """Return normalized input-pupil coordinates with wavelength-scaled OPD.
 
     Args:
         rg: RayGrid instance (already traced).
@@ -300,12 +294,17 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     Returns:
         (3, N, N) array: [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves.
     """
+    opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
+    return np.array([rg.grid[0], rg.grid[1], opd_grid], dtype=float)
+
+
+def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
+    """Compatibility helper for the historical afocal-only normalized grid."""
     if getattr(rg, "grid_pkg", None) is not None:
         raise ValueError(
             "Finite Zernike sampling requires the projected-pupil sample contract."
         )
-    opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
-    return np.array([rg.grid[0], rg.grid[1], opd_grid], dtype=float)
+    return _extract_normalized_input_pupil_grid(rg, opm, wavelength_nm)
 
 
 def get_zernike_coefficients(
@@ -315,10 +314,12 @@ def get_zernike_coefficients(
     zernike_terms: list[ZernikeTerm],
     image_point: str = "chief_ray",
     num_rays: int = 64,
+    pupil_space: str = "entrance",
 ) -> dict:
     """Return Zernike coefficients and independently sampled wavefront metrics.
 
-    Finite samples use orthographic reference-sphere coordinates and projected
+    Finite entrance samples use normalized input-pupil coordinates and uniform
+    weights. Finite exit samples use reference-sphere coordinates and projected
     area. Afocal samples retain uniform normalized-pupil cells; their coverage
     is the fraction of sampled unit-disk positions with finite OPD, including
     blocked disk positions in the denominator and excluding square corners.
@@ -335,11 +336,15 @@ def get_zernike_coefficients(
         zernike_terms: Ordered `(n, m)` Zernike terms matching the coefficients.
         image_point: Image-point reference convention.
         num_rays: Pupil-grid sampling resolution.
+        pupil_space: ``"entrance"`` or ``"exit"`` sampling coordinates.
 
     Returns:
         Zernike and wavefront metrics for one field and wavelength.
     """
     from rayoptics_web_utils.raygrid import make_ray_grid
+
+    if pupil_space not in {"entrance", "exit"}:
+        raise ValueError("pupil_space must be 'entrance' or 'exit'.")
 
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
 
@@ -351,8 +356,12 @@ def get_zernike_coefficients(
         image_point=image_point,
     )
 
-    if getattr(rg, "grid_pkg", None) is None:
-        grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
+    is_afocal = getattr(rg, "grid_pkg", None) is None
+    if is_afocal and pupil_space == "exit":
+        raise ValueError("Exit pupil space is unavailable for infinite image space.")
+
+    if is_afocal or pupil_space == "entrance":
+        grid = _extract_normalized_input_pupil_grid(rg, opm, wavelength_nm)
         weights = np.ones(grid.shape[1:], dtype=float)
         disk = np.all(np.isfinite(grid[:2]), axis=0) & (
             np.hypot(grid[0], grid[1]) <= 1.0 + 1.0e-12
@@ -361,8 +370,8 @@ def get_zernike_coefficients(
         weights = np.where(valid, weights, 0.0)
         sample_metadata = {
             "sampling_measure": "uniform_normalized_input_pupil_cells",
-            "normalization": "existing_afocal_normalized_pupil",
-            "reference_kind": "afocal_plane_wave",
+            "normalization": "existing_afocal_normalized_pupil" if is_afocal else "normalized_input_pupil",
+            "reference_kind": "afocal_plane_wave" if is_afocal else "finite_reference_sphere",
             "normalization_radius": 1.0,
             "support_area": float(np.sum(weights)),
             "support_coverage": float(
@@ -440,5 +449,6 @@ def get_zernike_coefficients(
         'num_terms': num_terms,
         'field_index': field_index,
         'wavelength_nm': float(wavelength_nm),
+        'pupil_space': 'entrance' if is_afocal else pupil_space,
         **sample_metadata,
     }

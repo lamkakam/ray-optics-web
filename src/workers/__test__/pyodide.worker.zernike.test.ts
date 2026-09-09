@@ -39,11 +39,25 @@ describe("_getZernikeCoefficients", () => {
     expect(capturedCode).toContain("opm = ExactOpticalModel()");
     expect(capturedCode).toContain("from rayoptics_web_utils.zernike import get_zernike_coefficients");
     expect(capturedCode).toContain("zernike_terms=json.loads(");
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, zernike_terms=zernike_terms, image_point='centroid')");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, zernike_terms=zernike_terms, image_point='centroid', pupil_space='entrance')");
     expect(capturedCode).not.toContain("ordering=");
     expect(capturedCode).not.toContain("num_terms=");
     expect(capturedCode).toContain("json.dumps");
     expect(result).toMatchObject(mockData);
+  });
+
+  it("defaults pupil space to entrance and passes an explicit exit selection", async () => {
+    let capturedCode = "";
+    const runPython = async (code: string) => {
+      capturedCode = code;
+      return JSON.stringify({});
+    };
+
+    await _getZernikeCoefficients(runPython, testModel, 0, 1);
+    expect(capturedCode).toContain("pupil_space='entrance'");
+
+    await _getZernikeCoefficients(runPython, testModel, 0, 1, undefined, 37, "noll", "exit");
+    expect(capturedCode).toContain("pupil_space='exit'");
   });
 
   it("passes different fieldIndex and wvlIndex values correctly", async () => {
@@ -62,7 +76,7 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 2, 0);
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, zernike_terms=zernike_terms, image_point='chief_ray')");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, zernike_terms=zernike_terms, image_point='chief_ray', pupil_space='entrance')");
   });
 
   it("defaults numTerms to 37 when not provided", async () => {

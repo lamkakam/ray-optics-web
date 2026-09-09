@@ -7,6 +7,12 @@ runs in the existing RayOptics/Pyodide worker architecture. The shared
 [image-reference conventions](image-reference-conventions.md) apply to this and
 the other optical analyses.
 
+The UI exposes pupil *sampling space* separately from OPD reference geometry.
+Entrance sampling uses normalized RayGrid input coordinates and uniform
+finite-cell weights. Exit sampling preserves the projected physical
+reference-sphere coordinates and area quadrature documented below. The default
+is Entrance; afocal systems support Entrance only.
+
 ## Problem addressed
 
 The previous finite-image path treated RayOptics' equally inclined chord (EIC)
@@ -384,4 +390,4 @@ evidence that the OPD is valid.
 - [Wyant and Creath: Basic Wavefront Aberration Theory for Optical Metrology](https://wp.optics.arizona.edu/jcwyant/wp-content/uploads/sites/13/2016/08/Zernikes.pdf)
 - RayOptics' installed wavefront implementation and its cited Hopkins equally
   inclined chord reference define the upstream OPD tuple and sign conventions
-  used by this integration.
+used by this integration.

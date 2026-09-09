@@ -20,7 +20,7 @@
  * collected after execution; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.30.0` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.31.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -45,7 +45,7 @@ import type {
   OptimizationProgressEntry,
   OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
-import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import type {
@@ -315,7 +315,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
       ]);
 
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.30.0-py3-none-any.whl`;
+      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.31.0-py3-none-any.whl`;
 
       await _init(createInitializationExecutor(pyodide), wheelUrl, onProgress);
       await emitInitProgress(onProgress, 100, "Ready");
@@ -595,7 +595,7 @@ export async function _getDiffractionMTFData(
 }
 
 /**
- * Converts the requested ordering to explicit Zernike terms, reconstructs them in
+ * Converts the requested ordering to explicit Zernike terms, passes the selected pupil space, reconstructs them in
  * Python, and parses coefficients plus direct wavefront and projected-pupil
  * metadata. Python receives the explicit term list rather than the ordering name.
  *
@@ -610,12 +610,13 @@ export async function _getZernikeCoefficients(
   imagePoint: ImagePoint = "chief_ray",
   numTerms: number = 37,
   ordering: ZernikeOrdering = "noll",
+  pupilSpace: ZernikePupilSpace = "entrance",
 ): Promise<ZernikeData> {
   const zernikeTermsJson = JSON.stringify(zernikeTermsForOrdering(ordering, numTerms));
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\nzernike_terms=json.loads(${JSON.stringify(zernikeTermsJson)})\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, zernike_terms=zernike_terms, image_point='${imagePoint}'))`,
+      (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\nzernike_terms=json.loads(${JSON.stringify(zernikeTermsJson)})\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, zernike_terms=zernike_terms, image_point='${imagePoint}', pupil_space='${pupilSpace}'))`,
     )
   )) as string;
   return JSON.parse(json) as ZernikeData;
@@ -1068,7 +1069,7 @@ export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise
   return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
 }
 
-/** Returns explicitly ordered Zernike coefficients for one field and wavelength, defaulting to 37 Noll-ordered terms. */
+/** Returns explicitly ordered Zernike coefficients, defaulting to 37 Noll terms sampled in Entrance pupil space. */
 export async function getZernikeCoefficients(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -1076,8 +1077,9 @@ export async function getZernikeCoefficients(
   imagePoint: ImagePoint = "chief_ray",
   numTerms?: number,
   ordering?: ZernikeOrdering,
+  pupilSpace?: ZernikePupilSpace,
 ): Promise<ZernikeData> {
-  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, imagePoint, numTerms, ordering);
+  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, imagePoint, numTerms, ordering, pupilSpace);
 }
 
 /** Focuses by minimizing monochromatic RMS spot radius. */

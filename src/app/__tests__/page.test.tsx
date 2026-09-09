@@ -330,6 +330,7 @@ const mockProxy = {
     num_terms: 0,
     field_index: 0,
     wavelength_nm: 587.6,
+    pupil_space: "entrance",
     sampling_measure: "projected_reference_sphere_area",
     normalization: "chief_ray_centered_enclosing_circle",
     reference_kind: "finite_reference_sphere",

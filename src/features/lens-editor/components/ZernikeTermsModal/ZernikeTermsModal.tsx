@@ -20,11 +20,15 @@ import {
   zernikeNotation,
   classicalName,
 } from "@/features/lens-editor/lib/zernikeData";
-import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
 
 const ORDERING_OPTIONS: SelectOption[] = [
   { value: "fringe", label: "Fringe" },
   { value: "noll", label: "Noll" },
+];
+const PUPIL_SPACE_OPTIONS: SelectOption[] = [
+  { value: "entrance", label: "Entrance pupil (normalized)" },
+  { value: "exit", label: "Reference sphere (projected)" },
 ];
 
 interface ZernikeTermsModalProps {
@@ -34,22 +38,24 @@ interface ZernikeTermsModalProps {
   readonly fieldOptions: readonly SelectOption[];
   /** Options for the Wavelength dropdown */
   readonly wavelengthOptions: readonly SelectOption[];
+  /** Whether the model has finite image space and can support exit-pupil fitting. */
+  readonly isFiniteImageSpace: boolean;
   /** Callback to fetch Zernike data. Called on open and on any dropdown change. */
-  readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => Promise<ZernikeData>;
+  readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering, pupilSpace: ZernikePupilSpace) => Promise<ZernikeData>;
   /** Called when the Ok button is clicked */
   readonly onClose: () => void;
 }
 
 /**
- * Modal that displays Zernike polynomial coefficients for a selected Half-Field, wavelength, and ordering (Noll or Fringe). Data is fetched lazily when the modal opens or when any dropdown selection changes.
+ * Modal that displays Zernike polynomial coefficients for a selected Half-Field, wavelength, ordering, and Zernike fit coordinate system. Data is fetched lazily when the modal opens or when any dropdown selection changes.
  *
  * @remarks
  * ## Key Behaviors
  *
  * - Reads `SpecsConfiguratorStore` via `useSpecsConfiguratorStore()` inside the mounted modal content and uses `store.getState().committedSpecs.wavelengths.referenceIndex` as the initial wavelength index. This is intentionally imperative/non-reactive: the modal is initialized from the last committed optical system when it opens.
- * - Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh inner editor with default selection state (`0`, latest committed reference wavelength index, `"fringe"`).
- * - On mount, fetches data once for `(field=0, wavelength=committed reference index, ordering="fringe")`.
- * - On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
+ * - Mount-on-open: reopening mounts fresh selection state, including the internal `entrance` selection shown as Entrance pupil (normalized).
+ * - The Zernike fit-coordinate selector is disabled for infinite image space; its internal `entrance` and `exit` values remain unchanged.
+ * - On any dropdown change (field, wavelength, ordering, or fit coordinates): fetches data with the new selection.
  * - After opening, the Wavelength dropdown is user-controlled; later committed-spec changes do not reset the selection until the modal is closed and reopened.
  * - All requests share error handling: latest failures clear results and loading and
  *   show calculation context in ErrorModal. Dismissal preserves usable selectors;
@@ -75,8 +81,9 @@ interface ZernikeTermsModalProps {
  *
  * ## Layout
  *
- * - Row 1: Half-Field + Wavelength dropdowns in a flex row
- * - Row 2: Ordering dropdown (below Half-Field + Wavelength)
+ * - Row 1: Half-Field and Wavelength dropdowns in a flex row
+ * - Row 2: Zernike fit coordinates dropdown with fit-coordinate help text beneath its selector
+ * - Row 3: Ordering dropdown
  * - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
  * - Scrollable table area (`max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto`) — viewport-relative height reserves ~26rem for static overhead (title, dropdowns, summary chips, fixed footer, and modal padding), preventing the table from pushing modal content beyond the dialog height on smaller screens. The clamp keeps at least 5rem of table space when the viewport is tight and caps the table at 32rem on larger screens.
  * - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
@@ -103,6 +110,7 @@ export function ZernikeTermsModal({
 function ZernikeTermsModalContent({
   fieldOptions,
   wavelengthOptions,
+  isFiniteImageSpace,
   onFetchData,
   onClose,
 }: Omit<ZernikeTermsModalProps, "isOpen">) {
@@ -114,6 +122,8 @@ function ZernikeTermsModalContent({
   const [selectedWvlIndex, setSelectedWvlIndex] = useState(committedReferenceWvlIndex);
   /** Zernike ordering reset to Fringe whenever the modal opens. */
   const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
+  /** Fit-coordinate value reset to the internal `entrance` selection whenever the modal opens. */
+  const [selectedPupilSpace, setSelectedPupilSpace] = useState<ZernikePupilSpace>("entrance");
   /** Most recently fetched coefficient payload. */
   const [data, setData] = useState<ZernikeData | undefined>();
   /** Whether a coefficient request is in progress. */
@@ -125,12 +135,12 @@ function ZernikeTermsModalContent({
 
   /** Fetch every selection through one recoverable, latest-request-only path. */
   const fetchData = useCallback(
-    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
+    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering, pupilSpace: ZernikePupilSpace) => {
       const requestId = ++requestCounter.current;
       setLoading(true);
       setError(undefined);
       try {
-        const result = await onFetchData(fieldIndex, wvlIndex, ordering);
+        const result = await onFetchData(fieldIndex, wvlIndex, ordering, pupilSpace);
         if (requestCounter.current === requestId) setData(result);
       } catch (reason: unknown) {
         if (requestCounter.current !== requestId) return;
@@ -145,7 +155,7 @@ function ZernikeTermsModalContent({
   );
 
   useEffect(() => {
-    void fetchData(0, committedReferenceWvlIndex, "fringe");
+    void fetchData(0, committedReferenceWvlIndex, "fringe", "entrance");
     return () => { requestCounter.current += 1; };
   }, [committedReferenceWvlIndex, fetchData]);
 
@@ -153,28 +163,34 @@ function ZernikeTermsModalContent({
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const idx = Number(e.target.value);
       setSelectedFieldIndex(idx);
-      fetchData(idx, selectedWvlIndex, selectedOrdering);
+      fetchData(idx, selectedWvlIndex, selectedOrdering, selectedPupilSpace);
     },
-    [fetchData, selectedWvlIndex, selectedOrdering],
+    [fetchData, selectedWvlIndex, selectedOrdering, selectedPupilSpace],
   );
 
   const handleWvlChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const idx = Number(e.target.value);
       setSelectedWvlIndex(idx);
-      fetchData(selectedFieldIndex, idx, selectedOrdering);
+      fetchData(selectedFieldIndex, idx, selectedOrdering, selectedPupilSpace);
     },
-    [fetchData, selectedFieldIndex, selectedOrdering],
+    [fetchData, selectedFieldIndex, selectedOrdering, selectedPupilSpace],
   );
 
   const handleOrderingChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const ord = e.target.value as ZernikeOrdering;
       setSelectedOrdering(ord);
-      fetchData(selectedFieldIndex, selectedWvlIndex, ord);
+      fetchData(selectedFieldIndex, selectedWvlIndex, ord, selectedPupilSpace);
     },
-    [fetchData, selectedFieldIndex, selectedWvlIndex],
+    [fetchData, selectedFieldIndex, selectedWvlIndex, selectedPupilSpace],
   );
+
+  const handlePupilSpaceChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const pupilSpace = e.target.value as ZernikePupilSpace;
+    setSelectedPupilSpace(pupilSpace);
+    fetchData(selectedFieldIndex, selectedWvlIndex, selectedOrdering, pupilSpace);
+  }, [fetchData, selectedFieldIndex, selectedOrdering, selectedWvlIndex]);
 
   const numTerms = selectedOrdering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
   const toNm = selectedOrdering === "noll" ? nollToNm : fringeToNm;
@@ -232,6 +248,17 @@ function ZernikeTermsModalContent({
               value={selectedWvlIndex}
               onChange={handleWvlChange}
             />
+          </div>
+        </div>
+        <div className="flex items-center gap-4 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="zernike-pupil-space-select">Zernike fit coordinates</Label>
+              <Select id="zernike-pupil-space-select" aria-label="Zernike fit coordinates" options={PUPIL_SPACE_OPTIONS} value={selectedPupilSpace} onChange={handlePupilSpaceChange} disabled={!isFiniteImageSpace} />
+            </div>
+            <Paragraph variant="caption">
+              Changes the fitting coordinates and sample weighting; the OPD reference remains unchanged. Entrance pupil uses uniform sample weights. Projected reference sphere uses projected-area weights.
+            </Paragraph>
           </div>
         </div>
         <div className="flex items-center gap-4 mb-4">

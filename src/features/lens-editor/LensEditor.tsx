@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
@@ -77,7 +77,7 @@ export interface LensEditorProps {
  * - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
  * - `handleSubmit` uses the app-lifetime cached loaders from `features/analysis/lib/plotFunctions.ts`, so submit-time first-order, Seidel, and plot updates use the same model/aim-point identity and worker-path rules as `AnalysisPlotContainer.tsx`.
  * - `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because it derives from the same complete cached Seidel payload committed separately.
- * - Zernike modal requests cache the complete coefficient-and-metrics payload by model instance, aim point, field, wavelength, ordering, and term count; reopening still commits the selected payload within the modal.
+ * - Zernike modal requests cache the complete payload by model instance, aim point, field, wavelength, ordering, term count, and pupil space. The final physical surface's image-gap thickness determines whether Exit is available using RayOptics' `abs(thickness) > 1e8` infinite-conjugate rule.
  * - `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractiveElement.diffractionGrating`
  * - Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
@@ -123,12 +123,12 @@ export function LensEditor({
 
   /** Fetches Zernike coefficients for the committed model and current image reference. */
   const handleFetchZernikeData = useCallback(
-    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering): Promise<ZernikeData> => {
+    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering, pupilSpace: ZernikePupilSpace): Promise<ZernikeData> => {
       if (!proxy) throw new Error("Pyodide not ready");
       const committedOpticalModel = lensStore.getState().committedOpticalModel;
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
-      return loadZernikeData({ proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex: wvlIndex, imagePoint, numTerms, ordering });
+      return loadZernikeData({ proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex: wvlIndex, imagePoint, numTerms, ordering, pupilSpace });
     },
     [proxy, lensStore, imagePoint]
   );
@@ -319,6 +319,7 @@ export function LensEditor({
       isOpen={zernikeModalOpen}
       fieldOptions={specsStore.getState().getFieldOptions()}
       wavelengthOptions={specsStore.getState().getWavelengthOptions()}
+      isFiniteImageSpace={Math.abs(committedOpticalModel.surfaces.at(-1)?.thickness ?? 0) <= 1e8}
       onFetchData={handleFetchZernikeData}
       onClose={() => setZernikeModalOpen(false)}
     />

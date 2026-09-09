@@ -17,7 +17,7 @@ import type {
   OptimizationProgressEntry,
   OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
-import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
 import type {
   AllGlassCatalogsData,
   UserDefinedMaterialsData,
@@ -69,8 +69,8 @@ export interface PyodideWorkerAPI {
   getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
   /** Returns third-order Seidel aberration data. */
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
-  /** Returns ordered coefficients, direct wavefront metrics, and pupil metadata. */
-  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
+  /** Returns ordered coefficients and metrics in the selected pupil space (Entrance by default). */
+  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numTerms?: number, ordering?: ZernikeOrdering, pupilSpace?: ZernikePupilSpace): Promise<ZernikeData>;
   /** Focuses by monochromatic RMS spot radius. */
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   /** Focuses by monochromatic Strehl ratio. */
