@@ -554,3 +554,63 @@ describe("ZernikeTermsModal", () => {
     await act(async () => {});
   });
 });
+
+/** Failed calculations remain recoverable, including out-of-order completion. */
+describe("Zernike calculation failures", () => {
+  it.each([new Error("Projected pupil fold"), "worker failed", undefined])("handles initial rejection %p and recovers", async (reason) => {
+    const user = userEvent.setup();
+    const fetch = jest.fn().mockRejectedValueOnce(reason).mockResolvedValue(mockZernikeData);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={fetch} />);
+    const error = await screen.findByRole("dialog", { name: "Error" });
+    expect(error).toHaveTextContent("Zernike calculation failed");
+    if (reason instanceof Error) expect(error).toHaveTextContent(reason.message);
+    if (typeof reason === "string") expect(error).toHaveTextContent(reason);
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+    await user.click(within(error).getByRole("button", { name: "OK" }));
+    expect(screen.getByRole("dialog", { name: "Zernike Terms" })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Half-Field"), "1");
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Error" })).not.toBeInTheDocument();
+  });
+
+  it("clears coefficients and metrics when a later request fails", async () => {
+    const user = userEvent.setup();
+    const fetch = jest.fn().mockResolvedValueOnce(mockZernikeData).mockRejectedValue(new Error("fold"));
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={fetch} />);
+    await screen.findByRole("table");
+    await user.selectOptions(screen.getByLabelText("Wavelength"), "0");
+    await screen.findByRole("dialog", { name: "Error" });
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("RMS WFE:")).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+  });
+
+  it.each([false, true])("ignores stale completion (reject=%s)", async (reject) => {
+    const user = userEvent.setup();
+    let resolve!: (data: ZernikeData) => void;
+    let fail!: (error: Error) => void;
+    const pending = new Promise<ZernikeData>((res, rej) => { resolve = res; fail = rej; });
+    const fetch = jest.fn().mockReturnValueOnce(pending).mockResolvedValue(mockZernikeData);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={fetch} />);
+    await user.selectOptions(screen.getByLabelText("Half-Field"), "1");
+    await screen.findByRole("table");
+    await act(async () => { if (reject) fail(new Error("stale")); else resolve({ ...mockZernikeData, rms_wfe: 99 }); });
+    expect(screen.queryByRole("dialog", { name: "Error" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/99.0000/)).not.toBeInTheDocument();
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  it.each([false, true])("ignores completion after closing and reopening (reject=%s)", async (reject) => {
+    let resolve!: (data: ZernikeData) => void;
+    let fail!: (error: Error) => void;
+    const pending = new Promise<ZernikeData>((res, rej) => { resolve = res; fail = rej; });
+    const fetch = jest.fn().mockReturnValueOnce(pending).mockResolvedValue(mockZernikeData);
+    const { rerender } = renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={fetch} />);
+    rerender(<ZernikeTermsModal {...defaultProps} isOpen={false} onFetchData={fetch} />);
+    rerender(<ZernikeTermsModal {...defaultProps} onFetchData={fetch} />);
+    await screen.findByRole("table");
+    await act(async () => { if (reject) fail(new Error("closed")); else resolve({ ...mockZernikeData, rms_wfe: 99 }); });
+    expect(screen.queryByRole("dialog", { name: "Error" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/99.0000/)).not.toBeInTheDocument();
+  });
+});

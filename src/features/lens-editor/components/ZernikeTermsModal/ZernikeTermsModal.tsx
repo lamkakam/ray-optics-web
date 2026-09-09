@@ -2,6 +2,7 @@ import type React from "react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { MathJax } from "better-react-mathjax";
 import { Button } from "@/shared/components/primitives/Button";
+import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Table } from "@/shared/components/primitives/Table";
 import { Label } from "@/shared/components/primitives/Label";
@@ -50,7 +51,10 @@ interface ZernikeTermsModalProps {
  * - On mount, fetches data once for `(field=0, wavelength=committed reference index, ordering="fringe")`.
  * - On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
  * - After opening, the Wavelength dropdown is user-controlled; later committed-spec changes do not reset the selection until the modal is closed and reopened.
- * - Race condition guard: uses a request counter ref to discard stale results from prior fetches.
+ * - All requests share error handling: latest failures clear results and loading and
+ *   show calculation context in ErrorModal. Dismissal preserves usable selectors;
+ *   a new request clears the error. Stale successes/failures and completions after
+ *   unmount are ignored through an invalidated request counter.
  * - Renders Zernike terms in a scrollable table; row count and index scheme depend on the frontend ordering selection:
  * - Noll: 56 rows, first column "Noll j", uses `nollToNm(j)`
  * - Fringe: `NUM_FRINGE_TERMS` (37) rows, first column "Fringe j", uses `fringeToNm(j)`
@@ -114,35 +118,36 @@ function ZernikeTermsModalContent({
   const [data, setData] = useState<ZernikeData | undefined>();
   /** Whether a coefficient request is in progress. */
   const [loading, setLoading] = useState(true);
+  /** Latest calculation failure, dismissed independently of the coefficient modal. */
+  const [error, setError] = useState<string | undefined>();
   /** Monotonic request id used to discard stale asynchronous results. */
   const requestCounter = useRef(0);
 
+  /** Fetch every selection through one recoverable, latest-request-only path. */
   const fetchData = useCallback(
-    (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
-      requestCounter.current += 1;
-      const requestId = requestCounter.current;
+    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
+      const requestId = ++requestCounter.current;
       setLoading(true);
-      onFetchData(fieldIndex, wvlIndex, ordering).then((result) => {
-        if (requestCounter.current === requestId) {
-          setData(result);
-          setLoading(false);
-        }
-      });
+      setError(undefined);
+      try {
+        const result = await onFetchData(fieldIndex, wvlIndex, ordering);
+        if (requestCounter.current === requestId) setData(result);
+      } catch (reason: unknown) {
+        if (requestCounter.current !== requestId) return;
+        setData(undefined);
+        const detail = reason instanceof Error ? reason.message : typeof reason === "string" ? reason : "Unknown calculation failure.";
+        setError(`Zernike calculation failed (field index ${fieldIndex}, wavelength index ${wvlIndex}, ${ordering}): ${detail}`);
+      } finally {
+        if (requestCounter.current === requestId) setLoading(false);
+      }
     },
     [onFetchData],
   );
 
   useEffect(() => {
-    requestCounter.current += 1;
-    const requestId = requestCounter.current;
-
-    onFetchData(0, committedReferenceWvlIndex, "fringe").then((result) => {
-      if (requestCounter.current === requestId) {
-        setData(result);
-        setLoading(false);
-      }
-    });
-  }, [committedReferenceWvlIndex, onFetchData]);
+    void fetchData(0, committedReferenceWvlIndex, "fringe");
+    return () => { requestCounter.current += 1; };
+  }, [committedReferenceWvlIndex, fetchData]);
 
   const handleFieldChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -196,6 +201,7 @@ function ZernikeTermsModalContent({
   }, [data, numTerms, toNm]);
 
   return (
+    <>
     <Modal
       isOpen={true}
       title="Zernike Terms"
@@ -268,5 +274,7 @@ function ZernikeTermsModalContent({
           </div>
         )}
       </Modal>
+      <ErrorModal isOpen={error !== undefined} message={error} onClose={() => setError(undefined)} />
+    </>
   );
 }
