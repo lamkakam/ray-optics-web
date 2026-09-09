@@ -31,6 +31,12 @@ describe("SettingsPage", () => {
     expect(mockSetTheme).toHaveBeenCalledWith("dark");
   });
 
+  it("does not update the theme when the active theme is selected", async () => {
+    render(<SettingsPage />);
+    await userEvent.selectOptions(screen.getByLabelText("Theme"), "light");
+    expect(mockSetTheme).not.toHaveBeenCalled();
+  });
+
   it("does not render the Image point selector", () => {
     render(<SettingsPage />);
     expect(screen.queryByLabelText("Image point")).not.toBeInTheDocument();

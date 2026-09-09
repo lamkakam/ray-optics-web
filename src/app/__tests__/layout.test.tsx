@@ -11,7 +11,17 @@ import type React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import RootLayout from "@/app/layout";
 
+let mockRenderClientOnlyChildren = false;
+
 jest.mock("@/app/globals.css", () => ({}));
+
+jest.mock("@/app/ClientOnlyApplication", () => ({
+  __esModule: true,
+  default: ({ children }: { readonly children: React.ReactNode }) =>
+    mockRenderClientOnlyChildren ? (
+      <div data-testid="client-only-boundary">{children}</div>
+    ) : undefined,
+}));
 
 jest.mock("next/dynamic", () => ({
   __esModule: true,
@@ -37,6 +47,10 @@ jest.mock("@/app/AppShell", () => ({
 }));
 
 describe("RootLayout server rendering", () => {
+  afterEach(() => {
+    mockRenderClientOnlyChildren = false;
+  });
+
   it("does not render the interactive application or routed content on the server", () => {
     const markup = renderToStaticMarkup(
       <RootLayout>
@@ -47,5 +61,19 @@ describe("RootLayout server rendering", () => {
     expect(markup).not.toContain("server-rendered-app-shell");
     expect(markup).not.toContain("server-rendered-route");
     expect(markup).not.toContain("Routed content");
+  });
+
+  it("delegates routed children to the client-only application boundary", () => {
+    mockRenderClientOnlyChildren = true;
+
+    const markup = renderToStaticMarkup(
+      <RootLayout>
+        <section data-testid="routed-child">Routed content</section>
+      </RootLayout>,
+    );
+
+    expect(markup).toContain("client-only-boundary");
+    expect(markup).toContain("routed-child");
+    expect(markup).toContain("Routed content");
   });
 });
