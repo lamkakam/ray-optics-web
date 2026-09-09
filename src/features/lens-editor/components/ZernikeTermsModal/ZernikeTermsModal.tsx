@@ -27,8 +27,8 @@ const ORDERING_OPTIONS: SelectOption[] = [
   { value: "noll", label: "Noll" },
 ];
 const PUPIL_SPACE_OPTIONS: SelectOption[] = [
-  { value: "entrance", label: "Entrance" },
-  { value: "exit", label: "Exit" },
+  { value: "entrance", label: "Entrance pupil (normalized)" },
+  { value: "exit", label: "Reference sphere (projected)" },
 ];
 
 interface ZernikeTermsModalProps {
@@ -47,15 +47,15 @@ interface ZernikeTermsModalProps {
 }
 
 /**
- * Modal that displays Zernike polynomial coefficients for a selected Half-Field, wavelength, ordering, and pupil sampling space. Data is fetched lazily when the modal opens or when any dropdown selection changes.
+ * Modal that displays Zernike polynomial coefficients for a selected Half-Field, wavelength, ordering, and Zernike fit coordinate system. Data is fetched lazily when the modal opens or when any dropdown selection changes.
  *
  * @remarks
  * ## Key Behaviors
  *
  * - Reads `SpecsConfiguratorStore` via `useSpecsConfiguratorStore()` inside the mounted modal content and uses `store.getState().committedSpecs.wavelengths.referenceIndex` as the initial wavelength index. This is intentionally imperative/non-reactive: the modal is initialized from the last committed optical system when it opens.
- * - Mount-on-open: reopening mounts fresh selection state, including Entrance pupil space.
- * - Exit is disabled for infinite image space; all selector changes refetch through the latest-request-only path.
- * - On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
+ * - Mount-on-open: reopening mounts fresh selection state, including the internal `entrance` selection shown as Entrance pupil (normalized).
+ * - The Zernike fit-coordinate selector is disabled for infinite image space; its internal `entrance` and `exit` values remain unchanged.
+ * - On any dropdown change (field, wavelength, ordering, or fit coordinates): fetches data with the new selection.
  * - After opening, the Wavelength dropdown is user-controlled; later committed-spec changes do not reset the selection until the modal is closed and reopened.
  * - All requests share error handling: latest failures clear results and loading and
  *   show calculation context in ErrorModal. Dismissal preserves usable selectors;
@@ -81,8 +81,9 @@ interface ZernikeTermsModalProps {
  *
  * ## Layout
  *
- * - Row 1: Half-Field + Wavelength dropdowns in a flex row
- * - Row 2: Ordering and Pupil Space dropdowns
+ * - Row 1: Half-Field and Wavelength dropdowns in a flex row
+ * - Row 2: Zernike fit coordinates dropdown with fit-coordinate help text beneath its selector
+ * - Row 3: Ordering dropdown
  * - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
  * - Scrollable table area (`max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto`) — viewport-relative height reserves ~26rem for static overhead (title, dropdowns, summary chips, fixed footer, and modal padding), preventing the table from pushing modal content beyond the dialog height on smaller screens. The clamp keeps at least 5rem of table space when the viewport is tight and caps the table at 32rem on larger screens.
  * - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
@@ -121,7 +122,7 @@ function ZernikeTermsModalContent({
   const [selectedWvlIndex, setSelectedWvlIndex] = useState(committedReferenceWvlIndex);
   /** Zernike ordering reset to Fringe whenever the modal opens. */
   const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
-  /** Pupil space reset to Entrance whenever the modal opens. */
+  /** Fit-coordinate value reset to the internal `entrance` selection whenever the modal opens. */
   const [selectedPupilSpace, setSelectedPupilSpace] = useState<ZernikePupilSpace>("entrance");
   /** Most recently fetched coefficient payload. */
   const [data, setData] = useState<ZernikeData | undefined>();
@@ -248,9 +249,16 @@ function ZernikeTermsModalContent({
               onChange={handleWvlChange}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="zernike-pupil-space-select">Pupil Space</Label>
-            <Select id="zernike-pupil-space-select" aria-label="Pupil Space" options={PUPIL_SPACE_OPTIONS} value={selectedPupilSpace} onChange={handlePupilSpaceChange} disabled={!isFiniteImageSpace} />
+        </div>
+        <div className="flex items-center gap-4 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="zernike-pupil-space-select">Zernike fit coordinates</Label>
+              <Select id="zernike-pupil-space-select" aria-label="Zernike fit coordinates" options={PUPIL_SPACE_OPTIONS} value={selectedPupilSpace} onChange={handlePupilSpaceChange} disabled={!isFiniteImageSpace} />
+            </div>
+            <Paragraph variant="caption">
+              Changes the fitting coordinates and sample weighting; the OPD reference remains unchanged. Entrance pupil uses uniform sample weights. Projected reference sphere uses projected-area weights.
+            </Paragraph>
           </div>
         </div>
         <div className="flex items-center gap-4 mb-4">

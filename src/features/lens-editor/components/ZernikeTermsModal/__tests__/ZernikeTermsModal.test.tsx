@@ -141,22 +141,23 @@ describe("ZernikeTermsModal", () => {
     await act(async () => {});
   });
 
-  it("defaults to Entrance pupil space and refetches for Exit", async () => {
+  it("defaults to Entrance pupil (normalized) and refetches for Reference sphere (projected)", async () => {
     const user = userEvent.setup();
     const onFetchData = createMockFetchData();
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    const pupilSpace = screen.getByLabelText("Pupil Space");
-    expect(pupilSpace).toHaveValue("entrance");
-    expect(within(pupilSpace).getByRole("option", { name: "Entrance" })).toBeInTheDocument();
-    expect(within(pupilSpace).getByRole("option", { name: "Exit" })).toBeInTheDocument();
-    await user.selectOptions(pupilSpace, "exit");
+    const fitCoordinates = screen.getByLabelText("Zernike fit coordinates");
+    expect(fitCoordinates).toHaveValue("entrance");
+    expect(within(fitCoordinates).getByRole("option", { name: "Entrance pupil (normalized)" })).toBeInTheDocument();
+    expect(within(fitCoordinates).getByRole("option", { name: "Reference sphere (projected)" })).toBeInTheDocument();
+    expect(screen.getByText("Changes the fitting coordinates and sample weighting; the OPD reference remains unchanged. Entrance pupil uses uniform sample weights. Projected reference sphere uses projected-area weights.")).toBeInTheDocument();
+    await user.selectOptions(fitCoordinates, "exit");
     await waitFor(() => expect(onFetchData).toHaveBeenLastCalledWith(0, 1, "fringe", "exit"));
   });
 
-  it("keeps Entrance disabled for afocal image space", async () => {
+  it("disables Zernike fit coordinates for afocal image space", async () => {
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} isFiniteImageSpace={false} />);
-    expect(screen.getByLabelText("Pupil Space")).toBeDisabled();
-    expect(screen.getByLabelText("Pupil Space")).toHaveValue("entrance");
+    expect(screen.getByLabelText("Zernike fit coordinates")).toBeDisabled();
+    expect(screen.getByLabelText("Zernike fit coordinates")).toHaveValue("entrance");
     await act(async () => {});
   });
 
