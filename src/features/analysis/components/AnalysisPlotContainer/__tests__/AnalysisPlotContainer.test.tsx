@@ -15,6 +15,7 @@ import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
+import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -346,6 +347,7 @@ describe("AnalysisPlotContainer", () => {
   let store: StoreApi<AnalysisPlotState>;
 
   beforeEach(() => {
+    _resetAnalysisCache();
     jest.clearAllMocks();
     mockImagePoint = "centroid";
     store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);

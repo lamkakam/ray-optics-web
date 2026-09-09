@@ -5,6 +5,7 @@
  * ## Behavior
  *
  * - Opens `/example-systems` and discovers the complete rendered example list from the accessible UI; it does not import or inspect `ExampleSystemList`.
+ * - Waits for the client-only route to mount before enumerating its example buttons.
  * - For each displayed example, selects it, applies it, confirms the overwrite dialog, and waits for the automatic lens-layout computation to settle.
  * - Opens the Lens Editor's Prescription tab, clicks `Update System`, and waits for the button's disabled/enabled transition to prove the update started and finished.
  * - Asserts that no error dialog is displayed and that the lens-layout diagram is visible.
@@ -23,6 +24,7 @@ test("every example system loads and updates successfully", async ({
   await page.goto("/example-systems");
 
   const exampleMenu = page.getByRole("list", { name: "Example systems" });
+  await expect(exampleMenu.getByRole("button").first()).toBeVisible();
   const exampleNames = (await exampleMenu.getByRole("button").allTextContents())
     .map((name) => name.trim())
     .filter((name) => name.length > 0);

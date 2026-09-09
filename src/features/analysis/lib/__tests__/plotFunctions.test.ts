@@ -5,6 +5,7 @@ import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
+import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 
 const mockModel = {} as OpticalModel;
 
@@ -148,6 +149,7 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
 }
 
 describe("loadAnalysisPlot", () => {
+  beforeEach(() => _resetAnalysisCache());
   it("returns undefined when proxy is undefined", async () => {
     await expect(loadAnalysisPlot({
       plotType: "rayFan",

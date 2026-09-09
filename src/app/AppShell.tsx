@@ -100,7 +100,7 @@ type GlassCatalogPreloadStatus = "loading" | "loaded" | "error";
  * ```
  *
  * ## Notes
- * - `app/layout.tsx` remains the server layout for metadata and global providers.
+ * - `app/ClientApplication.tsx` owns the app-wide providers, and `app/ClientOnlyApplication.tsx` prevents this shell and routed content from being server-rendered.
  * - This replaces the former route-group shell so the public URLs remain unchanged after flattening the routes.
  * - The loading overlay stays visible until both Pyodide is ready and the initial glass-catalog preload has completed successfully.
  * - While Pyodide initializes, the overlay uses the milestone state supplied by `usePyodide`.

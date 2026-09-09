@@ -32,7 +32,7 @@ interface AnalysisPlotContainerProps {
  *
  *
  * Analysis-plot orchestration shared by user-driven selector changes and image-point refreshes.
- * Plot loading and store commits use the same centralized helpers as the editor submit flow.
+ * Plot loading and store commits use the same centralized cached helpers as the editor submit flow. Cached results are still committed through the matching Zustand setter whenever a plot is selected again.
  */
 export function AnalysisPlotContainer({
   proxy,

@@ -2,7 +2,9 @@
 
 ## Project metadata
 
-The private `ray-optics-web` application is version `0.44.0` and uses the BSD-3-Clause license.
+The private `ray-optics-web` application is version `0.45.0` and uses the BSD-3-Clause license.
+
+The application directly depends on `lru-cache` for its bounded, app-lifetime in-memory analysis-result cache.
 
 ## Build behavior
 

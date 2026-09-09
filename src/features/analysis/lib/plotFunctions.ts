@@ -1,6 +1,7 @@
 /**
- * Central plot-type dispatch and typed result commits shared by editor submission,
- * example-system application, and interactive analysis-panel changes.
+ * Central cached analysis loading, plot-type dispatch, and typed result commits
+ * shared by editor submission, example-system application, and interactive
+ * analysis-panel changes.
  */
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
@@ -10,6 +11,9 @@ import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/se
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
+import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
+import { getCachedAnalysis } from "@/features/analysis/lib/analysisCache";
 
 /** Discriminated result returned by the shared analysis-plot loader. It makes the worker-call branching explicit so callers can store typed chart data without duplicating plot-type conditionals. */
 export type AnalysisPlotLoadResult =
@@ -53,6 +57,8 @@ interface LoadAnalysisPlotParams {
  * - Calls `proxy.getDiffractionPSFData(...)` with `imagePoint` for `diffractionPSF`.
  * - Calls `proxy.getDiffractionMTFData(...)` with `imagePoint` for `diffractionMTF`.
  * - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
+ * - Caches serialized worker promises by exact model instance, image point, plot type, and only the selectors relevant to that plot.
+ * - Shares the complete cached Seidel request with `surfaceBySurface3rdOrder`.
  */
 export async function loadAnalysisPlot({
   plotType,
@@ -64,89 +70,125 @@ export async function loadAnalysisPlot({
 }: LoadAnalysisPlotParams): Promise<AnalysisPlotLoadResult | undefined> {
   if (!proxy || !model) return undefined;
 
+  const cached = <T>(requestKey: string, load: () => Promise<T>): Promise<T> =>
+    getCachedAnalysis(model, imagePoint, requestKey, load);
+
   if (plotType === "rayFan") {
     return {
       kind: "rayFan",
-      rayFanData: await proxy.getRayFanData(model, fieldIndex, imagePoint),
+      rayFanData: await cached(`rayFan:${fieldIndex}`, () => proxy.getRayFanData(model, fieldIndex, imagePoint)),
     };
   }
 
   if (plotType === "surfaceBySurface3rdOrder") {
     return {
       kind: "surfaceBySurface3rdOrder",
-      surfaceBySurface3rdOrderData: (await proxy.get3rdOrderSeidelData(model)).surfaceBySurface,
+      surfaceBySurface3rdOrderData: (await loadSeidelData({ proxy, model, imagePoint })).surfaceBySurface,
     };
   }
 
   if (plotType === "wavefrontMap") {
     return {
       kind: "wavefrontMap",
-      wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex, imagePoint),
+      wavefrontMapData: await cached(`wavefrontMap:${fieldIndex}:${wavelengthIndex}`, () => proxy.getWavefrontData(model, fieldIndex, wavelengthIndex, imagePoint)),
     };
   }
 
   if (plotType === "strehlVsWavelength") {
     return {
       kind: "strehlVsWavelength",
-      strehlVsWavelengthData: await proxy.getStrehlVsWavelengthData(model, fieldIndex, imagePoint),
+      strehlVsWavelengthData: await cached(`strehlVsWavelength:${fieldIndex}`, () => proxy.getStrehlVsWavelengthData(model, fieldIndex, imagePoint)),
     };
   }
 
   if (plotType === "opdFan") {
     return {
       kind: "opdFan",
-      opdFanData: await proxy.getOpdFanData(model, fieldIndex, imagePoint),
+      opdFanData: await cached(`opdFan:${fieldIndex}`, () => proxy.getOpdFanData(model, fieldIndex, imagePoint)),
     };
   }
 
   if (plotType === "spotDiagram") {
     return {
       kind: "spotDiagram",
-      spotDiagramData: await proxy.getSpotDiagramData(model, fieldIndex, imagePoint),
+      spotDiagramData: await cached(`spotDiagram:${fieldIndex}`, () => proxy.getSpotDiagramData(model, fieldIndex, imagePoint)),
     };
   }
 
   if (plotType === "fieldCurvature") {
     return {
       kind: "fieldCurvature",
-      fieldCurvatureData: await proxy.getFieldCurvatureData(model, wavelengthIndex),
+      fieldCurvatureData: await cached(`fieldCurvature:${wavelengthIndex}`, () => proxy.getFieldCurvatureData(model, wavelengthIndex)),
     };
   }
 
   if (plotType === "astigmatismCurve") {
     return {
       kind: "astigmatismCurve",
-      astigmatismCurveData: await proxy.getAstigmatismCurveData(model, wavelengthIndex),
+      astigmatismCurveData: await cached(`astigmatismCurve:${wavelengthIndex}`, () => proxy.getAstigmatismCurveData(model, wavelengthIndex)),
     };
   }
 
   if (plotType === "longitudinalSphericalAberration") {
     return {
       kind: "longitudinalSphericalAberration",
-      longitudinalSphericalAberrationData: await proxy.getLSAData(model),
+      longitudinalSphericalAberrationData: await cached("longitudinalSphericalAberration", () => proxy.getLSAData(model)),
     };
   }
 
   if (plotType === "geoPSF") {
     return {
       kind: "geoPSF",
-      geoPsfData: await proxy.getGeoPSFData(model, fieldIndex, wavelengthIndex),
+      geoPsfData: await cached(`geoPSF:${fieldIndex}:${wavelengthIndex}`, () => proxy.getGeoPSFData(model, fieldIndex, wavelengthIndex)),
     };
   }
 
   if (plotType === "diffractionPSF") {
     return {
       kind: "diffractionPSF",
-      diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex, imagePoint),
+      diffractionPsfData: await cached(`diffractionPSF:${fieldIndex}:${wavelengthIndex}`, () => proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex, imagePoint)),
     };
   }
 
   if (plotType === "diffractionMTF") {
     return {
       kind: "diffractionMTF",
-      diffractionMtfData: await proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex, imagePoint),
+      diffractionMtfData: await cached(`diffractionMTF:${fieldIndex}:${wavelengthIndex}`, () => proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex, imagePoint)),
     };
   }
+}
+
+interface LoadSharedAnalysisParams {
+  readonly proxy: PyodideWorkerAPI;
+  readonly model: OpticalModel;
+  readonly imagePoint?: ImagePoint;
+}
+
+/** Loads first-order data, partitioned by aim point despite being mathematically aim-independent. */
+export function loadFirstOrderData({ proxy, model, imagePoint = "chief_ray" }: LoadSharedAnalysisParams): Promise<Record<string, number>> {
+  return getCachedAnalysis(model, imagePoint, "firstOrder", () => proxy.getFirstOrderData(model));
+}
+
+/** Loads the complete Seidel payload shared with the surface-by-surface plot. */
+export function loadSeidelData({ proxy, model, imagePoint = "chief_ray" }: LoadSharedAnalysisParams): Promise<SeidelData> {
+  return getCachedAnalysis(model, imagePoint, "seidel", () => proxy.get3rdOrderSeidelData(model));
+}
+
+interface LoadZernikeDataParams extends LoadSharedAnalysisParams {
+  readonly fieldIndex: number;
+  readonly wavelengthIndex: number;
+  readonly ordering: ZernikeOrdering;
+  readonly numTerms: number;
+}
+
+/** Loads one complete Zernike payload keyed by all computation selectors. */
+export function loadZernikeData({ proxy, model, fieldIndex, wavelengthIndex, imagePoint = "chief_ray", ordering, numTerms }: LoadZernikeDataParams): Promise<ZernikeData> {
+  return getCachedAnalysis(
+    model,
+    imagePoint,
+    `zernike:${fieldIndex}:${wavelengthIndex}:${ordering}:${numTerms}`,
+    () => proxy.getZernikeCoefficients(model, fieldIndex, wavelengthIndex, imagePoint, numTerms, ordering),
+  );
 }
 
 /**
