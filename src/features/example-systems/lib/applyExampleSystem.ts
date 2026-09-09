@@ -2,7 +2,7 @@ import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { commitAnalysisPlotResult, loadAnalysisPlot, loadFirstOrderData, loadSeidelData } from "@/features/analysis/lib/plotFunctions";
 import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -32,7 +32,7 @@ interface ApplyExampleSystemParams {
  * - Converts the optical model surfaces to lens prescription rows with `surfacesToGridRows()`.
  * - Mirrors `model.setAutoAperture` into the Lens Editor auto-aperture flag.
  * - Performs the specs, prescription rows, auto-aperture, and loading-flag store updates before awaiting worker computations so callers can route immediately after starting the returned promise.
- * - Computes first-order data, lens layout image, selected analysis plot data, and Seidel data.
+ * - Computes lens layout directly and loads first-order, selected analysis plot, and complete Seidel data through the shared app-lifetime model/aim-point cache.
  * - Passes the app-wide `imagePoint` through to selected OPD-related analysis plot loading.
  * - Commits first-order data, layout image, plot data, Seidel data, specs, and optical model to their stores.
  * - Commits selected plot-store-backed analysis results through `commitAnalysisPlotResult(...)`, including diffraction MTF data.
@@ -72,7 +72,7 @@ export async function applyExampleSystem({
     analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, model.specs.wavelengths.weights.length);
 
     const [fod, layout, plotResult, seidel] = await Promise.all([
-      proxy.getFirstOrderData(model),
+      loadFirstOrderData({ proxy, model, imagePoint }),
       proxy.plotLensLayout(model, isDark),
       loadAnalysisPlot({
         plotType: selectedPlotType,
@@ -82,7 +82,7 @@ export async function applyExampleSystem({
         wavelengthIndex: clampedWavelengthIndex,
         imagePoint,
       }),
-      proxy.get3rdOrderSeidelData(model),
+      loadSeidelData({ proxy, model, imagePoint }),
     ]);
 
     analysisDataStore.getState().setFirstOrderData(fod);

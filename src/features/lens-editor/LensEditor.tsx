@@ -9,7 +9,7 @@ import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zer
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
-import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { commitAnalysisPlotResult, loadAnalysisPlot, loadFirstOrderData, loadSeidelData, loadZernikeData } from "@/features/analysis/lib/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -75,8 +75,9 @@ export interface LensEditorProps {
  * - `onError` delegates compute failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
  * - Missing prescription glasses are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
  * - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
- * - `handleSubmit` uses `loadAnalysisPlot(...)` from `features/analysis/lib/plotFunctions.ts`, so submit-time analysis updates use the same worker-path rules as `AnalysisPlotContainer.tsx`
- * - `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because full Seidel data is committed separately from `proxy.get3rdOrderSeidelData(...)`
+ * - `handleSubmit` uses the app-lifetime cached loaders from `features/analysis/lib/plotFunctions.ts`, so submit-time first-order, Seidel, and plot updates use the same model/aim-point identity and worker-path rules as `AnalysisPlotContainer.tsx`.
+ * - `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because it derives from the same complete cached Seidel payload committed separately.
+ * - Zernike modal requests cache the complete coefficient-and-metrics payload by model instance, aim point, field, wavelength, ordering, and term count; reopening still commits the selected payload within the modal.
  * - `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractiveElement.diffractionGrating`
  * - Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
@@ -127,7 +128,7 @@ export function LensEditor({
       const committedOpticalModel = lensStore.getState().committedOpticalModel;
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
-      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, imagePoint, numTerms, ordering);
+      return loadZernikeData({ proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex: wvlIndex, imagePoint, numTerms, ordering });
     },
     [proxy, lensStore, imagePoint]
   );
@@ -163,7 +164,7 @@ export function LensEditor({
       analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, specs.wavelengths.weights.length);
 
       const [fod, layout, plotResult, seidel, sequentialSemiDiameters] = await Promise.all([
-        proxy.getFirstOrderData(model),
+        loadFirstOrderData({ proxy, model, imagePoint }),
         proxy.plotLensLayout(model, isDark),
         loadAnalysisPlot({
           plotType: selectedPlotType,
@@ -173,7 +174,7 @@ export function LensEditor({
           wavelengthIndex: clampedWavelengthIndex,
           imagePoint,
         }),
-        proxy.get3rdOrderSeidelData(model),
+        loadSeidelData({ proxy, model, imagePoint }),
         autoAperture ? proxy.getSurfaceSemiDiameters(model) : Promise.resolve(undefined),
       ]);
 

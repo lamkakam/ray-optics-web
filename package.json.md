@@ -4,6 +4,8 @@
 
 The private `ray-optics-web` application is version `0.44.0` and uses the BSD-3-Clause license.
 
+The application directly depends on `lru-cache` for its bounded, app-lifetime in-memory analysis-result cache.
+
 ## Build behavior
 
 `npm run build` runs the static Next.js export and then executes `postbuild`. Post-build processing runs in this order:

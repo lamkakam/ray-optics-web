@@ -16,6 +16,7 @@ import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/
 import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
+import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPage";
 import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
 import { ExampleSystemList } from "@/features/example-systems/lib/exampleSystems";
@@ -135,6 +136,7 @@ function renderPage(overrides?: {
 
 describe("ExampleSystemsPage", () => {
   beforeEach(() => {
+    _resetAnalysisCache();
     mockPush.mockReset();
     mockScreenBreakpoint = "screenLG";
     mockTheme = "light";

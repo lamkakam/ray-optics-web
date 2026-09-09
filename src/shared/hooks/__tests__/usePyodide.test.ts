@@ -23,7 +23,9 @@ jest.mock("comlink", () => ({
   wrap: jest.fn(() => mockProxy),
 }));
 
-import { usePyodide, _resetSingleton } from "@/shared/hooks/usePyodide";
+import { usePyodide, _resetSingleton, withAnalysisCacheInvalidation } from "@/shared/hooks/usePyodide";
+import { getCachedAnalysis } from "@/features/analysis/lib/analysisCache";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
 import { wrap } from "comlink";
 
@@ -152,5 +154,26 @@ describe("usePyodide", () => {
     await waitFor(() => {
       expect(result.current.isReady).toBe(true);
     });
+  });
+
+  it("clears cached analyses before and after successful or rejected custom-glass mutations", async () => {
+    const raw = {
+      addUserDefinedGlasses: jest.fn().mockResolvedValue({}),
+      updateUserDefinedGlasses: jest.fn().mockRejectedValue(new Error("partial mutation")),
+      deleteUserDefinedGlasses: jest.fn().mockResolvedValue(undefined),
+    } as unknown as import("@/shared/hooks/usePyodide").PyodideWorkerAPI;
+    const proxy = withAnalysisCacheInvalidation(raw);
+    const model = {} as OpticalModel;
+    const load = jest.fn().mockResolvedValue("analysis");
+
+    await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
+    await proxy.addUserDefinedGlasses([]);
+    await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
+    await expect(proxy.updateUserDefinedGlasses([])).rejects.toThrow("partial mutation");
+    await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
+    await proxy.deleteUserDefinedGlasses([]);
+    await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
+
+    expect(load).toHaveBeenCalledTimes(4);
   });
 });

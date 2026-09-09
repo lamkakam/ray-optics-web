@@ -18,6 +18,7 @@ import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
+import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import {
@@ -336,6 +337,7 @@ function expectButtonsInOrder(buttonNames: string[]) {
 }
 
 beforeEach(() => {
+  _resetAnalysisCache();
   jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
   jest.mocked(useTheme).mockReturnValue({ theme: "light", setTheme: jest.fn() });
 });

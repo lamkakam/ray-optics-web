@@ -25,6 +25,7 @@ import type {
 } from "@/features/glass-map/types/glassMap";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
+import { clearAnalysisCache, _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 
 /** Determinate worker initialization percentage and status text. */
 export interface InitProgress {
@@ -123,10 +124,39 @@ let singletonInitProgress: InitProgress = {
 };
 const initProgressListeners = new Set<(progress: InitProgress) => void>();
 
+/** Wraps custom-glass mutations with eager and settlement-time cache invalidation. */
+export function withAnalysisCacheInvalidation(proxy: PyodideWorkerAPI): PyodideWorkerAPI {
+  const invalidateMutation = <TArgs extends readonly unknown[], TResult>(
+    mutation: (...args: TArgs) => Promise<TResult>,
+  ) => async (...args: TArgs): Promise<TResult> => {
+    clearAnalysisCache();
+    try {
+      return await mutation(...args);
+    } finally {
+      clearAnalysisCache();
+    }
+  };
+
+  return new Proxy(proxy, {
+    get(target, property, receiver) {
+      if (property === "addUserDefinedGlasses") {
+        return invalidateMutation(target.addUserDefinedGlasses.bind(target));
+      }
+      if (property === "updateUserDefinedGlasses") {
+        return invalidateMutation(target.updateUserDefinedGlasses.bind(target));
+      }
+      if (property === "deleteUserDefinedGlasses") {
+        return invalidateMutation(target.deleteUserDefinedGlasses.bind(target));
+      }
+      return Reflect.get(target, property, receiver) as unknown;
+    },
+  });
+}
+
 function getProxy(): PyodideWorkerAPI {
   if (!singletonProxy) {
     const worker = createPyodideWorker();
-    singletonProxy = wrap<PyodideWorkerAPI>(worker);
+    singletonProxy = withAnalysisCacheInvalidation(wrap<PyodideWorkerAPI>(worker));
   }
   return singletonProxy;
 }
@@ -167,7 +197,7 @@ function initOnce(): Promise<void> {
  * - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
  * - `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
  * - `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve. `optimizeGlasses` extends that report with initial/final glass identities and categorical optimizer metadata.
- * - User-defined glass APIs are passed through to the worker as typed Comlink methods. Add/update/get return the bare Python material map keyed by glass name; delete resolves with no payload.
+ * - User-defined glass APIs are passed through to the worker as typed Comlink methods. Add/update/delete clear the app-lifetime analysis cache immediately before invocation and again after settlement, including rejection. Add/update/get return the bare Python material map keyed by glass name; delete resolves with no payload.
  * - `canInterruptOptimization()` reports whether the initialized worker can install a Pyodide interrupt buffer.
  * - `requestOptimizationStop(runId)` asks the worker to signal the currently active optimization only when the run id still matches; late or stale run ids return `{ signaled: false }`.
  * - `optimizeOpm` and `optimizeGlasses` accept the same optional streamed progress callback and interruption arguments; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. The worker injects its four bundled Special media and live user-defined registry into glass runs, and glass progress may additionally include canonical phase, surface, and candidate context. Ordinary Python setup/runtime exceptions resolve with `success: false`, `status: "error"`, and restored or empty state; executor, JSON parsing, and Comlink transport failures still reject.
@@ -217,6 +247,7 @@ export function usePyodide(): {
 
 /** Reset singleton state. Only for testing. */
 export function _resetSingleton(): void {
+  _resetAnalysisCache();
   singletonProxy = undefined;
   singletonInitPromise = undefined;
   singletonInitProgress = {
