@@ -1,5 +1,7 @@
 """Tests for rayoptics_web_utils.utils module."""
 
+import base64
+
 
 class TestFigToBase64:
     """Encoding closes registered figures on success and on save failures."""
@@ -59,3 +61,45 @@ class TestGetWvlLbl:
 
         result = _get_wvl_lbl(MockOpm(), 1)
         assert result == '587.0nm'
+
+
+def test_fig_to_base64_forwards_png_save_options_and_closes_the_same_figure(monkeypatch):
+    import rayoptics_web_utils.utils.utils as utils_module
+
+    save_calls = []
+    close_calls = []
+
+    class FakeFigure:
+        def savefig(self, buffer, **kwargs):
+            save_calls.append(kwargs)
+            buffer.write(b"synthetic png")
+
+    figure = FakeFigure()
+    monkeypatch.setattr(utils_module.plt, "close", close_calls.append)
+
+    result = utils_module._fig_to_base64(figure, dpi=237)
+
+    assert result == base64.b64encode(b"synthetic png").decode("utf-8")
+    assert save_calls == [
+        {"format": "png", "dpi": 237, "bbox_inches": "tight"}
+    ]
+    assert close_calls == [figure]
+
+
+def test_fig_to_base64_uses_150_dpi_by_default(monkeypatch):
+    import rayoptics_web_utils.utils.utils as utils_module
+
+    save_calls = []
+
+    class FakeFigure:
+        def savefig(self, buffer, **kwargs):
+            save_calls.append(kwargs)
+            buffer.write(b"synthetic png")
+
+    monkeypatch.setattr(utils_module.plt, "close", lambda figure: None)
+
+    utils_module._fig_to_base64(FakeFigure())
+
+    assert save_calls == [
+        {"format": "png", "dpi": 150, "bbox_inches": "tight"}
+    ]

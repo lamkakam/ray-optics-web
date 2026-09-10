@@ -12,6 +12,13 @@ def test_annular_is_exported():
     assert aperture.obstruction_radius == 3
 
 
+def test_default_constructor_uses_documented_radii():
+    aperture = Annular()
+
+    assert aperture.radius == 1.0
+    assert aperture.obstruction_radius == 0.5
+
+
 def test_point_inside_uses_annulus_and_offsets():
     aperture = Annular(radius=10, obstruction_radius=3, x_offset=2, y_offset=-1)
 
@@ -20,6 +27,16 @@ def test_point_inside_uses_annulus_and_offsets():
     assert aperture.point_inside(5.1, -1, fuzz=0)
     assert aperture.point_inside(12, -1)
     assert not aperture.point_inside(12.1, -1, fuzz=0)
+
+
+def test_point_inside_includes_both_boundaries_and_uses_small_default_fuzz():
+    aperture = Annular(radius=10, obstruction_radius=3)
+
+    assert aperture.point_inside(3, 0, fuzz=0)
+    assert aperture.point_inside(10, 0, fuzz=0)
+    assert not aperture.point_inside(2.999, 0, fuzz=0)
+    assert aperture.point_inside(2.99999, 0)
+    assert not aperture.point_inside(10.00002, 0)
 
 
 def test_edge_pt_target_targets_outer_radius_with_offsets():
@@ -31,7 +48,10 @@ def test_edge_pt_target_targets_outer_radius_with_offsets():
 
 @pytest.mark.parametrize("obstruction_radius", [0, -1, 10, 11])
 def test_rejects_invalid_obstruction_radius(obstruction_radius):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=r"^obstruction_radius must be greater than 0 and smaller than radius$",
+    ):
         Annular(radius=10, obstruction_radius=obstruction_radius)
 
 

@@ -1,4 +1,4 @@
-"""Tests for rayoptics_web_utils.glass.user_defined_materials module."""
+"""Test tabulated-material registration, rendering, mapping, and exports."""
 
 import pytest
 from rayoptics_web_utils.glass.user_defined_materials import UserDefinedMaterial
@@ -34,7 +34,7 @@ only_four_data_points = [
 def test_no_duplicate_keys_allowed() -> None:
     user_defined_materials = UserDefinedMaterial()
     key = "some_material_label"
-    with pytest.raises(KeyError):
+    with pytest.raises(KeyError, match="Key 'some_material_label' already exists."):
         user_defined_materials[key] = ohara_s_bsm22
         user_defined_materials[key] = ohara_s_bsm22
 
@@ -42,7 +42,10 @@ def test_required_at_least_4_pairs() -> None:
     user_defined_materials = UserDefinedMaterial()
 
     for i in range(0, 4):
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match=r"^At least 4 wavelength-refractive index pairs are required\.$",
+        ):
             user_defined_materials[f"pairs_{i}"] = [only_four_data_points[j] for j in range(i)]
     
 
@@ -111,5 +114,107 @@ def test_get_all_materials_data() -> None:
     assert key3 in all_materials_data
 
 
+def test_mapping_protocol_iterates_and_deletes_registered_materials() -> None:
+    user_defined_materials = UserDefinedMaterial()
+    user_defined_materials["material"] = only_four_data_points
+
+    assert len(user_defined_materials) == 1
+    assert list(user_defined_materials) == ["material"]
+    assert user_defined_materials["material"] is not None
+
+    del user_defined_materials["material"]
+
+    assert len(user_defined_materials) == 0
+    with pytest.raises(KeyError):
+        user_defined_materials["material"]
+
+
+def test_missing_material_errors_include_the_requested_label() -> None:
+    user_defined_materials = UserDefinedMaterial()
+
+    with pytest.raises(KeyError, match="Material 'missing' does not exist."):
+        user_defined_materials.get_one_material_data("missing")
+    with pytest.raises(KeyError, match="Material 'missing' does not exist."):
+        user_defined_materials.get_materials_data(["missing"])
+
+
+def test_render_safe_glass_code_uses_nm_fraunhofer_samples() -> None:
+    from rayoptics_web_utils.glass import user_defined_materials as module
+
+    class RecordingMaterial:
+        def __init__(self) -> None:
+            self.wavelengths = []
+
+        def rindex(self, wavelength):
+            self.wavelengths.append(wavelength)
+            values = {
+                module._WL_D * 1000.0: 1.5234,
+                module._WL_F * 1000.0: 1.54,
+                module._WL_C * 1000.0: 1.51,
+            }
+            for expected_wavelength, value in values.items():
+                if wavelength == pytest.approx(expected_wavelength):
+                    return value
+            raise AssertionError(f"unexpected wavelength: {wavelength}")
+
+    material = RecordingMaterial()
+
+    assert module._render_safe_glass_code(material) == "523174"
+    assert material.wavelengths == pytest.approx(
+        [module._WL_D * 1000.0, module._WL_F * 1000.0, module._WL_C * 1000.0]
+    )
+
+
+def test_get_one_material_data_converts_all_fraunhofer_wavelengths_to_nm() -> None:
+    from rayoptics_web_utils.glass import user_defined_materials as module
+
+    class RecordingMedium:
+        wvls = [400.0, 500.0, 600.0, 700.0]
+        rndx = [1.8, 1.7, 1.6, 1.5]
+
+        def __init__(self) -> None:
+            self.wavelengths = []
+
+        def rindex(self, wavelength):
+            self.wavelengths.append(wavelength)
+            return 1.4 + wavelength / 10000.0
+
+    medium = RecordingMedium()
+    user_defined_materials = UserDefinedMaterial()
+    user_defined_materials.map["synthetic"] = medium
+
+    result = user_defined_materials.get_one_material_data("synthetic")["synthetic"]
+
+    assert medium.wavelengths == pytest.approx(
+        [
+            module._WL_D * 1000.0,
+            module._WL_E * 1000.0,
+            module._WL_F * 1000.0,
+            module._WL_C * 1000.0,
+            module._WL_G * 1000.0,
+        ]
+    )
+    assert result["dispersionCoeffs"] == list(zip(medium.wvls, medium.rndx))
+    assert result["refractiveIndexD"] == pytest.approx(1.45876)
+    assert result["refractiveIndexE"] == pytest.approx(1.45461)
+
+
+def test_setitem_passes_the_label_and_custom_catalog_to_the_medium(monkeypatch) -> None:
+    from rayoptics_web_utils.glass import user_defined_materials as module
+
+    calls = []
+
+    class FakeMedium:
+        def __init__(self, *args, **kwargs) -> None:
+            calls.append((args, kwargs))
+
+    monkeypatch.setattr(module.opticalmedium, "InterpolatedMedium", FakeMedium)
+    user_defined_materials = UserDefinedMaterial()
+
+    user_defined_materials["synthetic"] = only_four_data_points
+
+    assert calls == [
+        (("synthetic",), {"pairs": only_four_data_points, "cat": "custom"})
+    ]
 
 

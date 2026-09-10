@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import textwrap
+import types
 
 
 def test_python_suite_collection_rejects_pyside6_imports():
@@ -59,6 +60,30 @@ class TestInit:
         for mod_name in stubbed:
             assert mod_name in sys.modules, f"{mod_name} should be stubbed"
 
+    def test_init_recreates_all_dependency_stubs_as_named_modules(self, monkeypatch):
+        from rayoptics_web_utils.env import init
+
+        stubbed = [
+            "PySide6",
+            "PySide6.QtWidgets",
+            "PySide6.QtCore",
+            "PySide6.QtGui",
+            "psutil",
+            "zmq",
+            "pyzmq",
+            "tornado",
+            "tornado.ioloop",
+        ]
+        for mod_name in stubbed:
+            monkeypatch.delitem(sys.modules, mod_name, raising=False)
+
+        init()
+
+        for mod_name in stubbed:
+            module = sys.modules[mod_name]
+            assert isinstance(module, types.ModuleType)
+            assert module.__name__ == mod_name
+
     def test_init_stubs_rayoptics_qtgui(self):
         """init() should stub rayoptics.qtgui and rayoptics.qtgui.guiappcmds."""
         from rayoptics_web_utils.env import init
@@ -67,6 +92,22 @@ class TestInit:
         assert 'rayoptics.qtgui.guiappcmds' in sys.modules
         qtgui = sys.modules['rayoptics.qtgui']
         assert hasattr(qtgui, 'guiappcmds')
+
+    def test_init_links_named_qtgui_modules_to_each_other(self, monkeypatch):
+        from rayoptics_web_utils.env import init
+
+        monkeypatch.delitem(sys.modules, "rayoptics.qtgui", raising=False)
+        monkeypatch.delitem(sys.modules, "rayoptics.qtgui.guiappcmds", raising=False)
+
+        init()
+
+        qtgui = sys.modules["rayoptics.qtgui"]
+        guiappcmds = sys.modules["rayoptics.qtgui.guiappcmds"]
+        assert isinstance(qtgui, types.ModuleType)
+        assert isinstance(guiappcmds, types.ModuleType)
+        assert qtgui.__name__ == "rayoptics.qtgui"
+        assert guiappcmds.__name__ == "rayoptics.qtgui.guiappcmds"
+        assert qtgui.guiappcmds is guiappcmds
 
     def test_init_returns_dict_with_custom_materials(self):
         """init() should return a dict containing all custom material keys."""
@@ -81,6 +122,45 @@ class TestInit:
         assert result['water'] is not None
         assert 'd263teco' in result
         assert result['d263teco'] is not None
+
+    def test_init_forwards_each_catalog_material_and_returns_registry(self, monkeypatch):
+        import rayoptics_web_utils.glass.custom_materials as custom_materials
+        import rayoptics_web_utils.glass.user_defined_materials as user_materials
+        from rayoptics_web_utils.env import init
+
+        material_calls = []
+
+        def fake_load_custom_material(filename, label):
+            material = object()
+            material_calls.append((filename, label, material))
+            return material
+
+        registry = object()
+
+        monkeypatch.setattr(
+            custom_materials, "load_custom_material", fake_load_custom_material
+        )
+        monkeypatch.setattr(user_materials, "UserDefinedMaterial", lambda: registry)
+
+        result = init()
+
+        assert [(filename, label) for filename, label, _ in material_calls] == [
+            ("CaF2_Malitson.yml", "CaF2"),
+            ("FusedSilica_Malitson.yml", "Fused Silica"),
+            ("Water_Daimon-20.0C.yml", "Water"),
+            ("D263TECO.yml", "D263TECO"),
+        ]
+        assert set(result) == {
+            "caf2",
+            "fused_silica",
+            "water",
+            "d263teco",
+            "user_defined",
+        }
+        assert [result[key] for key in ("caf2", "fused_silica", "water", "d263teco")] == [
+            material for _, _, material in material_calls
+        ]
+        assert result["user_defined"] is registry
 
     def test_init_sets_matplotlib_backend(self):
         """init() should set the matplotlib backend to Agg."""
