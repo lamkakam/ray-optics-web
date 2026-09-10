@@ -14,7 +14,7 @@ Run a local Mutmut campaign for the `rayoptics_web_utils` package using the Mutm
    Run scripts/init-python-venv.sh first.
    ```
 4. Changes the working directory to `src/python/` so Mutmut discovers the package configuration and tests.
-5. Executes `.venv/bin/mutmut run`, forwarding all additional arguments unchanged. This supports focused selectors and Mutmut flags.
+5. Executes `.venv/bin/mutmut run`, forwarding all additional arguments unchanged and appending `--max-children 2`. This supports focused selectors and Mutmut flags while capping the campaign at two worker processes.
 
 ## Preconditions
 
@@ -30,11 +30,11 @@ bash scripts/run-python-mutation-tests.sh
 # Run a focused aperture campaign
 bash scripts/run-python-mutation-tests.sh "rayoptics_web_utils.aperture.annular*"
 
-# Forward Mutmut flags
-bash scripts/run-python-mutation-tests.sh "rayoptics_web_utils.aperture.annular*" --max-children 2
+# Forward Mutmut flags; the wrapper supplies the fixed worker limit automatically
+bash scripts/run-python-mutation-tests.sh --help
 ```
 
-All arguments after `run-python-mutation-tests.sh` are passed through to `mutmut run` unchanged.
+All arguments after `run-python-mutation-tests.sh` are passed through to `mutmut run` unchanged; the wrapper adds `--max-children 2` after them to enforce the fixed concurrency cap.
 
 ## Output / Side-effects
 

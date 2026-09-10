@@ -127,16 +127,16 @@ Runs use per-test coverage and related-test selection with Stryker's default wor
 
 Console output summarizes progress and scores. Open `reports/mutation/mutation.html` for the interactive report or inspect `reports/mutation/mutation.json` programmatically. Each mutation run overwrites these Git-ignored reports, so copy them elsewhere to retain a result. A dry run checks instrumentation and test compatibility without measuring a mutation score or writing reports. See the [Stryker Jest runner documentation](https://stryker-mutator.io/docs/stryker-js/jest-runner/) for integration details.
 
-Mutmut 3.7.0 runs mutation tests for the complete internal `rayoptics_web_utils` Python package through its existing pytest suite. Run these commands from `src/python/` after initializing the venv. Python mutation testing is local-only and has no CI workflow or mutation-score gate.
+Mutmut 3.7.0 runs mutation tests for the complete internal `rayoptics_web_utils` Python package through its existing pytest suite. Run these commands from `src/python/` after initializing the venv. Project-provided Mutmut runs use `--max-children 2` to cap concurrent workers, because Mutmut otherwise defaults to the host CPU count. Python mutation testing is local-only and has no CI workflow or mutation-score gate.
 
 ```bash
 cd src/python
 
 # Full Python package mutation campaign (potentially lengthy)
-.venv/bin/mutmut run
+.venv/bin/mutmut run --max-children 2
 
 # Focus on the annular aperture implementation
-.venv/bin/mutmut run "rayoptics_web_utils.aperture.annular*"
+.venv/bin/mutmut run --max-children 2 "rayoptics_web_utils.aperture.annular*"
 
 # Summarize mutation results
 .venv/bin/mutmut results

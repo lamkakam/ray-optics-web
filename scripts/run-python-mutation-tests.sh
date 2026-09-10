@@ -11,4 +11,5 @@ if [ ! -d "$PYTHON_DIR/.venv" ]; then
 fi
 
 cd "$PYTHON_DIR"
-.venv/bin/mutmut run "$@"
+# Keep local mutation campaigns bounded regardless of the host CPU count.
+.venv/bin/mutmut run "$@" --max-children 2

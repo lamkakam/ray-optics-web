@@ -76,10 +76,10 @@ Run Mutmut from `<project-root>/src/python` after initializing the venv:
 
 ```bash
 # Full Python package campaign; can take substantially longer than pytest
-.venv/bin/mutmut run
+.venv/bin/mutmut run --max-children 2
 
 # Focused aperture campaign
-.venv/bin/mutmut run "rayoptics_web_utils.aperture.annular*"
+.venv/bin/mutmut run --max-children 2 "rayoptics_web_utils.aperture.annular*"
 
 # Summarize results
 .venv/bin/mutmut results
@@ -88,7 +88,7 @@ Run Mutmut from `<project-root>/src/python` after initializing the venv:
 .venv/bin/mutmut browse
 ```
 
-Mutmut 3.7.0 covers all sources in `src/rayoptics_web_utils` and selects tests from `tests/`. Its `mutants/` cache and working tree are Git-ignored. Mutation testing is local-only, surviving mutants are informational, and no CI workflow or mutation-score gate is configured.
+Mutmut 3.7.0 covers all sources in `src/rayoptics_web_utils` and selects tests from `tests/`. Project-provided runs use `--max-children 2` to cap concurrent workers; Mutmut otherwise defaults to the host CPU count. Its `mutants/` cache and working tree are Git-ignored. Mutation testing is local-only, surviving mutants are informational, and no CI workflow or mutation-score gate is configured.
 
 ### E2E tests (Playwright):
 
