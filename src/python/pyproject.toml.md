@@ -31,6 +31,10 @@ It also declares unpinned scientific/runtime dependencies supplied through Pyodi
 
 The package includes YAML data files under `rayoptics_web_utils/data/*.yml`, which are bundled into the wheel for client-side Pyodide use.
 
+## Mutation Testing
+
+Mutmut 3.7.0 targets all Python source files under `src/rayoptics_web_utils` and selects tests from `tests/`. It is an on-demand local development tool with no CI mutation-score gate. Run Mutmut from `src/python/` so it discovers this configuration.
+
 ## Versioning Contract
 
 When the `version` field changes, update the Pyodide worker wheel URL and module documentation in `src/workers/pyodide.worker.ts` so the browser loads the matching generated wheel.

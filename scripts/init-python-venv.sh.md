@@ -2,7 +2,7 @@
 
 ## Purpose
 
-One-time setup of the local Python development environment at `src/python/.venv`. This venv is used for running the internal package's test suite, editable development of `rayoptics_web_utils`, and generating the Python third-party dependency license report.
+One-time setup of the local Python development environment at `src/python/.venv`. This venv is used for running the internal package's test suite and local mutation tests, editable development of `rayoptics_web_utils`, and generating the Python third-party dependency license report.
 
 ## Behavior (step-by-step)
 
@@ -11,8 +11,9 @@ One-time setup of the local Python development environment at `src/python/.venv`
 3. Upgrades `pip` inside the venv.
 4. Installs `pytest` into the venv.
 5. Installs `pip-licenses`, which generates the Python third-party dependency license report.
-6. Installs the package in editable mode (`pip install -e .`), making local source changes immediately visible without rebuilding.
-7. Prints the activation command on success:
+6. Installs the pinned on-demand mutation-testing tool `mutmut==3.7.0` into the venv.
+7. Installs the package in editable mode (`pip install -e .`), making local source changes immediately visible without rebuilding.
+8. Prints the activation command on success:
    ```
    source src/python/.venv/bin/activate
    ```
@@ -25,7 +26,7 @@ One-time setup of the local Python development environment at `src/python/.venv`
 ## Output / Side-effects
 
 - Creates (or reuses) `src/python/.venv/`.
-- Installs `pytest`, `pip-licenses`, and the editable package into the venv.
+- Installs `pytest`, `pip-licenses`, `mutmut==3.7.0`, and the editable package into the venv.
 - Does **not** build or publish the wheel — use `build-python-wheel.sh` for that.
 
 ## Usage
@@ -47,6 +48,7 @@ source src/python/.venv/bin/activate
 This script is not called by any npm script. It must be run manually before:
 
 - `bash scripts/run-python-tests.sh`
+- Local Mutmut commands run from `src/python/`
 - Any interactive Python session inside `python/` that imports `rayoptics_web_utils`
 - `npm run generate:third-party-licenses`
 

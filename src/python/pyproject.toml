@@ -25,3 +25,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 rayoptics_web_utils = ["data/*.yml"]
+
+[tool.mutmut]
+source_paths = ["src/rayoptics_web_utils"]
+pytest_add_cli_args_test_selection = ["tests/"]
