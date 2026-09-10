@@ -48,6 +48,37 @@ def test_edge_pt_target_rotates_then_offsets():
     assert aperture.edge_pt_target([0, 1]) == approx([8, -3])
 
 
+def test_coordinate_transforms_preserve_arbitrary_local_coordinates():
+    aperture = OffsetRotatedRectangular(
+        x_half_width=4,
+        y_half_width=2,
+        x_offset=1.5,
+        y_offset=-0.75,
+        rotation=37,
+    )
+    local_point = (2.25, -1.125)
+
+    global_point = aperture._to_global(*local_point)
+
+    assert aperture._to_local(*global_point) == approx(local_point)
+
+
+def test_rotated_corner_vectors_include_all_four_signed_corners():
+    aperture = OffsetRotatedRectangular(rotation=30)
+
+    corners = aperture._rotated_corner_vectors(4, 2)
+
+    expected_corners = [
+        (-4 * 0.8660254037844386 + 2 * 0.5, -4 * 0.5 - 2 * 0.8660254037844386),
+        (-4 * 0.8660254037844386 - 2 * 0.5, -4 * 0.5 + 2 * 0.8660254037844386),
+        (4 * 0.8660254037844386 + 2 * 0.5, 4 * 0.5 - 2 * 0.8660254037844386),
+        (4 * 0.8660254037844386 - 2 * 0.5, 4 * 0.5 + 2 * 0.8660254037844386),
+    ]
+
+    for actual, expected in zip(corners, expected_corners):
+        assert actual == approx(expected)
+
+
 def test_apply_scale_factor_scales_half_widths_and_offsets_but_not_rotation():
     aperture = OffsetRotatedRectangular(
         x_half_width=4,
@@ -116,6 +147,52 @@ def test_equal_set_dimension_clamps_to_zero_size_when_target_is_inside_offset():
     assert aperture.rotation == 30
 
 
+def test_equal_set_dimension_clamps_when_target_equals_offset_radius():
+    aperture = OffsetRotatedRectangular(
+        x_half_width=4,
+        y_half_width=2,
+        x_offset=3,
+        y_offset=4,
+        rotation=30,
+    )
+
+    aperture.set_dimension(5, 5)
+
+    assert aperture.x_half_width == 0
+    assert aperture.y_half_width == 0
+
+
+def test_equal_set_dimension_handles_zero_existing_half_widths():
+    aperture = OffsetRotatedRectangular(x_half_width=0, y_half_width=0)
+
+    aperture.set_dimension(5, 5)
+
+    assert aperture.x_half_width == 0
+    assert aperture.y_half_width == 0
+
+
+def test_equal_set_dimension_reaches_a_target_just_outside_the_offset_radius():
+    aperture = OffsetRotatedRectangular(
+        x_half_width=4,
+        y_half_width=2,
+        x_offset=3,
+        y_offset=4,
+        rotation=30,
+    )
+
+    aperture.set_dimension(5.00001, 5.00001)
+
+    assert _farthest_corner_radius(aperture) == approx(5.00001)
+
+
+def test_equal_set_dimension_solves_small_positive_discriminants():
+    aperture = OffsetRotatedRectangular(x_half_width=1, y_half_width=1)
+
+    aperture.set_dimension(0.1, 0.1)
+
+    assert _farthest_corner_radius(aperture) == approx(0.1)
+
+
 def test_non_equal_set_dimension_sets_explicit_half_widths_directly():
     aperture = OffsetRotatedRectangular(
         x_half_width=4,
@@ -132,6 +209,15 @@ def test_non_equal_set_dimension_sets_explicit_half_widths_directly():
     assert aperture.x_offset == 1
     assert aperture.y_offset == 2
     assert aperture.rotation == 45
+
+
+def test_point_inside_includes_edges_and_uses_small_default_fuzz():
+    aperture = OffsetRotatedRectangular(x_half_width=4, y_half_width=2)
+
+    assert aperture.point_inside(4, 2, fuzz=0)
+    assert aperture.point_inside(4.000009, 0)
+    assert aperture.point_inside(0, 2.000009)
+    assert not aperture.point_inside(4.00002, 0)
 
 
 def test_rayoptics_auto_aperture_preserves_rectangular_clear_aperture_ratio():

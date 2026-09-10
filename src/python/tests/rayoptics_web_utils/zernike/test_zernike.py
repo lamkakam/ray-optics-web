@@ -1,4 +1,4 @@
-"""Tests for rayoptics_web_utils.zernike module."""
+"""Behavioral tests for Zernike evaluation, fitting, and exported metrics."""
 
 import json
 import numpy as np
@@ -42,6 +42,21 @@ class TestZernikeRadial:
         result = zernike_radial(2, 0, rho)
         np.testing.assert_allclose(result, expected)
 
+    def test_higher_order_nonzero_azimuthal_term_uses_both_factorials(self):
+        from rayoptics_web_utils.zernike import zernike_radial
+
+        rho = np.array([0.5])
+
+        assert zernike_radial(4, 2, rho) == pytest.approx([4 * 0.5**4 - 3 * 0.5**2])
+
+    def test_integer_input_still_produces_float_polynomial_values(self):
+        from rayoptics_web_utils.zernike import zernike_radial
+
+        result = zernike_radial(2, 0, np.array([0, 1]))
+
+        assert result.dtype == float
+        np.testing.assert_allclose(result, [-1.0, 1.0])
+
 
 class TestZernikePolynomial:
     """Test full Zernike polynomial evaluation."""
@@ -60,6 +75,18 @@ class TestZernikePolynomial:
         result = zernike_polynomial(2, 0, rho, theta)
         # Unnormalized: R_2^0(0) = 2*0^2 - 1 = -1 (no sqrt(3) factor)
         np.testing.assert_allclose(result, -1.0)
+
+    def test_negative_azimuthal_order_uses_positive_sine_argument(self):
+        from rayoptics_web_utils.zernike import zernike_polynomial
+
+        result = zernike_polynomial(
+            2,
+            -2,
+            np.array([0.5]),
+            np.array([np.pi / 4]),
+        )
+
+        assert result == pytest.approx([0.5**2])
 
     def test_orthogonality(self):
         """Numerical check: integral of Z_i * Z_j over unit disk ≈ pi * delta_ij."""
@@ -196,6 +223,395 @@ class TestFitZernike:
 
         with pytest.raises(ValueError, match=message):
             fit_zernike(np.array([xx, yy, opd]), terms)
+
+    def test_empty_term_list_has_an_exact_validation_error(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.zeros((3, 2, 2))
+
+        with pytest.raises(ValueError, match=r"^At least one Zernike term is required\.$"):
+            fit_zernike(grid, [])
+
+    @pytest.mark.parametrize(
+        "terms",
+        [
+            [np.array([0, 0])],
+            [[0]],
+            ["00"],
+        ],
+    )
+    def test_rejects_non_pair_term_sequences_with_an_exact_error(self, terms):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.zeros((3, 2, 2))
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Each Zernike term must be a two-item \(n, m\) pair\.$",
+        ):
+            fit_zernike(grid, terms)
+
+    @pytest.mark.parametrize(
+        "terms",
+        [
+            [(-1, 0)],
+            [(0.5, 0)],
+            [(0, 0.5)],
+            [(True, 0)],
+            [(0, False)],
+        ],
+    )
+    def test_rejects_noninteger_or_boolean_orders_with_an_exact_error(self, terms):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.zeros((3, 2, 2))
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Zernike radial and azimuthal orders must be valid integers\.$",
+        ):
+            fit_zernike(grid, terms)
+
+    def test_rejects_duplicate_terms_with_an_exact_error(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        with pytest.raises(
+            ValueError, match=r"^Zernike terms must not contain duplicate entries\.$"
+        ):
+            fit_zernike(np.zeros((3, 2, 2)), [(0, 0), (0, 0)])
+
+    def test_rejects_azimuthal_order_larger_than_radial_order_exactly(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Zernike azimuthal order must not exceed radial order\.$",
+        ):
+            fit_zernike(np.zeros((3, 2, 2)), [(1, 2)])
+
+    def test_rejects_odd_radial_azimuthal_parity_exactly(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Zernike radial and azimuthal orders must have even parity\.$",
+        ):
+            fit_zernike(np.zeros((3, 2, 2)), [(2, 1)])
+
+    def test_rejects_invalid_grid_shape_with_an_exact_error(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        with pytest.raises(
+            ValueError,
+            match=r"^OPD grid must have a leading coordinate dimension of length 3\.$",
+        ):
+            fit_zernike(np.zeros((2, 2, 2)), [(0, 0)])
+
+    def test_rejects_mismatched_weights_with_an_exact_error(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        with pytest.raises(
+            ValueError, match=r"^Zernike weights must match the OPD sample shape\.$"
+        ):
+            fit_zernike(np.zeros((3, 2, 2)), [(0, 0)], weights=np.ones((2, 1)))
+
+    def test_rejects_finite_opd_with_nonfinite_coordinates_exactly(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.zeros((3, 2, 2))
+        grid[0, 0, 0] = np.nan
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Finite OPD samples require finite pupil coordinates\.$",
+        ):
+            fit_zernike(grid, [(0, 0)])
+
+    def test_rejects_finite_opd_with_nonfinite_weights_exactly(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        weights = np.ones((2, 2))
+        weights[0, 0] = np.nan
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Finite OPD samples require finite quadrature weights\.$",
+        ):
+            fit_zernike(np.zeros((3, 2, 2)), [(0, 0)], weights=weights)
+
+    def test_rejects_samples_outside_the_unit_disk(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.array([[[1.5]], [[0.0]], [[0.25]]])
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Insufficient valid samples for the requested Zernike terms\.$",
+        ):
+            fit_zernike(grid, [(0, 0)])
+
+    def test_accepts_a_finite_sample_on_the_unit_disk_boundary(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.array([[[1.0]], [[0.0]], [[0.25]]])
+
+        np.testing.assert_allclose(fit_zernike(grid, [(0, 0)]), [0.25])
+
+    def test_accepts_the_full_coordinate_tolerance_at_the_unit_disk_boundary(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        boundary = 1.0 + 1.0e-12
+        grid = np.array([[[boundary]], [[0.0]], [[0.25]]])
+
+        np.testing.assert_allclose(fit_zernike(grid, [(0, 0)]), [0.25])
+
+    def test_zero_weight_samples_are_not_valid_samples(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Insufficient valid samples for the requested Zernike terms\.$",
+        ):
+            fit_zernike(
+                np.array([[[0.0]], [[0.0]], [[0.25]]]),
+                [(0, 0)],
+                weights=np.zeros((1, 1)),
+            )
+
+    def test_fit_residual_rms_uses_nonuniform_weights(self):
+        from rayoptics_web_utils.zernike.zernike import _fit_zernike_details
+
+        grid = np.array(
+            [
+                [[0.0, 0.5], [0.0, 0.5]],
+                [[0.0, 0.0], [0.5, 0.5]],
+                [[0.0, 1.0], [2.0, 4.0]],
+            ]
+        )
+        weights = np.array([[1.0, 1.0], [1.0, 10.0]])
+
+        _, residual_rms, _, _ = _fit_zernike_details(
+            grid, [(0, 0)], weights=weights
+        )
+        mean = np.average(grid[2], weights=weights)
+        expected = np.sqrt(np.average((grid[2] - mean) ** 2, weights=weights))
+
+        assert residual_rms == pytest.approx(expected)
+
+    def test_two_dimensional_sample_grid_is_supported(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.array(
+            [
+                [-0.5, 0.0, 0.5, 0.0],
+                [0.0, 0.0, 0.0, 0.5],
+                [0.2, 0.2, 0.2, 0.2],
+            ]
+        )
+
+        np.testing.assert_allclose(fit_zernike(grid, [(0, 0)]), [0.2])
+
+    def test_numeric_text_grid_and_weights_are_coerced_to_float(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        grid = np.array(
+            [
+                ["-0.5", "0.0", "0.5", "0.0"],
+                ["0.0", "0.0", "0.0", "0.5"],
+                ["0.2", "0.2", "0.2", "0.2"],
+            ]
+        )
+        weights = np.array(["1.0", "2.0", "3.0", "4.0"])
+
+        np.testing.assert_allclose(fit_zernike(grid, [(0, 0)], weights), [0.2])
+
+    def test_negative_quadrature_weight_has_an_exact_error(self):
+        from rayoptics_web_utils.zernike import fit_zernike
+
+        axis = np.linspace(-1.0, 1.0, 7)
+        xx, yy = np.meshgrid(axis, axis)
+        opd = np.zeros_like(xx)
+        opd[np.hypot(xx, yy) > 1.0] = np.nan
+        weights = np.ones_like(opd)
+        weights[3, 3] = -1.0
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Zernike quadrature weights must not be negative\.$",
+        ):
+            fit_zernike(np.array([xx, yy, opd]), [(0, 0)], weights)
+
+    def test_lstsq_is_called_with_an_explicit_none_rcond(self, monkeypatch):
+        from rayoptics_web_utils.zernike.zernike import _fit_zernike_details
+
+        observed = {}
+
+        def fake_lstsq(design, opd, **kwargs):
+            observed.update(kwargs)
+            return np.array([0.2]), np.array([]), 1, np.array([1.0])
+
+        monkeypatch.setattr(np.linalg, "lstsq", fake_lstsq)
+        grid = np.array(
+            [
+                [-0.5, 0.0, 0.5, 0.0],
+                [0.0, 0.0, 0.0, 0.5],
+                [0.2, 0.2, 0.2, 0.2],
+            ]
+        )
+
+        _fit_zernike_details(grid, [(0, 0)])
+
+        assert observed == {"rcond": None}
+
+    def test_nonpositive_final_singular_value_has_an_exact_error(self, monkeypatch):
+        from rayoptics_web_utils.zernike.zernike import _fit_zernike_details
+
+        monkeypatch.setattr(
+            np.linalg,
+            "lstsq",
+            lambda *args, **kwargs: (
+                np.array([0.2]),
+                np.array([]),
+                1,
+                np.array([1.0, 0.0]),
+            ),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Zernike design matrix has invalid singular values\.$",
+        ):
+            _fit_zernike_details(
+                np.array(
+                    [
+                        [-0.5, 0.0, 0.5, 0.0],
+                        [0.0, 0.0, 0.0, 0.5],
+                        [0.2, 0.2, 0.2, 0.2],
+                    ]
+                ),
+                [(0, 0)],
+            )
+
+    @pytest.mark.parametrize("singular_values", [[np.nan, 1.0], [1.0e7, 1.0e-7]])
+    def test_nonfinite_or_large_condition_has_an_exact_error(
+        self, monkeypatch, singular_values
+    ):
+        from rayoptics_web_utils.zernike.zernike import _fit_zernike_details
+
+        monkeypatch.setattr(
+            np.linalg,
+            "lstsq",
+            lambda *args, **kwargs: (
+                np.array([0.2]),
+                np.array([]),
+                1,
+                np.array(singular_values),
+            ),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Zernike design matrix is ill-conditioned \(.*\)\.$",
+        ):
+            _fit_zernike_details(
+                np.array(
+                    [
+                        [-0.5, 0.0, 0.5, 0.0],
+                        [0.0, 0.0, 0.0, 0.5],
+                        [0.2, 0.2, 0.2, 0.2],
+                    ]
+                ),
+                [(0, 0)],
+            )
+
+    def test_condition_equal_to_limit_is_accepted(self, monkeypatch):
+        from rayoptics_web_utils.zernike.zernike import _fit_zernike_details
+
+        monkeypatch.setattr(
+            np.linalg,
+            "lstsq",
+            lambda *args, **kwargs: (
+                np.array([0.2]),
+                np.array([]),
+                1,
+                np.array([1.0e12, 1.0]),
+            ),
+        )
+
+        _, _, rank, condition = _fit_zernike_details(
+            np.array(
+                [
+                    [-0.5, 0.0, 0.5, 0.0],
+                    [0.0, 0.0, 0.0, 0.5],
+                    [0.2, 0.2, 0.2, 0.2],
+                ]
+            ),
+            [(0, 0)],
+        )
+
+        assert rank == 1
+        assert condition == pytest.approx(1.0e12)
+
+    def test_condition_just_above_limit_is_rejected(self, monkeypatch):
+        from rayoptics_web_utils.zernike.zernike import _fit_zernike_details
+
+        monkeypatch.setattr(
+            np.linalg,
+            "lstsq",
+            lambda *args, **kwargs: (
+                np.array([0.2]),
+                np.array([]),
+                1,
+                np.array([1.0e12 + 0.5, 1.0]),
+            ),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Zernike design matrix is ill-conditioned \(1\.000e\+12\)\.$",
+        ):
+            _fit_zernike_details(
+                np.array(
+                    [
+                        [-0.5, 0.0, 0.5, 0.0],
+                        [0.0, 0.0, 0.0, 0.5],
+                        [0.2, 0.2, 0.2, 0.2],
+                    ]
+                ),
+                [(0, 0)],
+            )
+
+
+class TestMonochromaticStrehl:
+    """Test weighted coherent intensity and invalid-sample handling."""
+
+    def test_weighted_phase_average_changes_the_coherent_intensity(self):
+        from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl
+
+        assert _monochromatic_strehl([0.0, 0.5], [3.0, 1.0]) == pytest.approx(0.25)
+
+    def test_zero_weights_are_excluded_from_the_phase_average(self):
+        from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl
+
+        assert _monochromatic_strehl([0.0], [0.0]) == 0.0
+
+    def test_no_finite_positive_weighted_samples_return_zero(self):
+        from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl
+
+        assert _monochromatic_strehl([np.nan], [1.0]) == 0.0
+
+    def test_weight_shape_mismatch_has_an_exact_error(self):
+        from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl
+
+        with pytest.raises(ValueError, match=r"^Strehl weights must match OPD samples\.$"):
+            _monochromatic_strehl([0.0, 0.5], [1.0])
+
+    def test_numeric_text_opd_and_weights_are_coerced_to_float(self):
+        from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl
+
+        assert _monochromatic_strehl(["0.0", "0.5"], ["3.0", "1.0"]) == pytest.approx(
+            0.25
+        )
 
     def test_rank_deficient_fit_is_rejected(self):
         from rayoptics_web_utils.zernike import fit_zernike

@@ -1,11 +1,11 @@
-"""Test the geometric Ronchi ruling with collection-safe imports.
+"""Behavioral tests for geometric Ronchi rulings and headless vignetting setup.
 
 Keep module-level RayOptics imports on headless core modules. Pytest fixtures do
 not run during collection, so GUI-transitive imports must be deferred until a
 test body runs after the autouse environment initialization fixture.
 """
 
-from math import nan
+from math import nan, ulp
 
 import numpy as np
 import pytest
@@ -54,6 +54,37 @@ def test_rejects_invalid_constructor_values(parameter, value):
         RonchiRuling(**{parameter: value})
 
 
+@pytest.mark.parametrize(
+    "parameter", ["radius", "lpmm", "rotation", "x_offset", "y_offset"]
+)
+def test_constructor_nonfinite_values_have_exact_parameter_errors(parameter):
+    with pytest.raises(
+        ValueError,
+        match=rf"^{parameter} must be a finite number$",
+    ):
+        RonchiRuling(**{parameter: float("inf")})
+
+
+@pytest.mark.parametrize(
+    "parameter", ["radius", "lpmm", "rotation", "x_offset", "y_offset"]
+)
+def test_constructor_non_numeric_values_have_exact_parameter_errors(parameter):
+    with pytest.raises(
+        ValueError,
+        match=rf"^{parameter} must be a finite number$",
+    ):
+        RonchiRuling(**{parameter: "not a number"})
+
+
+@pytest.mark.parametrize("parameter", ["radius", "lpmm"])
+def test_positive_constructor_values_have_exact_errors(parameter):
+    with pytest.raises(
+        ValueError,
+        match=rf"^{parameter} must be greater than zero$",
+    ):
+        RonchiRuling(**{parameter: 0})
+
+
 def test_point_inside_has_symmetric_clear_and_opaque_half_pitch_bands():
     aperture = RonchiRuling(radius=1, lpmm=10)
 
@@ -85,6 +116,35 @@ def test_point_inside_clips_to_an_offset_circular_envelope():
     assert not aperture.point_inside(2.05, -3, fuzz=0)
     assert aperture.point_inside(2, -2, fuzz=0)
     assert not aperture.point_inside(2, -1.999, fuzz=0)
+
+
+def test_point_inside_rejects_an_outside_point_even_on_a_clear_period_center():
+    aperture = RonchiRuling(radius=1, lpmm=10)
+
+    assert not aperture.point_inside(1.1, 0, fuzz=0)
+
+
+def test_point_inside_uses_the_documented_rotation_sign():
+    aperture = RonchiRuling(radius=1, lpmm=10, rotation=45)
+
+    assert aperture.point_inside(0.025, 0.025, fuzz=0)
+
+
+def test_point_inside_default_fuzz_does_not_expand_the_envelope_by_one_unit():
+    aperture = RonchiRuling(radius=1, lpmm=10)
+
+    assert not aperture.point_inside(0, 1.5)
+
+
+def test_point_inside_accepts_and_rejects_the_explicit_ulp_margin():
+    aperture = RonchiRuling(radius=1, lpmm=10)
+    pitch = 1 / aperture.lpmm
+
+    four_ulp_boundary = pitch / 4 + 4 * ulp(pitch)
+    five_ulp_boundary = pitch / 4 + 5 * ulp(pitch)
+
+    assert aperture.point_inside(four_ulp_boundary, 0, fuzz=0)
+    assert not aperture.point_inside(five_ulp_boundary, 0, fuzz=0)
 
 
 def test_rotation_turns_vertical_lines_toward_positive_x():
@@ -126,6 +186,18 @@ def test_set_dimension_rejects_invalid_outer_radius(radius):
 
     with pytest.raises(ValueError):
         aperture.set_dimension(radius, radius)
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        (0, r"^radius must be greater than zero$"),
+        (float("inf"), r"^radius must be a finite number$"),
+    ],
+)
+def test_set_dimension_validation_errors_are_exact(value, message):
+    with pytest.raises(ValueError, match=message):
+        RonchiRuling().set_dimension(value, value)
 
 
 def test_apply_scale_factor_scales_radius_and_offsets_only():
@@ -247,8 +319,15 @@ def test_vignetting_uses_outer_envelope_and_restores_ruling_on_error():
         assert model is opm
         envelope = interface.clear_apertures[0]
         assert envelope is not ruling
+        assert envelope.rotation == ruling.rotation
         assert envelope.point_inside(1.05, -2, fuzz=0)
+        assert not envelope.point_inside(3.5, -2)
+        assert not envelope.point_inside(4, -2, fuzz=0)
+        assert not envelope.point_inside(1, -5, fuzz=0)
+        assert envelope.point_inside(3.000009, -2)
+        assert envelope.point_inside(3, -2, fuzz=0)
         assert envelope.edge_pt_target([1, 0]) == [3, -2]
+        assert envelope.edge_pt_target([2, -0.5]) == [5, -3]
         raise RuntimeError("stop after inspecting the temporary envelope")
 
     with pytest.raises(RuntimeError, match="temporary envelope"):
