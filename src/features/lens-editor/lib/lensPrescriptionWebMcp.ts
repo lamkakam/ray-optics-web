@@ -195,18 +195,29 @@ function resolvedRowMedium(
   return medium === undefined ? undefined : { medium: medium.medium, manufacturer: medium.manufacturer };
 }
 
+/** Named readonly handles for the five Lens Editor prescription descriptors. */
+export type LensPrescriptionTools = Readonly<{
+  readonly getLensPrescription: WebMCP.ModelContextTool;
+  readonly setLensPrescription: WebMCP.ModelContextTool;
+  readonly insertLensSurface: WebMCP.ModelContextTool;
+  readonly updateLensRow: WebMCP.ModelContextTool;
+  readonly deleteLensSurface: WebMCP.ModelContextTool;
+}>;
+
 /**
- * Creates the five validated tool descriptors bound to the supplied Lens Editor
- * store and current glass lookup snapshot. Set and update resolve the complete
- * candidate before mutation; material edits commit both canonical fields in one
- * `updateRow` call.
+ * Creates a readonly object of five validated tool descriptors bound to the
+ * supplied Lens Editor store and current glass lookup snapshot. The object keys
+ * are `getLensPrescription`, `setLensPrescription`, `insertLensSurface`,
+ * `updateLensRow`, and `deleteLensSurface`; each descriptor retains its stable
+ * snake_case MCP name. Set and update resolve the complete candidate before
+ * mutation; material edits commit both canonical fields in one `updateRow` call.
  */
 export function createLensPrescriptionTools(
   store: StoreApi<LensEditorState>,
   lookupMaps: GlassLookupMaps | undefined,
-): readonly WebMCP.ModelContextTool[] {
-  return [
-    {
+): LensPrescriptionTools {
+  return {
+    getLensPrescription: {
       name: "get_lens_prescription",
       description: "Read the complete Lens Editor prescription or one visible Object, surface, or Image row.",
       inputSchema: getLensPrescriptionInputSchema,
@@ -222,7 +233,7 @@ export function createLensPrescriptionTools(
         return JSON.stringify(externalRow(row));
       },
     },
-    {
+    setLensPrescription: {
       name: "set_lens_prescription",
       description: "Replace the complete Lens Editor prescription after strict validation.",
       inputSchema: setLensPrescriptionInputSchema,
@@ -235,7 +246,7 @@ export function createLensPrescriptionTools(
         return mutationResult(store.getState(), { replaced: true });
       },
     },
-    {
+    insertLensSurface: {
       name: "insert_lens_surface",
       description: "Insert a default physical lens surface after Object or a visible surface index.",
       inputSchema: insertLensSurfaceInputSchema,
@@ -255,7 +266,7 @@ export function createLensPrescriptionTools(
         return mutationResult(next, { surface: insertedIndex, row: externalRow(insertedRow) });
       },
     },
-    {
+    updateLensRow: {
       name: "update_lens_row",
       description: "Update applicable simple or nested fields on a visible Object, surface, or Image row.",
       inputSchema: updateLensRowInputSchema,
@@ -289,7 +300,7 @@ export function createLensPrescriptionTools(
         return mutationResult(next, { row: selector, value: externalRow(updatedRow) });
       },
     },
-    {
+    deleteLensSurface: {
       name: "delete_lens_surface",
       description: "Delete one physical lens surface by its current visible positive index.",
       inputSchema: deleteLensSurfaceInputSchema,
@@ -305,5 +316,5 @@ export function createLensPrescriptionTools(
         return mutationResult(store.getState(), { surface });
       },
     },
-  ];
+  };
 }
