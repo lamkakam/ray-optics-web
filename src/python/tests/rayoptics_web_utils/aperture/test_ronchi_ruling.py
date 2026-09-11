@@ -30,6 +30,16 @@ def test_exported_from_aperture_package_with_documented_defaults():
     assert aperture.y_offset == 0.0
 
 
+def test_listobj_str_includes_ruling_parameters_and_base_aperture_state():
+    """Object-list serialization retains ruling density and inherited offsets."""
+    aperture = RonchiRuling(radius=10, lpmm=25, x_offset=2, y_offset=-1)
+
+    assert aperture.listobj_str() == (
+        "ca: Ronchi radius=10 lpmm=25\n"
+        "x_offset=2   y_offset=-1   rotation=0.0\n"
+    )
+
+
 @pytest.mark.parametrize(
     ("parameter", "value"),
     [

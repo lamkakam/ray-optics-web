@@ -1,7 +1,13 @@
-"""Tests for rayoptics_web_utils.optimization."""
+"""Behavioral tests for configuration, operand evaluation, and optimization.
+
+The suite exercises normalized configuration contracts, weighted scalar/vector
+merit evaluation, pickup and target state, solver dispatch, progress, and
+failure behavior through real models and deterministic fakes.
+"""
 
 import json
 import math
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -1972,6 +1978,315 @@ class TestOptimizationValidation:
                 },
             )
 
+    def test_normalizes_least_squares_defaults_and_explicit_options(self):
+        from rayoptics_web_utils.optimization.config import normalize_optimizer_config
+
+        defaults = normalize_optimizer_config({})
+        explicit = normalize_optimizer_config(
+            {
+                "optimizer": {
+                    "kind": "least_squares",
+                    "method": "lm",
+                    "ftol": 1e-7,
+                    "xtol": 2e-7,
+                    "gtol": 3e-7,
+                    "max_nfev": 17,
+                }
+            }
+        )
+
+        assert defaults == {"kind": "least_squares", "method": "trf"}
+        assert explicit == {
+            "kind": "least_squares",
+            "method": "lm",
+            "ftol": 1e-7,
+            "xtol": 2e-7,
+            "gtol": 3e-7,
+            "max_nfev": 17,
+        }
+
+    def test_normalizes_differential_evolution_without_inventing_a_method(self):
+        from rayoptics_web_utils.optimization.config import normalize_optimizer_config
+
+        normalized = normalize_optimizer_config(
+            {
+                "optimizer": {
+                    "kind": "differential_evolution",
+                    "strategy": "rand1bin",
+                    "max_nfev": 40,
+                    "popsize": 4,
+                    "tol": 1e-4,
+                    "mutation": 0.8,
+                    "recombination": 0.6,
+                    "seed": 9,
+                    "polish": True,
+                    "init": "random",
+                    "atol": 1e-8,
+                }
+            }
+        )
+
+        assert normalized["kind"] == "differential_evolution"
+        assert normalized["strategy"] == "rand1bin"
+        assert normalized["max_nfev"] == 40
+        assert "method" not in normalized
+
+    @pytest.mark.parametrize(
+        ("optimizer", "error"),
+        [
+            ({"kind": "unknown"}, "Unknown optimizer kind: unknown"),
+            ({"kind": "least_squares", "method": "dogbox"}, "Unknown least-squares method: dogbox"),
+            ({"kind": "least_squares", "bad": 1}, "Unsupported optimizer option"),
+            ({"kind": "differential_evolution", "method": "trf"}, "Unsupported optimizer option"),
+        ],
+    )
+    def test_rejects_unknown_optimizer_kinds_methods_and_options(self, optimizer, error):
+        from rayoptics_web_utils.optimization.config import normalize_optimizer_config
+
+        with pytest.raises(ValueError, match=error):
+            normalize_optimizer_config({"optimizer": optimizer})
+
+    @pytest.mark.parametrize(
+        ("optimizer", "entry", "expected"),
+        [
+            (
+                {"kind": "least_squares", "method": "trf"},
+                {"kind": "radius", "surface_index": 1, "min": -20, "max": 30},
+                {"kind": "radius", "surface_index": 1, "min": -20.0, "max": 30.0},
+            ),
+            (
+                {"kind": "least_squares", "method": "lm"},
+                {"kind": "thickness", "surface_index": 1},
+                {"kind": "thickness", "surface_index": 1},
+            ),
+            (
+                {"kind": "differential_evolution"},
+                {"kind": "thickness", "surface_index": 1, "min": 1, "max": 8},
+                {"kind": "thickness", "surface_index": 1, "min": 1.0, "max": 8.0},
+            ),
+        ],
+    )
+    def test_normalizes_variable_kinds_bounds_and_numeric_values(
+        self,
+        fresh_cooke_triplet,
+        optimizer,
+        entry,
+        expected,
+    ):
+        from rayoptics_web_utils.optimization.config import (
+            normalize_optimizer_config,
+            normalize_variables,
+        )
+
+        normalized = normalize_variables(
+            fresh_cooke_triplet,
+            [entry],
+            normalize_optimizer_config({"optimizer": optimizer}),
+        )
+
+        assert normalized == [expected]
+
+    @pytest.mark.parametrize(
+        ("optimizer", "entry", "error"),
+        [
+            (
+                {"kind": "least_squares", "method": "trf"},
+                {"kind": "radius", "surface_index": 1, "min": 1},
+                "both min and max",
+            ),
+            (
+                {"kind": "least_squares", "method": "lm"},
+                {"kind": "radius", "surface_index": 1, "min": 1},
+                "omit both min and max",
+            ),
+            (
+                {"kind": "differential_evolution"},
+                {"kind": "radius", "surface_index": 1, "min": 1, "max": float("inf")},
+                "finite min and max",
+            ),
+            (
+                {"kind": "least_squares", "method": "lm"},
+                {"kind": "not-a-variable", "surface_index": 1},
+                "Unknown variable kind",
+            ),
+        ],
+    )
+    def test_rejects_invalid_variable_bound_contracts(
+        self,
+        fresh_cooke_triplet,
+        optimizer,
+        entry,
+        error,
+    ):
+        from rayoptics_web_utils.optimization.config import (
+            normalize_optimizer_config,
+            normalize_variables,
+        )
+
+        with pytest.raises(ValueError, match=error):
+            normalize_variables(
+                fresh_cooke_triplet,
+                [entry],
+                normalize_optimizer_config({"optimizer": optimizer}),
+            )
+
+    def test_normalizes_pickup_defaults_and_dependency_order(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization.config import (
+            normalize_pickups,
+            pickup_order,
+        )
+
+        pickups = normalize_pickups(
+            fresh_cooke_triplet,
+            [
+                {"kind": "radius", "surface_index": 3, "source_surface_index": 2},
+                {
+                    "kind": "radius",
+                    "surface_index": 2,
+                    "source_surface_index": 1,
+                    "scale": -2,
+                    "offset": 1.5,
+                },
+            ],
+            set(),
+        )
+
+        assert pickups[0]["scale"] == 1.0
+        assert pickups[0]["offset"] == 0.0
+        assert pickups[1]["scale"] == -2.0
+        assert pickups[1]["offset"] == 1.5
+        assert [pickup["surface_index"] for pickup in pickup_order(pickups)] == [2, 3]
+
+    @pytest.mark.parametrize(
+        ("pickups", "error"),
+        [
+            (
+                [
+                    {"kind": "radius", "surface_index": 1, "source_surface_index": 2},
+                    {"kind": "radius", "surface_index": 1, "source_surface_index": 3},
+                ],
+                "Duplicate pickup target",
+            ),
+            (
+                [{"kind": "not-a-pickup", "surface_index": 1, "source_surface_index": 2}],
+                "Unknown pickup kind",
+            ),
+            (
+                [{"kind": "radius", "surface_index": 1, "source_surface_index": 999}],
+                "source_surface_index",
+            ),
+        ],
+    )
+    def test_rejects_invalid_pickup_kind_target_and_source(self, fresh_cooke_triplet, pickups, error):
+        from rayoptics_web_utils.optimization.config import normalize_pickups
+
+        with pytest.raises((ValueError, IndexError), match=error):
+            normalize_pickups(fresh_cooke_triplet, pickups, set())
+
+    @pytest.mark.parametrize(
+        ("operand", "expected_pairs"),
+        [
+            (
+                {
+                    "kind": "opd_difference",
+                    "target": 2,
+                    "weight": 3,
+                    "fields": [{"index": 2, "weight": 4}, {"index": 0, "weight": 0}],
+                    "wavelengths": [{"index": 1, "weight": 5}, {"index": 0, "weight": 0}],
+                },
+                [(2, 1)],
+            ),
+            (
+                {"kind": "focal_length", "target": 100, "weight": 2},
+                [(None, None)],
+            ),
+            (
+                {"kind": "ray_fan", "weight": 1, "options": {"num_rays": 5}},
+                [
+                    (0, 0),
+                    (0, 1),
+                    (0, 2),
+                    (1, 0),
+                    (1, 1),
+                    (1, 2),
+                    (2, 0),
+                    (2, 1),
+                    (2, 2),
+                ],
+            ),
+        ],
+    )
+    def test_normalizes_scalar_special_and_field_wavelength_operand_samples(
+        self,
+        fresh_cooke_triplet,
+        operand,
+        expected_pairs,
+    ):
+        from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+        samples = normalize_operand_samples(fresh_cooke_triplet, operand)
+
+        assert [
+            (sample["field_index"], sample["wavelength_index"])
+            for sample in samples
+        ] == expected_pairs
+        if operand["kind"] == "opd_difference":
+            assert samples[0]["target"] == 2.0
+            assert samples[0]["weight"] == 3.0
+            assert samples[0]["field_weight"] == 4.0
+            assert samples[0]["wavelength_weight"] == 5.0
+
+    @pytest.mark.parametrize("kind", ["focal_length", "f_number"])
+    def test_zero_weight_scalar_operand_is_removed(self, fresh_cooke_triplet, kind):
+        from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+        assert normalize_operand_samples(
+            fresh_cooke_triplet,
+            {"kind": kind, "weight": 0.0},
+        ) == []
+
+    def test_rejects_duplicate_variables_and_bad_asphere_targets(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization.config import (
+            normalize_optimizer_config,
+            normalize_variables,
+        )
+
+        optimizer = normalize_optimizer_config({"optimizer": {"kind": "least_squares", "method": "trf"}})
+        variable = {"kind": "radius", "surface_index": 1, "min": 10, "max": 20}
+        with pytest.raises(ValueError, match="Duplicate variable target"):
+            normalize_variables(fresh_cooke_triplet, [variable, variable], optimizer)
+
+        with pytest.raises(IndexError, match="coefficient_index 10 is out of range"):
+            normalize_variables(
+                fresh_cooke_triplet,
+                [
+                    {
+                        "kind": "asphere_polynomial_coefficient",
+                        "surface_index": 1,
+                        "asphere_kind": "EvenAspherical",
+                        "coefficient_index": 10,
+                        "min": -1,
+                        "max": 1,
+                    }
+                ],
+                optimizer,
+            )
+
+        with pytest.raises(ValueError, match="Toroid sweep radius target requires"):
+            normalize_variables(
+                fresh_cooke_triplet,
+                [
+                    {
+                        "kind": "asphere_toric_sweep_radius",
+                        "surface_index": 1,
+                        "asphere_kind": "EvenAspherical",
+                        "min": -1,
+                        "max": 1,
+                    }
+                ],
+                optimizer,
+            )
+
 
 class TestOptimizationPackageExports:
     def test_root_package_exports_optimizer_functions(self):
@@ -1979,3 +2294,399 @@ class TestOptimizationPackageExports:
 
         assert callable(package.evaluate_optimization_problem)
         assert callable(package.optimize_opm)
+
+
+class TestOptimizationProblemStateAndObjectives:
+    def test_radius_vectors_and_bounds_use_curvature_space_including_zero_crossing(
+        self,
+        fresh_cooke_triplet,
+    ):
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [
+                    {"kind": "radius", "surface_index": 1, "min": -20, "max": 30},
+                    {"kind": "thickness", "surface_index": 6, "min": 35, "max": 50},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [{"kind": "focal_length", "target": 100, "weight": 1}]
+                },
+            },
+        )
+
+        vector = problem.current_vector()
+        lower, upper = problem.bounds()
+
+        assert vector[0] == pytest.approx(1.0 / 23.713)
+        np.testing.assert_allclose(lower, [-1.0 / 20.0, 35.0])
+        np.testing.assert_allclose(upper, [1.0 / 30.0, 50.0])
+        assert problem.scipy_bounds() == [
+            pytest.approx((-1.0 / 20.0, 1.0 / 30.0)),
+            pytest.approx((35.0, 50.0)),
+        ]
+
+    def test_optional_bounds_and_variable_state_preserve_public_radius_values(
+        self,
+        fresh_cooke_triplet,
+    ):
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm"},
+                "variables": [{"kind": "radius", "surface_index": 1}],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [{"kind": "focal_length", "target": 100, "weight": 1}]
+                },
+            },
+        )
+
+        assert problem.bounds()[0].tolist() == [float("-inf")]
+        assert problem.bounds()[1].tolist() == [float("inf")]
+        assert problem.scipy_bounds() == [(None, None)]
+        assert problem.variable_state() == [
+            {"kind": "radius", "surface_index": 1, "value": pytest.approx(23.713)}
+        ]
+
+    def test_from_normalized_config_binds_image_point_and_empty_variable_bounds(
+        self,
+        fresh_cooke_triplet,
+    ):
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        normalized = {
+            "optimizer": {"kind": "least_squares", "method": "lm"},
+            "variables": [],
+            "pickups": [],
+            "merit_function": {
+                "operands": [
+                    {
+                        "kind": "focal_length",
+                        "target": 100.0,
+                        "weight": 1.0,
+                        "options": {},
+                        "field_index": None,
+                        "field_weight": 1.0,
+                        "wavelength_index": None,
+                        "wavelength_weight": 1.0,
+                    }
+                ]
+            },
+        }
+
+        problem = OptimizationProblem.from_normalized_config(
+            fresh_cooke_triplet,
+            normalized,
+            image_point="centroid",
+        )
+
+        assert problem.image_point == "centroid"
+        assert problem.current_vector().shape == (0,)
+        lower, upper = problem.bounds()
+        assert lower.shape == (0,)
+        assert upper.shape == (0,)
+
+    def test_evaluate_expands_vector_operands_and_applies_all_weight_factors(
+        self,
+        monkeypatch,
+        fresh_cooke_triplet,
+    ):
+        import rayoptics_web_utils.optimization.problem as problem_module
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {"kind": "focal_length", "target": 5, "weight": 2},
+                        {
+                            "kind": "ray_fan",
+                            "weight": 3,
+                            "fields": [{"index": 0, "weight": 4}],
+                            "wavelengths": [{"index": 0, "weight": 9}],
+                            "options": {"num_rays": 2},
+                        },
+                    ]
+                },
+            },
+            image_point="centroid",
+        )
+        calls = []
+
+        def fake_focal(opm, field_index, wavelength_index, options, image_point):
+            calls.append(("focal_length", field_index, wavelength_index, options, image_point))
+            return 6.0
+
+        def fake_ray_fan(opm, field_index, wavelength_index, options, image_point):
+            calls.append(("ray_fan", field_index, wavelength_index, options, image_point))
+            return [0.25, -0.5]
+
+        monkeypatch.setitem(problem_module.OPERAND_REGISTRY, "focal_length", fake_focal)
+        monkeypatch.setitem(problem_module.OPERAND_REGISTRY, "ray_fan", fake_ray_fan)
+
+        evaluation = problem.evaluate()
+
+        assert calls == [
+            ("focal_length", None, None, {}, "centroid"),
+            ("ray_fan", 0, 0, {"num_rays": 2}, "centroid"),
+        ]
+        assert [entry["value"] for entry in evaluation["residuals"]] == [
+            pytest.approx(6.0),
+            pytest.approx(0.25),
+            pytest.approx(-0.5),
+        ]
+        assert [entry["weighted_residual"] for entry in evaluation["residuals"]] == [
+            pytest.approx(2.0),
+            pytest.approx(18.0 * 0.25),
+            pytest.approx(18.0 * -0.5),
+        ]
+        assert evaluation["merit_function"]["sum_of_squares"] == pytest.approx(
+            2.0**2 + (18.0 * 0.25) ** 2 + (18.0 * -0.5) ** 2
+        )
+        assert "target" not in evaluation["residuals"][1]
+
+    def test_penalty_residual_vector_has_at_least_one_entry_for_empty_normalized_merit(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem.from_normalized_config(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {"operands": []},
+            },
+        )
+
+        assert problem.penalty_residual_vector().tolist() == [1e6]
+
+    def test_glass_scalar_objective_normalizes_nonfinite_merit_and_propagates_errors(
+        self,
+        monkeypatch,
+        fresh_cooke_triplet,
+    ):
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [{"kind": "focal_length", "target": 100, "weight": 1}]
+                },
+            },
+        )
+        monkeypatch.setattr(
+            problem,
+            "evaluate",
+            lambda values=None: {
+                "merit_function": {"sum_of_squares": float("nan"), "rss": float("nan")},
+                "residuals": [],
+            },
+        )
+
+        assert problem.glass_scalar_objective(np.array([], dtype=float)) == 1e10
+        assert problem.optimization_progress[0]["merit_function_value"] == 1e10
+
+        def fail_evaluate(values=None):
+            raise RuntimeError("evaluation failed")
+
+        monkeypatch.setattr(problem, "evaluate", fail_evaluate)
+        with pytest.raises(RuntimeError, match="evaluation failed"):
+            problem.glass_scalar_objective(np.array([], dtype=float))
+
+
+@pytest.mark.parametrize("kind", ["least_squares", "differential_evolution"])
+def test_optimize_opm_reports_no_variable_metadata_for_each_solver_family(
+    fresh_cooke_triplet,
+    kind,
+):
+    from rayoptics_web_utils.optimization import optimize_opm
+
+    report = optimize_opm(
+        fresh_cooke_triplet,
+        {
+            "optimizer": {"kind": kind},
+            "variables": [],
+            "pickups": [],
+            "merit_function": {
+                "operands": [{"kind": "focal_length", "target": 100, "weight": 1}]
+            },
+        },
+    )
+
+    assert report["success"] is True
+    assert report["status"] == "no_variables"
+    assert report["message"] == "No optimization variables supplied"
+    assert report["optimizer"]["kind"] == kind
+    assert report["optimizer"]["nfev"] == 0
+    if kind == "least_squares":
+        assert report["optimizer"]["method"] == "trf"
+        assert report["optimizer"]["njev"] == 0
+        assert report["optimizer"]["cost"] == pytest.approx(
+            report["merit_function"]["sum_of_squares"] / 2.0
+        )
+        assert report["optimizer"]["optimality"] == 0.0
+    else:
+        assert report["optimizer"]["nit"] == 0
+
+
+@pytest.mark.parametrize(
+    ("kind", "latest_vector"),
+    [
+        ("least_squares", np.array([4.0])),
+        ("differential_evolution", None),
+    ],
+)
+def test_stopped_report_uses_latest_or_current_vector_and_solver_specific_fields(
+    kind,
+    latest_vector,
+):
+    import rayoptics_web_utils.optimization.optimization as optimization_module
+
+    evaluated_vectors = []
+
+    class FakeProgress:
+        def __init__(self):
+            self.latest_vector = latest_vector
+
+    class FakeProblem:
+        optimizer = {
+            "kind": kind,
+            **({"method": "lm"} if kind == "least_squares" else {}),
+        }
+        progress = FakeProgress()
+        optimization_progress = [{"iteration": 0, "merit_function_value": 9.0}]
+
+        def current_vector(self):
+            return np.array([8.0])
+
+        def evaluate(self, vector):
+            evaluated_vectors.append(np.array(vector, copy=True))
+            return {
+                "optimizer": {"kind": kind},
+                "merit_function": {"sum_of_squares": 9.0, "rss": 3.0},
+                "residuals": [],
+            }
+
+    report = optimization_module._build_stopped_report(
+        FakeProblem(),
+        [{"kind": "radius", "surface_index": 1, "value": 20.0}],
+    )
+
+    expected_vector = latest_vector if latest_vector is not None else np.array([8.0])
+    np.testing.assert_allclose(evaluated_vectors, [expected_vector])
+    assert report["success"] is True
+    assert report["status"] == "stopped"
+    assert report["message"] == "Optimization stopped by user"
+    assert report["initial_values"] == [
+        {"kind": "radius", "surface_index": 1, "value": 20.0}
+    ]
+    assert report["optimization_progress"] == FakeProblem.optimization_progress
+    assert report["optimizer"]["nfev"] == 1
+    if kind == "least_squares":
+        assert report["optimizer"]["njev"] == 0
+        assert report["optimizer"]["cost"] == pytest.approx(4.5)
+        assert report["optimizer"]["optimality"] == 0.0
+    else:
+        assert report["optimizer"]["nit"] == 0
+
+
+def test_compatibility_problem_optimize_forwards_lm_without_bounds_and_clears_reporter(
+    monkeypatch,
+    fresh_cooke_triplet,
+):
+    import rayoptics_web_utils.optimization.optimization as optimization_module
+    from rayoptics_web_utils.optimization.optimization import _OptimizationProblem
+
+    problem = _OptimizationProblem(
+        fresh_cooke_triplet,
+        {
+            "optimizer": {"kind": "least_squares", "method": "lm"},
+            "variables": [{"kind": "thickness", "surface_index": 6}],
+            "pickups": [],
+            "merit_function": {
+                "operands": [{"kind": "focal_length", "target": 100, "weight": 1}]
+            },
+        },
+    )
+    captured = {}
+    result = object()
+
+    def fake_least_squares(function, initial, **kwargs):
+        captured.update(function=function, initial=initial, kwargs=kwargs)
+        return result
+
+    monkeypatch.setattr(optimization_module, "least_squares", fake_least_squares)
+
+    assert problem.optimize(object()) is result
+    assert captured["function"] == problem.objective
+    assert captured["initial"].shape == (1,)
+    assert captured["kwargs"]["method"] == "lm"
+    assert "bounds" not in captured["kwargs"]
+    assert problem._progress_reporter is None
+
+
+def test_compatibility_problem_records_progress_with_its_reporter(monkeypatch):
+    """The retained compatibility hook forwards the exact progress arguments."""
+    from rayoptics_web_utils.optimization.optimization import _OptimizationProblem
+
+    observed = {}
+
+    class FakeProgress:
+        def record(self, vector, evaluation, reporter):
+            observed.update(vector=vector, evaluation=evaluation, reporter=reporter)
+            return "recorded"
+
+    problem = object.__new__(_OptimizationProblem)
+    problem.progress = FakeProgress()
+    problem._progress_reporter = object()
+    vector = np.array([1.0, 2.0])
+    evaluation = {"merit_function": {"sum_of_squares": 4.0}}
+
+    assert problem._record_progress(vector, evaluation) == "recorded"
+    assert observed == {
+        "vector": vector,
+        "evaluation": evaluation,
+        "reporter": problem._progress_reporter,
+    }
+
+
+def test_f_number_operand_reads_paraxial_f_number_and_ignores_sample_arguments():
+    """The f-number operand is scalar and independent of field/wavelength options."""
+    from rayoptics_web_utils.optimization.operands import compute_f_number
+
+    opm = {
+        "analysis_results": {
+            "parax_data": SimpleNamespace(fod=SimpleNamespace(fno=7.25)),
+        }
+    }
+
+    assert compute_f_number(
+        opm,
+        field_index=99,
+        wavelength_index=88,
+        options={"num_rays": 3},
+        image_point="centroid",
+    ) == pytest.approx(7.25)
+
+
+def test_f_number_operand_defaults_to_chief_ray_image_point():
+    """The low-level f-number operand keeps the shared chief-ray default."""
+    import inspect
+
+    from rayoptics_web_utils.optimization.operands import compute_f_number
+
+    assert inspect.signature(compute_f_number).parameters["image_point"].default == "chief_ray"

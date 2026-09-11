@@ -19,6 +19,16 @@ def test_default_constructor_uses_documented_radii():
     assert aperture.obstruction_radius == 0.5
 
 
+def test_listobj_str_includes_annular_parameters_and_base_aperture_state():
+    """Object-list serialization retains annular and inherited aperture data."""
+    aperture = Annular(radius=10, obstruction_radius=3, x_offset=2, y_offset=-1)
+
+    assert aperture.listobj_str() == (
+        "ca: annular radius=10 obstruction_radius=3\n"
+        "x_offset=2   y_offset=-1   rotation=0.0\n"
+    )
+
+
 def test_point_inside_uses_annulus_and_offsets():
     aperture = Annular(radius=10, obstruction_radius=3, x_offset=2, y_offset=-1)
 

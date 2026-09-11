@@ -1,5 +1,7 @@
 """Architecture tests for the optimization solver abstraction."""
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -547,3 +549,260 @@ def test_penalty_residual_vector_uses_ray_fan_num_rays_option(cooke_triplet):
     )
 
     assert problem.penalty_residual_vector().shape == (6,)
+
+
+@pytest.mark.parametrize(
+    ("max_nfev", "popsize", "variable_count", "expected"),
+    [
+        (None, 15, 2, 1000),
+        (0, 15, 2, 0),
+        (59, 3, 4, 3),
+        (3, 0, 0, 2),
+    ],
+)
+def test_differential_evolution_budget_translation_handles_boundaries(
+    max_nfev,
+    popsize,
+    variable_count,
+    expected,
+):
+    from rayoptics_web_utils.optimization.solvers.differential_evolution import (
+        _maxiter_for_evaluation_budget,
+    )
+
+    assert _maxiter_for_evaluation_budget(max_nfev, popsize, variable_count) == expected
+
+
+def test_least_squares_adapter_normalizes_missing_njev_and_clears_reporter(
+    monkeypatch,
+):
+    from rayoptics_web_utils.optimization.solvers.least_squares import LeastSquaresSolver
+
+    problem = SimpleNamespace(
+        optimizer={"method": "lm"},
+        current_vector=lambda: np.array([2.0]),
+        residual_objective=lambda vector: np.array([vector[0]]),
+        _progress_reporter=None,
+    )
+    captured = {}
+
+    def fake_least_squares(function, initial, **kwargs):
+        captured.update(
+            function=function,
+            initial=initial,
+            kwargs=kwargs,
+            reporter_during_call=problem._progress_reporter,
+        )
+        return SimpleNamespace(
+            x=np.array([3.0]),
+            success=True,
+            status=1,
+            message="ok",
+            nfev=4,
+            njev=None,
+            cost=2.5,
+            optimality=0.25,
+        )
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.least_squares.least_squares",
+        fake_least_squares,
+    )
+    reporter = object()
+
+    result = LeastSquaresSolver(problem).solve(reporter)
+
+    assert captured["function"] == problem.residual_objective
+    assert captured["initial"].tolist() == [2.0]
+    assert captured["reporter_during_call"] is reporter
+    assert "bounds" not in captured["kwargs"]
+    np.testing.assert_allclose(result["x"], [3.0])
+    assert result["success"] is True
+    assert result["status"] == 1
+    assert result["message"] == "ok"
+    assert result["nfev"] == 4
+    assert result["njev"] == 0
+    assert result["cost"] == pytest.approx(2.5)
+    assert result["optimality"] == pytest.approx(0.25)
+    assert problem._progress_reporter is None
+
+
+def test_least_squares_adapter_forwards_exact_default_options_and_normalizes_result(
+    monkeypatch,
+):
+    from rayoptics_web_utils.optimization.solvers.least_squares import LeastSquaresSolver
+
+    problem = SimpleNamespace(
+        optimizer={"method": "lm"},
+        current_vector=lambda: np.array([2.0]),
+        residual_objective=lambda vector: np.array([vector[0]]),
+        _progress_reporter=None,
+    )
+    captured = {}
+
+    def fake_least_squares(function, initial, **kwargs):
+        captured.update(function=function, initial=initial, kwargs=kwargs)
+        return SimpleNamespace(
+            x=np.array([3.0]),
+            success=0,
+            status=2,
+            message="converged",
+            nfev=7.0,
+            njev=8.0,
+            cost=1,
+            optimality=0.125,
+        )
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.least_squares.least_squares",
+        fake_least_squares,
+    )
+
+    result = LeastSquaresSolver(problem).solve()
+
+    assert captured["function"] == problem.residual_objective
+    assert captured["initial"].tolist() == [2.0]
+    assert captured["kwargs"] == {
+        "method": "lm",
+        "ftol": 1e-8,
+        "xtol": 1e-8,
+        "gtol": 1e-8,
+        "max_nfev": 200,
+    }
+    assert result == {
+        "x": np.array([3.0]),
+        "success": False,
+        "status": 2,
+        "message": "converged",
+        "nfev": 7,
+        "njev": 8,
+        "cost": 1.0,
+        "optimality": 0.125,
+    }
+    assert problem._progress_reporter is None
+
+
+def test_least_squares_adapter_forwards_explicit_tolerance_options(monkeypatch):
+    from rayoptics_web_utils.optimization.solvers.least_squares import LeastSquaresSolver
+
+    problem = SimpleNamespace(
+        optimizer={
+            "method": "lm",
+            "ftol": 2e-7,
+            "xtol": 3e-7,
+            "gtol": 4e-7,
+            "max_nfev": 19,
+        },
+        current_vector=lambda: np.array([2.0]),
+        residual_objective=lambda vector: np.array([vector[0]]),
+        _progress_reporter=None,
+    )
+    captured = {}
+
+    def fake_least_squares(function, initial, **kwargs):
+        captured.update(function=function, initial=initial, kwargs=kwargs)
+        return SimpleNamespace(
+            x=np.array([3.0]),
+            success=True,
+            status=1,
+            message="ok",
+            nfev=4,
+            njev=5,
+            cost=2.5,
+            optimality=0.25,
+        )
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.least_squares.least_squares",
+        fake_least_squares,
+    )
+
+    LeastSquaresSolver(problem).solve()
+
+    assert captured["kwargs"] == {
+        "method": "lm",
+        "ftol": 2e-7,
+        "xtol": 3e-7,
+        "gtol": 4e-7,
+        "max_nfev": 19,
+    }
+
+
+@pytest.mark.parametrize(
+    ("success", "status"),
+    [(True, 1), (False, 0)],
+)
+def test_differential_evolution_adapter_falls_back_when_scipy_omits_status(
+    monkeypatch,
+    success,
+    status,
+):
+    from rayoptics_web_utils.optimization.solvers.differential_evolution import (
+        DifferentialEvolutionSolver,
+    )
+
+    problem = SimpleNamespace(
+        optimizer={
+            "max_nfev": 20,
+            "popsize": 2,
+            "strategy": "rand1bin",
+            "tol": 0.2,
+            "mutation": 0.4,
+            "recombination": 0.5,
+            "seed": 11,
+            "polish": True,
+            "init": "random",
+            "atol": 0.01,
+        },
+        bounds=lambda: (np.array([-1.0, 0.0]), np.array([1.0, 2.0])),
+        scalar_objective=lambda vector: float(np.sum(vector**2)),
+        _progress_reporter=None,
+    )
+    captured = {}
+
+    def fake_differential_evolution(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(
+            x=np.array([0.25, 1.5]),
+            success=success,
+            message="done",
+            nfev=6,
+            nit=3,
+        )
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.differential_evolution.differential_evolution",
+        fake_differential_evolution,
+    )
+
+    result = DifferentialEvolutionSolver(problem).solve()
+
+    assert captured["func"] == problem.scalar_objective
+    assert captured["bounds"] == [(-1.0, 1.0), (0.0, 2.0)]
+    assert captured["maxiter"] == 4
+    assert captured["strategy"] == "rand1bin"
+    assert captured["polish"] is True
+    assert result["status"] == status
+    assert problem._progress_reporter is None
+
+
+def test_lbfgsb_objective_returns_penalty_for_exception_and_nonfinite_merit():
+    from rayoptics_web_utils.optimization.solvers.lbfgsb import (
+        GLASS_OBJECTIVE_PENALTY,
+        LBFGSBSolver,
+    )
+
+    class FakeProblem:
+        def __init__(self, value):
+            self.value = value
+
+        def glass_scalar_objective(self, vector):
+            del vector
+            if isinstance(self.value, Exception):
+                raise self.value
+            return self.value
+
+    vector = np.array([1.0])
+    assert LBFGSBSolver(FakeProblem(RuntimeError("bad")), 3, 1e-3).objective(vector) == GLASS_OBJECTIVE_PENALTY
+    assert LBFGSBSolver(FakeProblem(float("inf")), 3, 1e-3).objective(vector) == GLASS_OBJECTIVE_PENALTY
+    assert LBFGSBSolver(FakeProblem(4.5), 3, 1e-3).objective(vector) == pytest.approx(4.5)
