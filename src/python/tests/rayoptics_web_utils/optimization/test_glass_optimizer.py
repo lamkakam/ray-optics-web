@@ -893,6 +893,7 @@ class TestOptimizeGlasses:
 
         assert report["success"] is True
         assert report["status"] == "stopped"
+        assert report["message"] == "Optimization stopped by user"
         assert report["final_glasses"][0]["name"] == "N-BK7"
         assert glass_opm["seq_model"].gaps[6].thi != pytest.approx(999.0)
 
@@ -931,7 +932,11 @@ class TestOptimizeGlasses:
         )
         empty_report = optimize_glasses(glass_opm, _config())
 
+        assert glass_report["success"] is True
         assert glass_report["status"] == "optimized"
+        assert glass_report["message"] == "Glass optimization completed"
+        assert glass_report["initial_values"] == []
+        assert isinstance(glass_report["optimization_progress"], list)
         assert glass_report["optimizer"] == pytest.approx(
             {
                 "kind": "glass_expert",
@@ -944,12 +949,106 @@ class TestOptimizeGlasses:
                 "tol": 1e-3,
             }
         )
+        assert empty_report["success"] is True
         assert empty_report["status"] == "no_variables"
+        assert empty_report["message"] == "No optimization variables supplied"
+        assert empty_report["initial_values"] == []
+        assert isinstance(empty_report["optimization_progress"], list)
         json.dumps(glass_report, allow_nan=False)
         json.dumps(empty_report, allow_nan=False)
 
-    def test_continuous_only_unbounded_run_returns_final_scipy_status(self, glass_opm):
+    def test_build_report_uses_its_own_state_fields_and_empty_status(self):
+        """Report assembly replaces evaluation metadata and distinguishes no-op runs."""
+        import rayoptics_web_utils.optimization.glass_optimizer as module
+
+        problem = SimpleNamespace(
+            variables=[],
+            optimization_progress=[{"from": "problem"}],
+            current_vector=lambda: np.array([], dtype=float),
+            evaluate=lambda _vector: {
+                "initial_values": [{"from": "evaluation"}],
+                "optimization_progress": [{"from": "evaluation"}],
+            },
+        )
+        optimizer = object.__new__(module.GlassExpertOptimizer)
+        optimizer.problem = problem
+        optimizer.opm = type(
+            "OpticalModelFake",
+            (SimpleNamespace,),
+            {"__getitem__": lambda self, key: getattr(self, key)},
+        )(seq_model=SimpleNamespace(gaps=[]))
+        optimizer.glass_variables = []
+        optimizer.candidate_materials = None
+        optimizer.runs = 0
+        optimizer.nfev = 0
+        optimizer.nit = 0
+        optimizer.settings = {"num_neighbours": 1, "maxiter": 2, "tol": 0.01}
+        optimizer.initial_values = [{"from": "optimizer"}]
+        optimizer.initial_glasses = []
+        optimizer.final_result = None
+
+        report = optimizer.build_report()
+
+        assert report["success"] is True
+        assert report["status"] == "no_variables"
+        assert report["message"] == "No optimization variables supplied"
+        assert report["initial_values"] == [{"from": "optimizer"}]
+        assert report["optimization_progress"] == [{"from": "problem"}]
+
+    def test_build_report_rejects_a_missing_continuous_solver_result(self):
+        """Continuous report assembly requires a final solver result."""
+        import rayoptics_web_utils.optimization.glass_optimizer as module
+
+        optimizer = object.__new__(module.GlassExpertOptimizer)
+        optimizer.problem = SimpleNamespace(
+            variables=[object()],
+            optimization_progress=[],
+            current_vector=lambda: np.array([], dtype=float),
+            evaluate=lambda _vector: {},
+        )
+        optimizer.opm = type(
+            "OpticalModelFake",
+            (SimpleNamespace,),
+            {"__getitem__": lambda self, key: getattr(self, key)},
+        )(seq_model=SimpleNamespace(gaps=[]))
+        optimizer.glass_variables = []
+        optimizer.candidate_materials = None
+        optimizer.runs = 0
+        optimizer.nfev = 0
+        optimizer.nit = 0
+        optimizer.settings = {"num_neighbours": 1, "maxiter": 2, "tol": 0.01}
+        optimizer.initial_values = []
+        optimizer.initial_glasses = []
+        optimizer.final_result = None
+
+        with pytest.raises(
+            RuntimeError,
+            match="^Final L-BFGS-B result is unavailable$",
+        ):
+            optimizer.build_report()
+
+    def test_continuous_only_report_preserves_final_solver_fields(
+        self,
+        monkeypatch,
+        glass_opm,
+    ):
+        """Continuous-only reports expose the solver's exact status and message."""
+        import rayoptics_web_utils.optimization.glass_optimizer as module
         from rayoptics_web_utils.optimization import optimize_glasses
+
+        monkeypatch.setattr(
+            module.LBFGSBSolver,
+            "solve",
+            lambda self, progress_reporter=None: {
+                "x": self.problem.current_vector(),
+                "fun": 2.5,
+                "success": True,
+                "status": 7,
+                "message": "deterministic solver message",
+                "nfev": 2,
+                "nit": 1,
+            },
+        )
 
         report = optimize_glasses(
             glass_opm,
@@ -959,6 +1058,8 @@ class TestOptimizeGlasses:
             ),
         )
 
-        assert isinstance(report["status"], int)
+        assert report["success"] is True
+        assert report["status"] == 7
+        assert report["message"] == "deterministic solver message"
         assert report["optimizer"]["runs"] == 1
         assert report["optimizer"]["method"] == "L-BFGS-B"

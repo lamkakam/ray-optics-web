@@ -1406,6 +1406,138 @@ class TestOpticalSamplingConvergence:
         assert result.boundary_converged
         assert calls["raw_grid"] == [ray_grid.raw_grid]
 
+    def test_fit_grid_falls_back_to_the_raygrid_package_raw_grid(self, monkeypatch):
+        """The initial fit uses the packaged raw grid when no direct raw grid exists."""
+        module, ray_grid, optical_model, _, calls = self._mocked_sampling(monkeypatch)
+        fallback_raw_grid = ray_grid.grid_pkg[0]
+        del ray_grid.raw_grid
+
+        module.build_finite_projected_pupil_samples(
+            ray_grid,
+            optical_model,
+            550.0,
+            fixed_normalization_radius=1.0,
+            max_boundary_resolution=2,
+        )
+
+        assert calls["raw_grid"] == [fallback_raw_grid]
+
+    def test_boundary_refinement_uses_nested_resolution_and_all_raygrid_arguments(
+        self, monkeypatch
+    ):
+        """Refinement doubles resolution minus one and preserves wavelength/focus."""
+        from rayoptics_web_utils.raygrid import opd_reference
+
+        coordinates = [
+            [[0.0, 0.0], [2.0, 0.0]],
+            [[0.0, 0.5], [2.0, 0.5]],
+        ]
+        module, ray_grid, optical_model, _, calls = self._mocked_sampling(
+            monkeypatch, coordinates=coordinates, num_rays=2
+        )
+        refined_raw_grid = [["refined"]]
+        monkeypatch.setattr(
+            opd_reference,
+            "sample_valid_rays",
+            lambda *args: calls["sample_valid_rays"].append(args) or refined_raw_grid,
+        )
+        monkeypatch.setattr(
+            module,
+            "_opd_for_frozen_reference",
+            lambda *args: np.ones((2, 2)),
+        )
+
+        result = module.build_finite_projected_pupil_samples(
+            ray_grid,
+            optical_model,
+            550.0,
+            max_boundary_resolution=5,
+        )
+
+        assert calls["sample_valid_rays"] == [
+            (optical_model, ray_grid.fld, 550.0, ray_grid.foc, 3)
+        ]
+        assert result.boundary_resolution == 3
+        assert result.boundary_converged is True
+
+    def test_refined_final_acceptance_keeps_only_geometry_valid_samples(self, monkeypatch):
+        """Finite OPD cannot make a geometrically blocked refined sample valid."""
+        from rayoptics_web_utils.raygrid import opd_reference
+
+        module, ray_grid, optical_model, _, calls = self._mocked_sampling(
+            monkeypatch, num_rays=2
+        )
+        refined_raw_grid = [["refined"]]
+        refined_valid = np.array([[True, False], [False, False]])
+        monkeypatch.setattr(
+            opd_reference,
+            "sample_valid_rays",
+            lambda *args: calls["sample_valid_rays"].append(args) or refined_raw_grid,
+        )
+        monkeypatch.setattr(
+            module,
+            "_project_raw_grid",
+            lambda raw_grid, optical_model, geometry: (
+                (
+                    np.array(
+                        [
+                            [[0.0, 0.0], [1.0, 0.0]],
+                            [[0.0, 1.0], [1.0, 1.0]],
+                        ]
+                    ),
+                    refined_valid,
+                )
+                if raw_grid == refined_raw_grid
+                else (
+                    np.array(
+                        [
+                            [[0.0, 0.0], [1.0, 0.0]],
+                            [[0.0, 1.0], [1.0, 1.0]],
+                        ]
+                    ),
+                    np.ones((2, 2), dtype=bool),
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            module,
+            "_opd_for_frozen_reference",
+            lambda *args: np.ones((2, 2)),
+        )
+
+        result = module.build_finite_projected_pupil_samples(
+            ray_grid,
+            optical_model,
+            550.0,
+            max_boundary_resolution=3,
+        )
+
+        assert result.sample_count == 1
+        assert result.support_area == pytest.approx(0.1)
+
+    def test_final_acceptance_includes_the_normalization_boundary_tolerance(
+        self, monkeypatch
+    ):
+        """A point at the documented numerical enclosure margin remains accepted."""
+        coordinates = [
+            [[0.0, 0.0], [1.0 + 1.0e-12, 0.0]],
+            [[0.0, 0.5], [0.5, 0.5]],
+        ]
+        module, ray_grid, optical_model, _, _ = self._mocked_sampling(
+            monkeypatch, coordinates=coordinates
+        )
+
+        result = module.build_finite_projected_pupil_samples(
+            ray_grid,
+            optical_model,
+            550.0,
+            fixed_normalization_radius=1.0,
+            max_boundary_resolution=2,
+        )
+
+        assert result.sample_count == 4
+        assert np.isfinite(result.grid[0, 0, 1])
+
     def test_fit_resolution_two_samples_refined_rays_with_wavelength_and_focus(
         self, monkeypatch
     ):

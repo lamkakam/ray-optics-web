@@ -1,6 +1,8 @@
 """Behavioral tests for Zernike evaluation, fitting, and exported metrics."""
 
 import json
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -726,6 +728,260 @@ class TestUnnormalizedToRmsNormalized:
 class TestGetZernikeCoefficients:
     """Integration tests with Cooke Triplet model."""
 
+    def test_default_sampling_forwards_exact_ray_grid_contract(self, monkeypatch):
+        """The default resolution and image reference reach the RayGrid factory."""
+        import importlib
+
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        zernike_module = importlib.import_module("rayoptics_web_utils.zernike.zernike")
+
+        class FakeOpticalModel:
+            system_spec = SimpleNamespace(dimensions="mm")
+
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": SimpleNamespace(wavelengths=[550.0])}
+                raise KeyError(key)
+
+        opm = FakeOpticalModel()
+        captured = {}
+        monkeypatch.setattr(
+            "rayoptics_web_utils.raygrid.make_ray_grid",
+            lambda opm_arg, **kwargs: (
+                captured.update(opm=opm_arg, **kwargs) or SimpleNamespace()
+            ),
+        )
+        monkeypatch.setattr(
+            zernike_module,
+            "_extract_normalized_input_pupil_grid",
+            lambda *args: np.array([[[0.0]], [[0.0]], [[0.25]]]),
+        )
+        monkeypatch.setattr(
+            zernike_module,
+            "_fit_zernike_details",
+            lambda grid, terms, weights: (np.array([1.25]), 0.0, 1, 1.0),
+        )
+
+        get_zernike_coefficients(opm, 3, 0, [(0, 0)])
+
+        assert captured == {
+            "opm": opm,
+            "fi": 3,
+            "wavelength_nm": 550.0,
+            "num_rays": 64,
+            "image_point": "chief_ray",
+        }
+
+    def test_afocal_report_preserves_exact_sampling_and_support_contract(
+        self, monkeypatch
+    ):
+        """Afocal reports expose disk support, filtering, and metadata exactly."""
+        import importlib
+
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        zernike_module = importlib.import_module("rayoptics_web_utils.zernike.zernike")
+
+        class FakeOpticalModel:
+            system_spec = SimpleNamespace(dimensions="mm")
+
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": SimpleNamespace(wavelengths=[550.0])}
+                raise KeyError(key)
+
+        opm = FakeOpticalModel()
+        grid = np.array(
+            [
+                [[-1.0, 0.0, 1.0 + 1.0e-12], [0.0, 0.0, 0.75]],
+                [[0.0, 0.0, 0.0], [np.nan, 0.0, 0.0]],
+                [[0.25, 0.5, np.nan], [0.75, 1.0, 1.25]],
+            ]
+        )
+        expected_weights = np.array([[1.0, 1.0, 0.0], [0.0, 1.0, 1.0]])
+        fit_calls = []
+        strehl_calls = []
+
+        monkeypatch.setattr(
+            "rayoptics_web_utils.raygrid.make_ray_grid",
+            lambda *args, **kwargs: SimpleNamespace(),
+        )
+        monkeypatch.setattr(
+            zernike_module,
+            "_extract_normalized_input_pupil_grid",
+            lambda *args: grid,
+        )
+
+        def fake_fit(grid_arg, terms, weights):
+            fit_calls.append((grid_arg, terms, weights))
+            return np.array([1.25]), 0.125, 1, 2.5
+
+        def fake_strehl(opd, weights):
+            strehl_calls.append((opd, weights))
+            return 0.375
+
+        monkeypatch.setattr(zernike_module, "_fit_zernike_details", fake_fit)
+        monkeypatch.setattr(zernike_module, "_monochromatic_strehl", fake_strehl)
+
+        result = get_zernike_coefficients(opm, 3, 0, [(0, 0)], num_rays=17)
+
+        assert len(fit_calls) == 1
+        assert fit_calls[0][0] is grid
+        assert fit_calls[0][1] == [(0, 0)]
+        np.testing.assert_array_equal(fit_calls[0][2], expected_weights)
+        assert len(strehl_calls) == 1
+        np.testing.assert_array_equal(strehl_calls[0][0], grid[2])
+        np.testing.assert_array_equal(strehl_calls[0][1], expected_weights)
+
+        assert result["sampling_measure"] == "uniform_normalized_input_pupil_cells"
+        assert result["normalization"] == "existing_afocal_normalized_pupil"
+        assert result["reference_kind"] == "afocal_plane_wave"
+        assert result["normalization_radius"] == 1.0
+        assert result["support_area"] == pytest.approx(4.0)
+        assert result["support_coverage"] == pytest.approx(4.0 / 5.0)
+        assert result["sample_count"] == 4
+        assert result["boundary_resolution"] == 17
+        assert result["boundary_converged"] is True
+        assert result["strehl_ratio"] == pytest.approx(0.375)
+
+    def test_afocal_support_coverage_handles_a_single_disk_sample(self, monkeypatch):
+        """A one-cell disk must still report complete supported coverage."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        class FakeOpticalModel:
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": SimpleNamespace(wavelengths=[550.0])}
+                raise KeyError(key)
+
+        grid = np.array([[[0.0]], [[0.0]], [[0.25]]])
+        monkeypatch.setattr(
+            "rayoptics_web_utils.raygrid.make_ray_grid",
+            lambda *args, **kwargs: SimpleNamespace(),
+        )
+        monkeypatch.setattr(
+            "rayoptics_web_utils.zernike.zernike._extract_normalized_input_pupil_grid",
+            lambda *args: grid,
+        )
+
+        result = get_zernike_coefficients(FakeOpticalModel(), 0, 0, [(0, 0)])
+
+        assert result["support_area"] == pytest.approx(1.0)
+        assert result["support_coverage"] == pytest.approx(1.0)
+        assert result["sample_count"] == 1
+
+    def test_finite_projected_report_preserves_geometry_weights_and_metrics(
+        self, monkeypatch
+    ):
+        """Finite exit reports retain projected geometry and weighted measurements."""
+        import importlib
+
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        zernike_module = importlib.import_module("rayoptics_web_utils.zernike.zernike")
+
+        class FakeOpticalModel:
+            system_spec = SimpleNamespace(dimensions="mm")
+
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": SimpleNamespace(wavelengths=[550.0])}
+                raise KeyError(key)
+
+        opm = FakeOpticalModel()
+        grid = np.array(
+            [[[0.0, 0.25, 0.5, 0.75]], [[0.0, 0.0, 0.0, 0.0]],
+             [[0.125, 0.375, 0.625, np.nan]]]
+        )
+        weights = np.array([[1.0, 3.0, 0.0, 2.0]])
+        geometry = SimpleNamespace(
+            radius=9.5,
+            center=np.array([1.0, 2.0, 3.0]),
+            pupil_reference=np.array([4.0, 5.0, 6.0]),
+            ex=np.array([0.0, 1.0, 0.0]),
+            ey=np.array([1.0, 0.0, 0.0]),
+            ez=np.array([0.0, 0.0, 1.0]),
+        )
+        samples = SimpleNamespace(
+            grid=grid,
+            weights=weights,
+            geometry=geometry,
+            normalization_radius=4.5,
+            support_area=2.75,
+            support_coverage=0.625,
+            sample_count=2,
+            boundary_resolution=29,
+            boundary_converged=True,
+        )
+        fit_calls = []
+        strehl_calls = []
+
+        monkeypatch.setattr(
+            "rayoptics_web_utils.raygrid.make_ray_grid",
+            lambda *args, **kwargs: SimpleNamespace(grid_pkg=("finite",)),
+        )
+        monkeypatch.setattr(
+            "rayoptics_web_utils.zernike.projected_pupil.build_finite_projected_pupil_samples",
+            lambda *args: samples,
+        )
+
+        def fake_fit(grid_arg, terms, weights_arg):
+            fit_calls.append((grid_arg, terms, weights_arg))
+            return np.array([2.0]), 0.25, 1, 3.0
+
+        def fake_strehl(opd, weights_arg):
+            strehl_calls.append((opd, weights_arg))
+            return 0.25
+
+        monkeypatch.setattr(zernike_module, "_fit_zernike_details", fake_fit)
+        monkeypatch.setattr(zernike_module, "_monochromatic_strehl", fake_strehl)
+
+        result = get_zernike_coefficients(
+            opm,
+            field_index=4,
+            wvl_index=0,
+            zernike_terms=[(0, 0)],
+            image_point="centroid",
+            num_rays=23,
+            pupil_space="exit",
+        )
+
+        assert fit_calls[0][0] is grid
+        assert fit_calls[0][1] == [(0, 0)]
+        np.testing.assert_array_equal(fit_calls[0][2], weights)
+        np.testing.assert_array_equal(strehl_calls[0][0], grid[2])
+        np.testing.assert_array_equal(strehl_calls[0][1], weights)
+
+        assert result["sampling_measure"] == "projected_reference_sphere_area"
+        assert result["normalization"] == "chief_ray_centered_enclosing_circle"
+        assert result["reference_kind"] == "finite_reference_sphere"
+        assert result["reference_length_unit"] == "mm"
+        assert result["reference_radius"] == pytest.approx(9.5)
+        assert result["reference_center"] == [1.0, 2.0, 3.0]
+        assert result["reference_pupil_point"] == [4.0, 5.0, 6.0]
+        assert result["reference_x_axis"] == [0.0, 1.0, 0.0]
+        assert result["reference_y_axis"] == [1.0, 0.0, 0.0]
+        assert result["reference_z_axis"] == [0.0, 0.0, 1.0]
+        assert result["normalization_radius"] == pytest.approx(4.5)
+        assert result["support_area"] == pytest.approx(2.75)
+        assert result["support_coverage"] == pytest.approx(0.625)
+        assert result["sample_count"] == 2
+        assert result["boundary_resolution"] == 29
+        assert result["boundary_converged"] is True
+
+        assert result["weighted_mean_wfe"] == pytest.approx(0.3125)
+        assert result["rms_wfe"] == pytest.approx(np.sqrt(0.01171875))
+        assert result["pv_wfe"] == pytest.approx(0.25)
+        assert result["strehl_ratio"] == pytest.approx(0.25)
+        assert result["strehl_assumption"] == (
+            "uniform_scalar_amplitude_at_reference_point"
+        )
+        assert result["num_terms"] == 1
+        assert result["field_index"] == 4
+        assert result["wavelength_nm"] == pytest.approx(550.0)
+        assert result["pupil_space"] == "exit"
+
     def test_scale_opd_grid_to_wavelength_uses_system_unit_wavelength_conversion(self):
         """OPD-only scaling should use OpticalModel wavelength unit conversion."""
         from rayoptics_web_utils.zernike.zernike import _scale_opd_grid_to_wavelength
@@ -930,24 +1186,29 @@ class TestGetZernikeCoefficients:
         assert result["pupil_space"] == "entrance"
         assert result["sampling_measure"] == "uniform_normalized_input_pupil_cells"
         assert result["normalization"] == "normalized_input_pupil"
+        assert result["reference_kind"] == "finite_reference_sphere"
         assert result["normalization_radius"] == 1.0
         assert "reference_radius" not in result
 
     def test_invalid_pupil_space_is_rejected(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
 
-        with pytest.raises(ValueError, match="entrance.*exit"):
+        with pytest.raises(ValueError) as excinfo:
             get_zernike_coefficients(
                 cooke_triplet, 0, 1, [(0, 0)], pupil_space="object"
             )
+        assert excinfo.value.args == ("pupil_space must be 'entrance' or 'exit'.",)
 
     def test_afocal_exit_pupil_space_is_rejected(self, afocal_two_lens):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
 
-        with pytest.raises(ValueError, match="infinite image space"):
+        with pytest.raises(ValueError) as excinfo:
             get_zernike_coefficients(
                 afocal_two_lens, 0, 1, [(0, 0)], pupil_space="exit"
             )
+        assert excinfo.value.args == (
+            "Exit pupil space is unavailable for infinite image space.",
+        )
 
     def test_finite_result_reports_explicit_sampling_contract(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients

@@ -1,8 +1,101 @@
-"""Tests for rayoptics_web_utils.analysis module."""
+"""Behavioral tests for analysis payloads and diffraction math helpers.
+
+The module covers public JSON-safe analysis results plus the private MTF and PSF
+axis calculations that define their sampling, normalization, and cutoff
+contracts. The low-level tests use deterministic numeric inputs so boundary
+branches remain observable independently of a particular optical model.
+"""
 
 import json
 import numpy as np
 import pytest
+
+
+class TestMtfMathHelpers:
+    """Verify diffraction MTF, frequency-axis, and PSF-axis math contracts."""
+
+    def test_diffraction_limited_mtf_rejects_nonpositive_cutoffs(self):
+        from rayoptics_web_utils.analysis._mtf import _diffraction_limited_mtf
+
+        frequencies = np.array([-2.0, 0.0, 2.0])
+
+        np.testing.assert_array_equal(
+            _diffraction_limited_mtf(frequencies, 0.0),
+            np.zeros(3),
+        )
+        np.testing.assert_array_equal(
+            _diffraction_limited_mtf(frequencies, -1.0),
+            np.zeros(3),
+        )
+
+    def test_diffraction_limited_mtf_is_symmetric_and_zero_outside_cutoff(self):
+        from rayoptics_web_utils.analysis._mtf import _diffraction_limited_mtf
+
+        frequencies = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0])
+        values = _diffraction_limited_mtf(frequencies, 1.0)
+
+        assert values[3] == pytest.approx(1.0)
+        assert values[1] == pytest.approx(0.0)
+        assert values[5] == pytest.approx(0.0)
+        assert values[0] == pytest.approx(0.0)
+        assert values[-1] == pytest.approx(0.0)
+        np.testing.assert_allclose(values, values[::-1])
+        assert 0.0 < values[2] < 1.0
+        assert values[2] == pytest.approx(values[4])
+
+    @pytest.mark.parametrize(
+        ("axis", "negative", "positive", "expected"),
+        [
+            (0, [0.45, 0.2, 0.8], [0.3, 0.2, 0.8], 0.35),
+            (1, [0.1, -0.15, 0.8], [0.1, 0.55, 0.8], 0.35),
+        ],
+    )
+    def test_directional_na_uses_relative_components_and_axis(
+        self,
+        axis,
+        negative,
+        positive,
+        expected,
+    ):
+        from rayoptics_web_utils.analysis._mtf import _directional_na_from_ray_dirs
+
+        chief = np.array([0.1, 0.2, 0.8])
+
+        assert _directional_na_from_ray_dirs(
+            chief,
+            np.array(negative),
+            np.array(positive),
+            axis=axis,
+        ) == pytest.approx(expected)
+
+    def test_mtf_frequency_axis_handles_small_counts_and_maps_endpoints(self):
+        from rayoptics_web_utils.analysis._mtf import _mtf_frequency_axis
+
+        np.testing.assert_array_equal(_mtf_frequency_axis(12.0, 0), np.array([]))
+        np.testing.assert_array_equal(_mtf_frequency_axis(12.0, 1), np.array([0.0]))
+        np.testing.assert_allclose(
+            _mtf_frequency_axis(12.0, 4),
+            np.array([0.0, 4.0, 8.0, 12.0]),
+        )
+
+    def test_psf_image_axis_handles_invalid_cutoffs_and_centers_even_samples(self):
+        from rayoptics_web_utils.analysis._mtf import _psf_image_axis
+
+        np.testing.assert_array_equal(_psf_image_axis(2.0, 0), np.array([]))
+        np.testing.assert_array_equal(_psf_image_axis(0.0, 3), np.zeros(3))
+        np.testing.assert_array_equal(_psf_image_axis(-2.0, 3), np.zeros(3))
+        np.testing.assert_allclose(
+            _psf_image_axis(2.0, 4),
+            np.array([-0.375, -0.125, 0.125, 0.375]),
+        )
+
+    def test_psf_image_axis_centers_odd_samples_at_zero(self):
+        from rayoptics_web_utils.analysis._mtf import _psf_image_axis
+
+        np.testing.assert_allclose(
+            _psf_image_axis(1.0, 3),
+            np.array([-0.5, 0.0, 0.5]),
+        )
 
 
 class TestAnalysisConcreteModuleExports:

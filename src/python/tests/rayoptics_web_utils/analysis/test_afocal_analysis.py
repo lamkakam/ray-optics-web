@@ -94,6 +94,72 @@ def _synthetic_opm(refractive_index=1.0):
     )
 
 
+def _make_afocal_grid_fakes(monkeypatch, module, raw_grid, opd_function):
+    """Install strict fakes for the make-afocal-ray-grid orchestration."""
+    field = SimpleNamespace()
+    optical_spec = SimpleNamespace(
+        field_of_view=SimpleNamespace(fields=[field]),
+        spectral_region=SimpleNamespace(central_wvl=500.0),
+    )
+    opm = SimpleNamespace(
+        optical_spec=optical_spec,
+        nm_to_sys_units=lambda wavelength: wavelength / 100.0,
+    )
+    chief_pkg = object()
+    reference = np.array([0.0, 0.0, 1.0])
+    observed = {"raw": [], "reference": [], "plane": [], "opd": []}
+
+    def fake_raw_grid(model, received_field, wavelength, num_rays):
+        observed["raw"].append((model, received_field, wavelength, num_rays))
+        return raw_grid
+
+    def fake_reference_direction(
+        model,
+        fi,
+        wavelength,
+        *,
+        image_point,
+        num_rays,
+        grid,
+    ):
+        observed["reference"].append(
+            (model, fi, wavelength, image_point, num_rays, grid)
+        )
+        return reference, chief_pkg
+
+    def fake_exit_pupil_plane(model, received_field, wavelength, *, chief_pkg):
+        observed["plane"].append(
+            (model, received_field, wavelength, chief_pkg)
+        )
+        return np.array([0.0, 0.0, 10.0]), reference
+
+    def fake_afocal_opd(
+        model,
+        ray_pkg,
+        received_chief_pkg,
+        plane_point,
+        candidate_reference,
+        wavelength,
+    ):
+        observed["opd"].append(
+            (
+                model,
+                ray_pkg,
+                received_chief_pkg,
+                plane_point,
+                np.asarray(candidate_reference).copy(),
+                wavelength,
+            )
+        )
+        return opd_function(ray_pkg, candidate_reference)
+
+    monkeypatch.setattr(module, "_raw_grid", fake_raw_grid)
+    monkeypatch.setattr(module, "reference_direction", fake_reference_direction)
+    monkeypatch.setattr(module, "exit_pupil_plane", fake_exit_pupil_plane)
+    monkeypatch.setattr(module, "afocal_opd", fake_afocal_opd)
+    return opm, field, chief_pkg, reference, observed
+
+
 class TestAfocalPureHelpers:
     """Exercise afocal helper contracts with small synthetic ray packages."""
 
@@ -1211,6 +1277,307 @@ def test_finite_mtf_metadata_remains_image_na(cooke_triplet):
     assert result["scaleKind"] == "image-na"
     assert result["naTangential"] > 0.0
     assert result["naSagittal"] > 0.0
+
+
+class TestMakeAfocalRayGrid:
+    """Verify afocal plane-wave grid orchestration and centroid fitting."""
+
+    @staticmethod
+    def _three_point_grid():
+        return [
+            [(-1.0, -1.0, "a"), (0.0, -1.0, "b")],
+            [(-1.0, 0.0, "c"), (1.0, 1.0, None)],
+        ]
+
+    def test_signature_keeps_public_sampling_defaults(self):
+        import inspect
+        from rayoptics_web_utils.analysis._afocal import make_afocal_ray_grid
+
+        signature = inspect.signature(make_afocal_ray_grid)
+        assert signature.parameters["num_rays"].default == 64
+        assert signature.parameters["image_point"].default == "chief_ray"
+
+    def test_omitted_sampling_arguments_use_the_documented_defaults(self, monkeypatch):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        raw_grid = [
+            [(-1.0, -1.0, None) for _ in range(64)] for _ in range(64)
+        ]
+        opm, _, _, _, observed = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            raw_grid,
+            lambda ray_pkg, candidate: 0.0,
+        )
+
+        result = module.make_afocal_ray_grid(opm, 0, 550.0)
+
+        assert observed["raw"] == [(opm, opm.optical_spec.field_of_view.fields[0], 550.0, 64)]
+        assert observed["reference"] == [
+            (opm, 0, 550.0, "chief_ray", 64, raw_grid)
+        ]
+        assert result.grid.shape == (3, 64, 64)
+
+    def test_chief_grid_forwards_wavelengths_preserves_mask_and_metadata(self, monkeypatch):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        raw_grid = [
+            [(-1.0, -1.0, "a"), (0.0, -1.0, None)],
+            [(-1.0, 0.0, "c"), (1.0, 1.0, "d")],
+        ]
+        values = {"a": 5.0, "c": 7.0, "d": 9.0}
+        opm, field, chief_pkg, reference, observed = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            raw_grid,
+            lambda ray_pkg, candidate: values[ray_pkg],
+        )
+
+        result = module.make_afocal_ray_grid(
+            opm,
+            0,
+            550.0,
+            num_rays=2,
+            image_point="chief_ray",
+        )
+
+        assert observed["raw"] == [(opm, field, 550.0, 2)]
+        assert observed["reference"] == [
+            (opm, 0, 550.0, "chief_ray", 2, raw_grid)
+        ]
+        assert observed["plane"] == [(opm, field, 550.0, chief_pkg)]
+        assert [call[5] for call in observed["opd"]] == [550.0] * 3
+        assert all(call[2] is chief_pkg for call in observed["opd"])
+        assert all(call[3].tolist() == [0.0, 0.0, 10.0] for call in observed["opd"])
+        assert all(np.array_equal(call[4], reference) for call in observed["opd"])
+        assert result.raw_grid is raw_grid
+        assert result.chief_ray_pkg is chief_pkg
+        assert result.exit_pupil_point.tolist() == [0.0, 0.0, 10.0]
+        np.testing.assert_allclose(result.reference_direction, reference)
+        assert result.grid.shape == (3, 2, 2)
+        assert result.grid.dtype == float
+        np.testing.assert_allclose(result.grid[0], [[-1.0, 0.0], [-1.0, 1.0]])
+        np.testing.assert_allclose(result.grid[1], [[-1.0, -1.0], [0.0, 1.0]])
+        np.testing.assert_allclose(
+            result.grid[2],
+            [[1.0, np.nan], [1.4, 1.8]],
+            equal_nan=True,
+        )
+
+    def test_centroid_fit_uses_two_angles_strict_solver_options_and_removes_piston(
+        self, monkeypatch
+    ):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        raw_grid = self._three_point_grid()
+        opm, field, chief_pkg, reference, observed = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            raw_grid,
+            lambda ray_pkg, candidate: 10.0,
+        )
+        solver_observed = {}
+
+        def fake_least_squares(residual, x0, **kwargs):
+            solver_observed["x0"] = np.asarray(x0).copy()
+            solver_observed["kwargs"] = kwargs
+            solver_observed["initial_residual"] = residual(np.array([0.25, -0.5]))
+            return SimpleNamespace(
+                success=True,
+                x=np.array([0.0, 0.0]),
+                message="converged",
+            )
+
+        monkeypatch.setattr(module, "least_squares", fake_least_squares)
+
+        result = module.make_afocal_ray_grid(
+            opm,
+            0,
+            550.0,
+            num_rays=2,
+            image_point="centroid",
+        )
+
+        np.testing.assert_array_equal(solver_observed["x0"], [0.0, 0.0])
+        assert solver_observed["kwargs"] == {
+            "xtol": 1.0e-12,
+            "ftol": 1.0e-12,
+            "gtol": 1.0e-12,
+            "max_nfev": 100,
+        }
+        np.testing.assert_allclose(
+            solver_observed["initial_residual"], [0.0, 0.0], atol=1.0e-14
+        )
+        expected_candidate = np.array([0.25, -0.5, 1.0]) / np.linalg.norm(
+            [0.25, -0.5, 1.0]
+        )
+        np.testing.assert_allclose(observed["opd"][0][4], expected_candidate)
+        assert len(observed["opd"]) == 6
+        assert all(call[5] == 550.0 for call in observed["opd"])
+        assert result.raw_grid is raw_grid
+        assert result.chief_ray_pkg is chief_pkg
+        np.testing.assert_allclose(result.reference_direction, reference)
+        assert field is opm.optical_spec.field_of_view.fields[0]
+        assert result.grid.dtype == float
+        assert np.all(result.grid[2, :1, :] == 0.0)
+        assert np.isnan(result.grid[2, 1, 1])
+
+    def test_centroid_fit_requires_three_non_collinear_valid_samples(self, monkeypatch):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        raw_grid = [
+            [(-1.0, -1.0, "a"), (0.0, -1.0, None)],
+            [(-1.0, 0.0, None), (1.0, 1.0, None)],
+        ]
+        opm, _, _, _, _ = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            raw_grid,
+            lambda ray_pkg, candidate: 10.0,
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Centroid plane-wave reference requires three non-collinear valid rays\.$",
+        ):
+            module.make_afocal_ray_grid(
+                opm,
+                0,
+                550.0,
+                num_rays=2,
+                image_point="centroid",
+            )
+
+    def test_centroid_solver_reports_nonconvergence_with_exact_message(self, monkeypatch):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        opm, _, _, _, _ = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            self._three_point_grid(),
+            lambda ray_pkg, candidate: 10.0,
+        )
+        monkeypatch.setattr(
+            module,
+            "least_squares",
+            lambda *args, **kwargs: SimpleNamespace(
+                success=False,
+                x=np.array([0.0, 0.0]),
+                message="maximum evaluations reached",
+            ),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Centroid reference-plane solve did not converge: maximum evaluations reached$",
+        ):
+            module.make_afocal_ray_grid(
+                opm,
+                0,
+                550.0,
+                num_rays=2,
+                image_point="centroid",
+            )
+
+    def test_centroid_tilt_tolerance_scales_with_large_opd(self, monkeypatch):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        raw_grid = self._three_point_grid()
+        values = {"a": 1.0e12 - 50.0, "b": 1.0e12, "c": 1.0e12 - 50.0}
+        opm, _, _, _, _ = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            raw_grid,
+            lambda ray_pkg, candidate: values[ray_pkg],
+        )
+        monkeypatch.setattr(
+            module,
+            "least_squares",
+            lambda *args, **kwargs: SimpleNamespace(
+                success=True,
+                x=np.array([0.0, 0.0]),
+                message="converged",
+            ),
+        )
+
+        result = module.make_afocal_ray_grid(
+            opm,
+            0,
+            550.0,
+            num_rays=2,
+            image_point="centroid",
+        )
+
+        assert result.grid.dtype == float
+
+    def test_centroid_tilt_is_rejected_with_exact_message(self, monkeypatch):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        raw_grid = self._three_point_grid()
+        values = {"a": -1.5e-10, "b": 0.0, "c": -1.5e-10}
+        opm, _, _, _, _ = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            raw_grid,
+            lambda ray_pkg, candidate: values[ray_pkg],
+        )
+        monkeypatch.setattr(
+            module,
+            "least_squares",
+            lambda *args, **kwargs: SimpleNamespace(
+                success=True,
+                x=np.array([0.0, 0.0]),
+                message="converged",
+            ),
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Centroid reference-plane solve retained non-zero phase tilt\.$",
+        ):
+            module.make_afocal_ray_grid(
+                opm,
+                0,
+                550.0,
+                num_rays=2,
+                image_point="centroid",
+            )
+
+    def test_centroid_tilt_equal_to_tolerance_is_accepted(self, monkeypatch):
+        import rayoptics_web_utils.analysis._afocal as module
+
+        raw_grid = self._three_point_grid()
+        values = {"a": -1.0e-10, "b": 0.0, "c": -1.0e-10}
+        opm, _, _, _, _ = _make_afocal_grid_fakes(
+            monkeypatch,
+            module,
+            raw_grid,
+            lambda ray_pkg, candidate: values[ray_pkg],
+        )
+        monkeypatch.setattr(
+            module,
+            "least_squares",
+            lambda *args, **kwargs: SimpleNamespace(
+                success=True,
+                x=np.array([0.0, 0.0]),
+                message="converged",
+            ),
+        )
+        monkeypatch.setattr(
+            module.np.linalg,
+            "lstsq",
+            lambda *args, **kwargs: (np.array([0.0, 1.0e-10, 0.0]), None),
+        )
+
+        result = module.make_afocal_ray_grid(
+            opm,
+            0,
+            550.0,
+            num_rays=2,
+            image_point="centroid",
+        )
+
+        assert result.grid.dtype == float
 
 
 def test_afocal_longitudinal_payloads_use_output_vergence(afocal_two_lens):
