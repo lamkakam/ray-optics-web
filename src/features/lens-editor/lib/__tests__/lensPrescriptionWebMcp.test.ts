@@ -24,7 +24,7 @@ function setup(options: { lookupMaps?: GlassLookupMaps } = {}) {
   const store = createStore<LensEditorState>(createLensEditorSlice);
   store.getState().setRows(surfacesToGridRows(basePrescription));
   const maps = Object.hasOwn(options, "lookupMaps") ? options.lookupMaps : emptyLookupMaps;
-  const tools = new Map(createLensPrescriptionTools(store, maps).map((tool) => [tool.name, tool]));
+  const tools = new Map(Object.values(createLensPrescriptionTools(store, maps)).map((tool) => [tool.name, tool]));
   const execute = async (name: string, input: unknown, signal = new AbortController().signal) => {
     const tool = tools.get(name);
     if (!tool) throw new Error(`Missing tool ${name}`);
@@ -44,6 +44,19 @@ function snapshot(store: StoreApi<LensEditorState>) {
 }
 
 describe("lens prescription WebMCP tools", () => {
+  it("exposes named descriptors with their stable protocol names", () => {
+    const store = createStore<LensEditorState>(createLensEditorSlice);
+    const tools = createLensPrescriptionTools(store, emptyLookupMaps);
+
+    expect(Object.fromEntries(Object.entries(tools).map(([key, tool]) => [key, tool.name]))).toEqual({
+      getLensPrescription: "get_lens_prescription",
+      setLensPrescription: "set_lens_prescription",
+      insertLensSurface: "insert_lens_surface",
+      updateLensRow: "update_lens_row",
+      deleteLensSurface: "delete_lens_surface",
+    });
+  });
+
   it("creates five strict descriptors with the expected annotations", () => {
     const { tools } = setup();
     expect([...tools.keys()]).toEqual([

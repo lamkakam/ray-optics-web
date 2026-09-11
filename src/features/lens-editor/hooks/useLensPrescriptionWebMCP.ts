@@ -14,9 +14,9 @@ export function useLensPrescriptionWebMCP(
   lookupMaps: GlassLookupMaps | undefined,
 ): void {
   const tools = useMemo(() => createLensPrescriptionTools(store, lookupMaps), [store, lookupMaps]);
-  useWebMCP(tools[0], [store]);
-  useWebMCP(tools[1], [store]);
-  useWebMCP(tools[2], [store]);
-  useWebMCP(tools[3], [store]);
-  useWebMCP(tools[4], [store]);
+  useWebMCP(tools.getLensPrescription, [store]);
+  useWebMCP(tools.setLensPrescription, [store]);
+  useWebMCP(tools.insertLensSurface, [store]);
+  useWebMCP(tools.updateLensRow, [store]);
+  useWebMCP(tools.deleteLensSurface, [store]);
 }
