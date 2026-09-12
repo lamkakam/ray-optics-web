@@ -132,6 +132,7 @@ class OptimizationProblem:
             source_target = {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
+                **({"decenter_type": pickup["decenter_type"], "materialize": False} if "decenter_type" in pickup else {}),
                 **({"asphere_kind": pickup["asphere_kind"]} if "asphere_kind" in pickup else {}),
                 **(
                     {"coefficient_index": pickup["source_coefficient_index"]}

@@ -12,3 +12,4 @@ export * from "./OptimizationProgressModal";
 export * from "./OptimizationWeightsGrid";
 export * from "./RadiusModeModal";
 export * from "./ThicknessModeModal";
+export * from "./TiltDecenterVarModal";

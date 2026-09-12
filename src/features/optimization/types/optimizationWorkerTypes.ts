@@ -1,5 +1,10 @@
 /** Optimization-specific contracts shared by the UI and Pyodide worker boundary. */
-import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { AsphericalType, DecenterConfig, OpticalModel } from "@/shared/lib/types/opticalModel";
+
+/** Scalar tilt/decenter targets supported by the optimizer. */
+export type DecenterTargetKind = "decenter_alpha" | "decenter_beta" | "decenter_gamma" | "decenter_x" | "decenter_y";
+/** RayOptics coordinate-system strategy carried with every tilt/decenter target. */
+export type DecenterType = DecenterConfig["coordinateSystemStrategy"];
 
 /** Worker-supported continuous optimizer families. */
 export type ContinuousOptimizerKind = "least_squares" | "differential_evolution";
@@ -146,6 +151,13 @@ export type OptimizationVariableConfig =
       readonly coefficient_index: number;
       readonly min?: number;
       readonly max?: number;
+    }
+  | {
+      readonly kind: DecenterTargetKind;
+      readonly surface_index: number;
+      readonly decenter_type: DecenterType;
+      readonly min?: number;
+      readonly max?: number;
     };
 
 /** Pickup configuration, including coefficient-to-coefficient source indices where required. */
@@ -174,6 +186,14 @@ export type OptimizationPickupConfig =
       readonly source_coefficient_index: number;
       readonly scale: number;
       readonly offset: number;
+    }
+  | {
+      readonly kind: DecenterTargetKind;
+      readonly surface_index: number;
+      readonly decenter_type: DecenterType;
+      readonly source_surface_index: number;
+      readonly scale: number;
+      readonly offset: number;
     };
 
 /** Initial or final optimized value returned by Python. */
@@ -198,6 +218,14 @@ export type OptimizationValueEntry =
       readonly surface_index: number;
       readonly asphere_kind: AsphericalType;
       readonly coefficient_index: number;
+      readonly value: number;
+      readonly min?: number;
+      readonly max?: number;
+    }
+  | {
+      readonly kind: DecenterTargetKind;
+      readonly surface_index: number;
+      readonly decenter_type: DecenterType;
       readonly value: number;
       readonly min?: number;
       readonly max?: number;
@@ -229,6 +257,15 @@ export type OptimizationPickupEntry =
       readonly coefficient_index: number;
       readonly source_surface_index: number;
       readonly source_coefficient_index: number;
+      readonly scale: number;
+      readonly offset: number;
+      readonly value: number;
+    }
+  | {
+      readonly kind: DecenterTargetKind;
+      readonly surface_index: number;
+      readonly decenter_type: DecenterType;
+      readonly source_surface_index: number;
       readonly scale: number;
       readonly offset: number;
       readonly value: number;

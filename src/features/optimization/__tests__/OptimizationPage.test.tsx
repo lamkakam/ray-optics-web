@@ -833,10 +833,11 @@ describe("OptimizationPage", () => {
       "Asph.",
       "Var.",
       "Tilt & Decenter",
+      "Var.",
       "Diffraction Grating",
     ]);
 
-    expect(screen.getAllByText("Var.")).toHaveLength(3);
+    expect(screen.getAllByText("Var.")).toHaveLength(4);
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("Semi-diam.")).toBeInTheDocument();
     expect(screen.getByText("Aperture")).toBeInTheDocument();

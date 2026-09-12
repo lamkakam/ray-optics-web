@@ -17,6 +17,7 @@ import {
   GlassVariableModal,
   RadiusModeModal,
   ThicknessModeModal,
+  TiltDecenterVarModal,
 } from "./components";
 import { getOptimizationAlgorithmCapabilities } from "./lib/methodCapabilities";
 import { applyOptimizationModelToEditor } from "./lib/applyOptimizationModelToEditor";
@@ -107,12 +108,12 @@ function buildCurrentEditorModel(
  * - read-only `Aperture` column after `Semi-diam.` that opens the aperture inspection modal
  * - a conditional fourth `Var.` column immediately after `Medium` for Object and physical-surface glass pools when Glass Expert is selected
  * - a third always-present `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
- * - read-only `Tilt & Decenter` and `Diffraction Grating` columns
+ * - read-only `Tilt & Decenter`, followed by an always-visible fourth `Var.` column for five independent tilt/decenter targets on numbered surfaces and Image, and `Diffraction Grating`
  * - Passes the auto/manual mode from the synchronized optimization model through `BottomDrawerContainer` to `OptimizationLensPrescriptionGrid`, keeping the prescription display aligned with the model used by evaluation and optimization.
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
  * - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
  * - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
- * - Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.
+ * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
  * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
  * - When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` reports the thrown error message through the page-local warning callback instead of filtering to one hardcoded `lm` warning.
  * - When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
@@ -231,8 +232,10 @@ export function OptimizationPage({
   const thicknessModal = useStore(optimizationStore, (state) => state.thicknessModal);
   const thicknessModes = useStore(optimizationStore, (state) => state.thicknessModes);
   const asphereStates = useStore(optimizationStore, (state) => state.asphereStates);
+  const decenterStates = useStore(optimizationStore, (state) => state.decenterStates);
   const asphereModal = useStore(optimizationStore, (state) => state.asphereModal);
   const glassModal = useStore(optimizationStore, (state) => state.glassModal);
+  const decenterVarModal = useStore(optimizationStore, (state) => state.decenterVarModal);
   const [mediumModalRow, setMediumModalRow] = useState<GridRow | undefined>();
   const [asphericalModalRow, setAsphericalModalRow] = useState<GridRow | undefined>();
   const [apertureModalRow, setApertureModalRow] = useState<GridRow | undefined>();
@@ -384,6 +387,7 @@ export function OptimizationPage({
   const selectedGlassMode = glassModal.surfaceIndex === undefined
     ? undefined
     : glassModes.find((mode) => mode.surfaceIndex === glassModal.surfaceIndex);
+  const selectedDecenterState = decenterVarModal.surfaceIndex === undefined ? undefined : decenterStates.find((state) => state.surfaceIndex === decenterVarModal.surfaceIndex);
 
   const evaluationRows = useMemo(
     () => evaluationReport?.residuals.flatMap((residual, index) => {
@@ -515,7 +519,7 @@ export function OptimizationPage({
   }, [
     isReady, proxy, optimizationModel, optimizationStore, canBuildOptimizationConfig,
     missingGlassMessage, catalogs, optimizer, fieldWeights, wavelengthWeights,
-    radiusModes, thicknessModes, glassModes, asphereStates, operands,
+    radiusModes, thicknessModes, glassModes, asphereStates, decenterStates, operands,
     gridEditStopRevision, imagePoint, runDebouncedEvaluation, cancelDebouncedEvaluation,
   ]);
 
@@ -739,6 +743,16 @@ export function OptimizationPage({
         catalogs={catalogs}
         onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setGlassMode(surfaceIndex, mode)}
         onClose={() => optimizationStore.getState().closeGlassModal()}
+      />
+
+      <TiltDecenterVarModal
+        isOpen={decenterVarModal.open}
+        optimizationModel={optimizationModel}
+        surfaceIndex={decenterVarModal.surfaceIndex}
+        decenterState={selectedDecenterState}
+        canUseBounds={canUseBounds}
+        onSave={(surfaceIndex, state) => optimizationStore.getState().replaceDecenterState(surfaceIndex, state)}
+        onClose={() => optimizationStore.getState().closeDecenterVarModal()}
       />
 
       <OptimizationApplyConfirmModal

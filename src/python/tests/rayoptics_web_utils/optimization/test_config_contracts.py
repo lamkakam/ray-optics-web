@@ -188,6 +188,25 @@ def test_pickup_normalization_retains_asphere_kind_for_each_non_polynomial_asphe
     assert normalized[0]["asphere_kind"] == ("XToroid" if kind.endswith("sweep_radius") else "Conic")
 
 
+def test_decenter_variable_and_pickup_normalization_preserves_strategy(monkeypatch):
+    import rayoptics_web_utils.optimization.config as config
+
+    monkeypatch.setattr(config, "validate_target_for_kind", lambda *args, **kwargs: None)
+    variable = config.normalize_variables(
+        _FakeOpticalModel(),
+        [{"kind": "decenter_alpha", "surface_index": 2, "decenter_type": "bend"}],
+        _optimizer(method="lm"),
+    )
+    pickup = config.normalize_pickups(
+        _FakeOpticalModel(),
+        [{"kind": "decenter_x", "surface_index": 2, "source_surface_index": 1, "decenter_type": "reverse"}],
+        set(),
+    )
+
+    assert variable[0]["decenter_type"] == "bend"
+    assert pickup[0]["decenter_type"] == "reverse"
+
+
 def test_target_validation_uses_default_and_explicit_labels(monkeypatch):
     import rayoptics_web_utils.optimization.config as config
 

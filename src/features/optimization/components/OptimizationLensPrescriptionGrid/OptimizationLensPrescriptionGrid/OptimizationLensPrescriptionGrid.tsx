@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
-import type { RadiusMode, AsphereOptimizationState, GlassMode } from "@/features/optimization/stores/optimizationStore";
+import type { RadiusMode, AsphereOptimizationState, DecenterOptimizationState, GlassMode } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
@@ -73,6 +73,14 @@ function getAsphereModeLabel(asphereState: AsphereOptimizationState | undefined)
   return labels.length > 0 ? labels.join(",") : "C";
 }
 
+function getDecenterModeLabel(state: DecenterOptimizationState | undefined): string {
+  if (state === undefined) return "C";
+  const modes = [state.alpha, state.beta, state.gamma, state.x, state.y];
+  const labels = [modes.some(({ mode }) => mode === "variable") ? "V" : undefined,
+    modes.some(({ mode }) => mode === "pickup") ? "P" : undefined].filter((value): value is string => value !== undefined);
+  return labels.length === 0 ? "C" : labels.join(",");
+}
+
 function OptimizationVariableModeCell({
   label,
   ariaLabel,
@@ -105,6 +113,7 @@ export interface OptimizationLensPrescriptionGridProps {
   /** Constant or explicit-pool mode for Object gap 0 and physical gaps 1..N. */
   readonly glassModes?: ReadonlyArray<GlassMode>;
   readonly asphereStates: ReadonlyArray<AsphereOptimizationState>;
+  readonly decenterStates?: ReadonlyArray<DecenterOptimizationState>;
   readonly onOpenRadiusModal: (surfaceIndex: number) => void;
   readonly onOpenThicknessModal: (surfaceIndex: number) => void;
   readonly onOpenGlassModal?: (surfaceIndex: number) => void;
@@ -113,6 +122,7 @@ export interface OptimizationLensPrescriptionGridProps {
   readonly onOpenApertureModal: (row: GridRow) => void;
   readonly onOpenAsphereVarModal: (surfaceIndex: number) => void;
   readonly onOpenDecenterModal: (row: GridRow) => void;
+  readonly onOpenTiltDecenterVarModal?: (surfaceIndex: number) => void;
   readonly onOpenDiffractionGratingModal: (row: GridRow) => void;
   readonly onCellEditingStarted?: () => void;
   readonly onCellEditingStopped?: () => void;
@@ -137,7 +147,7 @@ export interface OptimizationLensPrescriptionGridProps {
  * - Adds a `Var.` column after `Asph.` for configuring asphere variable/pickup optimization targets; shown only for real surface rows. The button summarizes all saved asphere term modes as `C` when the asphere state is missing or every term is `constant`, `V` when any term is variable-only, `P` when any term is pickup-only, and `V,P` when variable and pickup terms are both present. Requires `asphereStates` and `onOpenAsphereVarModal` props.
  * - When `canOptimizeGlass` is true, inserts a fourth `Var.` column immediately after `Medium`. It renders `C`/`V` controls for Object gap `0` and every physical surface gap `1..N`; Image is blank. The column is omitted entirely for existing optimizers.
  * - Sets all optimization `Var.` columns to a narrow `60px` initial width sized for the `Var.` header text, while leaving them otherwise resizable by AG Grid defaults.
- * - Uses shared text action cells for non-optimization-mode inspection cells such as `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating`; those cells show aperture defaults or circular radius labels, `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while preserving the read-only modal callbacks.
+ * - Adds an always-visible `Var.` column immediately after `Tilt & Decenter`. Object is blank; numbered surfaces and Image summarize their five independent modes as `C`, `V`, `P`, or `V,P` and open the tilt/decenter optimization modal.
  */
 export function OptimizationLensPrescriptionGrid({
   autoAperture = false,
@@ -147,6 +157,7 @@ export function OptimizationLensPrescriptionGrid({
   canOptimizeGlass = false,
   glassModes = [],
   asphereStates,
+  decenterStates = [],
   onOpenRadiusModal,
   onOpenThicknessModal,
   onOpenGlassModal,
@@ -155,6 +166,7 @@ export function OptimizationLensPrescriptionGrid({
   onOpenApertureModal,
   onOpenAsphereVarModal,
   onOpenDecenterModal,
+  onOpenTiltDecenterVarModal = () => undefined,
   onOpenDiffractionGratingModal,
   onCellEditingStarted,
   onCellEditingStopped,
@@ -317,6 +329,19 @@ export function OptimizationLensPrescriptionGrid({
       getGridRow: (data) => data.row,
       onOpenDecenterModal,
     }),
+    {
+      headerName: "Var.", width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+      cellRenderer: (params: { data: RadiusRow }) => {
+        const surfaceIndex = params.data.radiusSurfaceIndex;
+        if (surfaceIndex === undefined || params.data.row.kind === "object") return undefined;
+        const state = decenterStates.find((entry) => entry.surfaceIndex === surfaceIndex);
+        return <LensPrescriptionActionWrapper onAction={() => onOpenTiltDecenterVarModal(surfaceIndex)}>
+          <Tooltip text="Click to configure tilt and decenter variable or pickup" position="top" portal noTouch triggerClassName="flex h-full w-full">
+            <OptimizationVariableModeCell label={getDecenterModeLabel(state)} ariaLabel={`Tilt and decenter mode for surface ${surfaceIndex}`} onOpenModal={() => onOpenTiltDecenterVarModal(surfaceIndex)} />
+          </Tooltip>
+        </LensPrescriptionActionWrapper>;
+      },
+    },
     createDiffractionGratingColumn<RadiusRow>({
       getGridRow: (data) => data.row,
       onOpenDiffractionGratingModal,
@@ -325,12 +350,14 @@ export function OptimizationLensPrescriptionGrid({
   ], [
     autoAperture,
     asphereStates,
+    decenterStates,
     canOptimizeGlass,
     glassModes,
     onOpenAsphericalModal,
     onOpenApertureModal,
     onOpenAsphereVarModal,
     onOpenDecenterModal,
+    onOpenTiltDecenterVarModal,
     onOpenDiffractionGratingModal,
     onOpenMediumModal,
     onOpenGlassModal,

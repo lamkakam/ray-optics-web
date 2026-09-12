@@ -7,7 +7,7 @@ continuous targets. Returned statuses distinguish successful evaluation/stop sta
 numeric solver statuses, and ordinary Python ``"error"`` reports. Operand evaluators
 may return scalars or residual vectors and receive the image-point convention
 explicitly. Snapshot entries retain the complete target descriptor so rollback
-preserves asphere kinds.
+preserves asphere kinds and tilt/decenter coordinate strategies.
 """
 
 from __future__ import annotations
@@ -27,6 +27,11 @@ type TargetKind = Literal[
     "asphere_conic_constant",
     "asphere_polynomial_coefficient",
     "asphere_toric_sweep_radius",
+    "decenter_alpha",
+    "decenter_beta",
+    "decenter_gamma",
+    "decenter_x",
+    "decenter_y",
 ]
 type OptimizerKind = Literal["least_squares", "differential_evolution", "glass_expert"]
 type LeastSquaresMethod = Literal["trf", "lm"]
@@ -91,6 +96,7 @@ class BaseVariableConfigInput(TypedDict, total=False):
     surface_index: int
     min: float
     max: float
+    decenter_type: str
 
 
 class AsphereVariableConfigInput(BaseVariableConfigInput, total=False):
@@ -138,12 +144,19 @@ class AspherePolynomialVariable(VariableBounds):
     coefficient_index: int
 
 
+class DecenterVariable(VariableBounds):
+    kind: Literal["decenter_alpha", "decenter_beta", "decenter_gamma", "decenter_x", "decenter_y"]
+    surface_index: int
+    decenter_type: Literal["bend", "dec and return", "decenter", "reverse"]
+
+
 type VariableConfig = (
     RadiusVariable
     | ThicknessVariable
     | AsphereConicVariable
     | AsphereToricSweepVariable
     | AspherePolynomialVariable
+    | DecenterVariable
 )
 
 
@@ -176,12 +189,19 @@ class AspherePolynomialTarget(TypedDict):
     coefficient_index: int
 
 
+class DecenterTarget(TypedDict):
+    kind: Literal["decenter_alpha", "decenter_beta", "decenter_gamma", "decenter_x", "decenter_y"]
+    surface_index: int
+    decenter_type: Literal["bend", "dec and return", "decenter", "reverse"]
+
+
 type TargetConfig = (
     RadiusTarget
     | ThicknessTarget
     | AsphereConicTarget
     | AsphereToricSweepTarget
     | AspherePolynomialTarget
+    | DecenterTarget
 )
 
 
@@ -191,6 +211,7 @@ class BasePickupConfigInput(TypedDict, total=False):
     source_surface_index: int
     scale: float
     offset: float
+    decenter_type: str
 
 
 class AspherePickupConfigInput(BasePickupConfigInput, total=False):
@@ -250,12 +271,22 @@ class AspherePolynomialPickup(TypedDict):
     offset: float
 
 
+class DecenterPickup(TypedDict):
+    kind: Literal["decenter_alpha", "decenter_beta", "decenter_gamma", "decenter_x", "decenter_y"]
+    surface_index: int
+    source_surface_index: int
+    decenter_type: Literal["bend", "dec and return", "decenter", "reverse"]
+    scale: float
+    offset: float
+
+
 type PickupConfig = (
     RadiusPickup
     | ThicknessPickup
     | AsphereConicPickup
     | AsphereToricSweepPickup
     | AspherePolynomialPickup
+    | DecenterPickup
 )
 
 

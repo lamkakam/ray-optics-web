@@ -1,16 +1,26 @@
 """Read, write, snapshot, and transform mutable optimization targets.
 
 Public radius values are preserved while optimizer vectors use curvature. Snapshot
-entries retain full asphere descriptors so restoration can recover materialized
-profiles safely.
+entries retain full asphere and decenter descriptors so restoration can recover
+materialized targets safely.
 """
 
 from __future__ import annotations
 
 from rayoptics.environment import OpticalModel
 from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, XToroid, YToroid
+from rayoptics.elem.surface import DecenterData
 
 from ._types import MutableTarget, PickupConfig, SnapshotEntry, TargetConfig, TargetKey, VariableConfig
+
+DECENTER_KINDS = {
+    "decenter_alpha": ("euler", 0),
+    "decenter_beta": ("euler", 1),
+    "decenter_gamma": ("euler", 2),
+    "decenter_x": ("dec", 0),
+    "decenter_y": ("dec", 1),
+}
+DECENTER_TYPES = {"bend", "dec and return", "decenter", "reverse"}
 
 
 def radius_to_curvature(radius: float) -> float:
@@ -139,6 +149,29 @@ def ensure_asphere_profile(opm: OpticalModel, entry: MutableTarget) -> None:
         ifc.profile = YToroid(r=radius, cc=0.0, cR=radius, coefs=[])
 
 
+def ensure_decenter_data(opm: OpticalModel, entry: MutableTarget, *, materialize: bool = True):
+    """Return compatible decenter data, optionally leaving an absent source untouched."""
+    if entry["kind"] not in DECENTER_KINDS:
+        return None
+    decenter_type = entry.get("decenter_type")
+    if decenter_type not in DECENTER_TYPES:
+        raise ValueError(f"Unknown decenter type: {decenter_type}")
+    sm = opm["seq_model"]
+    validate_surface_index(sm.ifcs, entry["surface_index"], "surface_index")
+    ifc = sm.ifcs[entry["surface_index"]]
+    existing = getattr(ifc, "decenter", None)
+    if existing is None:
+        if not materialize:
+            return None
+        ifc.decenter = DecenterData(decenter_type)
+        return ifc.decenter
+    if existing.dtype != decenter_type and materialize:
+        raise ValueError(
+            f"Surface {entry['surface_index']} already has decenter type {existing.dtype}, not {decenter_type}"
+        )
+    return existing
+
+
 def read_target_value(opm: OpticalModel, entry: MutableTarget) -> float:
     kind = entry["kind"]
     surface_index = entry["surface_index"]
@@ -149,6 +182,12 @@ def read_target_value(opm: OpticalModel, entry: MutableTarget) -> float:
     if kind == "thickness":
         validate_surface_index(sm.gaps, surface_index, "surface_index")
         return float(sm.gaps[surface_index].thi)
+    if kind in DECENTER_KINDS:
+        data = ensure_decenter_data(opm, entry, materialize=entry.get("materialize", True))
+        if data is None:
+            return 0.0
+        attribute, index = DECENTER_KINDS[kind]
+        return float(getattr(data, attribute)[index])
     ensure_asphere_profile(opm, entry)
     profile = surface_profile(opm, surface_index)
     if kind == "asphere_conic_constant":
@@ -175,6 +214,11 @@ def write_target_value(opm: OpticalModel, entry: MutableTarget, value: float) ->
     if kind == "thickness":
         validate_surface_index(sm.gaps, surface_index, "surface_index")
         sm.gaps[surface_index].thi = float(value)
+        return
+    if kind in DECENTER_KINDS:
+        data = ensure_decenter_data(opm, entry)
+        attribute, index = DECENTER_KINDS[kind]
+        getattr(data, attribute)[index] = float(value)
         return
     ensure_asphere_profile(opm, entry)
     profile = surface_profile(opm, surface_index)
