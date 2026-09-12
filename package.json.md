@@ -25,7 +25,8 @@ Running the manifest generator first ensures a deployment cannot complete withou
 `npm run lint` regenerates the Python export helpers and then runs Biome with
 warnings promoted to errors. Biome applies its stable recommended rules and the
 recommended Next.js, React, test, and Playwright domains. Its formatter is
-disabled, and its CSS parser accepts Tailwind CSS directives.
+enabled with an 80-column line width, and its CSS parser accepts Tailwind CSS
+directives. `npm run lint` still invokes only `biome lint`.
 
 Linting respects `.gitignore` and excludes dependency, build, and coverage
 output, `src/python`, `scripts`, and all generated TypeScript under

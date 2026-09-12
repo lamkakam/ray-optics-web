@@ -23,7 +23,10 @@
     }
   },
   "formatter": {
-    "enabled": false
+    "enabled": true,
+    "lineWidth": 80,
+    "indentStyle": "space",
+    "indentWidth": 2
   },
   "linter": {
     "enabled": true,
@@ -77,7 +80,15 @@
         "src/shared/components/layout/BottomDrawer/BottomDrawer.tsx",
         "src/shared/lib/lens-prescription-grid/LensPrescriptionGridCells.tsx"
       ],
-      "linter": { "rules": { "a11y": { "noStaticElementInteractions": "off", "useKeyWithClickEvents": "off", "useSemanticElements": "off" } } }
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noStaticElementInteractions": "off",
+            "useKeyWithClickEvents": "off",
+            "useSemanticElements": "off"
+          }
+        }
+      }
     },
     {
       "includes": [
@@ -91,10 +102,19 @@
         "src/shared/components/primitives/Modal/Modal.tsx",
         "src/shared/components/primitives/Tooltip/Tooltip.tsx"
       ],
-      "linter": { "rules": { "a11y": { "noStaticElementInteractions": "off", "useKeyWithClickEvents": "off" } } }
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noStaticElementInteractions": "off",
+            "useKeyWithClickEvents": "off"
+          }
+        }
+      }
     },
     {
-      "includes": ["src/features/lens-editor/components/LensLayoutPanel/LensLayoutPanel.tsx"],
+      "includes": [
+        "src/features/lens-editor/components/LensLayoutPanel/LensLayoutPanel.tsx"
+      ],
       "linter": { "rules": { "performance": { "noImgElement": "off" } } }
     },
     {
@@ -107,7 +127,9 @@
         "src/features/optimization/OptimizationPage.tsx",
         "src/shared/hooks/useWebMCP.ts"
       ],
-      "linter": { "rules": { "correctness": { "useExhaustiveDependencies": "off" } } }
+      "linter": {
+        "rules": { "correctness": { "useExhaustiveDependencies": "off" } }
+      }
     }
   ]
 }
