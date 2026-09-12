@@ -383,6 +383,7 @@ class VariableStateEntry(TypedDict):
     max: NotRequired[float]
     asphere_kind: NotRequired[AsphereKind]
     coefficient_index: NotRequired[int]
+    decenter_type: NotRequired[Literal["bend", "dec and return", "decenter", "reverse"]]
 
 
 class PickupReportEntry(TypedDict):

@@ -50,6 +50,19 @@ def test_problem_exposes_scalar_objective_from_merit_function(monkeypatch, cooke
     ]
 
 
+def test_variable_state_preserves_decenter_strategy_for_frontend_application(cooke_triplet):
+    from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+    problem = OptimizationProblem(cooke_triplet, {
+        "optimizer": {"kind": "least_squares", "method": "lm"},
+        "variables": [{"kind": "decenter_alpha", "surface_index": 1, "decenter_type": "bend"}],
+        "pickups": [],
+        "merit_function": {"operands": [{"kind": "focal_length", "target": 90.0, "weight": 1.0}]},
+    })
+
+    assert problem.variable_state()[0]["decenter_type"] == "bend"
+
+
 def test_optimize_opm_dispatches_through_solver_registry(monkeypatch, cooke_triplet, optimization_config):
     import rayoptics_web_utils.optimization.optimization as optimization_module
 
