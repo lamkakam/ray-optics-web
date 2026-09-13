@@ -31,6 +31,7 @@ jobs:
         run: bash scripts/fetch-lens-data.sh
       - run: npm run type-check
       - run: npm run lint
+      - run: npm run format:check
       - run: npm run test
       - run: npm run build
         env:
