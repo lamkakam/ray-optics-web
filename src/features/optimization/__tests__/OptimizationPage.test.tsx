@@ -1304,15 +1304,28 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("2.750000")).toBeInTheDocument();
   });
 
-  it("shows evaluation errors, clears stale rows, and blocks optimizer calls", async () => {
+  it("shows structured bounds validation, clears stale rows, blocks optimization, and recovers", async () => {
     const proxy = makeProxy({
       evaluateOptimizationProblem: jest
         .fn()
         .mockResolvedValue(makeEvaluationReport())
         .mockResolvedValueOnce(makeEvaluationReport())
-        .mockRejectedValueOnce(
-          new Error("Initial guess is outside of provided bounds"),
-        ),
+        .mockResolvedValueOnce({
+          success: false,
+          status: "error",
+          message: "Initial guess is outside of provided bounds",
+          optimizer: { kind: "least_squares", method: "trf" },
+          initial_values: [
+            { kind: "radius", surface_index: 1, value: 50, min: 60, max: 70 },
+          ],
+          final_values: [
+            { kind: "radius", surface_index: 1, value: 50, min: 60, max: 70 },
+          ],
+          pickups: [],
+          residuals: [],
+          merit_function: { sum_of_squares: 1e12, rss: 1e6 },
+          optimization_progress: [],
+        }),
     });
     const { optimizationStore } = renderOptimizationPage(proxy);
 
@@ -1358,6 +1371,79 @@ describe("OptimizationPage", () => {
     expect(
       screen.queryByText("Initial guess is outside of provided bounds"),
     ).not.toBeInTheDocument();
+  });
+
+  it("logs rejected evaluation diagnostics but renders only customer-safe copy", async () => {
+    const diagnostic = new Error(
+      'Traceback (most recent call last):\n  File "/lib/python3.13/site-packages/rayoptics_web_utils/optimization/optimization.py", line 134, in evaluate_optimization_problem\nValueError: private evaluation detail',
+    );
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest.fn().mockRejectedValue(diagnostic),
+    });
+
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    act(() => {
+      optimizationStore
+        .getState()
+        .replaceOperands([
+          { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+        ]);
+    });
+
+    expect(
+      await screen.findByText("Operand evaluation failed."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/optimization\.py/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ValueError/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Operand evaluation failed.",
+      diagnostic,
+    );
+    consoleError.mockRestore();
+  });
+
+  it("logs unexpected resolved evaluation reports but renders only customer-safe copy", async () => {
+    const internalReport = {
+      ...makeEvaluationReport(),
+      success: false,
+      status: "error",
+      message:
+        'Traceback (most recent call last):\n  File "/lib/python3.13/site-packages/rayoptics_web_utils/optimization/problem.py"\nRuntimeError: private report detail',
+      residuals: [],
+    };
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest.fn().mockResolvedValue(internalReport),
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    act(() => {
+      optimizationStore
+        .getState()
+        .replaceOperands([
+          { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+        ]);
+    });
+
+    expect(
+      await screen.findByText("Operand evaluation failed."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/problem\.py/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/RuntimeError/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Operand evaluation failed.",
+      internalReport,
+    );
+    consoleError.mockRestore();
   });
 
   it("requires a successful warning-free current evaluation before optimizing", async () => {
@@ -2338,21 +2424,31 @@ describe("OptimizationPage", () => {
     );
   });
 
-  it("applies the returned result and still shows a warning in Operand Evaluation when optimizeOpm returns a failed status", async () => {
+  it("applies an unsuccessful solver result but renders only customer-safe copy", async () => {
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const failedReport = {
+      success: false,
+      status: -1,
+      message: "private solver detail",
+      optimizer: { kind: "least_squares" as const, method: "trf" as const },
+      initial_values: [],
+      final_values: [
+        {
+          kind: "radius" as const,
+          surface_index: 1,
+          value: 33,
+          min: 20,
+          max: 40,
+        },
+      ],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 0, rss: 0 },
+    };
     const proxy = makeProxy({
-      optimizeOpm: jest.fn().mockResolvedValue({
-        success: false,
-        status: -1,
-        message: "bad config",
-        optimizer: { kind: "least_squares", method: "trf" },
-        initial_values: [],
-        final_values: [
-          { kind: "radius", surface_index: 1, value: 33, min: 20, max: 40 },
-        ],
-        pickups: [],
-        residuals: [],
-        merit_function: { sum_of_squares: 0, rss: 0 },
-      }),
+      optimizeOpm: jest.fn().mockResolvedValue(failedReport),
     });
     const user = userEvent.setup();
 
@@ -2369,53 +2465,66 @@ describe("OptimizationPage", () => {
       .closest("div")?.parentElement;
     expect(evaluationPanel).not.toBeNull();
     expect(
-      await within(evaluationPanel as HTMLElement).findByText("bad config"),
+      await within(evaluationPanel as HTMLElement).findByText(
+        "Optimization did not converge.",
+      ),
     ).toBeInTheDocument();
+    expect(screen.queryByText("private solver detail")).not.toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Optimization did not converge.",
+      failedReport,
+    );
     expect(
       optimizationStore.getState().optimizationModel?.surfaces[0]
         .curvatureRadius,
     ).toBe(33);
     expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+    consoleError.mockRestore();
   });
 
-  it("shows a returned Python error without mutating the model or entering the thrown-error path", async () => {
+  it("logs a returned Python error but renders only customer-safe copy without mutating the model", async () => {
     const onError = jest.fn();
-    const proxy = makeProxy({
-      optimizeOpm: jest.fn().mockResolvedValue({
-        success: false,
-        status: "error",
-        message: "final merit failed",
-        optimizer: {
-          kind: "least_squares",
-          method: "trf",
-          nfev: 0,
-          njev: 0,
-          cost: 5e11,
-          optimality: 0,
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const errorReport = {
+      success: false,
+      status: "error" as const,
+      message:
+        'Traceback (most recent call last):\n  File "/lib/python3.13/site-packages/rayoptics_web_utils/optimization/problem.py"\nRuntimeError: final merit failed',
+      optimizer: {
+        kind: "least_squares" as const,
+        method: "trf" as const,
+        nfev: 0,
+        njev: 0,
+        cost: 5e11,
+        optimality: 0,
+      },
+      initial_values: [
+        {
+          kind: "radius" as const,
+          surface_index: 1,
+          value: 50,
+          min: 20,
+          max: 60,
         },
-        initial_values: [
-          {
-            kind: "radius",
-            surface_index: 1,
-            value: 50,
-            min: 20,
-            max: 60,
-          },
-        ],
-        final_values: [
-          {
-            kind: "radius",
-            surface_index: 1,
-            value: 33,
-            min: 20,
-            max: 60,
-          },
-        ],
-        pickups: [],
-        residuals: [],
-        merit_function: { sum_of_squares: 1e12, rss: 1e6 },
-        optimization_progress: [],
-      }),
+      ],
+      final_values: [
+        {
+          kind: "radius" as const,
+          surface_index: 1,
+          value: 33,
+          min: 20,
+          max: 60,
+        },
+      ],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 1e12, rss: 1e6 },
+      optimization_progress: [],
+    };
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockResolvedValue(errorReport),
     });
     const user = userEvent.setup();
 
@@ -2430,20 +2539,35 @@ describe("OptimizationPage", () => {
     expect(evaluationPanel).not.toBeNull();
     expect(
       await within(evaluationPanel as HTMLElement).findByText(
-        "final merit failed",
+        "Optimization failed.",
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/problem\.py/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/RuntimeError/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Optimization failed.",
+      errorReport,
+    );
     expect(
       optimizationStore.getState().optimizationModel?.surfaces[0]
         .curvatureRadius,
     ).toBe(50);
     expect(onError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
-  it("reports thrown worker errors and allows the completed progress modal to close", async () => {
+  it("logs rejected optimization diagnostics, renders safe copy, and allows the progress modal to close", async () => {
     const onError = jest.fn();
+    const diagnostic = new Error(
+      'Traceback (most recent call last):\n  File "/lib/python3.13/site-packages/rayoptics_web_utils/optimization/solvers.py"\nRuntimeError: private worker detail',
+    );
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const proxy = makeProxy({
-      optimizeOpm: jest.fn().mockRejectedValue(new Error("worker failed")),
+      optimizeOpm: jest.fn().mockRejectedValue(diagnostic),
     });
     const user = userEvent.setup();
 
@@ -2453,13 +2577,22 @@ describe("OptimizationPage", () => {
     await clickOptimizeAfterEvaluation(user);
 
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
-    expect(screen.getByText("worker failed")).toBeInTheDocument();
+    expect(screen.getByText("Optimization failed.")).toBeInTheDocument();
+    expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/solvers\.py/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/RuntimeError/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Optimization failed.",
+      diagnostic,
+    );
     expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "OK" }));
     expect(
       screen.queryByRole("dialog", { name: "Optimization Progress" }),
     ).not.toBeInTheDocument();
+    consoleError.mockRestore();
   });
 
   it("applies an optimized image-surface radius to the page-local model", async () => {

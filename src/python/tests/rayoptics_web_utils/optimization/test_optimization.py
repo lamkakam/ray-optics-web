@@ -235,7 +235,7 @@ class TestEvaluateOptimizationProblem:
             ),
         ],
     )
-    def test_rejects_bounded_trf_initial_values_outside_bounds(
+    def test_reports_bounded_trf_initial_values_outside_bounds(
         self,
         fresh_cooke_triplet,
         variable,
@@ -256,23 +256,37 @@ class TestEvaluateOptimizationProblem:
             fresh_cooke_triplet["seq_model"].ifcs[1].decenter.euler[0] = 3.0
         fresh_cooke_triplet.update_model()
 
-        with pytest.raises(
-            ValueError,
-            match="^Initial guess is outside of provided bounds$",
-        ):
-            evaluate_optimization_problem(
-                fresh_cooke_triplet,
-                {
-                    "optimizer": {"kind": "least_squares", "method": "trf"},
-                    "variables": [variable],
-                    "pickups": [],
-                    "merit_function": {
-                        "operands": [
-                            {"kind": "focal_length", "target": 100.0, "weight": 1.0}
-                        ]
-                    },
+        initial_value = (
+            fresh_cooke_triplet["seq_model"].ifcs[1].profile.coefs[2]
+            if prepare == "asphere"
+            else fresh_cooke_triplet["seq_model"].ifcs[1].decenter.euler[0]
+        )
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [variable],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {"kind": "focal_length", "target": 100.0, "weight": 1.0}
+                    ]
                 },
-            )
+            },
+        )
+
+        current_value = (
+            fresh_cooke_triplet["seq_model"].ifcs[1].profile.coefs[2]
+            if prepare == "asphere"
+            else fresh_cooke_triplet["seq_model"].ifcs[1].decenter.euler[0]
+        )
+        assert report["success"] is False
+        assert report["status"] == "error"
+        assert report["message"] == "Initial guess is outside of provided bounds"
+        assert report["residuals"] == []
+        assert report["initial_values"] == report["final_values"]
+        assert current_value == pytest.approx(initial_value)
 
     @pytest.mark.parametrize("initial_radius", [20.0, 30.0])
     def test_accepts_bounded_trf_initial_values_equal_to_radius_bounds(

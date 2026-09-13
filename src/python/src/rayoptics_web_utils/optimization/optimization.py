@@ -13,9 +13,9 @@ penalty-padded dimensions. OPD operands trace only each retained sample's
 wavelength through the single-wavelength analysis helper.
 Ordinary setup/runtime exceptions return rollback reports with ``status="error"``;
 user interruption retains the successful partial ``status="stopped"`` contract.
-Operand evaluation rejects bounded least-squares ``trf`` initial vectors outside
-the same transformed inclusive bounds passed to SciPy; unbounded ``lm``
-evaluation is unaffected.
+Operand evaluation returns a structured ``status="error"`` report when bounded
+least-squares ``trf`` initial vectors fall outside the same transformed inclusive
+bounds passed to SciPy; unbounded ``lm`` evaluation is unaffected.
 """
 
 from __future__ import annotations
@@ -104,8 +104,9 @@ def evaluate_optimization_problem(
     1. Validates and normalizes the config.
     2. Snapshots all variable/pickup targets before mutation.
     3. For bounded least-squares ``trf``, validates the current transformed
-       optimizer vector against the inclusive transformed bounds and raises
-       ``Initial guess is outside of provided bounds`` when invalid.
+       optimizer vector against the inclusive transformed bounds and returns a
+       rollback report with ``success == False``, ``status == "error"``, empty
+       residuals, and ``Initial guess is outside of provided bounds`` when invalid.
     4. Applies the current variable vector and then applies pickups in dependency order.
     5. Calls `opm.update_model()`.
     6. Evaluates all operand residuals and returns a JSON-safe report.
@@ -131,7 +132,13 @@ def evaluate_optimization_problem(
             initial_vector = problem.current_vector()
             lower, upper = problem.bounds()
             if ((initial_vector < lower) | (initial_vector > upper)).any():
-                raise ValueError("Initial guess is outside of provided bounds")
+                return build_optimization_failure_report(
+                    ValueError("Initial guess is outside of provided bounds"),
+                    config,
+                    problem=problem,
+                    initial_values=initial_values,
+                    snapshot=snapshot,
+                )
         report = problem.evaluate()
     except Exception:
         _restore_state(opm, snapshot)
