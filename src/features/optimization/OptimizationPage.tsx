@@ -144,7 +144,8 @@ function buildCurrentEditorModel(
  * - Passes the auto/manual mode from the synchronized optimization model through `BottomDrawerContainer` to `OptimizationLensPrescriptionGrid`, keeping the prescription display aligned with the model used by evaluation and optimization.
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
  * - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
- * - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
+ * - Whenever the committed optimization config changes, the component immediately marks Operand Evaluation pending, clears the prior report, debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
+ * - Worker evaluation failures clear stale rows and surface their error message in Operand Evaluation; a later successful evaluation clears that warning.
  * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
  * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
  * - When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` reports the thrown error message through the page-local warning callback instead of filtering to one hardcoded `lm` warning.
@@ -156,7 +157,7 @@ function buildCurrentEditorModel(
  * - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
  * - `Optimize` is disabled when the current optimization model references glasses missing from the loaded glass catalog.
  * - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
- * - `Optimize` is disabled while any Optimization AG Grid cell edit is active, while a post-edit Operand Evaluation refresh is pending, and while Operand Evaluation is currently evaluating.
+ * - `Optimize` is disabled until the current Operand Evaluation succeeds without a displayed error or warning, while any Optimization AG Grid cell edit is active, while a post-edit Operand Evaluation refresh is pending, and while Operand Evaluation is currently evaluating.
  * - Page-level AG Grid edit lifecycle tracking increments on `onCellEditingStarted`, decrements on `onCellEditingStopped`, increments an edit-stop revision so even no-op edits schedule a refresh, and marks the committed post-edit state as pending until the next debounced Operand Evaluation request settles; invalid config or missing worker prerequisites clear that pending gate without running an evaluation.
  * - `Optimize` does not blur active AG Grid editors to force a commit. If the handler is triggered programmatically while editing, waiting for post-edit evaluation, evaluating, invalid, or zero-contribution, it returns without calling either optimizer RPC.
  * - `Optimize` validates the store state against the live catalog snapshot, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id and optional interrupt buffer, branches between `proxy.optimizeOpm` and `proxy.optimizeGlasses`, and streams merit-history updates into the modal chart through a Comlink progress callback.
@@ -562,6 +563,8 @@ export function OptimizationPage({
     missingGlassMessage === undefined &&
     canBuildOptimizationConfig &&
     hasNonZeroContribution &&
+    evaluationReport?.success === true &&
+    evaluationWarningMessage === undefined &&
     !hasActiveGridEdit &&
     !isPostEditEvaluationPending &&
     !isEvaluating;
@@ -634,7 +637,6 @@ export function OptimizationPage({
           return;
         }
 
-        setIsEvaluating(true);
         void proxy
           .evaluateOptimizationProblem(model, config, currentImagePoint)
           .then((report) => {
@@ -644,11 +646,16 @@ export function OptimizationPage({
             setOptimizationWarningMessage(undefined);
             setEvaluationReport(report);
           })
-          .catch(() => {
+          .catch((error: unknown) => {
             if (evaluationRequestIdRef.current !== requestId) {
               return;
             }
             setEvaluationReport(undefined);
+            setOptimizationWarningMessage(
+              error instanceof Error
+                ? error.message
+                : "Operand evaluation failed.",
+            );
           })
           .finally(() => {
             if (evaluationRequestIdRef.current === requestId) {
@@ -677,6 +684,8 @@ export function OptimizationPage({
 
     const requestId = evaluationRequestIdRef.current + 1;
     evaluationRequestIdRef.current = requestId;
+    setEvaluationReport(undefined);
+    setIsEvaluating(true);
     runDebouncedEvaluation(requestId, optimizationModel, imagePoint, catalogs);
 
     return () => {

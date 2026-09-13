@@ -13,6 +13,9 @@ penalty-padded dimensions. OPD operands trace only each retained sample's
 wavelength through the single-wavelength analysis helper.
 Ordinary setup/runtime exceptions return rollback reports with ``status="error"``;
 user interruption retains the successful partial ``status="stopped"`` contract.
+Operand evaluation rejects bounded least-squares ``trf`` initial vectors outside
+the same transformed inclusive bounds passed to SciPy; unbounded ``lm``
+evaluation is unaffected.
 """
 
 from __future__ import annotations
@@ -100,10 +103,13 @@ def evaluate_optimization_problem(
 
     1. Validates and normalizes the config.
     2. Snapshots all variable/pickup targets before mutation.
-    3. Applies the current variable vector and then applies pickups in dependency order.
-    4. Calls `opm.update_model()`.
-    5. Evaluates all operand residuals and returns a JSON-safe report.
-    6. If evaluation fails, restores the snapshotted state and re-raises.
+    3. For bounded least-squares ``trf``, validates the current transformed
+       optimizer vector against the inclusive transformed bounds and raises
+       ``Initial guess is outside of provided bounds`` when invalid.
+    4. Applies the current variable vector and then applies pickups in dependency order.
+    5. Calls `opm.update_model()`.
+    6. Evaluates all operand residuals and returns a JSON-safe report.
+    7. If evaluation fails, restores the snapshotted state and re-raises.
 
     Args:
         opm: RayOptics optical model.
@@ -118,6 +124,14 @@ def evaluate_optimization_problem(
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
     initial_values = problem.variable_state()
     try:
+        if (
+            problem.optimizer["kind"] == "least_squares"
+            and problem.optimizer["method"] == "trf"
+        ):
+            initial_vector = problem.current_vector()
+            lower, upper = problem.bounds()
+            if ((initial_vector < lower) | (initial_vector > upper)).any():
+                raise ValueError("Initial guess is outside of provided bounds")
         report = problem.evaluate()
     except Exception:
         _restore_state(opm, snapshot)

@@ -163,6 +163,7 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
       residuals: [],
       merit_function: { sum_of_squares: 0, rss: 0 },
     }),
+    optimizeGlasses: jest.fn(),
     ...overrides,
   } as unknown as PyodideWorkerAPI;
 }
@@ -197,6 +198,15 @@ function mockPointerCapture(element: HTMLElement) {
     configurable: true,
     value: jest.fn(),
   });
+}
+
+async function clickOptimizeAfterEvaluation(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+  );
+  await user.click(screen.getByRole("button", { name: "Optimize" }));
 }
 
 /** Optional setup overrides for the page-level worker/store harness. */
@@ -1294,6 +1304,110 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("2.750000")).toBeInTheDocument();
   });
 
+  it("shows evaluation errors, clears stale rows, and blocks optimizer calls", async () => {
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest
+        .fn()
+        .mockResolvedValue(makeEvaluationReport())
+        .mockResolvedValueOnce(makeEvaluationReport())
+        .mockRejectedValueOnce(
+          new Error("Initial guess is outside of provided bounds"),
+        ),
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    act(() => {
+      optimizationStore
+        .getState()
+        .replaceOperands([
+          { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+        ]);
+    });
+    expect(await screen.findByText("98.500000")).toBeInTheDocument();
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "60",
+        max: "70",
+      });
+    });
+
+    expect(
+      await screen.findByText("Initial guess is outside of provided bounds"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("98.500000")).not.toBeInTheDocument();
+    const optimizeButton = screen.getByRole("button", { name: "Optimize" });
+    expect(optimizeButton).toBeDisabled();
+
+    fireEvent.click(optimizeButton);
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+    expect(proxy.optimizeGlasses).not.toHaveBeenCalled();
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+    });
+    await waitFor(() =>
+      expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(3),
+    );
+    await waitFor(() => expect(optimizeButton).toBeEnabled());
+    expect(
+      screen.queryByText("Initial guess is outside of provided bounds"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("requires a successful warning-free current evaluation before optimizing", async () => {
+    let resolveSecond:
+      | ((report: ReturnType<typeof makeEvaluationReport>) => void)
+      | undefined;
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest
+        .fn()
+        .mockResolvedValueOnce(makeEvaluationReport())
+        .mockImplementationOnce(
+          () =>
+            new Promise<ReturnType<typeof makeEvaluationReport>>((resolve) => {
+              resolveSecond = resolve;
+            }),
+        ),
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    act(() => {
+      optimizationStore
+        .getState()
+        .replaceOperands([
+          { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+        ]);
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+    );
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+    });
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+
+    await waitFor(() =>
+      expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2),
+    );
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+
+    resolveSecond?.(makeEvaluationReport());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+    );
+  });
+
   it("ignores a stale evaluation response after a newer config request starts", async () => {
     let resolveFirst:
       | ((report: ReturnType<typeof makeEvaluationReport>) => void)
@@ -1456,7 +1570,7 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
     expect(proxy.optimizeOpm).toHaveBeenCalledWith(
@@ -1787,7 +1901,7 @@ describe("OptimizationPage", () => {
       expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
     });
 
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    fireEvent.click(screen.getByRole("button", { name: "Optimize" }));
 
     expect(proxy.optimizeOpm).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
@@ -1902,7 +2016,7 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     const dialog = await screen.findByRole("dialog", {
       name: "Optimization Progress",
@@ -2087,7 +2201,7 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     const stopButton = await screen.findByRole("button", {
       name: "Stop optimization",
@@ -2163,7 +2277,7 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument(),
     );
@@ -2203,7 +2317,7 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument(),
@@ -2245,7 +2359,7 @@ describe("OptimizationPage", () => {
     const { optimizationStore } = renderOptimizationPage(proxy);
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     expect(
       screen.queryByRole("dialog", { name: "Warning" }),
@@ -2261,6 +2375,7 @@ describe("OptimizationPage", () => {
       optimizationStore.getState().optimizationModel?.surfaces[0]
         .curvatureRadius,
     ).toBe(33);
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
   });
 
   it("shows a returned Python error without mutating the model or entering the thrown-error path", async () => {
@@ -2307,7 +2422,7 @@ describe("OptimizationPage", () => {
     const { optimizationStore } = renderOptimizationPage(proxy, onError);
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     const evaluationPanel = screen
       .getByText("Operand Evaluation")
@@ -2335,7 +2450,7 @@ describe("OptimizationPage", () => {
     renderOptimizationPage(proxy, onError);
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
     expect(screen.getByText("worker failed")).toBeInTheDocument();
@@ -2371,7 +2486,7 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
 
     await waitFor(() => {
       expect(
@@ -2400,7 +2515,7 @@ describe("OptimizationPage", () => {
         max: "60",
       });
     });
-    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await clickOptimizeAfterEvaluation(user);
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
 
     await user.click(screen.getByRole("button", { name: "Apply to Editor" }));
