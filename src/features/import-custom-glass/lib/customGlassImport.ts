@@ -2,7 +2,11 @@
  * Custom-glass conversion plus browser, worker, persistence, and store orchestration.
  * Row ids are allocated monotonically so editable grid rows remain stable.
  */
-import type { CatalogGlassData, UserDefinedGlassData, UserDefinedGlassInput } from "@/features/glass-map/types/glassMap";
+import type {
+  CatalogGlassData,
+  UserDefinedGlassData,
+  UserDefinedGlassInput,
+} from "@/features/glass-map/types/glassMap";
 import type {
   CustomGlassPayload,
   EditablePair,
@@ -27,7 +31,9 @@ function makeEditablePairId(): string {
 }
 
 /** Creates an editable grid pair with a stable generated id and string-valued drafts. */
-export function makeEditablePair(pair?: readonly [number, number]): EditablePair {
+export function makeEditablePair(
+  pair?: readonly [number, number],
+): EditablePair {
   return {
     id: makeEditablePairId(),
     fraunhofer: "",
@@ -37,15 +43,22 @@ export function makeEditablePair(pair?: readonly [number, number]): EditablePair
 }
 
 /** Trims a label and converts editable string drafts to numeric worker pairs. */
-export function toWorkerInput(label: string, rows: readonly EditablePair[]): UserDefinedGlassInput {
+export function toWorkerInput(
+  label: string,
+  rows: readonly EditablePair[],
+): UserDefinedGlassInput {
   return {
     name: label.trim(),
-    pairs: rows.map((row) => [Number(row.wavelength), Number(row.refractiveIndex)] as const),
+    pairs: rows.map(
+      (row) => [Number(row.wavelength), Number(row.refractiveIndex)] as const,
+    ),
   };
 }
 
 /** Builds the strict version-1.0 JSON export envelope for tabulated custom glasses. */
-export function toCustomGlassPayload(custom: Record<string, UserDefinedGlassData>): CustomGlassPayload {
+export function toCustomGlassPayload(
+  custom: Record<string, UserDefinedGlassData>,
+): CustomGlassPayload {
   return {
     version: "1.0",
     Custom: Object.fromEntries(
@@ -57,7 +70,9 @@ export function toCustomGlassPayload(custom: Record<string, UserDefinedGlassData
   };
 }
 
-function isUserDefinedGlassData(data: CatalogGlassData): data is UserDefinedGlassData {
+function isUserDefinedGlassData(
+  data: CatalogGlassData,
+): data is UserDefinedGlassData {
   return data.dispersionCoeffKind === "tabulated";
 }
 
@@ -70,12 +85,18 @@ export function getUserDefinedCustomGlasses(
   }
 
   const entries = Object.entries(customCatalog);
-  if (entries.every((entry): entry is [string, UserDefinedGlassData] => isUserDefinedGlassData(entry[1]))) {
+  if (
+    entries.every((entry): entry is [string, UserDefinedGlassData] =>
+      isUserDefinedGlassData(entry[1]),
+    )
+  ) {
     return customCatalog as UserDefinedCustomCatalog;
   }
 
   return Object.fromEntries(
-    entries.filter((entry): entry is [string, UserDefinedGlassData] => isUserDefinedGlassData(entry[1])),
+    entries.filter((entry): entry is [string, UserDefinedGlassData] =>
+      isUserDefinedGlassData(entry[1]),
+    ),
   );
 }
 
@@ -96,18 +117,30 @@ export async function saveCustomGlass({
   deletePersisted,
   onPersistenceWarning,
 }: SaveCustomGlassOptions): Promise<void> {
-  if (mode === "edit" && previousLabel !== undefined && previousLabel !== input.name) {
+  if (
+    mode === "edit" &&
+    previousLabel !== undefined &&
+    previousLabel !== input.name
+  ) {
     const added = await proxy.addUserDefinedGlasses([input]);
     try {
       await persistInput?.(input);
     } catch (error) {
-      onPersistenceWarning?.(error instanceof Error ? error.message : "Failed to persist custom glass.");
+      onPersistenceWarning?.(
+        error instanceof Error
+          ? error.message
+          : "Failed to persist custom glass.",
+      );
     }
     await proxy.deleteUserDefinedGlasses([previousLabel]);
     try {
       await deletePersisted?.([previousLabel]);
     } catch (error) {
-      onPersistenceWarning?.(error instanceof Error ? error.message : "Failed to delete persisted custom glass.");
+      onPersistenceWarning?.(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete persisted custom glass.",
+      );
     }
     storeActions.upsertCustomGlasses(added);
     storeActions.deleteCustomGlasses([previousLabel]);
@@ -134,7 +167,11 @@ export async function saveCustomGlass({
     try {
       await persistInput?.(input);
     } catch (error) {
-      onPersistenceWarning?.(error instanceof Error ? error.message : "Failed to persist custom glass.");
+      onPersistenceWarning?.(
+        error instanceof Error
+          ? error.message
+          : "Failed to persist custom glass.",
+      );
     }
   }
   storeActions.upsertCustomGlasses(result);
@@ -143,7 +180,9 @@ export async function saveCustomGlass({
 function filenameStem(filename: string): string {
   const basename = filename.split(/[\\/]/).at(-1) ?? filename;
   const extensionIndex = basename.lastIndexOf(".");
-  return (extensionIndex <= 0 ? basename : basename.slice(0, extensionIndex)).trim();
+  return (
+    extensionIndex <= 0 ? basename : basename.slice(0, extensionIndex)
+  ).trim();
 }
 
 function micrometersToNanometers(value: number): number {
@@ -151,10 +190,16 @@ function micrometersToNanometers(value: number): number {
 }
 
 /** Parses refractiveindex.info-style `wl,n` CSV text. The filename supplies the label; rows must contain unique positive finite values, at least four pairs are required, and wavelengths are converted from micrometers to nanometers. */
-export function parseCustomGlassCsv(file: File, text: string): ImportedCustomGlassMaterial | RejectedCsvFile {
+export function parseCustomGlassCsv(
+  file: File,
+  text: string,
+): ImportedCustomGlassMaterial | RejectedCsvFile {
   const label = filenameStem(file.name);
   if (label === "") {
-    return { filename: file.name, reason: "Filename must provide a non-blank glass label." };
+    return {
+      filename: file.name,
+      reason: "Filename must provide a non-blank glass label.",
+    };
   }
 
   const lines = text.split(/\r?\n/).filter((line) => line.trim() !== "");
@@ -164,7 +209,10 @@ export function parseCustomGlassCsv(file: File, text: string): ImportedCustomGla
 
   const headers = lines[0].split(",").map((header) => header.trim());
   if (headers.length !== 2 || headers[0] !== "wl" || headers[1] !== "n") {
-    return { filename: file.name, reason: "CSV header must contain exactly two columns: wl,n." };
+    return {
+      filename: file.name,
+      reason: "CSV header must contain exactly two columns: wl,n.",
+    };
   }
 
   const pairs: [number, number][] = [];
@@ -173,27 +221,48 @@ export function parseCustomGlassCsv(file: File, text: string): ImportedCustomGla
     const rowNumber = index + 2;
     const columns = line.split(",").map((column) => column.trim());
     if (columns.length !== 2 || columns.some((column) => column === "")) {
-      return { filename: file.name, reason: `Row ${rowNumber} must contain exactly two columns.` };
+      return {
+        filename: file.name,
+        reason: `Row ${rowNumber} must contain exactly two columns.`,
+      };
     }
 
     const wavelengthMicrometers = Number(columns[0]);
     const refractiveIndex = Number(columns[1]);
-    if (!Number.isFinite(wavelengthMicrometers) || !Number.isFinite(refractiveIndex)) {
-      return { filename: file.name, reason: `Row ${rowNumber} values must be numeric.` };
+    if (
+      !Number.isFinite(wavelengthMicrometers) ||
+      !Number.isFinite(refractiveIndex)
+    ) {
+      return {
+        filename: file.name,
+        reason: `Row ${rowNumber} values must be numeric.`,
+      };
     }
     if (wavelengthMicrometers <= 0 || refractiveIndex <= 0) {
-      return { filename: file.name, reason: `Row ${rowNumber} values must be positive.` };
+      return {
+        filename: file.name,
+        reason: `Row ${rowNumber} values must be positive.`,
+      };
     }
     if (wavelengths.has(wavelengthMicrometers)) {
-      return { filename: file.name, reason: `Duplicate wavelength ${columns[0]} found.` };
+      return {
+        filename: file.name,
+        reason: `Duplicate wavelength ${columns[0]} found.`,
+      };
     }
 
     wavelengths.add(wavelengthMicrometers);
-    pairs.push([micrometersToNanometers(wavelengthMicrometers), refractiveIndex]);
+    pairs.push([
+      micrometersToNanometers(wavelengthMicrometers),
+      refractiveIndex,
+    ]);
   }
 
   if (pairs.length < 4) {
-    return { filename: file.name, reason: "CSV must contain at least four valid wavelength/index pairs." };
+    return {
+      filename: file.name,
+      reason: "CSV must contain at least four valid wavelength/index pairs.",
+    };
   }
 
   return { name: label, pairs };
@@ -201,7 +270,9 @@ export function parseCustomGlassCsv(file: File, text: string): ImportedCustomGla
 
 /** Downloads a custom-glass payload as two-space-formatted `custom-glass.json`. */
 export function downloadCustomGlassJson(payload: CustomGlassPayload): void {
-  const blob = new Blob([JSON.stringify(payload, undefined, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(payload, undefined, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;

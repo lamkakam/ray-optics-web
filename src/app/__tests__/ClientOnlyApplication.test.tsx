@@ -17,7 +17,11 @@ jest.mock("next/dynamic", () => ({
     _loader: () => Promise<unknown>,
     _options: { readonly ssr?: boolean; readonly loading?: () => undefined },
   ) => {
-    function DynamicallyLoadedApplication({ children }: { readonly children: React.ReactNode }) {
+    function DynamicallyLoadedApplication({
+      children,
+    }: {
+      readonly children: React.ReactNode;
+    }) {
       return <div data-testid="dynamically-loaded-application">{children}</div>;
     }
 
@@ -33,8 +37,8 @@ describe("ClientOnlyApplication", () => {
       </ClientOnlyApplication>,
     );
 
-    expect(screen.getByTestId("dynamically-loaded-application")).toContainElement(
-      screen.getByText("Routed child"),
-    );
+    expect(
+      screen.getByTestId("dynamically-loaded-application"),
+    ).toContainElement(screen.getByText("Routed child"));
   });
 });

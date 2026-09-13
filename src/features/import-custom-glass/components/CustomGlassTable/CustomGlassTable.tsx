@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { AgGridProvider } from "ag-grid-react";
-import type { ColDef, FilterChangedEvent, GridApi, GridReadyEvent, RowSelectionOptions, SelectionChangedEvent, SelectionColumnDef, SortChangedEvent } from "ag-grid-community";
+import type {
+  ColDef,
+  FilterChangedEvent,
+  GridApi,
+  GridReadyEvent,
+  RowSelectionOptions,
+  SelectionChangedEvent,
+  SelectionColumnDef,
+  SortChangedEvent,
+} from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { useStore } from "zustand";
 import { useImportCustomGlassStore } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
@@ -65,112 +74,137 @@ interface CustomGlassTableProps {
  * - Each row checkbox exposes `aria-label="Select {label}"`.
  * - The header checkbox exposes `aria-label="Select all custom glasses"` in tests through the AG Grid mock.
  */
-export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlassTableProps) {
+export function CustomGlassTable({
+  rows,
+  checked,
+  onCheckedChange,
+}: CustomGlassTableProps) {
   const gridTheme = useAgGridTheme();
   const importCustomGlassStore = useImportCustomGlassStore();
-  const sortState = useStore(importCustomGlassStore, (state) => state.sortState);
-  const filterModel = useStore(importCustomGlassStore, (state) => state.filterModel);
-  const setSortState = useStore(importCustomGlassStore, (state) => state.setSortState);
-  const setFilterModel = useStore(importCustomGlassStore, (state) => state.setFilterModel);
+  const sortState = useStore(
+    importCustomGlassStore,
+    (state) => state.sortState,
+  );
+  const filterModel = useStore(
+    importCustomGlassStore,
+    (state) => state.filterModel,
+  );
+  const setSortState = useStore(
+    importCustomGlassStore,
+    (state) => state.setSortState,
+  );
+  const setFilterModel = useStore(
+    importCustomGlassStore,
+    (state) => state.setFilterModel,
+  );
   const gridApiRef = useRef<GridApi<CustomGlassRow> | undefined>(undefined);
 
-  const rowSelection = useMemo<RowSelectionOptions<CustomGlassRow>>(() => ({
-    mode: "multiRow",
-    checkboxes: true,
-    headerCheckbox: true,
-    selectAll: "all",
-  }), []);
+  const rowSelection = useMemo<RowSelectionOptions<CustomGlassRow>>(
+    () => ({
+      mode: "multiRow",
+      checkboxes: true,
+      headerCheckbox: true,
+      selectAll: "all",
+    }),
+    [],
+  );
 
-  const selectionColumnDef = useMemo<SelectionColumnDef>(() => ({
-    width: 81,
-    maxWidth: 81,
-    sortable: false,
-    filter: false,
-    resizable: false,
-    suppressMovable: true,
-  }), []);
+  const selectionColumnDef = useMemo<SelectionColumnDef>(
+    () => ({
+      width: 81,
+      maxWidth: 81,
+      sortable: false,
+      filter: false,
+      resizable: false,
+      suppressMovable: true,
+    }),
+    [],
+  );
 
-  const mainColumnDefs = useMemo<ColDef<CustomGlassRow>[]>(() => [
-    {
-      headerName: "Label",
-      field: "label",
-      sortable: true,
-      filter: "agTextColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 125,
-    },
-    {
-      headerName: "nd",
-      field: "nd",
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 137,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "vd",
-      field: "vd",
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 137,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "ne",
-      field: "ne",
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 137,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "ve",
-      field: "ve",
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 137,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "Pg,F",
-      field: "pgF",
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 137,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "PF,e",
-      field: "pFe",
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 137,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "PF,d",
-      field: "pFd",
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      width: 137,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-  ], []);
+  const mainColumnDefs = useMemo<ColDef<CustomGlassRow>[]>(
+    () => [
+      {
+        headerName: "Label",
+        field: "label",
+        sortable: true,
+        filter: "agTextColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 125,
+      },
+      {
+        headerName: "nd",
+        field: "nd",
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 137,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "vd",
+        field: "vd",
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 137,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "ne",
+        field: "ne",
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 137,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "ve",
+        field: "ve",
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 137,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "Pg,F",
+        field: "pgF",
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 137,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "PF,e",
+        field: "pFe",
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 137,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "PF,d",
+        field: "pFd",
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        width: 137,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+    ],
+    [],
+  );
 
   useEffect(() => {
     const api = gridApiRef.current;
@@ -215,10 +249,13 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
     setFilterModel(event.api.getFilterModel());
   };
 
-  const handleSelectionChanged = (event: SelectionChangedEvent<CustomGlassRow>) => {
-    const selectedLabels = event.selectedNodes
-      ?.map((node) => node.data?.label)
-      .filter((label): label is string => label !== undefined) ?? [];
+  const handleSelectionChanged = (
+    event: SelectionChangedEvent<CustomGlassRow>,
+  ) => {
+    const selectedLabels =
+      event.selectedNodes
+        ?.map((node) => node.data?.label)
+        .filter((label): label is string => label !== undefined) ?? [];
     const next = new Set(selectedLabels);
     if (!areSetsEqual(checked, next)) {
       onCheckedChange(next);
@@ -242,7 +279,11 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
           theme={gridTheme}
           rowData={[...rows]}
           columnDefs={mainColumnDefs}
-          defaultColDef={{ sortable: true, filter: true, suppressMovable: true }}
+          defaultColDef={{
+            sortable: true,
+            filter: true,
+            suppressMovable: true,
+          }}
           getRowId={(params) => params.data.label}
           rowSelection={rowSelection}
           selectionColumnDef={selectionColumnDef}

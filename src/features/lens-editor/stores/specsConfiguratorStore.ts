@@ -162,10 +162,9 @@ export interface SpecsConfiguratorState {
   loadFromSpecs: (specs: OpticalSpecs) => void;
 }
 
-export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> = (
-  set,
-  get
-) => ({
+export const createSpecsConfiguratorSlice: StateCreator<
+  SpecsConfiguratorState
+> = (set, get) => ({
   // Aperture defaults
   pupilSpace: "object",
   pupilType: "epd",
@@ -185,11 +184,19 @@ export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> 
   // Committed specs defaults (mirrors default form state above)
   committedSpecs: {
     pupil: { space: "object", type: "epd", value: 0.5 },
-    field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true, isWideAngle: false },
+    field: {
+      space: "object",
+      type: "height",
+      maxField: 0,
+      fields: [0],
+      isRelative: true,
+      isWideAngle: false,
+    },
     wavelengths: { weights: [[lookupWavelength("e"), 1]], referenceIndex: 0 },
   },
 
-  setCommittedSpecs: (specs) => set({ committedSpecs: normalizeOpticalSpecs(specs) }),
+  setCommittedSpecs: (specs) =>
+    set({ committedSpecs: normalizeOpticalSpecs(specs) }),
 
   clampFieldIndex: (index, newSpecs) => {
     const specs = newSpecs ?? get().committedSpecs;

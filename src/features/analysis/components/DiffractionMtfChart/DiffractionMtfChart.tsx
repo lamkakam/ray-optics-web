@@ -18,7 +18,10 @@ interface DiffractionMtfChartProps {
  * - Uses `buildDiffractionMtfOption(...)` to build chart options from measured dimensions.
  * - In fixed-height mode, chart height is capped by the parent height and otherwise targets 60% of chart width with a 300 px minimum.
  */
-export const DiffractionMtfChart = createAnalysisChartComponent<DiffractionMtfChartProps, DiffractionMtfData>({
+export const DiffractionMtfChart = createAnalysisChartComponent<
+  DiffractionMtfChartProps,
+  DiffractionMtfData
+>({
   displayName: "DiffractionMtfChart",
   testId: "diffraction-mtf-chart",
   ariaLabel: "Diffraction MTF plot",
@@ -27,8 +30,16 @@ export const DiffractionMtfChart = createAnalysisChartComponent<DiffractionMtfCh
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
     autoHeight
       ? Math.max(Math.round(parentWidth * 0.6), 300)
-      : Math.max(0, Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300))),
+      : Math.max(
+          0,
+          Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300)),
+        ),
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
   buildOption: (diffractionMtfData, chartWidth, chartHeight, chartTextColor) =>
-    buildDiffractionMtfOption(diffractionMtfData, chartWidth, chartHeight, chartTextColor),
+    buildDiffractionMtfOption(
+      diffractionMtfData,
+      chartWidth,
+      chartHeight,
+      chartTextColor,
+    ),
 });

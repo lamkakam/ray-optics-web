@@ -92,10 +92,14 @@ export function CheckboxInput({
         className={clsx(INPUT_CLASSES, disabled && "cursor-not-allowed")}
       />
       {typeof label === "string" ? (
-        <span className={clsx("flex-1 text-left text-sm leading-5", labelClassName)}>
+        <span
+          className={clsx("flex-1 text-left text-sm leading-5", labelClassName)}
+        >
           {label}
         </span>
-      ) : label}
+      ) : (
+        label
+      )}
     </label>
   );
 }

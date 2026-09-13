@@ -5,11 +5,18 @@ import type {
 } from "@/features/optimization/types/optimizationWorkerTypes";
 
 type SharedOptimizerConfig = OptimizationAlgorithmConfig;
-type SharedOptimizerConfigByKind<TKind extends OptimizerKind> = Extract<SharedOptimizerConfig, { readonly kind: TKind }>;
+type SharedOptimizerConfigByKind<TKind extends OptimizerKind> = Extract<
+  SharedOptimizerConfig,
+  { readonly kind: TKind }
+>;
 
 /** Method discriminator supported by one optimizer kind. */
 export type OptimizerMethodKind<TKind extends OptimizerKind> =
-  SharedOptimizerConfigByKind<TKind> extends { readonly method: infer TMethod extends string } ? TMethod : never;
+  SharedOptimizerConfigByKind<TKind> extends {
+    readonly method: infer TMethod extends string;
+  }
+    ? TMethod
+    : never;
 /** Numeric field keys supported by one optimizer kind. */
 export type OptimizerNumericFieldKind<TKind extends OptimizerKind> = Exclude<
   keyof SharedOptimizerConfigByKind<TKind>,
@@ -47,12 +54,14 @@ export interface BaseOptimizerUiMetadata<TKind extends OptimizerKind> {
 }
 
 /** Optimizer metadata that requires an explicit method choice. */
-export interface OptimizerUiMetadataWithMethods<TKind extends OptimizerKind> extends BaseOptimizerUiMetadata<TKind> {
+export interface OptimizerUiMetadataWithMethods<TKind extends OptimizerKind>
+  extends BaseOptimizerUiMetadata<TKind> {
   readonly methods: ReadonlyArray<OptimizerMethodUiConfig<TKind>>;
 }
 
 /** Optimizer metadata whose capabilities live directly on the optimizer kind. */
-export interface OptimizerUiMetadataWithoutMethods<TKind extends OptimizerKind> extends BaseOptimizerUiMetadata<TKind> {
+export interface OptimizerUiMetadataWithoutMethods<TKind extends OptimizerKind>
+  extends BaseOptimizerUiMetadata<TKind> {
   readonly canUseBounds: boolean;
   readonly canOptimizeGlass: boolean;
   readonly requiresResidualCountAtLeastVariableCount: boolean;
@@ -68,5 +77,8 @@ export type OptimizerUiMetadata<TKind extends OptimizerKind> =
 export type OptimizerUiConfig = {
   readonly least_squares: OptimizerUiMetadataWithMethods<"least_squares">;
 } & {
-  readonly [TKind in Exclude<OptimizerKind, "least_squares">]: OptimizerUiMetadata<TKind>;
+  readonly [TKind in Exclude<
+    OptimizerKind,
+    "least_squares"
+  >]: OptimizerUiMetadata<TKind>;
 };

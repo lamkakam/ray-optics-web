@@ -14,7 +14,10 @@ interface FieldCurveChartBuilderArgs {
 }
 
 /** Wraps the shared analysis ECharts component factory for Field Curvature plot data. */
-export const FieldCurveChart = createAnalysisChartComponent<FieldCurveChartProps, FieldCurveChartBuilderArgs>({
+export const FieldCurveChart = createAnalysisChartComponent<
+  FieldCurveChartProps,
+  FieldCurveChartBuilderArgs
+>({
   displayName: "FieldCurveChart",
   testId: "field-curve-chart",
   ariaLabel: "Field curve plot",
@@ -23,8 +26,16 @@ export const FieldCurveChart = createAnalysisChartComponent<FieldCurveChartProps
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
     autoHeight
       ? Math.max(Math.round(parentWidth * 0.6), 300)
-      : Math.max(0, Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300))),
+      : Math.max(
+          0,
+          Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300)),
+        ),
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
   buildOption: ({ fieldCurveData }, chartWidth, chartHeight, chartTextColor) =>
-    buildFieldCurveOption(fieldCurveData, chartWidth, chartHeight, chartTextColor),
+    buildFieldCurveOption(
+      fieldCurveData,
+      chartWidth,
+      chartHeight,
+      chartTextColor,
+    ),
 });

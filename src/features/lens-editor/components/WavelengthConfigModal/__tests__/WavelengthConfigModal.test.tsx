@@ -68,9 +68,11 @@ describe("WavelengthConfigModal", () => {
         {...defaultProps}
         initialWeights={[[546.073, 1]]}
         initialReferenceIndex={0}
-      />
+      />,
     );
-    expect(screen.queryByLabelText("Delete wavelength row")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Delete wavelength row"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders delete button for non-first rows", () => {
@@ -86,7 +88,7 @@ describe("WavelengthConfigModal", () => {
         {...defaultProps}
         initialWeights={[[546.073, 1]]}
         initialReferenceIndex={0}
-      />
+      />,
     );
     const addBtn = screen.getByLabelText("Add wavelength row");
     await user.click(addBtn);
@@ -98,13 +100,15 @@ describe("WavelengthConfigModal", () => {
 
   it("does not add more than 7 rows", async () => {
     const user = userEvent.setup();
-    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
+    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [
+      546.073, 1,
+    ]);
     render(
       <WavelengthConfigModal
         {...defaultProps}
         initialWeights={sevenWeights}
         initialReferenceIndex={0}
-      />
+      />,
     );
     const addBtns = screen.getAllByLabelText("Add wavelength row");
     await user.click(addBtns[0]);
@@ -226,13 +230,15 @@ describe("WavelengthConfigModal", () => {
   });
 
   it("hides add buttons when at 7 rows", () => {
-    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
+    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [
+      546.073, 1,
+    ]);
     render(
       <WavelengthConfigModal
         {...defaultProps}
         initialWeights={sevenWeights}
         initialReferenceIndex={0}
-      />
+      />,
     );
     const addBtns = screen.getAllByLabelText("Add wavelength row");
     addBtns.forEach((btn) => {
@@ -242,13 +248,15 @@ describe("WavelengthConfigModal", () => {
 
   it("shows add buttons after deleting a row from 7", async () => {
     const user = userEvent.setup();
-    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
+    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [
+      546.073, 1,
+    ]);
     render(
       <WavelengthConfigModal
         {...defaultProps}
         initialWeights={sevenWeights}
         initialReferenceIndex={0}
-      />
+      />,
     );
     const deleteBtns = screen.getAllByLabelText("Delete wavelength row");
     await user.click(deleteBtns[0]);
@@ -269,7 +277,7 @@ describe("WavelengthConfigModal", () => {
         {...defaultProps}
         initialReferenceIndex={2}
         onApply={onApply}
-      />
+      />,
     );
     // Delete second row (index 1)
     const deleteBtns = screen.getAllByLabelText("Delete wavelength row");
@@ -277,7 +285,7 @@ describe("WavelengthConfigModal", () => {
 
     await user.click(screen.getByText("Apply"));
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceIndex: 1 })
+      expect.objectContaining({ referenceIndex: 1 }),
     );
   });
 
@@ -298,7 +306,7 @@ describe("WavelengthConfigModal", () => {
           [656.273, 3],
         ]}
         initialReferenceIndex={0}
-      />
+      />,
     );
 
     const updatedRadios = screen.getAllByRole("radio") as HTMLInputElement[];
@@ -308,7 +316,9 @@ describe("WavelengthConfigModal", () => {
   it("derives Fraunhofer symbols from the initial wavelengths", () => {
     render(<WavelengthConfigModal {...defaultProps} />);
 
-    const symbols = screen.getAllByLabelText("Fraunhofer") as HTMLSelectElement[];
+    const symbols = screen.getAllByLabelText(
+      "Fraunhofer",
+    ) as HTMLSelectElement[];
     expect(symbols.map((select) => select.value)).toEqual(["F", "d", "C"]);
   });
 
@@ -317,7 +327,9 @@ describe("WavelengthConfigModal", () => {
     const onApply = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
 
-    const symbols = screen.getAllByLabelText("Fraunhofer") as HTMLSelectElement[];
+    const symbols = screen.getAllByLabelText(
+      "Fraunhofer",
+    ) as HTMLSelectElement[];
     await user.selectOptions(symbols[0], "g");
     await user.click(screen.getByText("Apply"));
 
@@ -328,13 +340,15 @@ describe("WavelengthConfigModal", () => {
           [587.562, 1],
           [656.273, 1],
         ],
-      })
+      }),
     );
   });
 
   it("updates the symbol for an exact wavelength", async () => {
     const user = userEvent.setup();
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
 
     try {
       render(<WavelengthConfigModal {...defaultProps} />);
@@ -343,8 +357,15 @@ describe("WavelengthConfigModal", () => {
       await user.clear(wavelength);
       await user.type(wavelength, "589.294");
       await user.keyboard("{Enter}");
-      await waitFor(() => expect((screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement).value).toBe("D"));
-      expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining("A component suspended inside an `act` scope"));
+      await waitFor(() =>
+        expect(
+          (screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement)
+            .value,
+        ).toBe("D"),
+      );
+      expect(consoleError).not.toHaveBeenCalledWith(
+        expect.stringContaining("A component suspended inside an `act` scope"),
+      );
     } finally {
       consoleError.mockRestore();
     }
@@ -359,7 +380,9 @@ describe("WavelengthConfigModal", () => {
     await user.type(wavelength, "486.134");
     await user.keyboard("{Enter}");
     // The native select displays its first option when the model has no matching symbol.
-    expect((screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement).value).toBe("t");
+    expect(
+      (screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement).value,
+    ).toBe("t");
   });
 
   it("uses the default wavelength and weight for invalid edits", async () => {
@@ -384,7 +407,7 @@ describe("WavelengthConfigModal", () => {
           [587.562, 1],
           [656.273, 1],
         ],
-      })
+      }),
     );
   });
 
@@ -406,7 +429,7 @@ describe("WavelengthConfigModal", () => {
           [587.562, 1],
           [656.273, 1],
         ],
-      })
+      }),
     );
   });
 
@@ -416,14 +439,19 @@ describe("WavelengthConfigModal", () => {
     render(
       <WavelengthConfigModal
         {...defaultProps}
-        initialWeights={[[486.133, 1], [656.273, 1]]}
+        initialWeights={[
+          [486.133, 1],
+          [656.273, 1],
+        ]}
         initialReferenceIndex={0}
         onApply={onApply}
-      />
+      />,
     );
 
     await user.click(screen.getAllByLabelText("Add wavelength row")[0]);
-    expect((screen.getAllByLabelText("Fraunhofer")[1] as HTMLSelectElement).value).toBe("e");
+    expect(
+      (screen.getAllByLabelText("Fraunhofer")[1] as HTMLSelectElement).value,
+    ).toBe("e");
     await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
@@ -433,7 +461,7 @@ describe("WavelengthConfigModal", () => {
           [546.073, 1],
           [656.273, 1],
         ],
-      })
+      }),
     );
   });
 
@@ -443,7 +471,9 @@ describe("WavelengthConfigModal", () => {
     render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
 
     await user.click(screen.getAllByLabelText("Add wavelength row")[2]);
-    expect((screen.getAllByLabelText("Fraunhofer")[3] as HTMLSelectElement).value).toBe("e");
+    expect(
+      (screen.getAllByLabelText("Fraunhofer")[3] as HTMLSelectElement).value,
+    ).toBe("e");
     await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
@@ -454,7 +484,7 @@ describe("WavelengthConfigModal", () => {
           [656.273, 1],
           [546.073, 1],
         ],
-      })
+      }),
     );
   });
 
@@ -466,14 +496,14 @@ describe("WavelengthConfigModal", () => {
         {...defaultProps}
         initialReferenceIndex={1}
         onApply={onApply}
-      />
+      />,
     );
 
     await user.click(screen.getAllByLabelText("Delete wavelength row")[0]);
     await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceIndex: 0 })
+      expect.objectContaining({ referenceIndex: 0 }),
     );
   });
 
@@ -485,14 +515,14 @@ describe("WavelengthConfigModal", () => {
         {...defaultProps}
         initialReferenceIndex={2}
         onApply={onApply}
-      />
+      />,
     );
 
     await user.click(screen.getAllByLabelText("Delete wavelength row")[1]);
     await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceIndex: 0 })
+      expect.objectContaining({ referenceIndex: 0 }),
     );
   });
 
@@ -504,14 +534,14 @@ describe("WavelengthConfigModal", () => {
         {...defaultProps}
         initialReferenceIndex={1}
         onApply={onApply}
-      />
+      />,
     );
 
     await user.click(screen.getAllByLabelText("Delete wavelength row")[1]);
     await user.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceIndex: 1 })
+      expect.objectContaining({ referenceIndex: 1 }),
     );
   });
 });

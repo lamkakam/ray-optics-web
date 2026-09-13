@@ -113,7 +113,8 @@ export interface LongitudinalSphericalAberrationSeriesData {
 }
 
 /** All wavelength series in the longitudinal spherical-aberration view. */
-export type LongitudinalSphericalAberrationData = LongitudinalSphericalAberrationSeriesData[];
+export type LongitudinalSphericalAberrationData =
+  LongitudinalSphericalAberrationSeriesData[];
 
 /** Transverse ray-fan axis samples. */
 export type RayFanAxisData = FanLineAxisData;

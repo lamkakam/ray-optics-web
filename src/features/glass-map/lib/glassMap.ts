@@ -32,7 +32,9 @@ export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
 };
 
 /** Fills missing catalog keys with empty objects. */
-export function completeAllCatalogsData(raw: AllGlassCatalogsData): CompleteGlassCatalogsData {
+export function completeAllCatalogsData(
+  raw: AllGlassCatalogsData,
+): CompleteGlassCatalogsData {
   const result = {} as Record<CatalogName, Record<string, CatalogGlassData>>;
   for (const catalogName of CATALOG_NAMES) {
     result[catalogName] = raw[catalogName] ?? {};
@@ -53,7 +55,10 @@ export function buildGlassLookupMaps(
 ): GlassLookupMaps {
   const manufacturerMap = new Map<string, CatalogName>();
   const mediumMap = new Map<string, { medium: string; manufacturer: string }>();
-  const customMediumMap = new Map<string, { medium: string; manufacturer: string }>();
+  const customMediumMap = new Map<
+    string,
+    { medium: string; manufacturer: string }
+  >();
 
   for (const catalogName of CATALOG_NAMES) {
     manufacturerMap.set(normalizeLookupKey(catalogName), catalogName);
@@ -61,15 +66,21 @@ export function buildGlassLookupMaps(
     for (const glassName of Object.keys(catalogsData[catalogName])) {
       if (catalogName === "Special") {
         if (normalizeLookupKey(glassName) !== "refl") {
-          mediumMap.set(normalizeLookupKey(glassName), { medium: glassName, manufacturer: "" });
+          mediumMap.set(normalizeLookupKey(glassName), {
+            medium: glassName,
+            manufacturer: "",
+          });
         }
         continue;
       }
 
-      mediumMap.set(`${normalizeLookupKey(catalogName)}:${normalizeLookupKey(glassName)}`, {
-        medium: glassName,
-        manufacturer: catalogName,
-      });
+      mediumMap.set(
+        `${normalizeLookupKey(catalogName)}:${normalizeLookupKey(glassName)}`,
+        {
+          medium: glassName,
+          manufacturer: catalogName,
+        },
+      );
 
       if (catalogName === "Custom") {
         customMediumMap.set(normalizeLookupKey(glassName), {
@@ -87,7 +98,10 @@ export function buildGlassLookupMaps(
     }
   }
   for (const alias of CAF2_ALIASES) {
-    mediumMap.set(normalizeLookupKey(alias), { medium: "CaF2", manufacturer: "" });
+    mediumMap.set(normalizeLookupKey(alias), {
+      medium: "CaF2",
+      manufacturer: "",
+    });
   }
 
   return { manufacturerMap, mediumMap, customMediumMap };
@@ -99,8 +113,9 @@ export function getEligibleGlassNames(
   catalogName: CatalogName,
 ): string[] {
   return Object.keys(catalogsData[catalogName] ?? {}).filter(
-    (glassName) => catalogName !== "Special"
-      || !Array.from(builtInSpecialMaterial).some(
+    (glassName) =>
+      catalogName !== "Special" ||
+      !Array.from(builtInSpecialMaterial).some(
         (medium) => medium.toLowerCase() === glassName.toLowerCase(),
       ),
   );
@@ -113,18 +128,26 @@ export function resolveCatalogGlass(
   catalogValue: string,
   glassValue: string,
 ): SelectedGlass | undefined {
-  const catalogName = lookupMaps.manufacturerMap.get(normalizeLookupKey(catalogValue));
+  const catalogName = lookupMaps.manufacturerMap.get(
+    normalizeLookupKey(catalogValue),
+  );
   if (catalogName === undefined) return undefined;
 
   const normalizedGlass = normalizeLookupKey(glassValue);
-  const lookupKey = catalogName === "Special"
-    ? normalizedGlass
-    : `${normalizeLookupKey(catalogName)}:${normalizedGlass}`;
+  const lookupKey =
+    catalogName === "Special"
+      ? normalizedGlass
+      : `${normalizeLookupKey(catalogName)}:${normalizedGlass}`;
   const resolved = lookupMaps.mediumMap.get(lookupKey);
-  if (resolved === undefined || normalizeLookupKey(resolved.medium) !== normalizedGlass) return undefined;
+  if (
+    resolved === undefined ||
+    normalizeLookupKey(resolved.medium) !== normalizedGlass
+  )
+    return undefined;
 
   const glassName = resolved.medium;
-  if (!getEligibleGlassNames(catalogsData, catalogName).includes(glassName)) return undefined;
+  if (!getEligibleGlassNames(catalogsData, catalogName).includes(glassName))
+    return undefined;
 
   const data = catalogsData[catalogName][glassName];
   return data === undefined ? undefined : { catalogName, glassName, data };
@@ -148,7 +171,10 @@ export function computePlotPoints(
       let y: number | undefined;
 
       if (plotType === "refractiveIndex") {
-        y = abbeNumCenterLine === "d" ? data.refractiveIndexD : data.refractiveIndexE;
+        y =
+          abbeNumCenterLine === "d"
+            ? data.refractiveIndexD
+            : data.refractiveIndexE;
       } else {
         y = data.partialDispersions[partialDispersionType];
       }

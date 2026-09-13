@@ -3,8 +3,14 @@ import { render, screen, act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { LensPrescriptionContainer } from "@/features/lens-editor/components/LensPrescriptionContainer";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
+import {
+  surfacesToGridRows,
+  gridRowsToSurfaces,
+} from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Surfaces, OpticalModel } from "@/shared/lib/types/opticalModel";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -18,7 +24,9 @@ jest.mock("next/link", () => {
     href,
     children,
     ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    readonly href: string;
+  }) {
     return (
       <a href={href} {...props}>
         {children}
@@ -28,8 +36,12 @@ jest.mock("next/link", () => {
 });
 
 jest.mock("better-react-mathjax", () => ({
-  MathJaxContext: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  MathJax: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -70,7 +82,13 @@ const testOpticalModel: OpticalModel = {
   ...testSurfaces,
   specs: {
     pupil: { space: "object", type: "epd", value: 25 },
-    field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      fields: [0, 0.7, 1],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
   },
 };
@@ -134,16 +152,16 @@ const glassCatalogContextValue: GlassCatalogContextValue = {
   preload: jest.fn(),
 };
 
-function renderLPC(store: ReturnType<typeof createTestStore> = createTestStore()) {
+function renderLPC(
+  store: ReturnType<typeof createTestStore> = createTestStore(),
+) {
   return {
     ...render(
       <GlassCatalogContext.Provider value={glassCatalogContextValue}>
         <LensEditorStoreContext.Provider value={store}>
-          <LensPrescriptionContainer
-            getOpticalModel={getOpticalModel}
-          />
+          <LensPrescriptionContainer getOpticalModel={getOpticalModel} />
         </LensEditorStoreContext.Provider>
-      </GlassCatalogContext.Provider>
+      </GlassCatalogContext.Provider>,
     ),
     store,
   };
@@ -161,14 +179,22 @@ describe("LensPrescriptionContainer", () => {
 
   it("does not render config action buttons moved to LensEditor", () => {
     renderLPC();
-    expect(screen.queryByRole("button", { name: "Update System" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Load Config" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Download Config" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Update System" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Load Config" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Download Config" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders rows from store (object + 2 surfaces + image)", () => {
     renderLPC();
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     expect(rows).toHaveLength(4);
   });
 
@@ -178,7 +204,9 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.click(addButtons[1]); // '+' on first surface row
 
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     expect(rows).toHaveLength(5);
   });
 
@@ -188,7 +216,9 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.click(deleteButtons[0]); // '-' on first surface row
 
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     expect(rows).toHaveLength(3);
   });
 
@@ -207,13 +237,19 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.type(radiusInput, "100");
     await userEvent.tab();
 
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
-    expect(surfaceRow?.kind === "surface" ? surfaceRow.curvatureRadius : undefined).toBe(100);
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
+    expect(
+      surfaceRow?.kind === "surface" ? surfaceRow.curvatureRadius : undefined,
+    ).toBe(100);
   });
 
   it("sets semi-diameter to 0 when a rectangular clear aperture is confirmed", async () => {
     const { store } = renderLPC();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -222,16 +258,35 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openApertureModal(surfaceRow.id);
     });
 
-    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
-    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Half-Length" }));
-    await userEvent.type(screen.getByRole("textbox", { name: "Clear Half-Length" }), "4");
-    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Half-Width" }));
-    await userEvent.type(screen.getByRole("textbox", { name: "Clear Half-Width" }), "2");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Clear Aperture Shape"),
+      "rectangular",
+    );
+    await userEvent.clear(
+      screen.getByRole("textbox", { name: "Clear Half-Length" }),
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Clear Half-Length" }),
+      "4",
+    );
+    await userEvent.clear(
+      screen.getByRole("textbox", { name: "Clear Half-Width" }),
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Clear Half-Width" }),
+      "2",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
-    expect(updatedRow?.kind === "surface" ? updatedRow.semiDiameter : undefined).toBe(0);
-    expect(updatedRow?.kind === "surface" ? updatedRow.clear_aperture : undefined).toEqual({
+    const updatedRow = store
+      .getState()
+      .rows.find((row) => row.id === surfaceRow.id);
+    expect(
+      updatedRow?.kind === "surface" ? updatedRow.semiDiameter : undefined,
+    ).toBe(0);
+    expect(
+      updatedRow?.kind === "surface" ? updatedRow.clear_aperture : undefined,
+    ).toEqual({
       shape: "rectangular",
       xHalfWidth: 4,
       yHalfWidth: 2,
@@ -243,7 +298,9 @@ describe("LensPrescriptionContainer", () => {
 
   it("preserves semi-diameter when a circular clear aperture is confirmed", async () => {
     const store = createTestStore();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -255,9 +312,15 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
-    expect(updatedRow?.kind === "surface" ? updatedRow.semiDiameter : undefined).toBe(10);
-    expect(updatedRow?.kind === "surface" ? updatedRow.clear_aperture : undefined).toEqual({
+    const updatedRow = store
+      .getState()
+      .rows.find((row) => row.id === surfaceRow.id);
+    expect(
+      updatedRow?.kind === "surface" ? updatedRow.semiDiameter : undefined,
+    ).toBe(10);
+    expect(
+      updatedRow?.kind === "surface" ? updatedRow.clear_aperture : undefined,
+    ).toEqual({
       shape: "circular",
       offsetX: 0,
       offsetY: 0,
@@ -266,14 +329,21 @@ describe("LensPrescriptionContainer", () => {
 
   it("pre-populates ApertureModal with the selected surface apertures", () => {
     const store = createTestStore();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
 
     store.getState().updateRow(surfaceRow.id, {
       clear_aperture: { shape: "circular", offsetX: 1.5, offsetY: -2.5 },
-      edge_aperture: { shape: "circular", radius: 6, offsetX: -3.5, offsetY: 4.5 },
+      edge_aperture: {
+        shape: "circular",
+        radius: 6,
+        offsetX: -3.5,
+        offsetY: 4.5,
+      },
     });
     renderLPC(store);
 
@@ -281,13 +351,25 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openApertureModal(surfaceRow.id);
     });
 
-    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue("circular");
-    expect(screen.getByRole("textbox", { name: "Clear Offset X" })).toHaveValue("1.5");
-    expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toHaveValue("-2.5");
-    expect(screen.getByLabelText("Edge Aperture Shape")).toHaveValue("circular");
+    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue(
+      "circular",
+    );
+    expect(screen.getByRole("textbox", { name: "Clear Offset X" })).toHaveValue(
+      "1.5",
+    );
+    expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toHaveValue(
+      "-2.5",
+    );
+    expect(screen.getByLabelText("Edge Aperture Shape")).toHaveValue(
+      "circular",
+    );
     expect(screen.getByRole("textbox", { name: "Radius" })).toHaveValue("6");
-    expect(screen.getByRole("textbox", { name: "Edge Offset X" })).toHaveValue("-3.5");
-    expect(screen.getByRole("textbox", { name: "Edge Offset Y" })).toHaveValue("4.5");
+    expect(screen.getByRole("textbox", { name: "Edge Offset X" })).toHaveValue(
+      "-3.5",
+    );
+    expect(screen.getByRole("textbox", { name: "Edge Offset Y" })).toHaveValue(
+      "4.5",
+    );
   });
 
   it("renders DecenterModal when decenterModal is open", () => {
@@ -327,7 +409,9 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     expect(store.getState().decenterModal.open).toBe(false);
-    const updatedRow = store.getState().rows.find((r) => r.id === surfaceRow.id);
+    const updatedRow = store
+      .getState()
+      .rows.find((r) => r.id === surfaceRow.id);
     expect(updatedRow?.kind === "surface" && updatedRow.decenter).toBeDefined();
   });
 
@@ -336,7 +420,14 @@ describe("LensPrescriptionContainer", () => {
     const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
     // Pre-set decenter
     store.getState().updateRow(rowId, {
-      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 0,
+        beta: 5,
+        gamma: 0,
+        offsetX: 1,
+        offsetY: 0,
+      },
     });
 
     renderLPC(store);
@@ -345,10 +436,14 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openDecenterModal(rowId);
     });
 
-    await userEvent.click(screen.getByRole("button", { name: "Remove Decenter" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Remove Decenter" }),
+    );
     expect(store.getState().decenterModal.open).toBe(false);
     const updatedRow = store.getState().rows.find((r) => r.id === rowId);
-    expect(updatedRow?.kind === "surface" && updatedRow.decenter).toBeUndefined();
+    expect(
+      updatedRow?.kind === "surface" && updatedRow.decenter,
+    ).toBeUndefined();
   });
 
   // --- Image row decenter ---
@@ -367,7 +462,14 @@ describe("LensPrescriptionContainer", () => {
   it("pre-populates modal with existing image row decenter", () => {
     const store = createTestStore();
     store.getState().updateRow(IMAGE_ROW_ID, {
-      decenter: { coordinateSystemStrategy: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 1.5,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0.1,
+        offsetY: 0.2,
+      },
     });
     renderLPC(store);
 
@@ -376,7 +478,9 @@ describe("LensPrescriptionContainer", () => {
     });
 
     // alpha field should be pre-filled with 1.5
-    expect(screen.getByRole("textbox", { name: "Alpha (°)" })).toHaveValue("1.5");
+    expect(screen.getByRole("textbox", { name: "Alpha (°)" })).toHaveValue(
+      "1.5",
+    );
   });
 
   it("saves decenter on image row when Confirm is clicked", async () => {
@@ -394,7 +498,9 @@ describe("LensPrescriptionContainer", () => {
 
   it("keeps the unconfirmed glass selection after a remount while the medium modal stays open", async () => {
     const { store, unmount } = renderLPC();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -405,7 +511,9 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.clear(screen.getByLabelText("Glass"));
     await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
     );
@@ -415,17 +523,25 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     expect(screen.getByLabelText("Glass")).toHaveValue("N-SF6");
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
     );
-    const reloadedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
-    expect(reloadedRow?.kind === "surface" ? reloadedRow.medium : undefined).toBe("N-BK7");
+    const reloadedRow = store
+      .getState()
+      .rows.find((row) => row.id === surfaceRow.id);
+    expect(
+      reloadedRow?.kind === "surface" ? reloadedRow.medium : undefined,
+    ).toBe("N-BK7");
   });
 
   it("commits the pending glass selection when MediumSelectorModal confirm is clicked", async () => {
     const { store } = renderLPC();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -438,8 +554,12 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
-    expect(updatedRow?.kind === "surface" ? updatedRow.medium : undefined).toBe("N-SF6");
+    const updatedRow = store
+      .getState()
+      .rows.find((row) => row.id === surfaceRow.id);
+    expect(updatedRow?.kind === "surface" ? updatedRow.medium : undefined).toBe(
+      "N-SF6",
+    );
     expect(store.getState().pendingMediumSelection).toBeUndefined();
     expect(store.getState().mediumModal.open).toBe(false);
   });
@@ -457,7 +577,9 @@ describe("LensPrescriptionContainer", () => {
 
   it("pre-populates MediumSelectorModal with surface row medium values", () => {
     const { store } = renderLPC();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -482,9 +604,15 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    const updatedRow = store.getState().rows.find((row) => row.id === store.getState().rows[0].id);
-    expect(updatedRow?.kind === "object" ? updatedRow.medium : undefined).toBe("N-SF6");
-    expect(updatedRow?.kind === "object" ? updatedRow.manufacturer : undefined).toBe("Schott");
+    const updatedRow = store
+      .getState()
+      .rows.find((row) => row.id === store.getState().rows[0].id);
+    expect(updatedRow?.kind === "object" ? updatedRow.medium : undefined).toBe(
+      "N-SF6",
+    );
+    expect(
+      updatedRow?.kind === "object" ? updatedRow.manufacturer : undefined,
+    ).toBe("Schott");
     expect(store.getState().pendingMediumSelection).toBeUndefined();
     expect(store.getState().mediumModal.open).toBe(false);
   });
@@ -495,13 +623,24 @@ describe("LensPrescriptionContainer", () => {
     act(() => store.getState().openMediumModal(store.getState().rows[0].id));
 
     const specialMedia = screen.getByLabelText("Glass");
-    expect(Array.from(specialMedia.querySelectorAll("option")).map((option) => option.textContent)).not.toContain("REFL");
+    expect(
+      Array.from(specialMedia.querySelectorAll("option")).map(
+        (option) => option.textContent,
+      ),
+    ).not.toContain("REFL");
   });
 
   it("removes decenter from image row when Remove Decenter is clicked", async () => {
     const store = createTestStore();
     store.getState().updateRow(IMAGE_ROW_ID, {
-      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 0,
+        beta: 5,
+        gamma: 0,
+        offsetX: 1,
+        offsetY: 0,
+      },
     });
     renderLPC(store);
 
@@ -509,7 +648,9 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
     });
 
-    await userEvent.click(screen.getByRole("button", { name: "Remove Decenter" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Remove Decenter" }),
+    );
     expect(store.getState().decenterModal.open).toBe(false);
     const imageRow = store.getState().rows.find((r) => r.kind === "image");
     expect(imageRow?.kind === "image" && imageRow.decenter).toBeUndefined();
@@ -517,7 +658,9 @@ describe("LensPrescriptionContainer", () => {
 
   it("pre-populates AsphericalModal with existing RadialPolynomial data", () => {
     const store = createTestStore();
-    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+    const rowId = store
+      .getState()
+      .rows.find((row) => row.kind === "surface")!.id;
     store.getState().updateRow(rowId, {
       aspherical: {
         kind: "RadialPolynomial",
@@ -540,7 +683,9 @@ describe("LensPrescriptionContainer", () => {
 
   it("pre-populates AsphericalModal with existing XToroid data", () => {
     const store = createTestStore();
-    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+    const rowId = store
+      .getState()
+      .rows.find((row) => row.kind === "surface")!.id;
     store.getState().updateRow(rowId, {
       aspherical: {
         kind: "XToroid",
@@ -557,12 +702,16 @@ describe("LensPrescriptionContainer", () => {
     });
 
     expect(screen.getByLabelText("Type")).toHaveValue("XToroid");
-    expect(screen.getByLabelText("Toroid sweep radius of curvature")).toHaveValue("42");
+    expect(
+      screen.getByLabelText("Toroid sweep radius of curvature"),
+    ).toHaveValue("42");
   });
 
   it("saves XToroid data to the store when AsphericalModal confirm is clicked", async () => {
     const { store } = renderLPC();
-    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+    const rowId = store
+      .getState()
+      .rows.find((row) => row.kind === "surface")!.id;
 
     act(() => {
       store.getState().openAsphericalModal(rowId);
@@ -571,8 +720,13 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.selectOptions(screen.getByLabelText("Type"), "XToroid");
     await userEvent.clear(screen.getByLabelText("Conic constant"));
     await userEvent.type(screen.getByLabelText("Conic constant"), "-0.5");
-    await userEvent.clear(screen.getByLabelText("Toroid sweep radius of curvature"));
-    await userEvent.type(screen.getByLabelText("Toroid sweep radius of curvature"), "15");
+    await userEvent.clear(
+      screen.getByLabelText("Toroid sweep radius of curvature"),
+    );
+    await userEvent.type(
+      screen.getByLabelText("Toroid sweep radius of curvature"),
+      "15",
+    );
     await userEvent.clear(screen.getByLabelText("x-toroid-a2"));
     await userEvent.type(screen.getByLabelText("x-toroid-a2"), "0.001");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
@@ -586,21 +740,28 @@ describe("LensPrescriptionContainer", () => {
           toricSweepRadiusOfCurvature: 15,
           polynomialCoefficients: [0.001],
         },
-      })
+      }),
     );
   });
 
   it("saves YToroid data with invalid toroid sweep radius as 0", async () => {
     const { store } = renderLPC();
-    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+    const rowId = store
+      .getState()
+      .rows.find((row) => row.kind === "surface")!.id;
 
     act(() => {
       store.getState().openAsphericalModal(rowId);
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Type"), "YToroid");
-    await userEvent.clear(screen.getByLabelText("Toroid sweep radius of curvature"));
-    await userEvent.type(screen.getByLabelText("Toroid sweep radius of curvature"), "oops");
+    await userEvent.clear(
+      screen.getByLabelText("Toroid sweep radius of curvature"),
+    );
+    await userEvent.type(
+      screen.getByLabelText("Toroid sweep radius of curvature"),
+      "oops",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     const updatedRow = store.getState().rows.find((row) => row.id === rowId);
@@ -612,26 +773,51 @@ describe("LensPrescriptionContainer", () => {
           toricSweepRadiusOfCurvature: 0,
           polynomialCoefficients: [],
         },
-      })
+      }),
     );
   });
 
   it.each([
     ["Conic", { kind: "Conic", conicConstant: 0 }],
-    ["EvenAspherical", { kind: "EvenAspherical", conicConstant: 0, polynomialCoefficients: [] }],
-    ["RadialPolynomial", { kind: "RadialPolynomial", conicConstant: 0, polynomialCoefficients: [] }],
-    ["YToroid", { kind: "YToroid", conicConstant: 0, toricSweepRadiusOfCurvature: 0, polynomialCoefficients: [] }],
-  ] as const)("maps %s aspherical confirmation to the domain row", async (type, expected) => {
-    const { store } = renderLPC();
-    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+    [
+      "EvenAspherical",
+      { kind: "EvenAspherical", conicConstant: 0, polynomialCoefficients: [] },
+    ],
+    [
+      "RadialPolynomial",
+      {
+        kind: "RadialPolynomial",
+        conicConstant: 0,
+        polynomialCoefficients: [],
+      },
+    ],
+    [
+      "YToroid",
+      {
+        kind: "YToroid",
+        conicConstant: 0,
+        toricSweepRadiusOfCurvature: 0,
+        polynomialCoefficients: [],
+      },
+    ],
+  ] as const)(
+    "maps %s aspherical confirmation to the domain row",
+    async (type, expected) => {
+      const { store } = renderLPC();
+      const rowId = store
+        .getState()
+        .rows.find((row) => row.kind === "surface")!.id;
 
-    act(() => store.getState().openAsphericalModal(rowId));
-    await userEvent.selectOptions(screen.getByLabelText("Type"), type);
-    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+      act(() => store.getState().openAsphericalModal(rowId));
+      await userEvent.selectOptions(screen.getByLabelText("Type"), type);
+      await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    const updatedRow = store.getState().rows.find((row) => row.id === rowId);
-    expect(updatedRow).toEqual(expect.objectContaining({ aspherical: expected }));
-  });
+      const updatedRow = store.getState().rows.find((row) => row.id === rowId);
+      expect(updatedRow).toEqual(
+        expect.objectContaining({ aspherical: expected }),
+      );
+    },
+  );
 
   it("renders DiffractionGratingModal when diffractionGratingModal is open", () => {
     const { store } = renderLPC();
@@ -648,7 +834,9 @@ describe("LensPrescriptionContainer", () => {
 
   it("pre-populates DiffractionGratingModal with the selected surface grating", () => {
     const store = createTestStore();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -677,8 +865,12 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(store.getState().diffractionGratingModal.open).toBe(false);
-    const updatedRow = store.getState().rows.find((r) => r.id === surfaceRow.id);
-    expect(updatedRow?.kind === "surface" && updatedRow.diffractiveElement).toEqual({
+    const updatedRow = store
+      .getState()
+      .rows.find((r) => r.id === surfaceRow.id);
+    expect(
+      updatedRow?.kind === "surface" && updatedRow.diffractiveElement,
+    ).toEqual({
       diffractionGrating: {
         lpmm: 1000,
         order: 1,
@@ -703,31 +895,43 @@ describe("LensPrescriptionContainer", () => {
 
     expect(store.getState().diffractionGratingModal.open).toBe(false);
     const updatedRow = store.getState().rows.find((r) => r.id === rowId);
-    expect(updatedRow?.kind === "surface" && updatedRow.diffractiveElement).toBeUndefined();
+    expect(
+      updatedRow?.kind === "surface" && updatedRow.diffractiveElement,
+    ).toBeUndefined();
   });
 
   // --- Export Python Script ---
   it("renders 'Export Python Script' button", () => {
     renderLPC();
-    expect(screen.getByRole("button", { name: "Export Python Script" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Export Python Script" }),
+    ).toBeInTheDocument();
   });
 
   it("renders Formatting beside Export Python Script", () => {
     renderLPC();
     const toolbar = screen.getByRole("toolbar", { name: "Grid toolbar" });
 
-    expect(within(toolbar).getByRole("button", { name: "Export Python Script" })).toBeInTheDocument();
-    expect(within(toolbar).getByRole("button", { name: "Formatting" })).toBeInTheDocument();
+    expect(
+      within(toolbar).getByRole("button", { name: "Export Python Script" }),
+    ).toBeInTheDocument();
+    expect(
+      within(toolbar).getByRole("button", { name: "Formatting" }),
+    ).toBeInTheDocument();
   });
 
   it("opens Formatting modal and does not close it on backdrop click", async () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    expect(screen.getByRole("dialog", { name: "Formatting" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Formatting" }),
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByTestId("modal-backdrop"));
-    expect(screen.getByRole("dialog", { name: "Formatting" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Formatting" }),
+    ).toBeInTheDocument();
   });
 
   it("closes Formatting modal when Cancel is clicked", async () => {
@@ -736,7 +940,9 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Formatting" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows Factor in Scale mode and hides it in Reverse mode", async () => {
@@ -751,8 +957,14 @@ describe("LensPrescriptionContainer", () => {
     expect(factorInput).not.toHaveAttribute("step");
     expect(factorInput).not.toHaveAttribute("min");
 
-    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
-    expect(screen.queryByRole("textbox", { name: "Factor" })).not.toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      }),
+    );
+    expect(
+      screen.queryByRole("textbox", { name: "Factor" }),
+    ).not.toBeInTheDocument();
   });
 
   it("resets Scale factor and range to current defaults after Formatting is cancelled and reopened", async () => {
@@ -760,7 +972,10 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
     await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
-    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "2.5");
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Factor" }),
+      "2.5",
+    );
     await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -782,12 +997,22 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
 
-    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      }),
+    );
     await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "1");
 
-    expect(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" })).toBeChecked();
-    expect(screen.queryByRole("textbox", { name: "Factor" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      }),
+    ).toBeChecked();
+    expect(
+      screen.queryByRole("textbox", { name: "Factor" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByLabelText("First Surface")).toHaveValue("1");
     expect(screen.getByLabelText("Last Surface")).toHaveValue("1");
 
@@ -806,112 +1031,190 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "2");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    const firstSurface = store.getState().rows.find((row) => row.kind === "surface");
-    expect(firstSurface?.kind === "surface" ? firstSurface.curvatureRadius : undefined).toBe(100);
-    expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
+    const firstSurface = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
+    expect(
+      firstSurface?.kind === "surface"
+        ? firstSurface.curvatureRadius
+        : undefined,
+    ).toBe(100);
+    expect(
+      screen.queryByRole("dialog", { name: "Formatting" }),
+    ).not.toBeInTheDocument();
   });
 
   it("prompts for a reference surface after Reverse creates a decentered first surface and delays row mutation", async () => {
     const store = createTestStore();
     const originalRows = store.getState().rows;
-    const lastSurface = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
-      row.kind === "surface"
-    ).at(-1);
+    const lastSurface = store
+      .getState()
+      .rows.filter(
+        (row): row is Extract<typeof row, { kind: "surface" }> =>
+          row.kind === "surface",
+      )
+      .at(-1);
     if (lastSurface === undefined) {
       throw new Error("Expected a surface row");
     }
     store.getState().updateRow(lastSurface.id, {
-      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: 1, offsetY: 0 },
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 0,
+        beta: 0,
+        gamma: 0,
+        offsetX: 1,
+        offsetY: 0,
+      },
     });
     const rowsBeforeReverse = store.getState().rows;
 
     renderLPC(store);
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      }),
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
-    expect(screen.getByRole("dialog", { name: "Add Reference Surface?" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Formatting" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Add Reference Surface?" }),
+    ).toBeInTheDocument();
     expect(store.getState().rows).toBe(rowsBeforeReverse);
     expect(store.getState().rows).not.toBe(originalRows);
   });
 
   it("applies prompted Reverse rows without a reference surface when No is clicked", async () => {
     const store = createTestStore();
-    const lastSurface = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
-      row.kind === "surface"
-    ).at(-1);
+    const lastSurface = store
+      .getState()
+      .rows.filter(
+        (row): row is Extract<typeof row, { kind: "surface" }> =>
+          row.kind === "surface",
+      )
+      .at(-1);
     if (lastSurface === undefined) {
       throw new Error("Expected a surface row");
     }
     store.getState().updateRow(lastSurface.id, {
-      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 5, offsetX: 0, offsetY: 0 },
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 0,
+        beta: 0,
+        gamma: 5,
+        offsetX: 0,
+        offsetY: 0,
+      },
     });
 
     renderLPC(store);
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      }),
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     await userEvent.click(screen.getByRole("button", { name: "No" }));
 
-    const surfaces = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
-      row.kind === "surface"
-    );
+    const surfaces = store
+      .getState()
+      .rows.filter(
+        (row): row is Extract<typeof row, { kind: "surface" }> =>
+          row.kind === "surface",
+      );
     expect(surfaces).toHaveLength(2);
     expect(surfaces[0].curvatureRadius).toBe(30);
     expect(surfaces[0].decenter?.gamma).toBe(5);
-    expect(screen.queryByRole("dialog", { name: "Add Reference Surface?" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Add Reference Surface?" }),
+    ).not.toBeInTheDocument();
   });
 
   it("applies prompted Reverse rows with a reference surface when Yes is clicked", async () => {
     const store = createTestStore();
-    const lastSurface = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
-      row.kind === "surface"
-    ).at(-1);
+    const lastSurface = store
+      .getState()
+      .rows.filter(
+        (row): row is Extract<typeof row, { kind: "surface" }> =>
+          row.kind === "surface",
+      )
+      .at(-1);
     if (lastSurface === undefined) {
       throw new Error("Expected a surface row");
     }
     store.getState().updateRow(lastSurface.id, {
-      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: 2, offsetY: 0 },
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 0,
+        beta: 0,
+        gamma: 0,
+        offsetX: 2,
+        offsetY: 0,
+      },
     });
 
     renderLPC(store);
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      }),
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     await userEvent.click(screen.getByRole("button", { name: "Yes" }));
 
-    const surfaces = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
-      row.kind === "surface"
-    );
+    const surfaces = store
+      .getState()
+      .rows.filter(
+        (row): row is Extract<typeof row, { kind: "surface" }> =>
+          row.kind === "surface",
+      );
     expect(surfaces).toHaveLength(3);
-    expect(surfaces[0]).toEqual(expect.objectContaining({
-      curvatureRadius: 0,
-      thickness: 0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 8,
-    }));
+    expect(surfaces[0]).toEqual(
+      expect.objectContaining({
+        curvatureRadius: 0,
+        thickness: 0,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 8,
+      }),
+    );
     expect(surfaces[0].decenter).toBeUndefined();
     expect(surfaces[1].curvatureRadius).toBe(30);
     expect(surfaces[1].decenter?.offsetX).toBe(2);
-    expect(screen.queryByRole("dialog", { name: "Add Reference Surface?" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Add Reference Surface?" }),
+    ).not.toBeInTheDocument();
   });
 
   it("applies Reverse immediately when the resulting first surface is not tilted or decentered", async () => {
     const { store } = renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      }),
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    const surfaces = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
-      row.kind === "surface"
-    );
-    expect(screen.queryByRole("dialog", { name: "Add Reference Surface?" })).not.toBeInTheDocument();
+    const surfaces = store
+      .getState()
+      .rows.filter(
+        (row): row is Extract<typeof row, { kind: "surface" }> =>
+          row.kind === "surface",
+      );
+    expect(
+      screen.queryByRole("dialog", { name: "Add Reference Surface?" }),
+    ).not.toBeInTheDocument();
     expect(surfaces).toHaveLength(2);
     expect(surfaces[0].curvatureRadius).toBe(30);
   });
@@ -941,7 +1244,9 @@ describe("LensPrescriptionContainer", () => {
     if (firstSurface?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
-    store.getState().updateRow(firstSurface.id, { curvatureRadius: Number.MAX_VALUE });
+    store
+      .getState()
+      .updateRow(firstSurface.id, { curvatureRadius: Number.MAX_VALUE });
     const rowsBeforeFormatting = store.getState().rows;
 
     renderLPC(store);
@@ -961,24 +1266,35 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
     await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
-    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "abc");
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Factor" }),
+      "abc",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(screen.getByRole("dialog", { name: "Error" })).toBeInTheDocument();
-    expect(screen.getByText("Formatting was not applied because the scale factor must be a positive finite number.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Formatting was not applied because the scale factor must be a positive finite number.",
+      ),
+    ).toBeInTheDocument();
     expect(store.getState().rows).toBe(rowsBeforeFormatting);
   });
 
   it("clicking 'Export Python Script' opens a dialog with title 'Python Script'", async () => {
     renderLPC();
-    await userEvent.click(screen.getByRole("button", { name: "Export Python Script" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Export Python Script" }),
+    );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Python Script")).toBeInTheDocument();
   });
 
   it("clicking OK in the Python Script dialog closes it", async () => {
     renderLPC();
-    await userEvent.click(screen.getByRole("button", { name: "Export Python Script" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Export Python Script" }),
+    );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -987,15 +1303,21 @@ describe("LensPrescriptionContainer", () => {
   // --- Auto-aperture toggle ---
   it("renders switch with 'Manual' text and visible 'Set auto aperture dimensions:' label initially", () => {
     renderLPC();
-    expect(screen.getByText("Set auto aperture dimensions:")).toBeInTheDocument();
-    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
+    expect(
+      screen.getByText("Set auto aperture dimensions:"),
+    ).toBeInTheDocument();
+    const toggle = screen.getByRole("switch", {
+      name: "Set auto aperture dimensions",
+    });
     expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(toggle).toHaveTextContent("Manual");
   });
 
   it("clicking switch changes text to 'Auto'", async () => {
     renderLPC();
-    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
+    const toggle = screen.getByRole("switch", {
+      name: "Set auto aperture dimensions",
+    });
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "true");
     expect(toggle).toHaveTextContent("Auto");
@@ -1003,7 +1325,9 @@ describe("LensPrescriptionContainer", () => {
 
   it("renders computed semi-diameters and makes them read-only in Auto mode", () => {
     const { store } = renderLPC();
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -1015,13 +1339,19 @@ describe("LensPrescriptionContainer", () => {
 
     const surfaceSemiDiameter = screen.getByText("12.5");
     expect(surfaceSemiDiameter.closest("td")).toBeInTheDocument();
-    expect(surfaceSemiDiameter.closest("td")?.querySelector("input")).toBeNull();
+    expect(
+      surfaceSemiDiameter.closest("td")?.querySelector("input"),
+    ).toBeNull();
   });
 
   it("shows clear rectangular aperture ratio labels when auto aperture dimensions are enabled", async () => {
     const { store } = renderLPC();
-    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
-    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    const toggle = screen.getByRole("switch", {
+      name: "Set auto aperture dimensions",
+    });
+    const surfaceRow = store
+      .getState()
+      .rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
     }
@@ -1030,15 +1360,24 @@ describe("LensPrescriptionContainer", () => {
     act(() => {
       store.getState().openApertureModal(surfaceRow.id);
     });
-    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Clear Aperture Shape"),
+      "rectangular",
+    );
 
-    expect(screen.getByRole("textbox", { name: "Clear Length Ratio" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Clear Width Ratio" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Clear Length Ratio" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Clear Width Ratio" }),
+    ).toBeInTheDocument();
   });
 
   it("clicking switch twice reverts to 'Manual'", async () => {
     renderLPC();
-    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
+    const toggle = screen.getByRole("switch", {
+      name: "Set auto aperture dimensions",
+    });
     await userEvent.click(toggle);
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "false");
@@ -1050,6 +1389,8 @@ describe("LensPrescriptionContainer", () => {
   it("Export Python Script button has a tooltip with correct text", () => {
     renderLPC();
     const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Generate a Python script")).toBe(true);
+    expect(
+      tooltips.some((t) => t.textContent === "Generate a Python script"),
+    ).toBe(true);
   });
 });

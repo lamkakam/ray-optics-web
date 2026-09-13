@@ -11,7 +11,7 @@ type WorkerHandler = (event: {
 class MockResponse {
   constructor(
     readonly body: string,
-    readonly ok = true
+    readonly ok = true,
   ) {}
 
   clone(): MockResponse {
@@ -28,15 +28,22 @@ class MockCache {
     urls.forEach((url) => this.entries.set(url, new MockResponse(url)));
   }
 
-  async match(request: { readonly url: string } | string): Promise<MockResponse | undefined> {
-    return this.entries.get(typeof request === "string" ? request : request.url);
+  async match(
+    request: { readonly url: string } | string,
+  ): Promise<MockResponse | undefined> {
+    return this.entries.get(
+      typeof request === "string" ? request : request.url,
+    );
   }
 
   async put(
     request: { readonly url: string } | string,
-    response: MockResponse
+    response: MockResponse,
   ): Promise<void> {
-    this.entries.set(typeof request === "string" ? request : request.url, response);
+    this.entries.set(
+      typeof request === "string" ? request : request.url,
+      response,
+    );
   }
 }
 
@@ -59,7 +66,9 @@ class MockCaches {
     return this.stores.delete(name);
   }
 
-  async match(request: { readonly url: string }): Promise<MockResponse | undefined> {
+  async match(request: {
+    readonly url: string;
+  }): Promise<MockResponse | undefined> {
     for (const cache of this.stores.values()) {
       const response = await cache.match(request);
       if (response) return response;
@@ -78,14 +87,14 @@ function createWindowClient(url: string) {
 async function loadWorker(
   manifest: string[],
   caches = new MockCaches(),
-  windowClients: ReturnType<typeof createWindowClient>[] = []
+  windowClients: ReturnType<typeof createWindowClient>[] = [],
 ) {
   const handlers = new Map<string, WorkerHandler>();
   const source = (
     await readFile(path.join(process.cwd(), "public/pyodide-sw.js"), "utf8")
   ).replace("/* __NEXT_STATIC_MANIFEST__ */ []", JSON.stringify(manifest));
   const fetchMock = jest.fn<Promise<MockResponse>, [{ readonly url: string }]>(
-    async () => new MockResponse("network")
+    async () => new MockResponse("network"),
   );
   const self = {
     location: { origin: "https://example.com" },
@@ -95,19 +104,28 @@ async function loadWorker(
       matchAll: jest.fn(async () => windowClients),
     },
     skipWaiting: jest.fn(async () => undefined),
-    addEventListener: (type: string, handler: WorkerHandler) => handlers.set(type, handler),
+    addEventListener: (type: string, handler: WorkerHandler) =>
+      handlers.set(type, handler),
   };
   vm.runInNewContext(source, { self, caches, fetch: fetchMock, URL, Promise });
   return { caches, fetchMock, handlers, self };
 }
 
-async function dispatch(worker: Awaited<ReturnType<typeof loadWorker>>, type: string, url = "") {
+async function dispatch(
+  worker: Awaited<ReturnType<typeof loadWorker>>,
+  type: string,
+  url = "",
+) {
   let pending: Promise<unknown> | undefined;
   let response: Promise<MockResponse> | undefined;
   worker.handlers.get(type)?.({
     request: { url },
-    waitUntil: (promise) => { pending = promise; },
-    respondWith: (promise) => { response = promise; },
+    waitUntil: (promise) => {
+      pending = promise;
+    },
+    respondWith: (promise) => {
+      response = promise;
+    },
   });
   await pending;
   return response;
@@ -121,12 +139,15 @@ describe("pyodide service worker", () => {
     ];
     const worker = await loadWorker(manifest);
     await dispatch(worker, "install");
-    expect((await worker.caches.open("next-static-assets")).added).toEqual([manifest]);
+    expect((await worker.caches.open("next-static-assets")).added).toEqual([
+      manifest,
+    ]);
   });
 
   it("does not create or runtime-fill the Next static cache for an empty manifest", async () => {
     const worker = await loadWorker([]);
-    const staticUrl = "https://example.com/ray-optics-web/_next/static/development.js";
+    const staticUrl =
+      "https://example.com/ray-optics-web/_next/static/development.js";
 
     await dispatch(worker, "install");
     const response = await dispatch(worker, "fetch", staticUrl);
@@ -147,7 +168,7 @@ describe("pyodide service worker", () => {
       "https://example.com/ray-optics-web/rayoptics_web_utils.whl",
     ];
     await Promise.all(
-      urls.map((url) => cache.put(url, new MockResponse(`cached:${url}`)))
+      urls.map((url) => cache.put(url, new MockResponse(`cached:${url}`))),
     );
     const worker = await loadWorker([], caches);
 
@@ -167,7 +188,7 @@ describe("pyodide service worker", () => {
     await dispatch(versionA, "install");
     const versionB = await loadWorker(
       ["https://example.com/ray-optics-web/_next/static/new.js"],
-      sharedCaches
+      sharedCaches,
     );
     versionB.fetchMock.mockResolvedValue(new MockResponse("missing", false));
     await dispatch(versionB, "install");
@@ -178,15 +199,17 @@ describe("pyodide service worker", () => {
   });
 
   it("runtime-caches only successful Next static responses", async () => {
-    const worker = await loadWorker(["/ray-optics-web/_next/static/precache.js"]);
+    const worker = await loadWorker([
+      "/ray-optics-web/_next/static/precache.js",
+    ]);
     const goodUrl = "https://example.com/ray-optics-web/_next/static/good.js";
     const badUrl = "https://example.com/ray-optics-web/_next/static/bad.js";
     worker.fetchMock
       .mockResolvedValueOnce(new MockResponse("good"))
       .mockResolvedValueOnce(new MockResponse("bad", false));
 
-    await (await dispatch(worker, "fetch", goodUrl));
-    await (await dispatch(worker, "fetch", badUrl));
+    await await dispatch(worker, "fetch", goodUrl);
+    await await dispatch(worker, "fetch", badUrl);
 
     const cache = await worker.caches.open("next-static-assets");
     await expect(cache.match(goodUrl)).resolves.toMatchObject({ body: "good" });
@@ -206,7 +229,9 @@ describe("pyodide service worker", () => {
 
     expect(caches.deleted).toContain("next-static-assets");
     expect(worker.self.clients.claim).toHaveBeenCalledTimes(1);
-    expect(worker.self.clients.matchAll).toHaveBeenCalledWith({ type: "window" });
+    expect(worker.self.clients.matchAll).toHaveBeenCalledWith({
+      type: "window",
+    });
     clients.forEach((client) => {
       expect(client.navigate).toHaveBeenCalledTimes(1);
       expect(client.navigate).toHaveBeenCalledWith(client.url);
@@ -231,7 +256,7 @@ describe("pyodide service worker", () => {
     await caches.open("unrelated-cache");
     const worker = await loadWorker(
       ["/ray-optics-web/_next/static/production.js"],
-      caches
+      caches,
     );
 
     await dispatch(worker, "activate");

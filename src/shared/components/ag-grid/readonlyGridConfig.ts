@@ -29,6 +29,10 @@ export const NO_BLANK_NUMBER_FILTER_OPTIONS = [
 ] as const;
 
 /** Formats a defined numeric cell to six decimals and an unavailable cell as blank. */
-export function formatOptionalSixDecimal({ value }: { readonly value: unknown }): string {
+export function formatOptionalSixDecimal({
+  value,
+}: {
+  readonly value: unknown;
+}): string {
   return value === undefined ? "" : Number(value).toFixed(6);
 }

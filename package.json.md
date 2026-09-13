@@ -23,9 +23,18 @@ Running the manifest generator first ensures a deployment cannot complete withou
 `npm run lint` regenerates the Python export helpers and then runs Biome with
 warnings promoted to errors. Biome applies its stable recommended rules and the
 recommended Next.js, React, test, and Playwright domains. Its formatter is
-disabled, and its CSS parser accepts Tailwind CSS directives.
+enabled with an 80-column line width, and its CSS parser accepts Tailwind CSS
+directives. `npm run lint` still invokes only `biome lint`.
 
 Linting respects `.gitignore` and excludes dependency, build, and coverage
 output, `src/python`, `scripts`, and all generated TypeScript under
 `src/shared/lib/utils/generated`. Generated helpers are validated at their
 source and generation boundaries instead of linted after generation.
+
+## Formatting behavior
+
+`npm run format` formats JavaScript, TypeScript, and TSX files with Biome and
+writes the changes. `npm run format:check` performs the same formatting check
+without writing changes. Both scripts disable Biome's JSON, CSS, HTML, and
+GraphQL formatters and ignore unknown file types while retaining the exclusions
+configured in `biome.json`.

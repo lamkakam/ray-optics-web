@@ -28,9 +28,7 @@ describe("geoPsfDeckData", () => {
       y: [0.02, 0.2, Number.POSITIVE_INFINITY],
     });
 
-    expect(prepared.points).toEqual([
-      { x: -0.1, y: 0.02 },
-    ]);
+    expect(prepared.points).toEqual([{ x: -0.1, y: 0.02 }]);
     expect(prepared.axisExtent).toBe(0.2);
   });
 

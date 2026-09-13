@@ -8,12 +8,15 @@ import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 const mockGlassData = {
   refractiveIndexD: 1.5168,
-  refractiveIndexE: 1.5190,
+  refractiveIndexE: 1.519,
   abbeNumberD: 64.17,
   abbeNumberE: 63.96,
   partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
-  dispersionCoeffKind: 'Sellmeier3T' as const,
-  dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+  dispersionCoeffKind: "Sellmeier3T" as const,
+  dispersionCoeffs: [
+    1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
+    103.560653,
+  ],
 };
 
 function makeStore() {
@@ -106,14 +109,22 @@ describe("glassMapStore actions", () => {
 
   it("setSelectedGlass sets a glass", () => {
     const store = makeStore();
-    const glass = { catalogName: "Schott" as CatalogName, glassName: "N-BK7", data: mockGlassData };
+    const glass = {
+      catalogName: "Schott" as CatalogName,
+      glassName: "N-BK7",
+      data: mockGlassData,
+    };
     store.getState().setSelectedGlass(glass);
     expect(store.getState().selectedGlass).toBe(glass);
   });
 
   it("setSelectedGlass clears with undefined", () => {
     const store = makeStore();
-    const glass = { catalogName: "Schott" as CatalogName, glassName: "N-BK7", data: mockGlassData };
+    const glass = {
+      catalogName: "Schott" as CatalogName,
+      glassName: "N-BK7",
+      data: mockGlassData,
+    };
     store.getState().setSelectedGlass(glass);
     store.getState().setSelectedGlass(undefined);
     expect(store.getState().selectedGlass).toBeUndefined();
@@ -154,15 +165,25 @@ describe("glassMapStore actions", () => {
     store.getState().setCatalogsData(completeAllCatalogsData({}));
 
     store.getState().upsertCustomGlasses({
-      CUSTOM_A: { ...mockGlassData, dispersionCoeffKind: "tabulated", dispersionCoeffs: [[587.56, 1.5168]] },
+      CUSTOM_A: {
+        ...mockGlassData,
+        dispersionCoeffKind: "tabulated",
+        dispersionCoeffs: [[587.56, 1.5168]],
+      },
     });
 
-    expect(store.getState().catalogsData?.Custom.CUSTOM_A?.dispersionCoeffKind).toBe("tabulated");
-    expect(store.getState().lookupMaps?.mediumMap.get("custom:custom_a")).toEqual({
+    expect(
+      store.getState().catalogsData?.Custom.CUSTOM_A?.dispersionCoeffKind,
+    ).toBe("tabulated");
+    expect(
+      store.getState().lookupMaps?.mediumMap.get("custom:custom_a"),
+    ).toEqual({
       medium: "CUSTOM_A",
       manufacturer: "Custom",
     });
-    expect(store.getState().lookupMaps?.customMediumMap.get("custom_a")).toEqual({
+    expect(
+      store.getState().lookupMaps?.customMediumMap.get("custom_a"),
+    ).toEqual({
       medium: "CUSTOM_A",
       manufacturer: "Custom",
     });
@@ -185,15 +206,31 @@ describe("glassMapStore actions", () => {
 
   it("deleteCustomGlasses removes custom data, rebuilds lookups, and clears deleted selection", () => {
     const store = makeStore();
-    const custom = { ...mockGlassData, dispersionCoeffKind: "tabulated" as const, dispersionCoeffs: [[587.56, 1.5168] as const] };
-    store.getState().setCatalogsData(completeAllCatalogsData({ Custom: { CUSTOM_A: custom } }));
-    store.getState().setSelectedGlass({ catalogName: "Custom", glassName: "CUSTOM_A", data: custom });
+    const custom = {
+      ...mockGlassData,
+      dispersionCoeffKind: "tabulated" as const,
+      dispersionCoeffs: [[587.56, 1.5168] as const],
+    };
+    store
+      .getState()
+      .setCatalogsData(
+        completeAllCatalogsData({ Custom: { CUSTOM_A: custom } }),
+      );
+    store.getState().setSelectedGlass({
+      catalogName: "Custom",
+      glassName: "CUSTOM_A",
+      data: custom,
+    });
 
     store.getState().deleteCustomGlasses(["CUSTOM_A"]);
 
     expect(store.getState().catalogsData?.Custom.CUSTOM_A).toBeUndefined();
-    expect(store.getState().lookupMaps?.mediumMap.get("custom:custom_a")).toBeUndefined();
-    expect(store.getState().lookupMaps?.customMediumMap.get("custom_a")).toBeUndefined();
+    expect(
+      store.getState().lookupMaps?.mediumMap.get("custom:custom_a"),
+    ).toBeUndefined();
+    expect(
+      store.getState().lookupMaps?.customMediumMap.get("custom_a"),
+    ).toBeUndefined();
     expect(store.getState().selectedGlass).toBeUndefined();
   });
 
@@ -210,10 +247,16 @@ describe("glassMapStore actions", () => {
 
   it("retains a selected custom glass when deleting another custom label", () => {
     const store = makeStore();
-    store.getState().setCatalogsData(completeAllCatalogsData({
-      Custom: { CUSTOM_A: mockGlassData, CUSTOM_B: mockGlassData },
-    }));
-    const selected = { catalogName: "Custom" as CatalogName, glassName: "CUSTOM_A", data: mockGlassData };
+    store.getState().setCatalogsData(
+      completeAllCatalogsData({
+        Custom: { CUSTOM_A: mockGlassData, CUSTOM_B: mockGlassData },
+      }),
+    );
+    const selected = {
+      catalogName: "Custom" as CatalogName,
+      glassName: "CUSTOM_A",
+      data: mockGlassData,
+    };
     store.getState().setSelectedGlass(selected);
 
     store.getState().deleteCustomGlasses(["CUSTOM_B"]);
@@ -225,11 +268,17 @@ describe("glassMapStore actions", () => {
 
   it("retains a non-Custom selection when deleting a matching Custom label", () => {
     const store = makeStore();
-    store.getState().setCatalogsData(completeAllCatalogsData({
-      Schott: { CUSTOM_A: mockGlassData },
-      Custom: { CUSTOM_A: mockGlassData },
-    }));
-    const selected = { catalogName: "Schott" as CatalogName, glassName: "CUSTOM_A", data: mockGlassData };
+    store.getState().setCatalogsData(
+      completeAllCatalogsData({
+        Schott: { CUSTOM_A: mockGlassData },
+        Custom: { CUSTOM_A: mockGlassData },
+      }),
+    );
+    const selected = {
+      catalogName: "Schott" as CatalogName,
+      glassName: "CUSTOM_A",
+      data: mockGlassData,
+    };
     store.getState().setSelectedGlass(selected);
 
     store.getState().deleteCustomGlasses(["CUSTOM_A"]);
@@ -240,9 +289,11 @@ describe("glassMapStore actions", () => {
 
   it("deletes Custom data when no glass is selected", () => {
     const store = makeStore();
-    store.getState().setCatalogsData(completeAllCatalogsData({
-      Custom: { CUSTOM_A: mockGlassData },
-    }));
+    store.getState().setCatalogsData(
+      completeAllCatalogsData({
+        Custom: { CUSTOM_A: mockGlassData },
+      }),
+    );
 
     store.getState().deleteCustomGlasses(["CUSTOM_A"]);
 
@@ -267,6 +318,8 @@ describe("glassMapStore actions", () => {
       medium: "H-FK61",
       manufacturer: "Hoya",
     });
-    expect(store.getState().lookupMaps?.mediumMap.get("schott:n-bk7")).toBeUndefined();
+    expect(
+      store.getState().lookupMaps?.mediumMap.get("schott:n-bk7"),
+    ).toBeUndefined();
   });
 });

@@ -9,12 +9,14 @@ jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
 }));
 
-function makeRows(values: readonly (readonly [string, string])[] = [
-  ["486.13", "1.522"],
-  ["546.07", "1.518"],
-  ["587.56", "1.5168"],
-  ["656.27", "1.514"],
-]): EditablePair[] {
+function makeRows(
+  values: readonly (readonly [string, string])[] = [
+    ["486.13", "1.522"],
+    ["546.07", "1.518"],
+    ["587.56", "1.5168"],
+    ["656.27", "1.514"],
+  ],
+): EditablePair[] {
   return values.map(([wavelength, refractiveIndex], index) => ({
     id: `row-${index}`,
     fraunhofer: "",
@@ -23,7 +25,9 @@ function makeRows(values: readonly (readonly [string, string])[] = [
   }));
 }
 
-function renderModal(overrides: Partial<ComponentProps<typeof CustomGlassModal>> = {}) {
+function renderModal(
+  overrides: Partial<ComponentProps<typeof CustomGlassModal>> = {},
+) {
   const props: ComponentProps<typeof CustomGlassModal> = {
     mode: "add",
     existingLabels: new Set(),
@@ -33,7 +37,14 @@ function renderModal(overrides: Partial<ComponentProps<typeof CustomGlassModal>>
     onSubmit: jest.fn(),
     ...overrides,
   };
-  return { ...render(<ThemeProvider><CustomGlassModal {...props} /></ThemeProvider>), props };
+  return {
+    ...render(
+      <ThemeProvider>
+        <CustomGlassModal {...props} />
+      </ThemeProvider>,
+    ),
+    props,
+  };
 }
 
 function confirmButton() {
@@ -50,10 +61,15 @@ describe("CustomGlassModal", () => {
     const onSubmit = jest.fn();
     renderModal({ onSubmit });
 
-    expect(screen.getByRole("dialog", { name: "Add Glass" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Add Glass" }),
+    ).toBeInTheDocument();
     expect(confirmButton()).toBeDisabled();
 
-    await user.type(screen.getByRole("textbox", { name: "Label" }), "  NEW_GLASS  ");
+    await user.type(
+      screen.getByRole("textbox", { name: "Label" }),
+      "  NEW_GLASS  ",
+    );
     expect(confirmButton()).toBeEnabled();
 
     await user.click(confirmButton());
@@ -64,13 +80,19 @@ describe("CustomGlassModal", () => {
   it("rejects duplicate labels for add mode but permits the unchanged edit label", () => {
     const existingLabels = new Set(["EXISTING"]);
 
-    const addRender = renderModal({ mode: "add", existingLabels, initialLabel: "EXISTING" });
+    const addRender = renderModal({
+      mode: "add",
+      existingLabels,
+      initialLabel: "EXISTING",
+    });
     expect(confirmButton()).toBeDisabled();
     expect(screen.getByText("Label already exists.")).toBeInTheDocument();
     addRender.unmount();
 
     renderModal({ mode: "edit", existingLabels, initialLabel: "EXISTING" });
-    expect(screen.getByRole("dialog", { name: "Edit Glass" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Edit Glass" }),
+    ).toBeInTheDocument();
     expect(confirmButton()).toBeEnabled();
     expect(screen.queryByText("Label already exists.")).not.toBeInTheDocument();
   });
@@ -87,7 +109,11 @@ describe("CustomGlassModal", () => {
 
   it("rejects a renamed edit that conflicts with another existing label", async () => {
     const user = userEvent.setup();
-    renderModal({ mode: "edit", existingLabels: new Set(["TARGET"]), initialLabel: "CURRENT" });
+    renderModal({
+      mode: "edit",
+      existingLabels: new Set(["TARGET"]),
+      initialLabel: "CURRENT",
+    });
 
     await user.clear(screen.getByRole("textbox", { name: "Label" }));
     await user.type(screen.getByRole("textbox", { name: "Label" }), " TARGET ");
@@ -98,10 +124,42 @@ describe("CustomGlassModal", () => {
 
   it.each([
     ["fewer than four rows", makeRows().slice(0, 3)],
-    ["zero wavelength", makeRows([["0", "1.5"], ["546.07", "1.518"], ["587.56", "1.5168"], ["656.27", "1.514"]])],
-    ["negative refractive index", makeRows([["486.13", "-1"], ["546.07", "1.518"], ["587.56", "1.5168"], ["656.27", "1.514"]])],
-    ["non-finite wavelength", makeRows([["Infinity", "1.5"], ["546.07", "1.518"], ["587.56", "1.5168"], ["656.27", "1.514"]])],
-    ["non-finite refractive index", makeRows([["486.13", "NaN"], ["546.07", "1.518"], ["587.56", "1.5168"], ["656.27", "1.514"]])],
+    [
+      "zero wavelength",
+      makeRows([
+        ["0", "1.5"],
+        ["546.07", "1.518"],
+        ["587.56", "1.5168"],
+        ["656.27", "1.514"],
+      ]),
+    ],
+    [
+      "negative refractive index",
+      makeRows([
+        ["486.13", "-1"],
+        ["546.07", "1.518"],
+        ["587.56", "1.5168"],
+        ["656.27", "1.514"],
+      ]),
+    ],
+    [
+      "non-finite wavelength",
+      makeRows([
+        ["Infinity", "1.5"],
+        ["546.07", "1.518"],
+        ["587.56", "1.5168"],
+        ["656.27", "1.514"],
+      ]),
+    ],
+    [
+      "non-finite refractive index",
+      makeRows([
+        ["486.13", "NaN"],
+        ["546.07", "1.518"],
+        ["587.56", "1.5168"],
+        ["656.27", "1.514"],
+      ]),
+    ],
   ])("keeps Confirm disabled for %s", (_caseName, initialRows) => {
     renderModal({ initialLabel: "VALID", initialRows });
 
@@ -119,15 +177,21 @@ describe("CustomGlassModal", () => {
     renderModal({ initialLabel: "VALID", initialRows: duplicateRows });
 
     expect(confirmButton()).toBeDisabled();
-    expect(screen.getByText("Duplicate wavelength rows must be resolved.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Duplicate wavelength rows must be resolved."),
+    ).toBeInTheDocument();
 
-    const secondRowWavelength = coefficientGrid().querySelectorAll("tbody tr")[1].querySelectorAll("input")[0];
+    const secondRowWavelength = coefficientGrid()
+      .querySelectorAll("tbody tr")[1]
+      .querySelectorAll("input")[0];
     await user.clear(secondRowWavelength);
     await user.type(secondRowWavelength, "500");
     await user.keyboard("{Enter}");
 
     expect(confirmButton()).toBeEnabled();
-    expect(screen.queryByText("Duplicate wavelength rows must be resolved.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Duplicate wavelength rows must be resolved."),
+    ).not.toBeInTheDocument();
   });
 
   it("does not treat blank wavelength drafts as duplicate values", () => {
@@ -141,7 +205,9 @@ describe("CustomGlassModal", () => {
       ]),
     });
 
-    expect(screen.queryByText("Duplicate wavelength rows must be resolved.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Duplicate wavelength rows must be resolved."),
+    ).not.toBeInTheDocument();
   });
 
   it("adds and deletes rows while retaining validation state", async () => {
@@ -160,7 +226,9 @@ describe("CustomGlassModal", () => {
 
   it("fills Fraunhofer wavelengths and clears the symbol after manual editing", async () => {
     const user = userEvent.setup();
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
 
     try {
       renderModal({ initialLabel: "VALID" });
@@ -169,12 +237,16 @@ describe("CustomGlassModal", () => {
       if (!(firstRow instanceof HTMLElement)) {
         throw new Error("Expected a first coefficient row.");
       }
-      const fraunhofer = within(firstRow).getByRole("combobox", { name: "Fraunhofer" });
+      const fraunhofer = within(firstRow).getByRole("combobox", {
+        name: "Fraunhofer",
+      });
       await user.selectOptions(fraunhofer, "d");
 
       const updatedFirstRow = coefficientGrid().querySelector("tbody tr");
       if (updatedFirstRow === null) {
-        throw new Error("Expected the first coefficient row after Fraunhofer selection.");
+        throw new Error(
+          "Expected the first coefficient row after Fraunhofer selection.",
+        );
       }
       const wavelength = updatedFirstRow.querySelectorAll("input")[0];
       expect(wavelength).toHaveValue("587.562");
@@ -189,16 +261,27 @@ describe("CustomGlassModal", () => {
 
       const updatedFraunhofer = updatedFirstRow.querySelector("select");
       if (!(updatedFraunhofer instanceof HTMLSelectElement)) {
-        throw new Error("Expected the Fraunhofer selector after manual editing.");
+        throw new Error(
+          "Expected the Fraunhofer selector after manual editing.",
+        );
       }
       await user.selectOptions(updatedFraunhofer, "d");
-      const selectedFraunhofer = coefficientGrid().querySelector("tbody tr select");
+      const selectedFraunhofer =
+        coefficientGrid().querySelector("tbody tr select");
       if (!(selectedFraunhofer instanceof HTMLSelectElement)) {
-        throw new Error("Expected the Fraunhofer selector after selecting a line.");
+        throw new Error(
+          "Expected the Fraunhofer selector after selecting a line.",
+        );
       }
       await user.selectOptions(selectedFraunhofer, "");
-      await waitFor(() => expect(coefficientGrid().querySelector("tbody tr input")).toHaveValue("587.562"));
-      expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining("A component suspended inside an `act` scope"));
+      await waitFor(() =>
+        expect(coefficientGrid().querySelector("tbody tr input")).toHaveValue(
+          "587.562",
+        ),
+      );
+      expect(consoleError).not.toHaveBeenCalledWith(
+        expect.stringContaining("A component suspended inside an `act` scope"),
+      );
     } finally {
       consoleError.mockRestore();
     }

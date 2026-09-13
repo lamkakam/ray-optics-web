@@ -1,5 +1,5 @@
 import path from "node:path";
-import { test, } from "./fixtures";
+import { test } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
 
 test("import invalid JSON shows error modal, dismissed by OK", async ({
@@ -14,7 +14,7 @@ test("import invalid JSON shows error modal, dismissed by OK", async ({
     page.locator('button[aria-label="Load Config"]').click(),
   ]);
   await fileChooser.setFiles(
-    path.join(__dirname, "jsons", "invalid-lens-config.json")
+    path.join(__dirname, "jsons", "invalid-lens-config.json"),
   );
 
   // 2. Expect the Error modal to appear

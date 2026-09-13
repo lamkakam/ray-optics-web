@@ -4,12 +4,21 @@
  * @remarks
  * Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glassMap.ts`.
  */
-export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special', 'Custom'] as const;
+export const CATALOG_NAMES = [
+  "CDGM",
+  "Hikari",
+  "Hoya",
+  "Ohara",
+  "Schott",
+  "Sumita",
+  "Special",
+  "Custom",
+] as const;
 /** Canonical built-in and Custom catalog names. */
-export type CatalogName = typeof CATALOG_NAMES[number];
+export type CatalogName = (typeof CATALOG_NAMES)[number];
 
 /** Supported analytical dispersion-coefficient families. */
-export type DispersionCoeffKind = 'Schott2x6' | 'Sellmeier3T' | 'Sellmeier4T';
+export type DispersionCoeffKind = "Schott2x6" | "Sellmeier3T" | "Sellmeier4T";
 
 interface GlassDataBase {
   readonly refractiveIndexD: number;
@@ -46,9 +55,14 @@ export type UserDefinedMaterialsData = Record<string, UserDefinedGlassData>;
 /** Analytical or tabulated catalog glass. */
 export type CatalogGlassData = GlassData | UserDefinedGlassData;
 /** Possibly incomplete worker catalog payload. */
-export type AllGlassCatalogsData = Partial<Record<CatalogName, Record<string, CatalogGlassData>>>;
+export type AllGlassCatalogsData = Partial<
+  Record<CatalogName, Record<string, CatalogGlassData>>
+>;
 /** Complete catalog map with every canonical key. */
-export type CompleteGlassCatalogsData = Record<CatalogName, Record<string, CatalogGlassData>>;
+export type CompleteGlassCatalogsData = Record<
+  CatalogName,
+  Record<string, CatalogGlassData>
+>;
 
 /** Canonical medium and catalog identity returned by lookup. */
 export interface GlassMediumLookupValue {
@@ -64,11 +78,11 @@ export interface GlassLookupMaps {
 }
 
 /** Fraunhofer center line used for Abbe-number axes. */
-export type AbbeNumCenterLine = 'd' | 'e';
+export type AbbeNumCenterLine = "d" | "e";
 /** Supported partial-dispersion ordinate. */
-export type PartialDispersionType = 'P_Fd' | 'P_fe' | 'P_gF';
+export type PartialDispersionType = "P_Fd" | "P_fe" | "P_gF";
 /** Refractive-index or partial-dispersion glass-map mode. */
-export type GlassMapPlotType = 'refractiveIndex' | 'partialDispersion';
+export type GlassMapPlotType = "refractiveIndex" | "partialDispersion";
 
 /** Selected catalog and glass identity. */
 export interface SelectedGlass {

@@ -40,9 +40,16 @@ interface ActionWrapperProps {
 }
 
 /** Wraps an interactive grid cell action with consistent keyboard and pointer behavior. */
-export function LensPrescriptionActionWrapper({ children, onAction }: ActionWrapperProps) {
+export function LensPrescriptionActionWrapper({
+  children,
+  onAction,
+}: ActionWrapperProps) {
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("button,a,input,select,textarea") !== null) {
+    if (
+      (event.target as HTMLElement).closest(
+        "button,a,input,select,textarea",
+      ) !== null
+    ) {
       return;
     }
 
@@ -73,7 +80,13 @@ export function MediumCell({
   tooltipText = "Click to set medium or glass",
 }: MediumCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
+    <Tooltip
+      text={tooltipText}
+      position="top"
+      portal
+      noTouch
+      triggerClassName="flex h-full w-full"
+    >
       <button
         type="button"
         aria-label="Edit medium"
@@ -92,7 +105,11 @@ interface TextActionButtonProps {
   readonly onClick: () => void;
 }
 
-function TextActionButton({ ariaLabel, children, onClick }: TextActionButtonProps) {
+function TextActionButton({
+  ariaLabel,
+  children,
+  onClick,
+}: TextActionButtonProps) {
   return (
     <button
       type="button"
@@ -118,8 +135,17 @@ export function AsphericalCell({
   tooltipText = "Click to set aspherical parameters",
 }: AsphericalCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
-      <TextActionButton ariaLabel="Edit aspherical parameters" onClick={onOpenModal}>
+    <Tooltip
+      text={tooltipText}
+      position="top"
+      portal
+      noTouch
+      triggerClassName="flex h-full w-full"
+    >
+      <TextActionButton
+        ariaLabel="Edit aspherical parameters"
+        onClick={onOpenModal}
+      >
         {formatAsphericalLabel(aspherical)}
       </TextActionButton>
     </Tooltip>
@@ -141,7 +167,13 @@ export function ApertureCell({
   tooltipText = "Click to set aperture",
 }: ApertureCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
+    <Tooltip
+      text={tooltipText}
+      position="top"
+      portal
+      noTouch
+      triggerClassName="flex h-full w-full"
+    >
       <TextActionButton ariaLabel="Edit aperture" onClick={onOpenModal}>
         {formatApertureLabel(clearAperture, edgeAperture)}
       </TextActionButton>
@@ -162,8 +194,17 @@ export function DecenterCell({
   tooltipText = "Click to open settings for Tilt and Decenter",
 }: DecenterCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
-      <TextActionButton ariaLabel="Edit decenter and tilt" onClick={onOpenModal}>
+    <Tooltip
+      text={tooltipText}
+      position="top"
+      portal
+      noTouch
+      triggerClassName="flex h-full w-full"
+    >
+      <TextActionButton
+        ariaLabel="Edit decenter and tilt"
+        onClick={onOpenModal}
+      >
         {formatDecenterLabel(decenter)}
       </TextActionButton>
     </Tooltip>
@@ -183,8 +224,17 @@ export function DiffractionGratingCell({
   tooltipText = "Click to set diffraction grating",
 }: DiffractionGratingCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
-      <TextActionButton ariaLabel="Edit diffraction grating" onClick={onOpenModal}>
+    <Tooltip
+      text={tooltipText}
+      position="top"
+      portal
+      noTouch
+      triggerClassName="flex h-full w-full"
+    >
+      <TextActionButton
+        ariaLabel="Edit diffraction grating"
+        onClick={onOpenModal}
+      >
         {formatDiffractionGratingLabel(diffractionGrating)}
       </TextActionButton>
     </Tooltip>

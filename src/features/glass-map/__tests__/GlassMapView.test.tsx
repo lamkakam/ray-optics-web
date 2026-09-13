@@ -4,7 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand/vanilla";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import { GlassMapStoreContext } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
+import {
+  createGlassMapSlice,
+  type GlassMapStore,
+} from "@/features/glass-map/stores/glassMapStore";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import { _resetGlassCatalogLoaderForTest } from "@/features/glass-map/lib/glassCatalogLoader";
@@ -14,7 +17,9 @@ jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mathjax-context">{children}</div>
   ),
-  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  MathJax: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 jest.mock("next/link", () => {
@@ -22,7 +27,9 @@ jest.mock("next/link", () => {
     href,
     children,
     ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    readonly href: string;
+  }) {
     return (
       <a href={href} {...props}>
         {children}
@@ -32,9 +39,13 @@ jest.mock("next/link", () => {
 });
 
 jest.mock("@/features/glass-map/components", () => {
-  const actual = jest.requireActual<typeof import("@/features/glass-map/components")>("@/features/glass-map/components");
+  const actual = jest.requireActual<
+    typeof import("@/features/glass-map/components")
+  >("@/features/glass-map/components");
 
-  function MockGlassScatterPlot(props: React.ComponentProps<typeof actual.GlassScatterPlot>) {
+  function MockGlassScatterPlot(
+    props: React.ComponentProps<typeof actual.GlassScatterPlot>,
+  ) {
     return (
       <div
         data-testid="glass-scatter-plot-props"
@@ -57,8 +68,11 @@ const rawData: AllGlassCatalogsData = {
       abbeNumberD: 64.17,
       abbeNumberE: 63.96,
       partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
-      dispersionCoeffKind: 'Sellmeier3T' as const,
-      dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+      dispersionCoeffKind: "Sellmeier3T" as const,
+      dispersionCoeffs: [
+        1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
+        103.560653,
+      ],
     },
   },
   CDGM: {},
@@ -167,7 +181,8 @@ const defaultCatalogsData = completeAllCatalogsData(rawData);
 
 function makeStore(catalogsData?: AllGlassCatalogsData) {
   const store = createStore<GlassMapStore>(createGlassMapSlice);
-  const resolvedCatalogsData = arguments.length === 0 ? defaultCatalogsData : catalogsData;
+  const resolvedCatalogsData =
+    arguments.length === 0 ? defaultCatalogsData : catalogsData;
 
   if (resolvedCatalogsData !== undefined) {
     store.getState().setCatalogsData(resolvedCatalogsData);
@@ -176,16 +191,13 @@ function makeStore(catalogsData?: AllGlassCatalogsData) {
   return store;
 }
 
-function renderWithStore(
-  ui: React.ReactElement,
-  store = makeStore()
-) {
+function renderWithStore(ui: React.ReactElement, store = makeStore()) {
   return render(
     <GlassMapStoreContext.Provider value={store}>
       <Suspense fallback={<div>Loading glass catalog data…</div>}>
         {ui}
       </Suspense>
-    </GlassMapStoreContext.Provider>
+    </GlassMapStoreContext.Provider>,
   );
 }
 
@@ -203,30 +215,45 @@ describe("GlassMapView", () => {
   it("shows loading indicator when the worker is not ready even if a proxy exists", () => {
     renderWithStore(<GlassMapView proxy={makeProxy()} isReady={false} />);
     expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: /refractive index/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("radio", { name: /refractive index/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows loading indicator when the proxy is unavailable after readiness", () => {
     renderWithStore(<GlassMapView proxy={undefined} isReady={true} />);
     expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: /refractive index/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("radio", { name: /refractive index/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows loading indicator on first render when isReady=true but catalogsData not yet fetched", () => {
     const proxy = makeProxy();
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, makeStore(undefined));
+    renderWithStore(
+      <GlassMapView proxy={proxy} isReady={true} />,
+      makeStore(undefined),
+    );
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
     expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it.each(["catalogsData", "lookupMaps"] as const)("keeps loading when %s is unavailable", (missingState) => {
-    const store = makeStore();
-    store.setState({ [missingState]: undefined });
+  it.each(["catalogsData", "lookupMaps"] as const)(
+    "keeps loading when %s is unavailable",
+    (missingState) => {
+      const store = makeStore();
+      store.setState({ [missingState]: undefined });
 
-    renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />, store);
+      renderWithStore(
+        <GlassMapView proxy={makeProxy()} isReady={true} />,
+        store,
+      );
 
-    expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
-  });
+      expect(
+        screen.getByText(/loading glass catalog data/i),
+      ).toBeInTheDocument();
+    },
+  );
 
   it("does not call getAllGlassCatalogsData on mount when isReady=true", async () => {
     const proxy = makeProxy();
@@ -240,7 +267,7 @@ describe("GlassMapView", () => {
     renderWithStore(
       <React.StrictMode>
         <GlassMapView proxy={proxy} isReady={true} />
-      </React.StrictMode>
+      </React.StrictMode>,
     );
 
     expect(await screen.findByText(/select a glass/i)).toBeInTheDocument();
@@ -264,9 +291,14 @@ describe("GlassMapView", () => {
 
   it("keeps a loading placeholder when catalog data is unexpectedly unavailable", () => {
     const proxy = makeProxy({
-      getAllGlassCatalogsData: jest.fn().mockRejectedValue(new Error("Network error")),
+      getAllGlassCatalogsData: jest
+        .fn()
+        .mockRejectedValue(new Error("Network error")),
     });
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, makeStore(undefined));
+    renderWithStore(
+      <GlassMapView proxy={proxy} isReady={true} />,
+      makeStore(undefined),
+    );
 
     expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
     expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
@@ -276,7 +308,9 @@ describe("GlassMapView", () => {
     const proxy = makeProxy();
     renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
     await waitFor(() => {
-      expect(screen.getByRole("radio", { name: /refractive index/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("radio", { name: /refractive index/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -305,16 +339,14 @@ describe("GlassMapView", () => {
       glass: "N-BK7",
     };
     renderWithStore(
-      <GlassMapView
-        proxy={proxy}
-        isReady={true}
-        routeIntent={routeIntent}
-      />,
+      <GlassMapView proxy={proxy} isReady={true} routeIntent={routeIntent} />,
       makeStore(),
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "N-BK7" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -331,11 +363,7 @@ describe("GlassMapView", () => {
     });
 
     renderWithStore(
-      <GlassMapView
-        proxy={proxy}
-        isReady={true}
-        routeIntent={routeIntent}
-      />,
+      <GlassMapView proxy={proxy} isReady={true} routeIntent={routeIntent} />,
       store,
     );
 
@@ -359,7 +387,10 @@ describe("GlassMapView", () => {
           abbeNumberE: 63.96,
           partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
           dispersionCoeffKind: "Sellmeier3T",
-          dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+          dispersionCoeffs: [
+            1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
+            103.560653,
+          ],
         },
       });
     });
@@ -368,13 +399,19 @@ describe("GlassMapView", () => {
       <GlassMapView
         proxy={proxy}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Ohara", glass: "Missing" }}
+        routeIntent={{
+          source: "medium-selector",
+          catalog: "Ohara",
+          glass: "Missing",
+        }}
       />,
       store,
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "N-BK7" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -384,12 +421,18 @@ describe("GlassMapView", () => {
       <GlassMapView
         proxy={proxy}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={{
+          source: "medium-selector",
+          catalog: "Schott",
+          glass: "N-BK7",
+        }}
       />,
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("link", { name: "Back to lens editor" })).toHaveAttribute("href", "/");
+      expect(
+        screen.getByRole("link", { name: "Back to lens editor" }),
+      ).toHaveAttribute("href", "/");
     });
   });
 
@@ -399,12 +442,18 @@ describe("GlassMapView", () => {
       <GlassMapView
         proxy={makeProxy()}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={{
+          source: "medium-selector",
+          catalog: "Schott",
+          glass: "N-BK7",
+        }}
         onUseSelectedGlass={onUseSelectedGlass}
       />,
     );
 
-    await userEvent.click(await screen.findByRole("link", { name: "Use selected glass" }));
+    await userEvent.click(
+      await screen.findByRole("link", { name: "Use selected glass" }),
+    );
 
     expect(onUseSelectedGlass).toHaveBeenCalledWith(
       expect.objectContaining({ glassName: "N-BK7", catalogName: "Schott" }),
@@ -417,20 +466,28 @@ describe("GlassMapView", () => {
       <GlassMapView
         proxy={makeProxy()}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={{
+          source: "medium-selector",
+          catalog: "Schott",
+          glass: "N-BK7",
+        }}
         onUseSelectedGlass={onUseSelectedGlass}
       />,
     );
 
     await screen.findByRole("heading", { name: "N-BK7" });
-    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+    await userEvent.click(
+      screen.getByRole("radio", { name: "Partial Dispersion" }),
+    );
     await userEvent.click(screen.getByRole("radio", { name: "e" }));
     await userEvent.click(screen.getByRole("radio", { name: "P_F,e" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "Hoya" }));
 
     expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("link", { name: "Use selected glass" }));
+    await userEvent.click(
+      screen.getByRole("link", { name: "Use selected glass" }),
+    );
 
     expect(onUseSelectedGlass).toHaveBeenCalledWith(
       expect.objectContaining({ glassName: "N-BK7", catalogName: "Schott" }),
@@ -447,7 +504,9 @@ describe("GlassMapView", () => {
     expect(screen.getByText("Ve")).toBeInTheDocument();
     expect(screen.getByText("Ne")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+    await userEvent.click(
+      screen.getByRole("radio", { name: "Partial Dispersion" }),
+    );
     expect(screen.getByText("P_g,F")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("radio", { name: "P_F,e" }));
@@ -465,7 +524,9 @@ describe("GlassMapView", () => {
     expect(plotProps).toHaveAttribute("data-y-domain-min", "1.4");
     expect(plotProps).toHaveAttribute("data-y-domain-max", "2");
 
-    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+    await userEvent.click(
+      screen.getByRole("radio", { name: "Partial Dispersion" }),
+    );
 
     expect(plotProps).not.toHaveAttribute("data-y-domain-min");
     expect(plotProps).not.toHaveAttribute("data-y-domain-max");
@@ -484,30 +545,42 @@ describe("GlassMapView", () => {
             abbeNumberE: 25.2,
             partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
             dispersionCoeffKind: "Sellmeier3T" as const,
-            dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+            dispersionCoeffs: [
+              1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095,
+              118.557185,
+            ],
           },
         },
       }),
     });
-    const store = makeStore(completeAllCatalogsData({
-      ...rawData,
-      Ohara: {
-        "S-TIH6": {
-          refractiveIndexD: 1.80518,
-          refractiveIndexE: 1.8163,
-          abbeNumberD: 25.36,
-          abbeNumberE: 25.2,
-          partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
-          dispersionCoeffKind: "Sellmeier3T" as const,
-          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+    const store = makeStore(
+      completeAllCatalogsData({
+        ...rawData,
+        Ohara: {
+          "S-TIH6": {
+            refractiveIndexD: 1.80518,
+            refractiveIndexE: 1.8163,
+            abbeNumberD: 25.36,
+            abbeNumberE: 25.2,
+            partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+            dispersionCoeffKind: "Sellmeier3T" as const,
+            dispersionCoeffs: [
+              1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095,
+              118.557185,
+            ],
+          },
         },
-      },
-    }));
+      }),
+    );
     renderWithStore(
       <GlassMapView
         proxy={proxy}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={{
+          source: "medium-selector",
+          catalog: "Schott",
+          glass: "N-BK7",
+        }}
         onUseSelectedGlass={onUseSelectedGlass}
       />,
       store,
@@ -519,7 +592,9 @@ describe("GlassMapView", () => {
     expect(unselectedPoint).toBeDefined();
     fireEvent.click(unselectedPoint!);
 
-    await userEvent.click(screen.getByRole("link", { name: "Use selected glass" }));
+    await userEvent.click(
+      screen.getByRole("link", { name: "Use selected glass" }),
+    );
 
     expect(onUseSelectedGlass).toHaveBeenCalledWith(
       expect.objectContaining({ glassName: "S-TIH6", catalogName: "Ohara" }),
@@ -528,21 +603,38 @@ describe("GlassMapView", () => {
 
   it.each([
     ["without route intent", undefined, jest.fn()],
-    ["without pending selection callback", { source: "medium-selector" as const, catalog: "Schott", glass: "N-BK7" }, undefined],
-    ["without a valid selected glass", { source: "medium-selector" as const, catalog: "Schott", glass: "Missing" }, jest.fn()],
-  ])("hides Use selected glass %s", async (_label, routeIntent, onUseSelectedGlass) => {
-    renderWithStore(
-      <GlassMapView
-        proxy={makeProxy()}
-        isReady={true}
-        routeIntent={routeIntent}
-        onUseSelectedGlass={onUseSelectedGlass}
-      />,
-    );
-    await waitFor(() => expect(makeProxy).toBeDefined());
+    [
+      "without pending selection callback",
+      { source: "medium-selector" as const, catalog: "Schott", glass: "N-BK7" },
+      undefined,
+    ],
+    [
+      "without a valid selected glass",
+      {
+        source: "medium-selector" as const,
+        catalog: "Schott",
+        glass: "Missing",
+      },
+      jest.fn(),
+    ],
+  ])(
+    "hides Use selected glass %s",
+    async (_label, routeIntent, onUseSelectedGlass) => {
+      renderWithStore(
+        <GlassMapView
+          proxy={makeProxy()}
+          isReady={true}
+          routeIntent={routeIntent}
+          onUseSelectedGlass={onUseSelectedGlass}
+        />,
+      );
+      await waitFor(() => expect(makeProxy).toBeDefined());
 
-    expect(screen.queryByRole("link", { name: "Use selected glass" })).not.toBeInTheDocument();
-  });
+      expect(
+        screen.queryByRole("link", { name: "Use selected glass" }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it("does not render a back link without MediumSelectorModal route intent", async () => {
     const proxy = makeProxy();
@@ -552,7 +644,9 @@ describe("GlassMapView", () => {
       expect(screen.getByText(/select a glass/i)).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole("link", { name: "Back to lens editor" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Back to lens editor" }),
+    ).not.toBeInTheDocument();
   });
 
   it("applies route intent from preloaded store data on the first render", async () => {
@@ -564,15 +658,13 @@ describe("GlassMapView", () => {
     };
 
     renderWithStore(
-      <GlassMapView
-        proxy={proxy}
-        isReady={true}
-        routeIntent={routeIntent}
-      />,
+      <GlassMapView proxy={proxy} isReady={true} routeIntent={routeIntent} />,
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "N-BK7" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -589,38 +681,52 @@ describe("GlassMapView", () => {
             abbeNumberE: 25.2,
             partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
             dispersionCoeffKind: "Sellmeier3T" as const,
-            dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+            dispersionCoeffs: [
+              1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095,
+              118.557185,
+            ],
           },
         },
       }),
     });
-    const store = makeStore(completeAllCatalogsData({
-      ...rawData,
-      Schott: {
-        ...rawData.Schott,
-        "N-SF6": {
-          refractiveIndexD: 1.80518,
-          refractiveIndexE: 1.8163,
-          abbeNumberD: 25.36,
-          abbeNumberE: 25.2,
-          partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
-          dispersionCoeffKind: "Sellmeier3T" as const,
-          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+    const store = makeStore(
+      completeAllCatalogsData({
+        ...rawData,
+        Schott: {
+          ...rawData.Schott,
+          "N-SF6": {
+            refractiveIndexD: 1.80518,
+            refractiveIndexE: 1.8163,
+            abbeNumberD: 25.36,
+            abbeNumberE: 25.2,
+            partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+            dispersionCoeffKind: "Sellmeier3T" as const,
+            dispersionCoeffs: [
+              1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095,
+              118.557185,
+            ],
+          },
         },
-      },
-    }));
+      }),
+    );
 
     renderWithStore(
       <GlassMapView
         proxy={proxy}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={{
+          source: "medium-selector",
+          catalog: "Schott",
+          glass: "N-BK7",
+        }}
       />,
       store,
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "N-BK7" }),
+      ).toBeInTheDocument();
     });
 
     const unselectedPoint = screen
@@ -630,7 +736,9 @@ describe("GlassMapView", () => {
     fireEvent.click(unselectedPoint!);
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "N-SF6" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "N-SF6" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -638,12 +746,22 @@ describe("GlassMapView", () => {
     const store = makeStore();
     renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />, store);
 
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Schott");
-    await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "n-bk7");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Catalog" }),
+      "Schott",
+    );
+    await userEvent.type(
+      screen.getByRole("combobox", { name: "Glass" }),
+      "n-bk7",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
 
-    expect(await screen.findByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
-    expect(store.getState().selectedGlass).toEqual(expect.objectContaining({ catalogName: "Schott", glassName: "N-BK7" }));
+    expect(
+      await screen.findByRole("heading", { name: "N-BK7" }),
+    ).toBeInTheDocument();
+    expect(store.getState().selectedGlass).toEqual(
+      expect.objectContaining({ catalogName: "Schott", glassName: "N-BK7" }),
+    );
   });
 
   it("lets selector selection dismiss the route-intent override", async () => {
@@ -655,16 +773,28 @@ describe("GlassMapView", () => {
       <GlassMapView
         proxy={makeProxy()}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={{
+          source: "medium-selector",
+          catalog: "Schott",
+          glass: "N-BK7",
+        }}
       />,
       store,
     );
 
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Custom");
-    await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "my glass");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Catalog" }),
+      "Custom",
+    );
+    await userEvent.type(
+      screen.getByRole("combobox", { name: "Glass" }),
+      "my glass",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
 
-    expect(await screen.findByRole("heading", { name: "My Glass" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "My Glass" }),
+    ).toBeInTheDocument();
   });
 
   it("does not enable a disabled catalog when selecting one of its glasses", async () => {
@@ -672,11 +802,19 @@ describe("GlassMapView", () => {
     act(() => store.getState().toggleCatalog("Schott"));
     renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />, store);
 
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Schott");
-    await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "N-BK7");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Catalog" }),
+      "Schott",
+    );
+    await userEvent.type(
+      screen.getByRole("combobox", { name: "Glass" }),
+      "N-BK7",
+    );
     await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
 
-    expect(await screen.findByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "N-BK7" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Schott" })).not.toBeChecked();
     expect(store.getState().enabledCatalogs.Schott).toBe(false);
     expect(screen.queryAllByTestId("glass-point")).toHaveLength(0);

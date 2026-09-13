@@ -2,27 +2,50 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
 import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomDrawerContainer";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
+import type {
+  OpticalModel,
+  OpticalSpecs,
+} from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
 // Mock child containers to avoid complex deps
-jest.mock("@/features/lens-editor/components/SpecsConfiguratorContainer", () => ({
-  SpecsConfiguratorContainer: () => <div data-testid="specs-content">Specs Content</div>,
-}));
+jest.mock(
+  "@/features/lens-editor/components/SpecsConfiguratorContainer",
+  () => ({
+    SpecsConfiguratorContainer: () => (
+      <div data-testid="specs-content">Specs Content</div>
+    ),
+  }),
+);
 
-jest.mock("@/features/lens-editor/components/LensPrescriptionContainer", () => ({
-  LensPrescriptionContainer: () => <div data-testid="prescription-content">Prescription Content</div>,
-}));
+jest.mock(
+  "@/features/lens-editor/components/LensPrescriptionContainer",
+  () => ({
+    LensPrescriptionContainer: () => (
+      <div data-testid="prescription-content">Prescription Content</div>
+    ),
+  }),
+);
 
 jest.mock("@/features/lens-editor/components/FocusingContainer", () => ({
-  FocusingContainer: () => <div data-testid="focusing-content">Focusing Content</div>,
+  FocusingContainer: () => (
+    <div data-testid="focusing-content">Focusing Content</div>
+  ),
 }));
 
 jest.mock("@/features/lens-editor/components/ImageReferencePanel", () => ({
-  ImageReferencePanel: () => <div data-testid="image-reference-content">Image Reference Content</div>,
+  ImageReferencePanel: () => (
+    <div data-testid="image-reference-content">Image Reference Content</div>
+  ),
 }));
 
 // Mock useScreenBreakpoint (used inside BottomDrawer -> Tabs)
@@ -32,7 +55,13 @@ jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
 
 const testSpecs: OpticalSpecs = {
   pupil: { space: "object", type: "epd", value: 25 },
-  field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+  field: {
+    space: "object",
+    type: "angle",
+    maxField: 20,
+    fields: [0, 0.7, 1],
+    isRelative: true,
+  },
   wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
 };
 
@@ -45,7 +74,9 @@ const testModel: OpticalModel = {
 };
 
 function makeStores() {
-  const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
+  const specsStore = createStore<SpecsConfiguratorState>(
+    createSpecsConfiguratorSlice,
+  );
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   return { specsStore, lensStore };
 }
@@ -70,7 +101,10 @@ function makeProxy(): PyodideWorkerAPI {
   } as unknown as PyodideWorkerAPI;
 }
 
-function renderContainer(draggable: boolean, lensStore?: StoreApi<LensEditorState>) {
+function renderContainer(
+  draggable: boolean,
+  lensStore?: StoreApi<LensEditorState>,
+) {
   const stores = makeStores();
   const resolvedLensStore = lensStore ?? stores.lensStore;
   return render(
@@ -84,7 +118,7 @@ function renderContainer(draggable: boolean, lensStore?: StoreApi<LensEditorStat
         onError={jest.fn()}
         draggable={draggable}
       />
-    </LensEditorStoreContext.Provider>
+    </LensEditorStoreContext.Provider>,
   );
 }
 
@@ -104,20 +138,30 @@ describe("BottomDrawerContainer", () => {
 
   it("renders all drawer tab labels", () => {
     renderContainer(true);
-    expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Prescription" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "System Specs" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "Prescription" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Focusing" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Image Reference" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "Image Reference" }),
+    ).toBeInTheDocument();
   });
 
   it("with draggable=true: drag handle is present", () => {
     renderContainer(true);
-    expect(screen.getByRole("separator", { name: "Resize drawer" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    ).toBeInTheDocument();
   });
 
   it("with draggable=false: drag handle is absent", () => {
     renderContainer(false);
-    expect(screen.queryByRole("separator", { name: "Resize drawer" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("separator", { name: "Resize drawer" }),
+    ).not.toBeInTheDocument();
   });
 
   it("tab switching works: click Prescription shows prescription content", async () => {
@@ -133,7 +177,9 @@ describe("BottomDrawerContainer", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: "Image Reference" }));
 
-    expect(lensStore.getState().activeBottomDrawerTabId).toBe("image-reference");
+    expect(lensStore.getState().activeBottomDrawerTabId).toBe(
+      "image-reference",
+    );
   });
 
   it("restores the previously active tab after remounting with the same lens store", async () => {
@@ -148,7 +194,9 @@ describe("BottomDrawerContainer", () => {
     renderContainer(true, lensStore);
 
     expect(screen.getByTestId("image-reference-content")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Image Reference" })).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("tab", { name: "Image Reference" }),
+    ).toHaveAttribute("aria-selected", "true");
   });
 
   it("stores the committed drawer height in the lens editor slice", async () => {
@@ -193,7 +241,9 @@ describe("BottomDrawerContainer", () => {
     initialRender.unmount();
     renderContainer(true, lensStore);
 
-    const remountedHandle = screen.getByRole("separator", { name: "Resize drawer" });
+    const remountedHandle = screen.getByRole("separator", {
+      name: "Resize drawer",
+    });
     const remountedDrawer = remountedHandle.parentElement;
     expect(remountedDrawer).not.toBeNull();
     expect(remountedDrawer).toHaveStyle({ height: "560px" });

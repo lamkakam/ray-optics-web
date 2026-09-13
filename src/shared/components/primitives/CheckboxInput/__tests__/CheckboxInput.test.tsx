@@ -18,7 +18,7 @@ describe("CheckboxInput", () => {
     render(<CheckboxInput {...defaultProps} />);
 
     expect(
-      screen.getByRole("checkbox", { name: "Use model glass" })
+      screen.getByRole("checkbox", { name: "Use model glass" }),
     ).toBeInTheDocument();
   });
 
@@ -26,7 +26,9 @@ describe("CheckboxInput", () => {
     const onChange = jest.fn();
     render(<CheckboxInput {...defaultProps} onChange={onChange} />);
 
-    await userEvent.click(screen.getByRole("checkbox", { name: "Use model glass" }));
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Use model glass" }),
+    );
 
     expect(onChange).toHaveBeenCalledWith(true);
   });
@@ -42,18 +44,22 @@ describe("CheckboxInput", () => {
       <CheckboxInput
         {...defaultProps}
         ariaLabel="Schott"
-        label={(
+        label={
           <div data-testid="catalog-label">
             <span data-testid="catalog-dot" />
             <span>Schott</span>
           </div>
-        )}
-      />
+        }
+      />,
     );
 
     expect(screen.getByTestId("catalog-dot")).toBeInTheDocument();
-    expect(screen.getByTestId("catalog-label").parentElement?.tagName).toBe("LABEL");
-    expect(screen.getByRole("checkbox", { name: "Schott" })).toBeInTheDocument();
+    expect(screen.getByTestId("catalog-label").parentElement?.tagName).toBe(
+      "LABEL",
+    );
+    expect(
+      screen.getByRole("checkbox", { name: "Schott" }),
+    ).toBeInTheDocument();
   });
 
   it("supports disabled state", () => {
@@ -69,18 +75,20 @@ describe("CheckboxInput", () => {
       <CheckboxInput
         {...defaultProps}
         ariaLabel="Use model glass for numeric entry"
-      />
+      />,
     );
 
     expect(
       screen.getByRole("checkbox", {
         name: "Use model glass for numeric entry",
-      })
+      }),
     ).toBeInTheDocument();
   });
 
   it("keeps the native indeterminate property synchronized", () => {
-    const { rerender } = render(<CheckboxInput {...defaultProps} indeterminate />);
+    const { rerender } = render(
+      <CheckboxInput {...defaultProps} indeterminate />,
+    );
     const checkbox = screen.getByRole("checkbox", { name: "Use model glass" });
 
     expect((checkbox as HTMLInputElement).indeterminate).toBe(true);
@@ -92,8 +100,12 @@ describe("CheckboxInput", () => {
   it("defaults the native indeterminate property to false", () => {
     render(<CheckboxInput {...defaultProps} />);
 
-    expect((screen.getByRole("checkbox", { name: "Use model glass" }) as HTMLInputElement).indeterminate)
-      .toBe(false);
+    expect(
+      (
+        screen.getByRole("checkbox", {
+          name: "Use model glass",
+        }) as HTMLInputElement
+      ).indeterminate,
+    ).toBe(false);
   });
-
 });

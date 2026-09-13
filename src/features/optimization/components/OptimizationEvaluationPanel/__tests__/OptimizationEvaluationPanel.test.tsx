@@ -21,7 +21,9 @@ describe("OptimizationEvaluationPanel", () => {
     cx.text.color.bodyTextColor.split(" ").forEach((token) => {
       expect(emptyState).not.toHaveClass(token);
     });
-    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("optimization-evaluation-scroll"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders an invalid config message before the empty state text", () => {
@@ -33,7 +35,9 @@ describe("OptimizationEvaluationPanel", () => {
       />,
     );
 
-    const invalidMessage = screen.getByText("Variable minimum must be less than maximum.");
+    const invalidMessage = screen.getByText(
+      "Variable minimum must be less than maximum.",
+    );
     const emptyState = screen.getByText(
       "Evaluation results appear here when the current optimization config is valid.",
     );
@@ -45,8 +49,13 @@ describe("OptimizationEvaluationPanel", () => {
     cx.text.color.errorTextColor.split(" ").forEach((token) => {
       expect(invalidMessage).toHaveClass(token);
     });
-    expect(invalidMessage.compareDocumentPosition(emptyState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+    expect(
+      invalidMessage.compareDocumentPosition(emptyState) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.queryByTestId("optimization-evaluation-scroll"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders a warning message before the empty state text", () => {
@@ -66,8 +75,13 @@ describe("OptimizationEvaluationPanel", () => {
     cx.text.color.errorTextColor.split(" ").forEach((token) => {
       expect(warningMessage).toHaveClass(token);
     });
-    expect(warningMessage.compareDocumentPosition(emptyState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+    expect(
+      warningMessage.compareDocumentPosition(emptyState) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.queryByTestId("optimization-evaluation-scroll"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders a warning message before the table when rows are present", () => {
@@ -85,7 +99,10 @@ describe("OptimizationEvaluationPanel", () => {
     cx.text.color.errorTextColor.split(" ").forEach((token) => {
       expect(warningMessage).toHaveClass(token);
     });
-    expect(warningMessage.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      warningMessage.compareDocumentPosition(table) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("renders the evaluation table and updating status", () => {
@@ -98,12 +115,17 @@ describe("OptimizationEvaluationPanel", () => {
       />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent("Updating evaluation…");
-    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass("overflow-y-auto");
-    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveStyle({ maxHeight: "320px" });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Updating evaluation…",
+    );
+    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass(
+      "overflow-y-auto",
+    );
+    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveStyle({
+      maxHeight: "320px",
+    });
     expect(screen.getByText("Paraxial focal length")).toBeInTheDocument();
     expect(screen.getByText("98.500000")).toBeInTheDocument();
-
   });
 
   it("renders the full table without an internal vertical scrollbar when body scrolling is disabled", () => {
@@ -115,8 +137,12 @@ describe("OptimizationEvaluationPanel", () => {
       />,
     );
 
-    expect(screen.getByTestId("optimization-evaluation-scroll")).not.toHaveClass("overflow-y-auto");
-    expect(screen.getByTestId("optimization-evaluation-scroll")).not.toHaveStyle({ maxHeight: "320px" });
+    expect(
+      screen.getByTestId("optimization-evaluation-scroll"),
+    ).not.toHaveClass("overflow-y-auto");
+    expect(
+      screen.getByTestId("optimization-evaluation-scroll"),
+    ).not.toHaveStyle({ maxHeight: "320px" });
   });
 
   it("renders N/A targets for target-less residual rows", () => {

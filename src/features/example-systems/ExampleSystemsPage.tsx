@@ -1,12 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { ExampleSystemList, type ExampleSystemName } from "@/features/example-systems/lib/exampleSystems";
+import {
+  ExampleSystemList,
+  type ExampleSystemName,
+} from "@/features/example-systems/lib/exampleSystems";
 import { Button } from "@/shared/components/primitives/Button";
 import { DescriptionContainer } from "@/shared/components/primitives/DescriptionContainer";
 import { Header } from "@/shared/components/primitives/Header";
@@ -49,7 +59,10 @@ interface ExampleSystemsPageProps {
  * - Keeps background apply completion attached after navigation: `applyExampleSystem()` continues computing first-order/layout/selected plot/Seidel data with the app-wide `imagePoint`, commits specs/model when ready, and clears local applying state only if the page remains mounted.
  * - Calls `onError` when the background apply promise rejects after navigation; the route is not moved back to `/example-systems`.
  */
-export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) {
+export function ExampleSystemsPage({
+  proxy,
+  onError,
+}: ExampleSystemsPageProps) {
   const router = useRouter();
   const { theme } = useTheme();
   const { imagePoint } = useImagePoint();
@@ -59,15 +72,28 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
   const analysisPlotStore = useAnalysisPlotStore();
   const analysisDataStore = useAnalysisDataStore();
   const lensLayoutImageStore = useLensLayoutImageStore();
-  const [selectedExampleKey, setSelectedExampleKey] = useState<ExampleSystemName | undefined>();
+  const [selectedExampleKey, setSelectedExampleKey] = useState<
+    ExampleSystemName | undefined
+  >();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [applying, setApplying] = useState(false);
   const mountedRef = useRef(true);
-  const exampleButtonRefs = useRef<Partial<Record<ExampleSystemName, HTMLButtonElement>>>({});
-  const exampleKeys = useMemo(() => Object.keys(ExampleSystemList) as ExampleSystemName[], []);
-  const selectedDescription = selectedExampleKey === undefined
-    ? <Paragraph variant="body">Select an example system to review its source and apply it to the Lens Editor.</Paragraph>
-    : getExampleSystemDescription(selectedExampleKey);
+  const exampleButtonRefs = useRef<
+    Partial<Record<ExampleSystemName, HTMLButtonElement>>
+  >({});
+  const exampleKeys = useMemo(
+    () => Object.keys(ExampleSystemList) as ExampleSystemName[],
+    [],
+  );
+  const selectedDescription =
+    selectedExampleKey === undefined ? (
+      <Paragraph variant="body">
+        Select an example system to review its source and apply it to the Lens
+        Editor.
+      </Paragraph>
+    ) : (
+      getExampleSystemDescription(selectedExampleKey)
+    );
   const isLargeScreen = screenSize === "screenLG";
 
   useEffect(() => {
@@ -86,27 +112,37 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
     exampleButtonRefs.current[selectedExampleKey]?.focus();
   }, [selectedExampleKey]);
 
-  const handleExampleButtonRef = useCallback((key: ExampleSystemName, button: HTMLButtonElement | null) => {
-    if (button === null) {
-      delete exampleButtonRefs.current[key];
-      return;
-    }
+  const handleExampleButtonRef = useCallback(
+    (key: ExampleSystemName, button: HTMLButtonElement | null) => {
+      if (button === null) {
+        delete exampleButtonRefs.current[key];
+        return;
+      }
 
-    exampleButtonRefs.current[key] = button;
-  }, []);
+      exampleButtonRefs.current[key] = button;
+    },
+    [],
+  );
 
   const handleSelectExample = useCallback((key: ExampleSystemName) => {
     setSelectedExampleKey(key);
   }, []);
 
-  const handleMenuKeyDown = useCallback((event: KeyboardEvent<HTMLMenuElement>) => {
-    if (event.key !== "Enter" || selectedExampleKey === undefined || applying) {
-      return;
-    }
+  const handleMenuKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLMenuElement>) => {
+      if (
+        event.key !== "Enter" ||
+        selectedExampleKey === undefined ||
+        applying
+      ) {
+        return;
+      }
 
-    event.preventDefault();
-    setConfirmOpen(true);
-  }, [applying, selectedExampleKey]);
+      event.preventDefault();
+      setConfirmOpen(true);
+    },
+    [applying, selectedExampleKey],
+  );
 
   const handleConfirm = useCallback(() => {
     if (selectedExampleKey === undefined || applying) {
@@ -237,9 +273,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
             {menuItems}
           </MenuContainer>
           <div className="flex w-[calc(50vw-1.5rem)] min-h-0 flex-col gap-4">
-            <div className="flex justify-end">
-              {applyButton}
-            </div>
+            <div className="flex justify-end">{applyButton}</div>
             <DescriptionContainer className="h-[50dvh] w-[calc(50vw-1.5rem)] overflow-y-auto [&>p+p]:mt-4">
               {selectedDescription}
             </DescriptionContainer>

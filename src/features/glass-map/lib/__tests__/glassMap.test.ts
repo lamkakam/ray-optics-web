@@ -6,9 +6,7 @@ import {
   getEligibleGlassNames,
   resolveCatalogGlass,
 } from "@/features/glass-map/lib/glassMap";
-import {
-  CATALOG_NAMES,
-} from "@/features/glass-map/types/glassMap";
+import { CATALOG_NAMES } from "@/features/glass-map/types/glassMap";
 import type {
   GlassData,
   AllGlassCatalogsData,
@@ -17,12 +15,15 @@ import type {
 
 const rawGlass: GlassData = {
   refractiveIndexD: 1.5168,
-  refractiveIndexE: 1.5190,
+  refractiveIndexE: 1.519,
   abbeNumberD: 64.17,
   abbeNumberE: 63.96,
   partialDispersions: { P_fe: 0.4, P_Fd: 0.41, P_gF: 0.5349 },
-  dispersionCoeffKind: 'Sellmeier3T',
-  dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+  dispersionCoeffKind: "Sellmeier3T",
+  dispersionCoeffs: [
+    1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
+    103.560653,
+  ],
 };
 
 const rawCatalogsData: AllGlassCatalogsData = {
@@ -54,7 +55,9 @@ describe("CATALOG_NAMES", () => {
 
 describe("catalog glass resolution", () => {
   it("resolves catalog and glass names case-insensitively with stored spelling", () => {
-    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "schott", "n-bk7")).toEqual({
+    expect(
+      resolveCatalogGlass(completeCatalogsData, lookupMaps, "schott", "n-bk7"),
+    ).toEqual({
       catalogName: "Schott",
       glassName: "N-BK7",
       data: rawGlass,
@@ -62,8 +65,14 @@ describe("catalog glass resolution", () => {
   });
 
   it("normalizes surrounding whitespace through the canonical lookup maps", () => {
-    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "  schott ", " N-BK7  "))
-      .toEqual({ catalogName: "Schott", glassName: "N-BK7", data: rawGlass });
+    expect(
+      resolveCatalogGlass(
+        completeCatalogsData,
+        lookupMaps,
+        "  schott ",
+        " N-BK7  ",
+      ),
+    ).toEqual({ catalogName: "Schott", glassName: "N-BK7", data: rawGlass });
   });
 
   it("rejects unknown catalogs, partial matches, aliases, and excluded Special media", () => {
@@ -79,29 +88,69 @@ describe("catalog glass resolution", () => {
     });
     const specialLookups = buildGlassLookupMaps(specialCatalogs);
 
-    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "Unknown", "N-BK7")).toBeUndefined();
-    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "Schott", "N-B")).toBeUndefined();
-    expect(resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "fluorite")).toBeUndefined();
-    expect(resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "AIR")).toBeUndefined();
-    expect(resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "refl")).toBeUndefined();
-    expect(resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "D263TECO")).toEqual({
+    expect(
+      resolveCatalogGlass(completeCatalogsData, lookupMaps, "Unknown", "N-BK7"),
+    ).toBeUndefined();
+    expect(
+      resolveCatalogGlass(completeCatalogsData, lookupMaps, "Schott", "N-B"),
+    ).toBeUndefined();
+    expect(
+      resolveCatalogGlass(
+        specialCatalogs,
+        specialLookups,
+        "Special",
+        "fluorite",
+      ),
+    ).toBeUndefined();
+    expect(
+      resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "AIR"),
+    ).toBeUndefined();
+    expect(
+      resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "refl"),
+    ).toBeUndefined();
+    expect(
+      resolveCatalogGlass(
+        specialCatalogs,
+        specialLookups,
+        "Special",
+        "D263TECO",
+      ),
+    ).toEqual({
       catalogName: "Special",
       glassName: "D263TECO",
       data: rawGlass,
     });
-    expect(getEligibleGlassNames({
-      ...rawCatalogsData,
-      Special: { air: rawGlass, REFL: rawGlass, CaF2: rawGlass, Water: rawGlass },
-    }, "Special")).toEqual(["CaF2", "Water"]);
-    expect(getEligibleGlassNames({ ...rawCatalogsData, CDGM: { air: rawGlass } }, "CDGM"))
-      .toEqual(["air"]);
+    expect(
+      getEligibleGlassNames(
+        {
+          ...rawCatalogsData,
+          Special: {
+            air: rawGlass,
+            REFL: rawGlass,
+            CaF2: rawGlass,
+            Water: rawGlass,
+          },
+        },
+        "Special",
+      ),
+    ).toEqual(["CaF2", "Water"]);
+    expect(
+      getEligibleGlassNames(
+        { ...rawCatalogsData, CDGM: { air: rawGlass } },
+        "CDGM",
+      ),
+    ).toEqual(["air"]);
   });
 
   it("resolves Custom glass through the catalog-scoped medium map", () => {
-    const catalogsData = completeAllCatalogsData({ Custom: { "My Glass": rawGlass } });
+    const catalogsData = completeAllCatalogsData({
+      Custom: { "My Glass": rawGlass },
+    });
     const maps = buildGlassLookupMaps(catalogsData);
 
-    expect(resolveCatalogGlass(catalogsData, maps, " custom ", " my glass ")).toEqual({
+    expect(
+      resolveCatalogGlass(catalogsData, maps, " custom ", " my glass "),
+    ).toEqual({
       catalogName: "Custom",
       glassName: "My Glass",
       data: rawGlass,
@@ -114,7 +163,9 @@ describe("catalog glass resolution", () => {
       Schott: { "N-BK7": undefined },
     } as unknown as typeof completeCatalogsData;
 
-    expect(resolveCatalogGlass(catalogsWithoutData, lookupMaps, "Schott", "N-BK7")).toBeUndefined();
+    expect(
+      resolveCatalogGlass(catalogsWithoutData, lookupMaps, "Schott", "N-BK7"),
+    ).toBeUndefined();
   });
 });
 
@@ -128,19 +179,39 @@ describe("buildGlassLookupMaps", () => {
     const result = buildGlassLookupMaps(catalogsData);
 
     expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
-    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({ medium: "H-LaK52", manufacturer: "Hoya" });
+    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
+      medium: "H-LaK52",
+      manufacturer: "Hoya",
+    });
     expect(result.mediumMap.get("h-lak52")).toBeUndefined();
-    expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
+    expect(result.mediumMap.get("d263teco")).toEqual({
+      medium: "D263TECO",
+      manufacturer: "",
+    });
     expect(result.mediumMap.get("refl")).toBeUndefined();
-    expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("custom:custom_a")).toEqual({ medium: "CUSTOM_A", manufacturer: "Custom" });
-    expect(result.customMediumMap.get("custom_a")).toEqual({ medium: "CUSTOM_A", manufacturer: "Custom" });
+    expect(result.mediumMap.get("fluorite")).toEqual({
+      medium: "CaF2",
+      manufacturer: "",
+    });
+    expect(result.mediumMap.get("fluorspar")).toEqual({
+      medium: "CaF2",
+      manufacturer: "",
+    });
+    expect(result.mediumMap.get("custom:custom_a")).toEqual({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    });
+    expect(result.customMediumMap.get("custom_a")).toEqual({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    });
     expect(result.customMediumMap.get("h-lak52")).toBeUndefined();
   });
 
   it("preserves the stored spelling when a Special catalog contains a built-in medium", () => {
-    const catalogsData = completeAllCatalogsData({ Special: { water: rawGlass } });
+    const catalogsData = completeAllCatalogsData({
+      Special: { water: rawGlass },
+    });
 
     expect(buildGlassLookupMaps(catalogsData).mediumMap.get("water")).toEqual({
       medium: "water",
@@ -151,9 +222,18 @@ describe("buildGlassLookupMaps", () => {
   it("provides non-catalog built-in Special media as fallback lookups", () => {
     const result = buildGlassLookupMaps(completeAllCatalogsData({}));
 
-    expect(result.mediumMap.get("caf2")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("fused silica")).toEqual({ medium: "Fused silica", manufacturer: "" });
-    expect(result.mediumMap.get("water")).toEqual({ medium: "Water", manufacturer: "" });
+    expect(result.mediumMap.get("caf2")).toEqual({
+      medium: "CaF2",
+      manufacturer: "",
+    });
+    expect(result.mediumMap.get("fused silica")).toEqual({
+      medium: "Fused silica",
+      manufacturer: "",
+    });
+    expect(result.mediumMap.get("water")).toEqual({
+      medium: "Water",
+      manufacturer: "",
+    });
   });
 });
 
@@ -187,7 +267,7 @@ describe("computePlotPoints", () => {
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
         partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
-        dispersionCoeffKind: 'Schott2x6',
+        dispersionCoeffKind: "Schott2x6",
         dispersionCoeffs: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
       },
     },
@@ -201,8 +281,11 @@ describe("computePlotPoints", () => {
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
         partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
-        dispersionCoeffKind: 'Sellmeier3T',
-        dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+        dispersionCoeffKind: "Sellmeier3T",
+        dispersionCoeffs: [
+          1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
+          103.560653,
+        ],
       },
     },
     Sumita: {},
@@ -221,7 +304,13 @@ describe("computePlotPoints", () => {
   };
 
   it("returns points for refractiveIndex/d: x=Vd, y=Nd", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "refractiveIndex", "d", "P_gF");
+    const points = computePlotPoints(
+      catalogsData,
+      allEnabled,
+      "refractiveIndex",
+      "d",
+      "P_gF",
+    );
     expect(points.length).toBe(2);
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
@@ -230,45 +319,91 @@ describe("computePlotPoints", () => {
   });
 
   it("returns points for refractiveIndex/e: x=Ve, y=Ne", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "refractiveIndex", "e", "P_gF");
+    const points = computePlotPoints(
+      catalogsData,
+      allEnabled,
+      "refractiveIndex",
+      "e",
+      "P_gF",
+    );
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(63.96);
     expect(bk7.y).toBe(1.519);
   });
 
   it("returns points for partialDispersion/d/P_gF: x=Vd, y=P_gF", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "d", "P_gF");
+    const points = computePlotPoints(
+      catalogsData,
+      allEnabled,
+      "partialDispersion",
+      "d",
+      "P_gF",
+    );
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
     expect(bk7.y).toBe(0.5349);
   });
 
   it("returns points for partialDispersion/d/P_Fd: x=Vd, y=P_Fd", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "d", "P_Fd");
+    const points = computePlotPoints(
+      catalogsData,
+      allEnabled,
+      "partialDispersion",
+      "d",
+      "P_Fd",
+    );
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
     expect(bk7.y).toBe(0.41);
   });
 
   it("returns points for partialDispersion/e/P_fe: x=Ve, y=P_fe", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "e", "P_fe");
+    const points = computePlotPoints(
+      catalogsData,
+      allEnabled,
+      "partialDispersion",
+      "e",
+      "P_fe",
+    );
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(63.96);
     expect(bk7.y).toBe(0.4);
   });
 
   it("excludes disabled catalog", () => {
-    const enabled: Record<CatalogName, boolean> = { ...allEnabled, CDGM: false };
-    const points = computePlotPoints(catalogsData, enabled, "refractiveIndex", "d", "P_gF");
+    const enabled: Record<CatalogName, boolean> = {
+      ...allEnabled,
+      CDGM: false,
+    };
+    const points = computePlotPoints(
+      catalogsData,
+      enabled,
+      "refractiveIndex",
+      "d",
+      "P_gF",
+    );
     expect(points.find((p) => p.catalogName === "CDGM")).toBeUndefined();
     expect(points.find((p) => p.catalogName === "Schott")).toBeDefined();
   });
 
   it("returns empty array when all catalogs disabled", () => {
     const allDisabled: Record<CatalogName, boolean> = {
-      CDGM: false, Hikari: false, Hoya: false, Ohara: false, Schott: false, Sumita: false, Special: false, Custom: false,
+      CDGM: false,
+      Hikari: false,
+      Hoya: false,
+      Ohara: false,
+      Schott: false,
+      Sumita: false,
+      Special: false,
+      Custom: false,
     };
-    const points = computePlotPoints(catalogsData, allDisabled, "refractiveIndex", "d", "P_gF");
+    const points = computePlotPoints(
+      catalogsData,
+      allDisabled,
+      "refractiveIndex",
+      "d",
+      "P_gF",
+    );
     expect(points).toHaveLength(0);
   });
 
@@ -289,8 +424,13 @@ describe("computePlotPoints", () => {
       Custom: false,
     };
 
-    const points = computePlotPoints({ ...catalogsData, Hoya: { Missing: incompleteGlass } }, enabledOnlyHoya,
-      "partialDispersion", "d", "P_gF");
+    const points = computePlotPoints(
+      { ...catalogsData, Hoya: { Missing: incompleteGlass } },
+      enabledOnlyHoya,
+      "partialDispersion",
+      "d",
+      "P_gF",
+    );
 
     expect(points).toEqual([]);
   });

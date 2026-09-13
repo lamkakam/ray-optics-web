@@ -38,33 +38,36 @@ export function OptimizationWeightsGrid({
 }: OptimizationWeightsGridProps) {
   const gridTheme = useAgGridTheme();
 
-  const weightColumns = useMemo<ColDef<WeightRow>[]>(() => [
-    {
-      headerName: "Index",
-      width: 80,
-      valueGetter: (params) => params.data?.index,
-    },
-    {
-      headerName: "Value",
-      width: valueColumnWidth,
-      valueGetter: (params) => params.data?.label,
-    },
-    {
-      headerName: "Weight",
-      width: 90,
-      editable: true,
-      valueGetter: (params) => params.data?.weight,
-      valueParser: (params) => Number.parseFloat(params.newValue),
-      valueSetter: (params) => {
-        if (params.data === undefined) {
-          return false;
-        }
-
-        onUpdateWeight(params.data.index, params.newValue as number);
-        return true;
+  const weightColumns = useMemo<ColDef<WeightRow>[]>(
+    () => [
+      {
+        headerName: "Index",
+        width: 80,
+        valueGetter: (params) => params.data?.index,
       },
-    },
-  ], [onUpdateWeight, valueColumnWidth]);
+      {
+        headerName: "Value",
+        width: valueColumnWidth,
+        valueGetter: (params) => params.data?.label,
+      },
+      {
+        headerName: "Weight",
+        width: 90,
+        editable: true,
+        valueGetter: (params) => params.data?.weight,
+        valueParser: (params) => Number.parseFloat(params.newValue),
+        valueSetter: (params) => {
+          if (params.data === undefined) {
+            return false;
+          }
+
+          onUpdateWeight(params.data.index, params.newValue as number);
+          return true;
+        },
+      },
+    ],
+    [onUpdateWeight, valueColumnWidth],
+  );
 
   return (
     <div

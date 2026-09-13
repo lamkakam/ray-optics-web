@@ -40,7 +40,9 @@ function getAxisMinMax(values: readonly number[]): readonly [number, number] {
  * - Computes `axisExtent` from the largest absolute x/y bound, falling back to `1` so orthographic zoom remains finite.
  * - Returns finite min/max values for color-bar endpoint labels, falling back to `0` when no finite wavefront values exist.
  */
-export function buildWavefrontMapBitmap(wavefrontMapData: WavefrontMapData): WavefrontMapPreparedData {
+export function buildWavefrontMapBitmap(
+  wavefrontMapData: WavefrontMapData,
+): WavefrontMapPreparedData {
   const width = wavefrontMapData.x.length;
   const height = wavefrontMapData.y.length;
   const imageData = new Uint8ClampedArray(width * height * 4);
@@ -57,22 +59,26 @@ export function buildWavefrontMapBitmap(wavefrontMapData: WavefrontMapData): Wav
   }
 
   const normalizedMin = Number.isFinite(minValue) ? minValue : 0;
-  const normalizedMax = Number.isFinite(maxValue) ? Math.max(normalizedMin, maxValue) : normalizedMin;
+  const normalizedMax = Number.isFinite(maxValue)
+    ? Math.max(normalizedMin, maxValue)
+    : normalizedMin;
   const valueRange = normalizedMax - normalizedMin;
 
   for (let yIndex = 0; yIndex < height; yIndex += 1) {
     for (let xIndex = 0; xIndex < width; xIndex += 1) {
       const value = wavefrontMapData.z[yIndex]?.[xIndex];
-      const pixelOffset = ((yIndex * width) + xIndex) * 4;
+      const pixelOffset = (yIndex * width + xIndex) * 4;
       if (value === undefined || !Number.isFinite(value)) {
         imageData[pixelOffset + 3] = 0;
         continue;
       }
 
-      const normalizedValue = valueRange > 0
-        ? Math.max(0, Math.min(1, (value - normalizedMin) / valueRange))
-        : 0;
-      const [red, green, blue, alpha] = interpolateAnalysisHeatmapColor(normalizedValue);
+      const normalizedValue =
+        valueRange > 0
+          ? Math.max(0, Math.min(1, (value - normalizedMin) / valueRange))
+          : 0;
+      const [red, green, blue, alpha] =
+        interpolateAnalysisHeatmapColor(normalizedValue);
       imageData[pixelOffset] = red;
       imageData[pixelOffset + 1] = green;
       imageData[pixelOffset + 2] = blue;
@@ -82,7 +88,13 @@ export function buildWavefrontMapBitmap(wavefrontMapData: WavefrontMapData): Wav
 
   const [xMin, xMax] = getAxisMinMax(wavefrontMapData.x);
   const [yMin, yMax] = getAxisMinMax(wavefrontMapData.y);
-  const axisExtent = Math.max(Math.abs(xMin), Math.abs(xMax), Math.abs(yMin), Math.abs(yMax), 1);
+  const axisExtent = Math.max(
+    Math.abs(xMin),
+    Math.abs(xMax),
+    Math.abs(yMin),
+    Math.abs(yMax),
+    1,
+  );
 
   return {
     image: {

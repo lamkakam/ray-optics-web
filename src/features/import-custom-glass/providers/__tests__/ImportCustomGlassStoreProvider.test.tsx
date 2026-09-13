@@ -14,7 +14,9 @@ describe("ImportCustomGlassStoreProvider", () => {
   it("useImportCustomGlassStore returns the store when inside ImportCustomGlassStoreProvider", () => {
     const { result } = renderHook(() => useImportCustomGlassStore(), {
       wrapper: ({ children }) => (
-        <ImportCustomGlassStoreProvider>{children}</ImportCustomGlassStoreProvider>
+        <ImportCustomGlassStoreProvider>
+          {children}
+        </ImportCustomGlassStoreProvider>
       ),
     });
 
@@ -23,11 +25,15 @@ describe("ImportCustomGlassStoreProvider", () => {
   });
 
   it("useImportCustomGlassStore throws when called outside ImportCustomGlassStoreProvider", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useImportCustomGlassStore());
-    }).toThrow("`useImportCustomGlassStore` must be used within `ImportCustomGlassStoreProvider`");
+    }).toThrow(
+      "`useImportCustomGlassStore` must be used within `ImportCustomGlassStoreProvider`",
+    );
 
     consoleSpy.mockRestore();
   });
@@ -35,7 +41,9 @@ describe("ImportCustomGlassStoreProvider", () => {
   it("store returned is a singleton within the same provider", () => {
     const { result, rerender } = renderHook(() => useImportCustomGlassStore(), {
       wrapper: ({ children }) => (
-        <ImportCustomGlassStoreProvider>{children}</ImportCustomGlassStoreProvider>
+        <ImportCustomGlassStoreProvider>
+          {children}
+        </ImportCustomGlassStoreProvider>
       ),
     });
 
@@ -46,7 +54,9 @@ describe("ImportCustomGlassStoreProvider", () => {
   });
 
   it("direct ImportCustomGlassStoreContext.Provider injection works", () => {
-    const store = createStore<ImportCustomGlassStore>(createImportCustomGlassSlice);
+    const store = createStore<ImportCustomGlassStore>(
+      createImportCustomGlassSlice,
+    );
     const { result } = renderHook(() => useImportCustomGlassStore(), {
       wrapper: ({ children }) => (
         <ImportCustomGlassStoreContext.Provider value={store}>

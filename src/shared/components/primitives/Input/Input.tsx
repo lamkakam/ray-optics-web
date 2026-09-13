@@ -32,10 +32,7 @@ const BASE_CLASSES = [
  * - Disabled styling is tokenized via `cx.input.style.opacity` and `cx.input.style.cursor`, which mirror the shared disabled behavior used by `Select`.
  */
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  function Input(
-    { autoComplete = "off", className, ...rest },
-    ref,
-  ) {
+  function Input({ autoComplete = "off", className, ...rest }, ref) {
     const sizeClasses = [
       cx.input.size.horizontalPadding,
       cx.input.size.verticalPadding,

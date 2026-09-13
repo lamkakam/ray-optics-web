@@ -22,7 +22,9 @@ export interface AnalysisDataState {
   setFirstOrderData: (data: Record<string, number> | undefined) => void;
 }
 
-export const createAnalysisDataSlice: StateCreator<AnalysisDataState> = (set) => ({
+export const createAnalysisDataSlice: StateCreator<AnalysisDataState> = (
+  set,
+) => ({
   seidelData: undefined,
   firstOrderData: undefined,
 

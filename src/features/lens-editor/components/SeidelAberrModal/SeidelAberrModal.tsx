@@ -5,7 +5,10 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { Table } from "@/shared/components/primitives/Table";
 import { Tabs } from "@/shared/components/primitives/Tabs";
 import type { TabItem } from "@/shared/components/primitives/Tabs";
-import type { SeidelData, AberrationTypeToLabel } from "@/features/lens-editor/types/seidelData";
+import type {
+  SeidelData,
+  AberrationTypeToLabel,
+} from "@/features/lens-editor/types/seidelData";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface SeidelAberrModalProps {
@@ -53,7 +56,11 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
  *
  * - The Ok action is passed to `Modal.footer` so it remains fixed while Seidel aberration content scrolls.
  */
-export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProps) {
+export function SeidelAberrModal({
+  isOpen,
+  data,
+  onClose,
+}: SeidelAberrModalProps) {
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 
   const surfaceHeaders = useMemo(
@@ -73,12 +80,20 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
   );
 
   const transverseRows = useMemo(
-    () => Object.entries(transverse).map(([key, val]) => [ABERRATION_TYPE_TO_LABEL[key], val.toFixed(6)]),
+    () =>
+      Object.entries(transverse).map(([key, val]) => [
+        ABERRATION_TYPE_TO_LABEL[key],
+        val.toFixed(6),
+      ]),
     [transverse],
   );
 
   const wavefrontRows = useMemo(
-    () => Object.entries(wavefront).map(([key, val]) => [ABERRATION_TYPE_TO_LABEL[key], val.toFixed(6)]),
+    () =>
+      Object.entries(wavefront).map(([key, val]) => [
+        ABERRATION_TYPE_TO_LABEL[key],
+        val.toFixed(6),
+      ]),
     [wavefront],
   );
 
@@ -126,7 +141,10 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
         label: "Field Curvature",
         content: (
           <div className="pt-2 overflow-x-auto">
-            <Table headers={["Aberration", "Value", "Curvature Radius"]} rows={curvatureRows} />
+            <Table
+              headers={["Aberration", "Value", "Curvature Radius"]}
+              rows={curvatureRows}
+            />
           </div>
         ),
       },
@@ -140,19 +158,22 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
       title="3rd Order Seidel Aberrations"
       titleId="seidel-modal-title"
       size="4xl"
-      footer={(
+      footer={
         <div className="flex justify-end">
-          <Button variant="primary" onClick={onClose}>Ok</Button>
+          <Button variant="primary" onClick={onClose}>
+            Ok
+          </Button>
         </div>
-      )}
+      }
     >
       <Paragraph className="mb-4">
-        Note: Third-order Seidel aberration approximation only captures the effect of
-        higher-order aspheric surface up to the 4th order
-        ({" "}<MathJax inline>{`\\(r^{4}\\)`}</MathJax>{" "} and its term {" "}<MathJax inline>{`\\(a_{4}\\)`}</MathJax>).
-        The effect of higher-order polynomial terms
-        such as {" "}<MathJax inline>{`\\(a_{6}, a_{8}\\)`}</MathJax>{" "} or higher
-        is outside the scope of this approximation.
+        Note: Third-order Seidel aberration approximation only captures the
+        effect of higher-order aspheric surface up to the 4th order ({" "}
+        <MathJax inline>{`\\(r^{4}\\)`}</MathJax> and its term{" "}
+        <MathJax inline>{`\\(a_{4}\\)`}</MathJax>). The effect of higher-order
+        polynomial terms such as{" "}
+        <MathJax inline>{`\\(a_{6}, a_{8}\\)`}</MathJax> or higher is outside
+        the scope of this approximation.
       </Paragraph>
       <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
     </Modal>

@@ -4,7 +4,11 @@ import { useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { useAppShell } from "@/app/AppShellContext";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { CustomGlassModal, CustomGlassTable, CustomGlassToolbar } from "@/features/import-custom-glass/components";
+import {
+  CustomGlassModal,
+  CustomGlassTable,
+  CustomGlassToolbar,
+} from "@/features/import-custom-glass/components";
 import {
   downloadCustomGlassJson,
   getUserDefinedCustomGlasses,
@@ -84,35 +88,52 @@ export {
 export default function ImportCustomGlassPage() {
   const { proxy } = useAppShell();
   const glassMapStore = useGlassMapStore();
-  const customCatalog = useStore(glassMapStore, (state) => state.catalogsData?.Custom);
-  const custom = useMemo(() => getUserDefinedCustomGlasses(customCatalog), [customCatalog]);
+  const customCatalog = useStore(
+    glassMapStore,
+    (state) => state.catalogsData?.Custom,
+  );
+  const custom = useMemo(
+    () => getUserDefinedCustomGlasses(customCatalog),
+    [customCatalog],
+  );
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set());
   const [modalMode, setModalMode] = useState<ModalMode | undefined>();
-  const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode | undefined>();
-  const [pendingImport, setPendingImport] = useState<readonly ImportedCustomGlassMaterial[] | undefined>();
-  const [rejectedCsvFiles, setRejectedCsvFiles] = useState<readonly RejectedCsvFile[]>([]);
-  const [persistenceWarning, setPersistenceWarning] = useState<string | undefined>();
+  const [confirmationMode, setConfirmationMode] = useState<
+    ConfirmationMode | undefined
+  >();
+  const [pendingImport, setPendingImport] = useState<
+    readonly ImportedCustomGlassMaterial[] | undefined
+  >();
+  const [rejectedCsvFiles, setRejectedCsvFiles] = useState<
+    readonly RejectedCsvFile[]
+  >([]);
+  const [persistenceWarning, setPersistenceWarning] = useState<
+    string | undefined
+  >();
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const csvFileInputRef = useRef<HTMLInputElement>(null);
   const rows = useMemo<readonly CustomGlassRow[]>(
-    () => Object.entries(custom)
-      .map(([label, data]) => ({
-        label,
-        nd: data.refractiveIndexD,
-        vd: data.abbeNumberD,
-        ne: data.refractiveIndexE,
-        ve: data.abbeNumberE,
-        pgF: data.partialDispersions.P_gF,
-        pFe: data.partialDispersions.P_fe,
-        pFd: data.partialDispersions.P_Fd,
-        data,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label)),
+    () =>
+      Object.entries(custom)
+        .map(([label, data]) => ({
+          label,
+          nd: data.refractiveIndexD,
+          vd: data.abbeNumberD,
+          ne: data.refractiveIndexE,
+          ve: data.abbeNumberE,
+          pgF: data.partialDispersions.P_gF,
+          pFe: data.partialDispersions.P_fe,
+          pFd: data.partialDispersions.P_Fd,
+          data,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [custom],
   );
   const checkedLabels = [...checked];
-  const selectedEditLabel = checkedLabels.length === 1 ? checkedLabels[0] : undefined;
-  const selectedEditData = selectedEditLabel === undefined ? undefined : custom[selectedEditLabel];
+  const selectedEditLabel =
+    checkedLabels.length === 1 ? checkedLabels[0] : undefined;
+  const selectedEditData =
+    selectedEditLabel === undefined ? undefined : custom[selectedEditLabel];
 
   const openEdit = () => {
     if (selectedEditLabel !== undefined) {
@@ -129,7 +150,11 @@ export default function ImportCustomGlassPage() {
       await deletePersistedCustomGlasses(checkedLabels);
     } catch (error) {
       hasPersistenceWarning = true;
-      setPersistenceWarning(error instanceof Error ? error.message : "Failed to delete persisted custom glass.");
+      setPersistenceWarning(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete persisted custom glass.",
+      );
       setConfirmationMode("persistence-warning");
     }
     glassMapStore.getState().deleteCustomGlasses(checkedLabels);
@@ -138,7 +163,10 @@ export default function ImportCustomGlassPage() {
       setConfirmationMode(undefined);
     }
   };
-  const handleSubmit = async (label: string, modalRows: Parameters<typeof toWorkerInput>[1]) => {
+  const handleSubmit = async (
+    label: string,
+    modalRows: Parameters<typeof toWorkerInput>[1],
+  ) => {
     if (proxy === undefined || modalMode === undefined) {
       return;
     }
@@ -171,26 +199,40 @@ export default function ImportCustomGlassPage() {
     if (proxy === undefined) {
       return;
     }
-    const toUpdate = materials.filter((material) => custom[material.name] !== undefined);
-    const toAdd = materials.filter((material) => custom[material.name] === undefined);
+    const toUpdate = materials.filter(
+      (material) => custom[material.name] !== undefined,
+    );
+    const toAdd = materials.filter(
+      (material) => custom[material.name] === undefined,
+    );
     let hasPersistenceWarning = false;
-    const updated = toUpdate.length > 0 ? await proxy.updateUserDefinedGlasses(toUpdate) : {};
+    const updated =
+      toUpdate.length > 0 ? await proxy.updateUserDefinedGlasses(toUpdate) : {};
     if (toUpdate.length > 0) {
       try {
         await upsertPersistedCustomGlasses(toUpdate);
       } catch (error) {
         hasPersistenceWarning = true;
-        setPersistenceWarning(error instanceof Error ? error.message : "Failed to persist custom glass import.");
+        setPersistenceWarning(
+          error instanceof Error
+            ? error.message
+            : "Failed to persist custom glass import.",
+        );
         setConfirmationMode("persistence-warning");
       }
     }
-    const added = toAdd.length > 0 ? await proxy.addUserDefinedGlasses(toAdd) : {};
+    const added =
+      toAdd.length > 0 ? await proxy.addUserDefinedGlasses(toAdd) : {};
     if (toAdd.length > 0) {
       try {
         await upsertPersistedCustomGlasses(toAdd);
       } catch (error) {
         hasPersistenceWarning = true;
-        setPersistenceWarning(error instanceof Error ? error.message : "Failed to persist custom glass import.");
+        setPersistenceWarning(
+          error instanceof Error
+            ? error.message
+            : "Failed to persist custom glass import.",
+        );
         setConfirmationMode("persistence-warning");
       }
     }
@@ -213,7 +255,9 @@ export default function ImportCustomGlassPage() {
       showRejectedCsvFiles(rejections);
       return;
     }
-    const conflicts = materials.filter((material) => custom[material.name] !== undefined);
+    const conflicts = materials.filter(
+      (material) => custom[material.name] !== undefined,
+    );
     if (conflicts.length > 0) {
       setRejectedCsvFiles(rejections);
       setPendingImport(materials);
@@ -231,21 +275,30 @@ export default function ImportCustomGlassPage() {
       setConfirmationMode("invalid-import");
       return;
     }
-    const materials = Object.entries(payload.Custom).map(([name, material]) => ({ name, pairs: material.data }));
+    const materials = Object.entries(payload.Custom).map(
+      ([name, material]) => ({ name, pairs: material.data }),
+    );
     await queueImport(materials);
   };
   const handleCsvImport = async (files: readonly File[]) => {
     if (proxy === undefined || files.length === 0) {
       return;
     }
-    const results = await Promise.all(files.map(async (file) => parseCustomGlassCsv(file, await file.text())));
-    const materials = results.filter((result): result is ImportedCustomGlassMaterial => "name" in result);
-    const rejections = results.filter((result): result is RejectedCsvFile => "reason" in result);
+    const results = await Promise.all(
+      files.map(async (file) => parseCustomGlassCsv(file, await file.text())),
+    );
+    const materials = results.filter(
+      (result): result is ImportedCustomGlassMaterial => "name" in result,
+    );
+    const rejections = results.filter(
+      (result): result is RejectedCsvFile => "reason" in result,
+    );
     await queueImport(materials, rejections);
   };
-  const initialModalRows = modalMode === "edit" && selectedEditData !== undefined
-    ? selectedEditData.dispersionCoeffs.map((pair) => makeEditablePair(pair))
-    : [];
+  const initialModalRows =
+    modalMode === "edit" && selectedEditData !== undefined
+      ? selectedEditData.dispersionCoeffs.map((pair) => makeEditablePair(pair))
+      : [];
 
   return (
     <main className="flex min-h-0 flex-1 flex-col gap-4 p-4">
@@ -253,37 +306,64 @@ export default function ImportCustomGlassPage() {
         jsonFileInputRef={jsonFileInputRef}
         csvFileInputRef={csvFileInputRef}
         selectedCount={checkedLabels.length}
-        onJsonFileSelected={(file) => { void handleJsonImport(file); }}
-        onCsvFilesSelected={(files) => { void handleCsvImport(files); }}
+        onJsonFileSelected={(file) => {
+          void handleJsonImport(file);
+        }}
+        onCsvFilesSelected={(files) => {
+          void handleCsvImport(files);
+        }}
         onAdd={() => setModalMode("add")}
         onEdit={openEdit}
-        onDownloadJson={() => downloadCustomGlassJson(toCustomGlassPayload(custom))}
+        onDownloadJson={() =>
+          downloadCustomGlassJson(toCustomGlassPayload(custom))
+        }
         onDelete={() => setConfirmationMode("delete")}
       />
-      <CustomGlassTable rows={rows} checked={checked} onCheckedChange={setChecked} />
+      <CustomGlassTable
+        rows={rows}
+        checked={checked}
+        onCheckedChange={setChecked}
+      />
       {modalMode !== undefined && (
         <CustomGlassModal
           mode={modalMode}
           existingLabels={new Set(Object.keys(custom))}
-          initialLabel={modalMode === "edit" ? selectedEditLabel ?? "" : ""}
+          initialLabel={modalMode === "edit" ? (selectedEditLabel ?? "") : ""}
           initialRows={initialModalRows}
           onCancel={() => setModalMode(undefined)}
-          onSubmit={(label, modalRows) => { void handleSubmit(label, modalRows); }}
+          onSubmit={(label, modalRows) => {
+            void handleSubmit(label, modalRows);
+          }}
         />
       )}
       {confirmationMode === "delete" && (
         <Modal
           isOpen
           title="Delete Custom Glass"
-          footer={(
+          footer={
             <div className="flex justify-end gap-3">
-              <Button variant="secondary" aria-label="Cancel" onClick={() => setConfirmationMode(undefined)}>Cancel</Button>
-              <Button variant="danger" aria-label="Delete" onClick={() => { void confirmDelete(); }}>Delete</Button>
+              <Button
+                variant="secondary"
+                aria-label="Cancel"
+                onClick={() => setConfirmationMode(undefined)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                aria-label="Delete"
+                onClick={() => {
+                  void confirmDelete();
+                }}
+              >
+                Delete
+              </Button>
             </div>
-          )}
+          }
         >
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            Delete {checkedLabels.length} selected custom glass{checkedLabels.length === 1 ? "" : "es"}?
+            Delete {checkedLabels.length} selected custom glass
+            {checkedLabels.length === 1 ? "" : "es"}?
           </p>
         </Modal>
       )}
@@ -291,7 +371,7 @@ export default function ImportCustomGlassPage() {
         <Modal
           isOpen
           title="Overwrite Custom Glass"
-          footer={(
+          footer={
             <div className="flex justify-end gap-3">
               <Button
                 variant="secondary"
@@ -304,9 +384,17 @@ export default function ImportCustomGlassPage() {
               >
                 Cancel
               </Button>
-              <Button variant="danger" aria-label="Overwrite" onClick={() => { void importMaterials(pendingImport, rejectedCsvFiles); }}>Overwrite</Button>
+              <Button
+                variant="danger"
+                aria-label="Overwrite"
+                onClick={() => {
+                  void importMaterials(pendingImport, rejectedCsvFiles);
+                }}
+              >
+                Overwrite
+              </Button>
             </div>
-          )}
+          }
         >
           <p className="text-sm text-gray-700 dark:text-gray-300">
             Overwrite existing custom glass entries from this import?
@@ -317,11 +405,17 @@ export default function ImportCustomGlassPage() {
         <Modal
           isOpen
           title="Invalid Custom Glass JSON"
-          footer={(
+          footer={
             <div className="flex justify-end gap-3">
-              <Button variant="primary" aria-label="OK" onClick={() => setConfirmationMode(undefined)}>OK</Button>
+              <Button
+                variant="primary"
+                aria-label="OK"
+                onClick={() => setConfirmationMode(undefined)}
+              >
+                OK
+              </Button>
             </div>
-          )}
+          }
         >
           <p className="text-sm text-gray-700 dark:text-gray-300">
             The selected file is not a valid custom glass JSON file.
@@ -332,7 +426,7 @@ export default function ImportCustomGlassPage() {
         <Modal
           isOpen
           title="Rejected Custom Glass CSV Files"
-          footer={(
+          footer={
             <div className="flex justify-end gap-3">
               <Button
                 variant="primary"
@@ -345,7 +439,7 @@ export default function ImportCustomGlassPage() {
                 OK
               </Button>
             </div>
-          )}
+          }
         >
           <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
             <p>The following CSV files were not imported.</p>
@@ -360,30 +454,32 @@ export default function ImportCustomGlassPage() {
           </div>
         </Modal>
       )}
-      {confirmationMode === "persistence-warning" && persistenceWarning !== undefined && (
-        <Modal
-          isOpen
-          title="Custom Glass Persistence Warning"
-          footer={(
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="primary"
-                aria-label="OK"
-                onClick={() => {
-                  setPersistenceWarning(undefined);
-                  setConfirmationMode(undefined);
-                }}
-              >
-                OK
-              </Button>
-            </div>
-          )}
-        >
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            The custom glass change succeeded for this session, but it could not be saved for future visits. {persistenceWarning}
-          </p>
-        </Modal>
-      )}
+      {confirmationMode === "persistence-warning" &&
+        persistenceWarning !== undefined && (
+          <Modal
+            isOpen
+            title="Custom Glass Persistence Warning"
+            footer={
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="primary"
+                  aria-label="OK"
+                  onClick={() => {
+                    setPersistenceWarning(undefined);
+                    setConfirmationMode(undefined);
+                  }}
+                >
+                  OK
+                </Button>
+              </div>
+            }
+          >
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              The custom glass change succeeded for this session, but it could
+              not be saved for future visits. {persistenceWarning}
+            </p>
+          </Modal>
+        )}
     </main>
   );
 }

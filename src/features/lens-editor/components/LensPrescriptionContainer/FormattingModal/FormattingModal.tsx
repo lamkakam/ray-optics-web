@@ -20,14 +20,20 @@ export type FormattingMode = "scale" | "reverse";
 interface FormattingModalProps {
   readonly isOpen: boolean;
   readonly rows: readonly GridRow[];
-  readonly onConfirm: (result: { readonly mode: FormattingMode; readonly rows: GridRow[] }) => void;
+  readonly onConfirm: (result: {
+    readonly mode: FormattingMode;
+    readonly rows: GridRow[];
+  }) => void;
   readonly onCancel: () => void;
   readonly onError: (message: string) => void;
 }
 
 const FORMAT_MODE_OPTIONS = [
   { value: "scale" as const, label: "Scale" },
-  { value: "reverse" as const, label: "Reverse (also reversing thickness and medium)" },
+  {
+    value: "reverse" as const,
+    label: "Reverse (also reversing thickness and medium)",
+  },
 ];
 
 function lastSurfaceIndex(rows: readonly GridRow[]): number {
@@ -81,33 +87,40 @@ export function FormattingModal({
   const [scaleFirstSurface, setScaleFirstSurface] = useState(0);
   const [scaleLastSurface, setScaleLastSurface] = useState(imageSelectorIndex);
   const [reverseFirstSurface, setReverseFirstSurface] = useState(0);
-  const [reverseLastSurface, setReverseLastSurface] = useState(lastSurfaceIndex(rows));
+  const [reverseLastSurface, setReverseLastSurface] = useState(
+    lastSurfaceIndex(rows),
+  );
   const scaleOptions = useMemo(() => buildScaleSurfaceOptions(rows), [rows]);
-  const reverseOptions = useMemo(() => buildReverseSurfaceOptions(rows), [rows]);
+  const reverseOptions = useMemo(
+    () => buildReverseSurfaceOptions(rows),
+    [rows],
+  );
   const currentOptions = mode === "scale" ? scaleOptions : reverseOptions;
-  const maxSurfaceIndex = mode === "scale" ? imageSelectorIndex : lastSurfaceIndex(rows);
+  const maxSurfaceIndex =
+    mode === "scale" ? imageSelectorIndex : lastSurfaceIndex(rows);
   const firstSurface = clampSurfaceIndex(
     mode === "scale" ? scaleFirstSurface : reverseFirstSurface,
-    maxSurfaceIndex
+    maxSurfaceIndex,
   );
   const lastSurface = clampSurfaceIndex(
     mode === "scale" ? scaleLastSurface : reverseLastSurface,
-    maxSurfaceIndex
+    maxSurfaceIndex,
   );
 
   function handleConfirm() {
-    const result = mode === "scale"
-      ? formatPrescriptionRows(rows, {
-          mode,
-          first: firstSurface,
-          last: lastSurface,
-          factor: Number(scaleFactor),
-        })
-      : formatPrescriptionRows(rows, {
-          mode,
-          first: firstSurface,
-          last: lastSurface,
-        });
+    const result =
+      mode === "scale"
+        ? formatPrescriptionRows(rows, {
+            mode,
+            first: firstSurface,
+            last: lastSurface,
+            factor: Number(scaleFactor),
+          })
+        : formatPrescriptionRows(rows, {
+            mode,
+            first: firstSurface,
+            last: lastSurface,
+          });
 
     if (!result.ok) {
       onError(result.error);
@@ -122,12 +135,16 @@ export function FormattingModal({
       isOpen={isOpen}
       title="Formatting"
       size="md"
-      footer={(
+      footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+          <Button variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleConfirm}>
+            Confirm
+          </Button>
         </div>
-      )}
+      }
     >
       <div className="space-y-4">
         <RadioInput

@@ -23,7 +23,10 @@ interface AstigmatismChartBuilderArgs {
  * - Uses `data-testid="astigmatism-chart"` and `aria-label="Astigmatism plot"`.
  * - Matches the field-curvature chart sizing behavior: height is 60% of parent width with a 300px minimum, capped by parent height unless `autoHeight` is enabled.
  */
-export const AstigmatismChart = createAnalysisChartComponent<AstigmatismChartProps, AstigmatismChartBuilderArgs>({
+export const AstigmatismChart = createAnalysisChartComponent<
+  AstigmatismChartProps,
+  AstigmatismChartBuilderArgs
+>({
   displayName: "AstigmatismChart",
   testId: "astigmatism-chart",
   ariaLabel: "Astigmatism plot",
@@ -32,8 +35,21 @@ export const AstigmatismChart = createAnalysisChartComponent<AstigmatismChartPro
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
     autoHeight
       ? Math.max(Math.round(parentWidth * 0.6), 300)
-      : Math.max(0, Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300))),
+      : Math.max(
+          0,
+          Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300)),
+        ),
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
-  buildOption: ({ astigmatismCurveData }, chartWidth, chartHeight, chartTextColor) =>
-    buildAstigmatismOption(astigmatismCurveData, chartWidth, chartHeight, chartTextColor),
+  buildOption: (
+    { astigmatismCurveData },
+    chartWidth,
+    chartHeight,
+    chartTextColor,
+  ) =>
+    buildAstigmatismOption(
+      astigmatismCurveData,
+      chartWidth,
+      chartHeight,
+      chartTextColor,
+    ),
 });

@@ -15,7 +15,9 @@ describe("SettingsPage", () => {
 
   it("renders heading 'Settings'", () => {
     render(<SettingsPage />);
-    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Settings" }),
+    ).toBeInTheDocument();
   });
 
   it("renders Theme select with correct value", () => {

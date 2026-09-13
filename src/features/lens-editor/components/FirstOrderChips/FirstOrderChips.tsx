@@ -32,7 +32,7 @@ export function FirstOrderChips({ data }: FirstOrderChipsProps) {
   if (!data) return null;
 
   const chips = CHIP_CONFIG.filter(({ key }) => key in data).map(
-    ({ key, format }) => <Chip key={key}>{format(data[key])}</Chip>
+    ({ key, format }) => <Chip key={key}>{format(data[key])}</Chip>,
   );
 
   return chips;

@@ -20,7 +20,11 @@ import {
   zernikeNotation,
   classicalName,
 } from "@/features/lens-editor/lib/zernikeData";
-import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
+import type {
+  ZernikeData,
+  ZernikeOrdering,
+  ZernikePupilSpace,
+} from "@/features/lens-editor/types/zernikeData";
 
 const ORDERING_OPTIONS: SelectOption[] = [
   { value: "fringe", label: "Fringe" },
@@ -41,7 +45,12 @@ interface ZernikeTermsModalProps {
   /** Whether the model has finite image space and can support exit-pupil fitting. */
   readonly isFiniteImageSpace: boolean;
   /** Callback to fetch Zernike data. Called on open and on any dropdown change. */
-  readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering, pupilSpace: ZernikePupilSpace) => Promise<ZernikeData>;
+  readonly onFetchData: (
+    fieldIndex: number,
+    wvlIndex: number,
+    ordering: ZernikeOrdering,
+    pupilSpace: ZernikePupilSpace,
+  ) => Promise<ZernikeData>;
   /** Called when the Ok button is clicked */
   readonly onClose: () => void;
 }
@@ -115,15 +124,20 @@ function ZernikeTermsModalContent({
   onClose,
 }: Omit<ZernikeTermsModalProps, "isOpen">) {
   const specsStore = useSpecsConfiguratorStore();
-  const committedReferenceWvlIndex = specsStore.getState().committedSpecs.wavelengths.referenceIndex;
+  const committedReferenceWvlIndex =
+    specsStore.getState().committedSpecs.wavelengths.referenceIndex;
   /** Field index reset to zero whenever the modal opens. */
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
   /** Wavelength index reset to the committed reference whenever the modal opens. */
-  const [selectedWvlIndex, setSelectedWvlIndex] = useState(committedReferenceWvlIndex);
+  const [selectedWvlIndex, setSelectedWvlIndex] = useState(
+    committedReferenceWvlIndex,
+  );
   /** Zernike ordering reset to Fringe whenever the modal opens. */
-  const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
+  const [selectedOrdering, setSelectedOrdering] =
+    useState<ZernikeOrdering>("fringe");
   /** Fit-coordinate value reset to the internal `entrance` selection whenever the modal opens. */
-  const [selectedPupilSpace, setSelectedPupilSpace] = useState<ZernikePupilSpace>("entrance");
+  const [selectedPupilSpace, setSelectedPupilSpace] =
+    useState<ZernikePupilSpace>("entrance");
   /** Most recently fetched coefficient payload. */
   const [data, setData] = useState<ZernikeData | undefined>();
   /** Whether a coefficient request is in progress. */
@@ -135,18 +149,35 @@ function ZernikeTermsModalContent({
 
   /** Fetch every selection through one recoverable, latest-request-only path. */
   const fetchData = useCallback(
-    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering, pupilSpace: ZernikePupilSpace) => {
+    async (
+      fieldIndex: number,
+      wvlIndex: number,
+      ordering: ZernikeOrdering,
+      pupilSpace: ZernikePupilSpace,
+    ) => {
       const requestId = ++requestCounter.current;
       setLoading(true);
       setError(undefined);
       try {
-        const result = await onFetchData(fieldIndex, wvlIndex, ordering, pupilSpace);
+        const result = await onFetchData(
+          fieldIndex,
+          wvlIndex,
+          ordering,
+          pupilSpace,
+        );
         if (requestCounter.current === requestId) setData(result);
       } catch (reason: unknown) {
         if (requestCounter.current !== requestId) return;
         setData(undefined);
-        const detail = reason instanceof Error ? reason.message : typeof reason === "string" ? reason : "Unknown calculation failure.";
-        setError(`Zernike calculation failed (field index ${fieldIndex}, wavelength index ${wvlIndex}, ${ordering}): ${detail}`);
+        const detail =
+          reason instanceof Error
+            ? reason.message
+            : typeof reason === "string"
+              ? reason
+              : "Unknown calculation failure.";
+        setError(
+          `Zernike calculation failed (field index ${fieldIndex}, wavelength index ${wvlIndex}, ${ordering}): ${detail}`,
+        );
       } finally {
         if (requestCounter.current === requestId) setLoading(false);
       }
@@ -156,7 +187,9 @@ function ZernikeTermsModalContent({
 
   useEffect(() => {
     void fetchData(0, committedReferenceWvlIndex, "fringe", "entrance");
-    return () => { requestCounter.current += 1; };
+    return () => {
+      requestCounter.current += 1;
+    };
   }, [committedReferenceWvlIndex, fetchData]);
 
   const handleFieldChange = useCallback(
@@ -186,49 +219,71 @@ function ZernikeTermsModalContent({
     [fetchData, selectedFieldIndex, selectedWvlIndex, selectedPupilSpace],
   );
 
-  const handlePupilSpaceChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const pupilSpace = e.target.value as ZernikePupilSpace;
-    setSelectedPupilSpace(pupilSpace);
-    fetchData(selectedFieldIndex, selectedWvlIndex, selectedOrdering, pupilSpace);
-  }, [fetchData, selectedFieldIndex, selectedOrdering, selectedWvlIndex]);
+  const handlePupilSpaceChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const pupilSpace = e.target.value as ZernikePupilSpace;
+      setSelectedPupilSpace(pupilSpace);
+      fetchData(
+        selectedFieldIndex,
+        selectedWvlIndex,
+        selectedOrdering,
+        pupilSpace,
+      );
+    },
+    [fetchData, selectedFieldIndex, selectedOrdering, selectedWvlIndex],
+  );
 
-  const numTerms = selectedOrdering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
+  const numTerms =
+    selectedOrdering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
   const toNm = selectedOrdering === "noll" ? nollToNm : fringeToNm;
   const firstColHeader = selectedOrdering === "noll" ? "Noll j" : "Fringe j";
 
   const headers = useMemo(
-    () => [firstColHeader, "Notation", "Classical Name", "Non-normalized Term", "RMS Normalized Term (waves)"],
+    () => [
+      firstColHeader,
+      "Notation",
+      "Classical Name",
+      "Non-normalized Term",
+      "RMS Normalized Term (waves)",
+    ],
     [firstColHeader],
   );
 
   const rows = useMemo(() => {
     if (!data) return [];
-    return Array.from({ length: Math.min(numTerms, data.coefficients.length) }, (_, i) => {
-      const j = i + 1;
-      const [n, m] = toNm(j);
-      return [
-        String(j),
-        <MathJax key={`${n}-${m}`} inline>{zernikeNotation(n, m)}</MathJax>,
-        classicalName(n, m),
-        data.coefficients[i].toFixed(6),
-        data.rms_normalized_coefficients[i].toFixed(6),
-      ];
-    });
+    return Array.from(
+      { length: Math.min(numTerms, data.coefficients.length) },
+      (_, i) => {
+        const j = i + 1;
+        const [n, m] = toNm(j);
+        return [
+          String(j),
+          <MathJax key={`${n}-${m}`} inline>
+            {zernikeNotation(n, m)}
+          </MathJax>,
+          classicalName(n, m),
+          data.coefficients[i].toFixed(6),
+          data.rms_normalized_coefficients[i].toFixed(6),
+        ];
+      },
+    );
   }, [data, numTerms, toNm]);
 
   return (
     <>
-    <Modal
-      isOpen={true}
-      title="Zernike Terms"
-      titleId="zernike-modal-title"
-      size="4xl"
-      footer={(
-        <div className="flex justify-end">
-          <Button variant="primary" onClick={onClose}>Ok</Button>
-        </div>
-      )}
-    >
+      <Modal
+        isOpen={true}
+        title="Zernike Terms"
+        titleId="zernike-modal-title"
+        size="4xl"
+        footer={
+          <div className="flex justify-end">
+            <Button variant="primary" onClick={onClose}>
+              Ok
+            </Button>
+          </div>
+        }
+      >
         <div className="flex items-center gap-4 mb-2">
           <div className="flex items-center gap-2">
             <Label htmlFor="zernike-field-select">Half-Field</Label>
@@ -253,11 +308,22 @@ function ZernikeTermsModalContent({
         <div className="flex items-center gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="zernike-pupil-space-select">Zernike fit coordinates</Label>
-              <Select id="zernike-pupil-space-select" aria-label="Zernike fit coordinates" options={PUPIL_SPACE_OPTIONS} value={selectedPupilSpace} onChange={handlePupilSpaceChange} disabled={!isFiniteImageSpace} />
+              <Label htmlFor="zernike-pupil-space-select">
+                Zernike fit coordinates
+              </Label>
+              <Select
+                id="zernike-pupil-space-select"
+                aria-label="Zernike fit coordinates"
+                options={PUPIL_SPACE_OPTIONS}
+                value={selectedPupilSpace}
+                onChange={handlePupilSpaceChange}
+                disabled={!isFiniteImageSpace}
+              />
             </div>
             <Paragraph variant="caption">
-              Changes the fitting coordinates and sample weighting; the OPD reference remains unchanged. Entrance pupil uses uniform sample weights. Projected reference sphere uses projected-area weights.
+              Changes the fitting coordinates and sample weighting; the OPD
+              reference remains unchanged. Entrance pupil uses uniform sample
+              weights. Projected reference sphere uses projected-area weights.
             </Paragraph>
           </div>
         </div>
@@ -277,7 +343,10 @@ function ZernikeTermsModalContent({
 
         {data && (
           <div className="relative">
-            <div data-testid="zernike-table-scroll" className="max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto">
+            <div
+              data-testid="zernike-table-scroll"
+              className="max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto"
+            >
               <Table headers={headers} rows={rows} />
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
@@ -288,10 +357,12 @@ function ZernikeTermsModalContent({
                 <strong>RMS WFE:</strong> {data.rms_wfe.toFixed(4)} waves
               </Chip>
               <Chip>
-                <strong>Fit Residual RMS:</strong> {data.fit_residual_rms.toFixed(4)} waves
+                <strong>Fit Residual RMS:</strong>{" "}
+                {data.fit_residual_rms.toFixed(4)} waves
               </Chip>
               <Chip>
-                <strong>Pupil Coverage:</strong> {(100 * data.support_coverage).toFixed(1)}%
+                <strong>Pupil Coverage:</strong>{" "}
+                {(100 * data.support_coverage).toFixed(1)}%
               </Chip>
               <Chip>
                 <strong>Approx. Strehl:</strong> {data.strehl_ratio.toFixed(4)}
@@ -301,7 +372,11 @@ function ZernikeTermsModalContent({
           </div>
         )}
       </Modal>
-      <ErrorModal isOpen={error !== undefined} message={error} onClose={() => setError(undefined)} />
+      <ErrorModal
+        isOpen={error !== undefined}
+        message={error}
+        onClose={() => setError(undefined)}
+      />
     </>
   );
 }

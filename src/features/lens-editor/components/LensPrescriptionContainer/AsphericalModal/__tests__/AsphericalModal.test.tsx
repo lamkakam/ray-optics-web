@@ -7,7 +7,9 @@ jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mathjax-context">{children}</div>
   ),
-  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  MathJax: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 describe("AsphericalModal", () => {
@@ -37,7 +39,9 @@ describe("AsphericalModal", () => {
     expect(screen.getByLabelText("Conic constant")).toBeDisabled();
     expect(screen.getByLabelText("Type")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders a backdrop overlay behind the dialog", () => {
@@ -68,8 +72,12 @@ describe("AsphericalModal", () => {
 
   it("shows Radial Polynomial, X Toroid, and Y Toroid in the type selector", () => {
     render(<AsphericalModal {...defaultProps} />);
-    const options = screen.getAllByRole("option").map((option) => option.textContent);
-    expect(options).toEqual(expect.arrayContaining(["Radial Polynomial", "X Toroid", "Y Toroid"]));
+    const options = screen
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(options).toEqual(
+      expect.arrayContaining(["Radial Polynomial", "X Toroid", "Y Toroid"]),
+    );
   });
 
   it("does not show coefficient inputs when type is Conic", () => {
@@ -83,16 +91,30 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         initialType="EvenAspherical"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-      />
+      />,
     );
-    for (const label of ["a2", "a4", "a6", "a8", "a10", "a12", "a14", "a16", "a18", "a20"]) {
+    for (const label of [
+      "a2",
+      "a4",
+      "a6",
+      "a8",
+      "a10",
+      "a12",
+      "a14",
+      "a16",
+      "a18",
+      "a20",
+    ]) {
       expect(screen.getByLabelText(label)).toBeInTheDocument();
     }
   });
 
   it("shows coefficient inputs when switching to EvenAspherical", async () => {
     render(<AsphericalModal {...defaultProps} />);
-    await userEvent.selectOptions(screen.getByLabelText("Type"), "EvenAspherical");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Type"),
+      "EvenAspherical",
+    );
     expect(screen.getByLabelText("a2")).toBeInTheDocument();
   });
 
@@ -102,7 +124,7 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         initialType="RadialPolynomial"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-      />
+      />,
     );
 
     expect(screen.getByLabelText("radial-a1")).toBeInTheDocument();
@@ -114,7 +136,7 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         initialType="XToroid"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-      />
+      />,
     );
 
     expect(screen.getByLabelText("x-toroid-a2")).toBeInTheDocument();
@@ -126,7 +148,7 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         initialType="YToroid"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-      />
+      />,
     );
 
     expect(screen.getByLabelText("y-toroid-a2")).toBeInTheDocument();
@@ -138,10 +160,12 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         initialType="XToroid"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-      />
+      />,
     );
 
-    expect(screen.getByLabelText("Toroid sweep radius of curvature")).toHaveValue("0");
+    expect(
+      screen.getByLabelText("Toroid sweep radius of curvature"),
+    ).toHaveValue("0");
   });
 
   it("shows toroid sweep radius of curvature input for YToroid", () => {
@@ -150,10 +174,12 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         initialType="YToroid"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-      />
+      />,
     );
 
-    expect(screen.getByLabelText("Toroid sweep radius of curvature")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Toroid sweep radius of curvature"),
+    ).toBeInTheDocument();
   });
 
   it("does not show toroid sweep radius of curvature input for RadialPolynomial", () => {
@@ -162,10 +188,12 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         initialType="RadialPolynomial"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
-      />
+      />,
     );
 
-    expect(screen.queryByLabelText("Toroid sweep radius of curvature")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Toroid sweep radius of curvature"),
+    ).not.toBeInTheDocument();
   });
 
   it("calls onConfirm with correct data for Conic", async () => {
@@ -175,7 +203,7 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         onConfirm={onConfirm}
         initialConicConstant={-1.5}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByText("Confirm"));
@@ -194,7 +222,7 @@ describe("AsphericalModal", () => {
         {...defaultProps}
         onConfirm={onConfirm}
         initialConicConstant={0}
-      />
+      />,
     );
 
     const input = screen.getByLabelText("Conic constant");
@@ -218,7 +246,7 @@ describe("AsphericalModal", () => {
         initialType="EvenAspherical"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     const a2Input = screen.getByLabelText("a2");
@@ -243,7 +271,7 @@ describe("AsphericalModal", () => {
         initialConicConstant={-2}
         initialCoefficients={[0.01, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByText("Confirm"));
@@ -265,7 +293,7 @@ describe("AsphericalModal", () => {
         initialCoefficients={[0.01, 0.02, 0, 0, 0, 0, 0, 0, 0, 0]}
         initialToricSweepRadiusOfCurvature={12.5}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByText("Confirm"));
@@ -286,7 +314,7 @@ describe("AsphericalModal", () => {
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
         initialToricSweepRadiusOfCurvature={8}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     const input = screen.getByLabelText("Toroid sweep radius of curvature");
@@ -339,7 +367,7 @@ describe("AsphericalModal", () => {
         initialType="EvenAspherical"
         initialCoefficients={[0.001, 0.002, 0, 0, 0, 0, 0, 0, 0, 0]}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByText("Confirm"));
@@ -359,7 +387,7 @@ describe("AsphericalModal", () => {
         initialType="EvenAspherical"
         initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByText("Confirm"));
@@ -368,7 +396,7 @@ describe("AsphericalModal", () => {
       expect.objectContaining({
         type: "EvenAspherical",
         polynomialCoefficients: [],
-      })
+      }),
     );
   });
 
@@ -380,7 +408,7 @@ describe("AsphericalModal", () => {
         initialType="EvenAspherical"
         initialCoefficients={[0.25, 0]}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     const input = screen.getByLabelText("a2");
@@ -391,7 +419,7 @@ describe("AsphericalModal", () => {
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({
         polynomialCoefficients: [0.25],
-      })
+      }),
     );
   });
 
@@ -403,7 +431,7 @@ describe("AsphericalModal", () => {
         initialType="EvenAspherical"
         initialCoefficients={[0.01, 0.02]}
         onConfirm={onConfirm}
-      />
+      />,
     );
 
     const input = screen.getByLabelText("a4");
@@ -414,22 +442,67 @@ describe("AsphericalModal", () => {
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({
         polynomialCoefficients: [0.01, 0.03],
-      })
+      }),
     );
   });
 
   it.each([
-    ["EvenAspherical", ["a2", "a4", "a6", "a8", "a10", "a12", "a14", "a16", "a18", "a20"]],
-    ["RadialPolynomial", ["radial-a1", "radial-a2", "radial-a3", "radial-a4", "radial-a5", "radial-a6", "radial-a7", "radial-a8", "radial-a9", "radial-a10"]],
-    ["XToroid", ["x-toroid-a2", "x-toroid-a4", "x-toroid-a6", "x-toroid-a8", "x-toroid-a10", "x-toroid-a12", "x-toroid-a14", "x-toroid-a16", "x-toroid-a18", "x-toroid-a20"]],
-    ["YToroid", ["y-toroid-a2", "y-toroid-a4", "y-toroid-a6", "y-toroid-a8", "y-toroid-a10", "y-toroid-a12", "y-toroid-a14", "y-toroid-a16", "y-toroid-a18", "y-toroid-a20"]],
+    [
+      "EvenAspherical",
+      ["a2", "a4", "a6", "a8", "a10", "a12", "a14", "a16", "a18", "a20"],
+    ],
+    [
+      "RadialPolynomial",
+      [
+        "radial-a1",
+        "radial-a2",
+        "radial-a3",
+        "radial-a4",
+        "radial-a5",
+        "radial-a6",
+        "radial-a7",
+        "radial-a8",
+        "radial-a9",
+        "radial-a10",
+      ],
+    ],
+    [
+      "XToroid",
+      [
+        "x-toroid-a2",
+        "x-toroid-a4",
+        "x-toroid-a6",
+        "x-toroid-a8",
+        "x-toroid-a10",
+        "x-toroid-a12",
+        "x-toroid-a14",
+        "x-toroid-a16",
+        "x-toroid-a18",
+        "x-toroid-a20",
+      ],
+    ],
+    [
+      "YToroid",
+      [
+        "y-toroid-a2",
+        "y-toroid-a4",
+        "y-toroid-a6",
+        "y-toroid-a8",
+        "y-toroid-a10",
+        "y-toroid-a12",
+        "y-toroid-a14",
+        "y-toroid-a16",
+        "y-toroid-a18",
+        "y-toroid-a20",
+      ],
+    ],
   ] as const)("renders all coefficient labels for %s", (type, labels) => {
     render(
       <AsphericalModal
         {...defaultProps}
         initialType={type}
         initialCoefficients={Array.from({ length: 10 }, () => 0)}
-      />
+      />,
     );
 
     for (const label of labels) {

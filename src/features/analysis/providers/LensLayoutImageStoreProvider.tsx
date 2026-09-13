@@ -1,13 +1,17 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from 'react';
-import { createStore, type StoreApi } from 'zustand';
-import { createLensLayoutImageSlice, type LensLayoutImageState } from '@/features/analysis/stores/lensLayoutImageStore';
+import { createContext, type ReactNode, useContext, useState } from "react";
+import { createStore, type StoreApi } from "zustand";
+import {
+  createLensLayoutImageSlice,
+  type LensLayoutImageState,
+} from "@/features/analysis/stores/lensLayoutImageStore";
 
 type ContextValue = StoreApi<LensLayoutImageState> | undefined;
 
 /** Raw context object. Use only in tests to supply a pre-built store directly via `<LensLayoutImageStoreContext.Provider value={store}>`. */
-export const LensLayoutImageStoreContext = createContext<ContextValue>(undefined);
+export const LensLayoutImageStoreContext =
+  createContext<ContextValue>(undefined);
 
 /** Initial state and child tree for an isolated lens-layout-image store. */
 export interface LensLayoutImageStoreProviderProps {
@@ -15,7 +19,9 @@ export interface LensLayoutImageStoreProviderProps {
 }
 
 /** Provides a single `StoreApi<LensLayoutImageState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes. */
-export const LensLayoutImageStoreProvider: React.FC<LensLayoutImageStoreProviderProps> = ({ children }) => {
+export const LensLayoutImageStoreProvider: React.FC<
+  LensLayoutImageStoreProviderProps
+> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 
   if (store === undefined) {
@@ -33,7 +39,9 @@ export const LensLayoutImageStoreProvider: React.FC<LensLayoutImageStoreProvider
 export const useLensLayoutImageStore = (): StoreApi<LensLayoutImageState> => {
   const store = useContext(LensLayoutImageStoreContext);
   if (store === undefined) {
-    throw new Error('`useLensLayoutImageStore` must be used within `LensLayoutImageStoreProvider`');
+    throw new Error(
+      "`useLensLayoutImageStore` must be used within `LensLayoutImageStoreProvider`",
+    );
   }
   return store;
 };

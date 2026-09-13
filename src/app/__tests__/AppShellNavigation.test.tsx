@@ -13,12 +13,16 @@ const mockPush = jest.fn<void, [string]>();
 let mockPathname = "/";
 let mockHasUnappliedResult = false;
 let mockOptimizationModel: OpticalModel | undefined;
-let mockCapturedOnNavigate: ((href: string, event?: React.MouseEvent<HTMLAnchorElement>) => boolean) | undefined;
-let mockUnappliedModalProps: {
-  readonly isOpen: boolean;
-  readonly onLeave: () => void;
-  readonly onApplyToEditor: () => void;
-} | undefined;
+let mockCapturedOnNavigate:
+  | ((href: string, event?: React.MouseEvent<HTMLAnchorElement>) => boolean)
+  | undefined;
+let mockUnappliedModalProps:
+  | {
+      readonly isOpen: boolean;
+      readonly onLeave: () => void;
+      readonly onApplyToEditor: () => void;
+    }
+  | undefined;
 
 const mockGlassMapStore = {
   getState: () => ({ catalogsData: {}, lookupMaps: undefined }),
@@ -38,8 +42,10 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("zustand", () => ({
-  useStore: <State, Selected>(store: { getState: () => State }, selector: (state: State) => Selected) =>
-    selector(store.getState()),
+  useStore: <State, Selected>(
+    store: { getState: () => State },
+    selector: (state: State) => Selected,
+  ) => selector(store.getState()),
 }));
 
 jest.mock("@/shared/hooks/usePyodide", () => ({
@@ -55,32 +61,49 @@ jest.mock("@/features/lens-editor/providers/LensEditorStoreProvider", () => ({
   useLensEditorStore: () => ({ getState: jest.fn() }),
 }));
 
-jest.mock("@/features/lens-editor/providers/SpecsConfiguratorStoreProvider", () => ({
-  useSpecsConfiguratorStore: () => ({ getState: jest.fn() }),
-}));
+jest.mock(
+  "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider",
+  () => ({
+    useSpecsConfiguratorStore: () => ({ getState: jest.fn() }),
+  }),
+);
 
-jest.mock("@/features/optimization/providers/OptimizationStoreProvider", () => ({
-  useOptimizationStore: () => mockOptimizationStore,
-}));
+jest.mock(
+  "@/features/optimization/providers/OptimizationStoreProvider",
+  () => ({
+    useOptimizationStore: () => mockOptimizationStore,
+  }),
+);
 
 jest.mock("@/features/glass-map/providers/GlassMapStoreProvider", () => ({
   useGlassMapStore: () => mockGlassMapStore,
 }));
 
-const mockApplyOptimizationModelToEditor = jest.fn<Promise<void>, [unknown]>().mockResolvedValue(undefined);
+const mockApplyOptimizationModelToEditor = jest
+  .fn<Promise<void>, [unknown]>()
+  .mockResolvedValue(undefined);
 jest.mock("@/features/optimization/lib/applyOptimizationModelToEditor", () => ({
-  applyOptimizationModelToEditor: (...args: [unknown]) => mockApplyOptimizationModelToEditor(...args),
+  applyOptimizationModelToEditor: (...args: [unknown]) =>
+    mockApplyOptimizationModelToEditor(...args),
 }));
 
 jest.mock("@/shared/components/layout/Layout", () => ({
-  Layout: ({ children, onNavigate }: { readonly children: React.ReactNode; readonly onNavigate?: typeof mockCapturedOnNavigate }) => {
+  Layout: ({
+    children,
+    onNavigate,
+  }: {
+    readonly children: React.ReactNode;
+    readonly onNavigate?: typeof mockCapturedOnNavigate;
+  }) => {
     mockCapturedOnNavigate = onNavigate;
     return <>{children}</>;
   },
 }));
 
 jest.mock("better-react-mathjax", () => ({
-  MathJaxContext: ({ children }: { readonly children: React.ReactNode }) => <>{children}</>,
+  MathJaxContext: ({ children }: { readonly children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 jest.mock("@/shared/components/primitives/ErrorModal", () => ({
@@ -114,7 +137,11 @@ describe("AppShell navigation callback", () => {
   });
 
   it("returns true and navigates when called without a mouse event", () => {
-    render(<AppShell><div>Route body</div></AppShell>);
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
     let result: boolean | undefined;
 
     act(() => {
@@ -128,9 +155,15 @@ describe("AppShell navigation callback", () => {
   it("prevents a guarded event and returns false without navigating", () => {
     mockPathname = "/optimization";
     mockHasUnappliedResult = true;
-    render(<AppShell><div>Route body</div></AppShell>);
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
     const preventDefault = jest.fn();
-    const event = { preventDefault } as unknown as React.MouseEvent<HTMLAnchorElement>;
+    const event = {
+      preventDefault,
+    } as unknown as React.MouseEvent<HTMLAnchorElement>;
     let result: boolean | undefined;
 
     act(() => {
@@ -143,7 +176,11 @@ describe("AppShell navigation callback", () => {
   });
 
   it("ignores a leave callback when no navigation is pending", () => {
-    render(<AppShell><div>Route body</div></AppShell>);
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
 
     act(() => {
       mockUnappliedModalProps?.onLeave();
@@ -154,7 +191,11 @@ describe("AppShell navigation callback", () => {
 
   it("does not apply a model when the apply callback has no pending destination", () => {
     mockOptimizationModel = {} as OpticalModel;
-    render(<AppShell><div>Route body</div></AppShell>);
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
 
     act(() => {
       mockUnappliedModalProps?.onApplyToEditor();

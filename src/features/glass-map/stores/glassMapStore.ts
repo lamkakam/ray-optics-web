@@ -21,7 +21,10 @@ import {
   type SelectedGlass,
   type UserDefinedMaterialsData,
 } from "@/features/glass-map/types/glassMap";
-import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
+import {
+  buildGlassLookupMaps,
+  completeAllCatalogsData,
+} from "@/features/glass-map/lib/glassMap";
 
 export interface GlassMapState {
   /** Plot shown by the Glass Map. Defaults to `"refractiveIndex"`. */
@@ -65,7 +68,7 @@ export interface GlassMapActions {
 export type GlassMapStore = GlassMapState & GlassMapActions;
 
 const allEnabled = Object.fromEntries(
-  CATALOG_NAMES.map((name) => [name, true])
+  CATALOG_NAMES.map((name) => [name, true]),
 ) as Record<CatalogName, boolean>;
 
 export interface GlassMapRouteIntent {
@@ -141,10 +144,11 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
         ...state.catalogsData,
         Custom: nextCustom,
       };
-      const selectedGlass = state.selectedGlass?.catalogName === "Custom"
-        && deleted.has(state.selectedGlass.glassName)
-        ? undefined
-        : state.selectedGlass;
+      const selectedGlass =
+        state.selectedGlass?.catalogName === "Custom" &&
+        deleted.has(state.selectedGlass.glassName)
+          ? undefined
+          : state.selectedGlass;
 
       return {
         catalogsData,

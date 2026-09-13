@@ -14,7 +14,9 @@ interface ImagePointContextValue {
   readonly setImagePoint: (newImagePoint: ImagePoint) => void;
 }
 
-const ImagePointContext = createContext<ImagePointContextValue | undefined>(undefined);
+const ImagePointContext = createContext<ImagePointContextValue | undefined>(
+  undefined,
+);
 
 /** Current browser-storage key for the image-reference preference. */
 const STORAGE_KEY = "ray-optics-web-image-point";
@@ -30,7 +32,9 @@ function isImagePoint(value: unknown): value is ImagePoint {
 function getInitialImagePoint(): ImagePoint {
   if (typeof window === "undefined") return "chief_ray";
 
-  const stored = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
+  const stored =
+    localStorage.getItem(STORAGE_KEY) ??
+    localStorage.getItem(LEGACY_STORAGE_KEY);
   return isImagePoint(stored) ? stored : "chief_ray";
 }
 
@@ -44,8 +48,13 @@ function getInitialImagePoint(): ImagePoint {
  * - Persists valid updates to the new `localStorage` key.
  * - Ignores invalid persisted values and invalid runtime updates.
  */
-export function ImagePointProvider({ children }: { readonly children: React.ReactNode }) {
-  const [imagePoint, _setImagePoint] = useState<ImagePoint>(getInitialImagePoint);
+export function ImagePointProvider({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
+  const [imagePoint, _setImagePoint] =
+    useState<ImagePoint>(getInitialImagePoint);
 
   const setImagePoint = useCallback((newImagePoint: ImagePoint) => {
     if (!isImagePoint(newImagePoint)) return;

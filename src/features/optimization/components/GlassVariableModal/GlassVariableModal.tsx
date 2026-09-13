@@ -26,10 +26,16 @@ import {
   type SelectionChangedEvent,
   type SelectionColumnDef,
 } from "ag-grid-community";
-import { CATALOG_NAMES, type AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import {
+  CATALOG_NAMES,
+  type AllGlassCatalogsData,
+} from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { GlassCatalogName } from "@/features/optimization/types/optimizationWorkerTypes";
-import type { GlassMode, GlassModeDraft } from "@/features/optimization/stores/optimizationStore";
+import type {
+  GlassMode,
+  GlassModeDraft,
+} from "@/features/optimization/stores/optimizationStore";
 import {
   formatOptionalSixDecimal,
   NO_BLANK_NUMBER_FILTER_OPTIONS,
@@ -68,8 +74,13 @@ function serializeMode(mode: GlassMode): string {
     : `variable:${mode.candidates.map(getGlassCandidateIdentity).join(",")}`;
 }
 
-function areSetsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
-  return left.size === right.size && [...left].every((value) => right.has(value));
+function areSetsEqual(
+  left: ReadonlySet<string>,
+  right: ReadonlySet<string>,
+): boolean {
+  return (
+    left.size === right.size && [...left].every((value) => right.has(value))
+  );
 }
 
 /** Renders a hidden modal until all target data exists, then remounts a keyed local editor. */
@@ -82,13 +93,19 @@ export function GlassVariableModal({
   onSetMode,
   onClose,
 }: GlassVariableModalProps) {
-  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
+  if (
+    !isOpen ||
+    optimizationModel === undefined ||
+    surfaceIndex === undefined ||
+    selectedMode === undefined
+  ) {
     return <Modal isOpen={false} title="Glass Variable" />;
   }
 
-  const target = surfaceIndex === 0
-    ? optimizationModel.object
-    : optimizationModel.surfaces[surfaceIndex - 1];
+  const target =
+    surfaceIndex === 0
+      ? optimizationModel.object
+      : optimizationModel.surfaces[surfaceIndex - 1];
 
   return (
     <GlassVariableModalEditor
@@ -122,11 +139,15 @@ function GlassVariableModalEditor({
 }: GlassVariableModalEditorProps) {
   const gridTheme = useAgGridTheme();
   const persistedCandidates = useMemo(
-    () => selectedMode.mode === "variable" ? selectedMode.candidates : [],
+    () => (selectedMode.mode === "variable" ? selectedMode.candidates : []),
     [selectedMode],
   );
   const rows = useMemo(
-    () => mergePersistedGlassCandidateRows(buildLiveGlassCandidateRows(catalogs), persistedCandidates),
+    () =>
+      mergePersistedGlassCandidateRows(
+        buildLiveGlassCandidateRows(catalogs),
+        persistedCandidates,
+      ),
     [catalogs, persistedCandidates],
   );
   const rowsByIdentity = useMemo(
@@ -134,128 +155,140 @@ function GlassVariableModalEditor({
     [rows],
   );
   const [mode, setMode] = useState<GlassMode["mode"]>(selectedMode.mode);
-  const [selectedIdentities, setSelectedIdentities] = useState<ReadonlySet<string>>(
-    () => new Set(persistedCandidates.map(getGlassCandidateIdentity)),
-  );
+  const [selectedIdentities, setSelectedIdentities] = useState<
+    ReadonlySet<string>
+  >(() => new Set(persistedCandidates.map(getGlassCandidateIdentity)));
   const initializedVariableRef = useRef(selectedMode.mode === "variable");
   const gridApiRef = useRef<GridApi<GlassCandidateRow> | undefined>(undefined);
 
-  const rowSelection = useMemo<RowSelectionOptions<GlassCandidateRow>>(() => ({
-    mode: "multiRow",
-    checkboxes: true,
-    headerCheckbox: true,
-    selectAll: "all",
-  }), []);
-  const selectionColumnDef = useMemo<SelectionColumnDef>(() => ({
-    width: 58,
-    maxWidth: 58,
-    sortable: false,
-    filter: false,
-    resizable: false,
-    suppressMovable: true,
-  }), []);
-  const columnDefs = useMemo<ColDef<GlassCandidateRow>[]>(() => [
-    {
-      headerName: "Catalog",
-      field: "catalog",
-      width: 120,
-      sortable: true,
-      filter: "agTextColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
-      unSortIcon: true,
-    },
-    {
-      headerName: "Label",
-      field: "name",
-      width: 180,
-      sortable: true,
-      filter: "agTextColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
-      unSortIcon: true,
-      cellRenderer: ({ data }: { data: GlassCandidateRow }) =>
-        data.available ? data.name : `${data.name} (Unavailable)`,
-    },
-    {
-      headerName: "nd",
-      field: "nd",
-      width: 110,
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "vd",
-      field: "vd",
-      width: 110,
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "ne",
-      field: "ne",
-      width: 110,
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "ve",
-      field: "ve",
-      width: 110,
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "Pg,F",
-      field: "pgF",
-      width: 110,
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "PF,e",
-      field: "pFe",
-      width: 110,
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-    {
-      headerName: "PF,d",
-      field: "pFd",
-      width: 110,
-      sortable: true,
-      filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
-      unSortIcon: true,
-      valueFormatter: formatOptionalSixDecimal,
-    },
-  ], []);
+  const rowSelection = useMemo<RowSelectionOptions<GlassCandidateRow>>(
+    () => ({
+      mode: "multiRow",
+      checkboxes: true,
+      headerCheckbox: true,
+      selectAll: "all",
+    }),
+    [],
+  );
+  const selectionColumnDef = useMemo<SelectionColumnDef>(
+    () => ({
+      width: 58,
+      maxWidth: 58,
+      sortable: false,
+      filter: false,
+      resizable: false,
+      suppressMovable: true,
+    }),
+    [],
+  );
+  const columnDefs = useMemo<ColDef<GlassCandidateRow>[]>(
+    () => [
+      {
+        headerName: "Catalog",
+        field: "catalog",
+        width: 120,
+        sortable: true,
+        filter: "agTextColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
+        unSortIcon: true,
+      },
+      {
+        headerName: "Label",
+        field: "name",
+        width: 180,
+        sortable: true,
+        filter: "agTextColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
+        unSortIcon: true,
+        cellRenderer: ({ data }: { data: GlassCandidateRow }) =>
+          data.available ? data.name : `${data.name} (Unavailable)`,
+      },
+      {
+        headerName: "nd",
+        field: "nd",
+        width: 110,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "vd",
+        field: "vd",
+        width: 110,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "ne",
+        field: "ne",
+        width: 110,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "ve",
+        field: "ve",
+        width: 110,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "Pg,F",
+        field: "pgF",
+        width: 110,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "PF,e",
+        field: "pFe",
+        width: 110,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+      {
+        headerName: "PF,d",
+        field: "pFd",
+        width: 110,
+        sortable: true,
+        filter: "agNumberColumnFilter",
+        filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+        unSortIcon: true,
+        valueFormatter: formatOptionalSixDecimal,
+      },
+    ],
+    [],
+  );
 
-  const synchronizeGridSelection = useCallback((api: GridApi<GlassCandidateRow>) => {
-    api.forEachNode((node) => {
-      const id = node.data?.id;
-      const shouldBeSelected = id !== undefined && selectedIdentities.has(id);
-      if (node.isSelected() !== shouldBeSelected) {
-        node.setSelected(shouldBeSelected);
-      }
-    });
-  }, [selectedIdentities]);
+  const synchronizeGridSelection = useCallback(
+    (api: GridApi<GlassCandidateRow>) => {
+      api.forEachNode((node) => {
+        const id = node.data?.id;
+        const shouldBeSelected = id !== undefined && selectedIdentities.has(id);
+        if (node.isSelected() !== shouldBeSelected) {
+          node.setSelected(shouldBeSelected);
+        }
+      });
+    },
+    [selectedIdentities],
+  );
 
   useEffect(() => {
     if (gridApiRef.current !== undefined) {
@@ -263,19 +296,27 @@ function GlassVariableModalEditor({
     }
   }, [synchronizeGridSelection]);
 
-  const handleGridReady = useCallback((event: GridReadyEvent<GlassCandidateRow>) => {
-    gridApiRef.current = event.api;
-    synchronizeGridSelection(event.api);
-  }, [synchronizeGridSelection]);
+  const handleGridReady = useCallback(
+    (event: GridReadyEvent<GlassCandidateRow>) => {
+      gridApiRef.current = event.api;
+      synchronizeGridSelection(event.api);
+    },
+    [synchronizeGridSelection],
+  );
 
-  const handleSelectionChanged = useCallback((event: SelectionChangedEvent<GlassCandidateRow>) => {
-    const next = new Set(
-      event.selectedNodes
-        ?.map((node) => node.data?.id)
-        .filter((id): id is string => id !== undefined) ?? [],
-    );
-    setSelectedIdentities((previous) => areSetsEqual(previous, next) ? previous : next);
-  }, []);
+  const handleSelectionChanged = useCallback(
+    (event: SelectionChangedEvent<GlassCandidateRow>) => {
+      const next = new Set(
+        event.selectedNodes
+          ?.map((node) => node.data?.id)
+          .filter((id): id is string => id !== undefined) ?? [],
+      );
+      setSelectedIdentities((previous) =>
+        areSetsEqual(previous, next) ? previous : next,
+      );
+    },
+    [],
+  );
 
   const handleModeChange = (nextMode: GlassMode["mode"]) => {
     setMode(nextMode);
@@ -289,14 +330,19 @@ function GlassVariableModalEditor({
       surfaceIndex,
       catalogs,
     );
-    setSelectedIdentities(new Set(
-      rows
-        .filter((row) => row.available && row.catalog === incumbentCatalog)
-        .map((row) => row.id),
-    ));
+    setSelectedIdentities(
+      new Set(
+        rows
+          .filter((row) => row.available && row.catalog === incumbentCatalog)
+          .map((row) => row.id),
+      ),
+    );
   };
 
-  const updateCatalogSelection = (catalog: GlassCatalogName, checked: boolean) => {
+  const updateCatalogSelection = (
+    catalog: GlassCatalogName,
+    checked: boolean,
+  ) => {
     setSelectedIdentities((previous) => {
       const next = new Set(previous);
       for (const row of rows) {
@@ -319,20 +365,24 @@ function GlassVariableModalEditor({
       .filter((row): row is GlassCandidateRow => row !== undefined)
       .map(({ name, catalog }) => ({ name, catalog })),
   );
-  const hasSelectionError = mode === "variable" && selectedCandidates.length === 0;
-  const target = surfaceIndex === 0
-    ? optimizationModel.object
-    : optimizationModel.surfaces[surfaceIndex - 1];
-  const targetLabel = surfaceIndex === 0
-    ? "Object"
-    : optimizationModel.surfaces[surfaceIndex - 1]?.label ?? `Surface ${surfaceIndex}`;
+  const hasSelectionError =
+    mode === "variable" && selectedCandidates.length === 0;
+  const target =
+    surfaceIndex === 0
+      ? optimizationModel.object
+      : optimizationModel.surfaces[surfaceIndex - 1];
+  const targetLabel =
+    surfaceIndex === 0
+      ? "Object"
+      : (optimizationModel.surfaces[surfaceIndex - 1]?.label ??
+        `Surface ${surfaceIndex}`);
 
   return (
     <Modal
       isOpen
       title="Glass Variable"
       size="4xl"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose}>
             Cancel
@@ -341,9 +391,10 @@ function GlassVariableModalEditor({
             variant="primary"
             disabled={hasSelectionError}
             onClick={() => {
-              const draft: GlassModeDraft = mode === "constant"
-                ? { mode: "constant" }
-                : { mode: "variable", candidates: selectedCandidates };
+              const draft: GlassModeDraft =
+                mode === "constant"
+                  ? { mode: "constant" }
+                  : { mode: "variable", candidates: selectedCandidates };
               onSetMode(surfaceIndex, draft);
               onClose();
             }}
@@ -351,7 +402,7 @@ function GlassVariableModalEditor({
             Confirm
           </Button>
         </div>
-      )}
+      }
     >
       <div className="space-y-4">
         <Paragraph>
@@ -367,7 +418,9 @@ function GlassVariableModalEditor({
               { value: "constant", label: "constant" },
               { value: "variable", label: "variable" },
             ]}
-            onChange={(event) => handleModeChange(event.target.value as GlassMode["mode"])}
+            onChange={(event) =>
+              handleModeChange(event.target.value as GlassMode["mode"])
+            }
           />
         </div>
 
@@ -375,10 +428,16 @@ function GlassVariableModalEditor({
           <>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {CATALOG_NAMES.map((catalog) => {
-                const liveRows = rows.filter((row) => row.catalog === catalog && row.available);
-                const selectedCount = liveRows.filter((row) => selectedIdentities.has(row.id)).length;
-                const checked = liveRows.length > 0 && selectedCount === liveRows.length;
-                const indeterminate = selectedCount > 0 && selectedCount < liveRows.length;
+                const liveRows = rows.filter(
+                  (row) => row.catalog === catalog && row.available,
+                );
+                const selectedCount = liveRows.filter((row) =>
+                  selectedIdentities.has(row.id),
+                ).length;
+                const checked =
+                  liveRows.length > 0 && selectedCount === liveRows.length;
+                const indeterminate =
+                  selectedCount > 0 && selectedCount < liveRows.length;
                 return (
                   <CheckboxInput
                     key={catalog}
@@ -387,7 +446,9 @@ function GlassVariableModalEditor({
                     label={catalog}
                     checked={checked}
                     indeterminate={indeterminate}
-                    onChange={(nextChecked) => updateCatalogSelection(catalog, nextChecked)}
+                    onChange={(nextChecked) =>
+                      updateCatalogSelection(catalog, nextChecked)
+                    }
                   />
                 );
               })}
@@ -403,7 +464,11 @@ function GlassVariableModalEditor({
                   theme={gridTheme}
                   rowData={rows}
                   columnDefs={columnDefs}
-                  defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+                  defaultColDef={{
+                    sortable: false,
+                    filter: false,
+                    suppressMovable: true,
+                  }}
                   domLayout="normal"
                   getRowId={(params) => params.data.id}
                   rowSelection={rowSelection}

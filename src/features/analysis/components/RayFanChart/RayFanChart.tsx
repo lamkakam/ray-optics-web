@@ -25,7 +25,11 @@ interface RayFanChartProps {
  */
 export const RayFanChart = createAnalysisChartComponent<
   RayFanChartProps,
-  { readonly rayFanData: RayFanData; readonly wavelengthLabels: readonly string[]; readonly isSmallScreen: boolean },
+  {
+    readonly rayFanData: RayFanData;
+    readonly wavelengthLabels: readonly string[];
+    readonly isSmallScreen: boolean;
+  },
   boolean
 >({
   displayName: "RayFanChart",
@@ -38,7 +42,10 @@ export const RayFanChart = createAnalysisChartComponent<
     wavelengthLabels,
     isSmallScreen,
   }),
-  getChartHeight: ({ parentWidth, parentHeight, autoHeight }, isSmallScreen) => {
+  getChartHeight: (
+    { parentWidth, parentHeight, autoHeight },
+    isSmallScreen,
+  ) => {
     const widthBasedHeight = isSmallScreen
       ? Math.max(Math.round(parentWidth), 560)
       : Math.max(Math.round(parentWidth / 2), 320);
@@ -48,6 +55,18 @@ export const RayFanChart = createAnalysisChartComponent<
       : Math.max(0, Math.min(parentHeight, widthBasedHeight));
   },
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
-  buildOption: ({ rayFanData, wavelengthLabels, isSmallScreen }, chartWidth, chartHeight, chartTextColor) =>
-    buildRayFanChartOption(rayFanData, wavelengthLabels, chartWidth, chartHeight, chartTextColor, isSmallScreen),
+  buildOption: (
+    { rayFanData, wavelengthLabels, isSmallScreen },
+    chartWidth,
+    chartHeight,
+    chartTextColor,
+  ) =>
+    buildRayFanChartOption(
+      rayFanData,
+      wavelengthLabels,
+      chartWidth,
+      chartHeight,
+      chartTextColor,
+      isSmallScreen,
+    ),
 });

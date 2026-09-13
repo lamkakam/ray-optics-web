@@ -20,12 +20,16 @@ interface ConfirmOverwriteModalProps {
  *
  * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
  */
-export function ConfirmOverwriteModal({ isOpen, onConfirm, onCancel }: ConfirmOverwriteModalProps) {
+export function ConfirmOverwriteModal({
+  isOpen,
+  onConfirm,
+  onCancel,
+}: ConfirmOverwriteModalProps) {
   return (
     <Modal
       isOpen={isOpen}
       title="Load Example System"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel}>
             Cancel
@@ -34,7 +38,7 @@ export function ConfirmOverwriteModal({ isOpen, onConfirm, onCancel }: ConfirmOv
             Load
           </Button>
         </div>
-      )}
+      }
     >
       <Paragraph variant="body" className="mb-6">
         This will overwrite your current configuration. Continue?

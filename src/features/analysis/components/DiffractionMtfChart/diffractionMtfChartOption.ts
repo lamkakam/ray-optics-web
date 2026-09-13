@@ -1,12 +1,25 @@
 /** Diffraction-MTF ECharts registration and shared plot geometry. */
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
-import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
+import {
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
-import type { DiffractionMtfData, LineAxisData } from "@/features/analysis/types/plotData";
+import type {
+  DiffractionMtfData,
+  LineAxisData,
+} from "@/features/analysis/types/plotData";
 
-echarts.use([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([
+  LineChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 const DIFFRACTION_MTF_GRID_TOP = 48;
 const DIFFRACTION_MTF_GRID_BOTTOM = 56;
@@ -15,7 +28,10 @@ const DIFFRACTION_MTF_GRID_RIGHT = 28;
 const DIFFRACTION_MTF_LEGEND_TOP = 12;
 
 interface DiffractionMtfSeriesConfig {
-  readonly key: keyof Pick<DiffractionMtfData, "Tangential" | "Sagittal" | "IdealTangential" | "IdealSagittal">;
+  readonly key: keyof Pick<
+    DiffractionMtfData,
+    "Tangential" | "Sagittal" | "IdealTangential" | "IdealSagittal"
+  >;
   readonly label: string;
   readonly lineType: "solid" | "dashed";
 }
@@ -90,14 +106,22 @@ export function buildDiffractionMtfOption(
       right: DIFFRACTION_MTF_GRID_RIGHT,
       top: DIFFRACTION_MTF_GRID_TOP,
       bottom: DIFFRACTION_MTF_GRID_BOTTOM,
-      width: Math.max(0, chartWidth - DIFFRACTION_MTF_GRID_LEFT - DIFFRACTION_MTF_GRID_RIGHT),
-      height: Math.max(0, chartHeight - DIFFRACTION_MTF_GRID_TOP - DIFFRACTION_MTF_GRID_BOTTOM),
+      width: Math.max(
+        0,
+        chartWidth - DIFFRACTION_MTF_GRID_LEFT - DIFFRACTION_MTF_GRID_RIGHT,
+      ),
+      height: Math.max(
+        0,
+        chartHeight - DIFFRACTION_MTF_GRID_TOP - DIFFRACTION_MTF_GRID_BOTTOM,
+      ),
     },
     xAxis: {
       type: "value",
       min: 0,
       max: getXAxisMax(diffractionMtfData),
-      name: diffractionMtfData.unitX ? `Spatial Frequency (${diffractionMtfData.unitX})` : "Spatial Frequency",
+      name: diffractionMtfData.unitX
+        ? `Spatial Frequency (${diffractionMtfData.unitX})`
+        : "Spatial Frequency",
       nameLocation: "middle",
       nameGap: 34,
       nameTextStyle: {

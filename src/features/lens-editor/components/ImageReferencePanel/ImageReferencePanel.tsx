@@ -1,7 +1,10 @@
 "use client";
 
 import type React from "react";
-import { type ImagePoint, useImagePoint } from "@/shared/components/providers/ImagePointProvider";
+import {
+  type ImagePoint,
+  useImagePoint,
+} from "@/shared/components/providers/ImagePointProvider";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
 
@@ -31,7 +34,9 @@ const imagePointOptions: ReadonlyArray<{ value: ImagePoint; label: string }> = [
 export function ImageReferencePanel() {
   const { imagePoint, setImagePoint } = useImagePoint();
 
-  const handleImagePointChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleImagePointChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     const selectedImagePoint = event.target.value as ImagePoint;
     if (selectedImagePoint !== imagePoint) {
       setImagePoint(selectedImagePoint);

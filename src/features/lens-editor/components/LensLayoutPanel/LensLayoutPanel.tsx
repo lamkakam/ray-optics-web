@@ -34,10 +34,13 @@ export function LensLayoutPanel({
             className="max-h-full max-w-full object-contain"
           />
           {loading && (
-            <div className={clsx("absolute inset-0 flex items-center justify-center", "dark:bg-gray-900/60")}>
-              <Paragraph variant="placeholder">
-                Updating...
-              </Paragraph>
+            <div
+              className={clsx(
+                "absolute inset-0 flex items-center justify-center",
+                "dark:bg-gray-900/60",
+              )}
+            >
+              <Paragraph variant="placeholder">Updating...</Paragraph>
             </div>
           )}
         </>

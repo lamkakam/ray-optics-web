@@ -11,13 +11,21 @@ let mockResizeObserverObserve: jest.Mock;
 let mockResizeObserverDisconnect: jest.Mock;
 let mockBuildSurfaceBySurface3rdOrderChartOption: jest.Mock;
 
-jest.mock("echarts/core", () => ({
-  init: (...args: unknown[]) => mockEchartsInit(...args),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    init: (...args: unknown[]) => mockEchartsInit(...args),
+  }),
+  { virtual: true },
+);
 
-jest.mock("@/features/analysis/components/SurfaceBySurface3rdOrderChart/surfaceBySurface3rdOrderChartOption", () => ({
-  buildSurfaceBySurface3rdOrderChartOption: (...args: unknown[]) => mockBuildSurfaceBySurface3rdOrderChartOption(...args),
-}));
+jest.mock(
+  "@/features/analysis/components/SurfaceBySurface3rdOrderChart/surfaceBySurface3rdOrderChartOption",
+  () => ({
+    buildSurfaceBySurface3rdOrderChartOption: (...args: unknown[]) =>
+      mockBuildSurfaceBySurface3rdOrderChartOption(...args),
+  }),
+);
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -49,7 +57,9 @@ describe("SurfaceBySurface3rdOrderChart", () => {
     }));
     mockResizeObserverObserve = jest.fn();
     mockResizeObserverDisconnect = jest.fn();
-    mockBuildSurfaceBySurface3rdOrderChartOption = jest.fn(() => ({ series: [] }));
+    mockBuildSurfaceBySurface3rdOrderChartOption = jest.fn(() => ({
+      series: [],
+    }));
 
     class MockResizeObserver implements ResizeObserver {
       observe = mockResizeObserverObserve;
@@ -80,14 +90,16 @@ describe("SurfaceBySurface3rdOrderChart", () => {
     render(
       <SurfaceBySurface3rdOrderChart
         surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
-      />
+      />,
     );
 
     act(() => {
       jest.advanceTimersByTime(500);
     });
 
-    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("surface-by-surface-3rd-order-chart"),
+    ).toBeInTheDocument();
     expect(mockBuildSurfaceBySurface3rdOrderChartOption).toHaveBeenCalledWith(
       surfaceBySurface3rdOrderData,
       800,
@@ -102,10 +114,12 @@ describe("SurfaceBySurface3rdOrderChart", () => {
       <SurfaceBySurface3rdOrderChart
         surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
         autoHeight
-      />
+      />,
     );
 
-    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toHaveStyle({
+    expect(
+      screen.getByTestId("surface-by-surface-3rd-order-chart"),
+    ).toHaveStyle({
       width: "800px",
       height: "480px",
     });
@@ -124,14 +138,16 @@ describe("SurfaceBySurface3rdOrderChart", () => {
     render(
       <SurfaceBySurface3rdOrderChart
         surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
-      />
+      />,
     );
 
     act(() => {
       jest.advanceTimersByTime(500);
     });
 
-    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toHaveStyle({
+    expect(
+      screen.getByTestId("surface-by-surface-3rd-order-chart"),
+    ).toHaveStyle({
       width: "800px",
       height: "480px",
     });

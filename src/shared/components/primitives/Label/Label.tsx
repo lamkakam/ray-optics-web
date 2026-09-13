@@ -2,7 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> { }
+interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
 
 const BASE_CLASSES = [
   cx.label.style.fontWeight,

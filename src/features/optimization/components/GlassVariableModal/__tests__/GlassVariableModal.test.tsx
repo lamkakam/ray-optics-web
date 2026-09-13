@@ -65,42 +65,67 @@ const model: OpticalModel = {
   ],
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20, fields: [0], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      fields: [0],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
   },
 };
 
 /** Modal state combinations that must short-circuit before rendering an editor. */
-const hiddenModalCases: ReadonlyArray<readonly [
-  string,
-  boolean,
-  OpticalModel | undefined,
-  number | undefined,
-  GlassMode | undefined,
-]> = [
+const hiddenModalCases: ReadonlyArray<
+  readonly [
+    string,
+    boolean,
+    OpticalModel | undefined,
+    number | undefined,
+    GlassMode | undefined,
+  ]
+> = [
   ["closed", false, model, 1, { surfaceIndex: 1, mode: "constant" }],
-  ["without a model", true, undefined, 1, { surfaceIndex: 1, mode: "constant" }],
-  ["without a surface index", true, model, undefined, { surfaceIndex: 1, mode: "constant" }],
+  [
+    "without a model",
+    true,
+    undefined,
+    1,
+    { surfaceIndex: 1, mode: "constant" },
+  ],
+  [
+    "without a surface index",
+    true,
+    model,
+    undefined,
+    { surfaceIndex: 1, mode: "constant" },
+  ],
   ["without a selected mode", true, model, 1, undefined],
 ];
 
 describe("GlassVariableModal", () => {
-  it.each(hiddenModalCases)("renders no editor when %s", (_description, isOpen, optimizationModel, surfaceIndex, selectedMode) => {
-    render(
-      <GlassVariableModal
-        isOpen={isOpen}
-        optimizationModel={optimizationModel}
-        surfaceIndex={surfaceIndex}
-        selectedMode={selectedMode}
-        catalogs={catalogs}
-        onSetMode={jest.fn()}
-        onClose={jest.fn()}
-      />,
-    );
+  it.each(hiddenModalCases)(
+    "renders no editor when %s",
+    (_description, isOpen, optimizationModel, surfaceIndex, selectedMode) => {
+      render(
+        <GlassVariableModal
+          isOpen={isOpen}
+          optimizationModel={optimizationModel}
+          surfaceIndex={surfaceIndex}
+          selectedMode={selectedMode}
+          catalogs={catalogs}
+          onSetMode={jest.fn()}
+          onClose={jest.fn()}
+        />,
+      );
 
-    expect(screen.queryByText(/medium:/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
-  });
+      expect(screen.queryByText(/medium:/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Confirm" }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it("shows the selection plus nine-column candidate grid only in Variable mode", async () => {
     const user = userEvent.setup();
@@ -154,8 +179,10 @@ describe("GlassVariableModal", () => {
     );
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
-    const expectedTextFilterOptions = "contains,notContains,equals,notEqual,startsWith,endsWith";
-    const expectedNumberFilterOptions = "equals,notEqual,greaterThan,greaterThanOrEqual,lessThan,lessThanOrEqual,inRange";
+    const expectedTextFilterOptions =
+      "contains,notContains,equals,notEqual,startsWith,endsWith";
+    const expectedNumberFilterOptions =
+      "equals,notEqual,greaterThan,greaterThanOrEqual,lessThan,lessThanOrEqual,inRange";
 
     expect(headers[0]).toHaveAttribute("data-sortable", "false");
     expect(headers[0]).toHaveAttribute("data-filter", "false");
@@ -167,13 +194,19 @@ describe("GlassVariableModal", () => {
       expect(header).toHaveAttribute("data-un-sort-icon", "true");
     }
     for (const header of [...headers].slice(1, 3)) {
-      expect(header).toHaveAttribute("data-filter-options", expectedTextFilterOptions);
+      expect(header).toHaveAttribute(
+        "data-filter-options",
+        expectedTextFilterOptions,
+      );
     }
     for (const header of [...headers].slice(3)) {
-      expect(header).toHaveAttribute("data-filter-options", expectedNumberFilterOptions);
-      expect(header.getAttribute("data-filter-options")?.split(",")).not.toEqual(
-        expect.arrayContaining(["blank", "notBlank"]),
+      expect(header).toHaveAttribute(
+        "data-filter-options",
+        expectedNumberFilterOptions,
       );
+      expect(
+        header.getAttribute("data-filter-options")?.split(","),
+      ).not.toEqual(expect.arrayContaining(["blank", "notBlank"]));
     }
   });
 
@@ -194,9 +227,13 @@ describe("GlassVariableModal", () => {
       />,
     );
 
-    const nBk7Row = screen.getByRole("checkbox", { name: "Select Schott N-BK7" }).closest("tr");
+    const nBk7Row = screen
+      .getByRole("checkbox", { name: "Select Schott N-BK7" })
+      .closest("tr");
     expect(nBk7Row).not.toBeNull();
-    expect([...nBk7Row!.querySelectorAll("td")].map((cell) => cell.textContent)).toEqual([
+    expect(
+      [...nBk7Row!.querySelectorAll("td")].map((cell) => cell.textContent),
+    ).toEqual([
       "",
       "Schott",
       "N-BK7",
@@ -232,37 +269,59 @@ describe("GlassVariableModal", () => {
     const grid = screen.getByTestId("ag-grid-mock");
     const selectionHeader = grid.querySelector("thead th");
     expect(selectionHeader).not.toBeNull();
-    const globalCheckbox = within(selectionHeader as HTMLElement).getByRole("checkbox");
+    const globalCheckbox = within(selectionHeader as HTMLElement).getByRole(
+      "checkbox",
+    );
 
     await user.click(globalCheckbox);
 
     for (const catalog of CATALOG_NAMES) {
-      expect(screen.getByRole("checkbox", { name: `Select all ${catalog} candidates` })).toBeChecked();
+      expect(
+        screen.getByRole("checkbox", {
+          name: `Select all ${catalog} candidates`,
+        }),
+      ).toBeChecked();
     }
     for (const rowCheckbox of within(grid).getAllByRole("checkbox").slice(1)) {
       expect(rowCheckbox).toBeChecked();
     }
 
-    await user.click(screen.getByRole("checkbox", { name: "Select all Hoya candidates" }));
+    await user.click(
+      screen.getByRole("checkbox", { name: "Select all Hoya candidates" }),
+    );
 
-    expect(screen.getByRole("checkbox", { name: "Select Hoya BSC7" })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Hoya BSC7" }),
+    ).not.toBeChecked();
     expect(globalCheckbox).not.toBeChecked();
 
-    await user.click(screen.getByRole("checkbox", { name: "Select Hoya BSC7" }));
+    await user.click(
+      screen.getByRole("checkbox", { name: "Select Hoya BSC7" }),
+    );
 
-    expect(screen.getByRole("checkbox", { name: "Select all Hoya candidates" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Hoya candidates" }),
+    ).toBeChecked();
     await waitFor(() => expect(globalCheckbox).toBeChecked());
 
-    await user.click(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }));
+    await user.click(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    );
 
-    expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).toBePartiallyChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Schott candidates" }),
+    ).toBePartiallyChecked();
     expect(globalCheckbox).not.toBeChecked();
 
     await user.click(globalCheckbox);
     await user.click(globalCheckbox);
 
     for (const catalog of CATALOG_NAMES) {
-      expect(screen.getByRole("checkbox", { name: `Select all ${catalog} candidates` })).not.toBeChecked();
+      expect(
+        screen.getByRole("checkbox", {
+          name: `Select all ${catalog} candidates`,
+        }),
+      ).not.toBeChecked();
     }
     for (const rowCheckbox of within(grid).getAllByRole("checkbox").slice(1)) {
       expect(rowCheckbox).not.toBeChecked();
@@ -296,29 +355,39 @@ describe("GlassVariableModal", () => {
 
     const grid = screen.getByTestId("ag-grid-mock");
     act(() => {
-      grid.dispatchEvent(new CustomEvent("mockSortChanged", {
-        bubbles: true,
-        detail: {
-          columnState: [
-            { colId: "vd", sort: "asc" },
-            { colId: "label", sort: "desc", sortIndex: 1 },
-          ],
-        },
-      }));
-      grid.dispatchEvent(new CustomEvent("mockFilterChanged", {
-        bubbles: true,
-        detail: {
-          filterModel: {
-            catalog: { filterType: "text", type: "contains", filter: "o" },
-            nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+      grid.dispatchEvent(
+        new CustomEvent("mockSortChanged", {
+          bubbles: true,
+          detail: {
+            columnState: [
+              { colId: "vd", sort: "asc" },
+              { colId: "label", sort: "desc", sortIndex: 1 },
+            ],
           },
-        },
-      }));
+        }),
+      );
+      grid.dispatchEvent(
+        new CustomEvent("mockFilterChanged", {
+          bubbles: true,
+          detail: {
+            filterModel: {
+              catalog: { filterType: "text", type: "contains", filter: "o" },
+              nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+            },
+          },
+        }),
+      );
     });
 
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select CDGM H-ZK1" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select Hoya BSC7" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select CDGM H-ZK1" }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Hoya BSC7" }),
+    ).toBeChecked();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
@@ -350,13 +419,27 @@ describe("GlassVariableModal", () => {
 
     await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
 
-    expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).not.toBePartiallyChecked();
-    expect(screen.getByRole("checkbox", { name: "Select all Hoya candidates" })).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select all Hoya candidates" })).not.toBePartiallyChecked();
-    expect(screen.queryByRole("checkbox", { name: /Select undefined undefined/ })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("checkbox", { name: /Select Schott / })).toHaveLength(2);
-    for (const checkbox of screen.getAllByRole("checkbox", { name: /Select Schott / })) {
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Schott candidates" }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Schott candidates" }),
+    ).not.toBePartiallyChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Hoya candidates" }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Hoya candidates" }),
+    ).not.toBePartiallyChecked();
+    expect(
+      screen.queryByRole("checkbox", { name: /Select undefined undefined/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("checkbox", { name: /Select Schott / }),
+    ).toHaveLength(2);
+    for (const checkbox of screen.getAllByRole("checkbox", {
+      name: /Select Schott /,
+    })) {
       expect(checkbox).toBeChecked();
     }
 
@@ -387,14 +470,22 @@ describe("GlassVariableModal", () => {
     );
 
     await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    ).toBeChecked();
 
-    await user.click(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }));
+    await user.click(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    );
     await user.selectOptions(screen.getByLabelText("Glass mode"), "constant");
     await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
 
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-BK7" }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    ).not.toBeChecked();
   });
 
   it("preserves an initially variable selection when the mode is toggled", async () => {
@@ -419,8 +510,12 @@ describe("GlassVariableModal", () => {
     await user.selectOptions(screen.getByLabelText("Glass mode"), "constant");
     await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
 
-    expect(screen.getByRole("checkbox", { name: "Select Hoya BSC7" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Hoya BSC7" }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-BK7" }),
+    ).not.toBeChecked();
   });
 
   it("remounts when the physical target medium changes", async () => {
@@ -465,7 +560,10 @@ describe("GlassVariableModal", () => {
 
   it("remounts when the object target medium changes", async () => {
     const user = userEvent.setup();
-    const initialModel: OpticalModel = { ...model, object: { ...model.object, medium: "N-BK7" } };
+    const initialModel: OpticalModel = {
+      ...model,
+      object: { ...model.object, medium: "N-BK7" },
+    };
     const { rerender } = render(
       <GlassVariableModal
         isOpen
@@ -484,7 +582,10 @@ describe("GlassVariableModal", () => {
     rerender(
       <GlassVariableModal
         isOpen
-        optimizationModel={{ ...initialModel, object: { ...initialModel.object, medium: "N-LAK9" } }}
+        optimizationModel={{
+          ...initialModel,
+          object: { ...initialModel.object, medium: "N-LAK9" },
+        }}
         surfaceIndex={0}
         selectedMode={{ surfaceIndex: 0, mode: "constant" }}
         catalogs={catalogs}
@@ -502,7 +603,12 @@ describe("GlassVariableModal", () => {
       ...model,
       surfaces: [
         model.surfaces[0],
-        { ...model.surfaces[0], label: "Stop", medium: "CaF2", manufacturer: "" },
+        {
+          ...model.surfaces[0],
+          label: "Stop",
+          medium: "CaF2",
+          manufacturer: "",
+        },
       ],
     };
 
@@ -542,12 +648,20 @@ describe("GlassVariableModal", () => {
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).toBePartiallyChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Schott candidates" }),
+    ).toBePartiallyChecked();
 
-    await user.click(screen.getByRole("checkbox", { name: "Select Hoya BSC7" }));
-    await user.click(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }));
+    await user.click(
+      screen.getByRole("checkbox", { name: "Select Hoya BSC7" }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    );
 
-    expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Schott candidates" }),
+    ).toBeChecked();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
@@ -578,11 +692,21 @@ describe("GlassVariableModal", () => {
       />,
     );
 
-    expect(screen.getAllByRole("checkbox", { name: /Select all .* candidates/ })).toHaveLength(8);
-    expect(screen.getByRole("checkbox", { name: "Select Special CaF2" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Select Special D263TECO" })).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: "Select Special air" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: "Select Special REFL" })).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("checkbox", { name: /Select all .* candidates/ }),
+    ).toHaveLength(8);
+    expect(
+      screen.getByRole("checkbox", { name: "Select Special CaF2" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Special D263TECO" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("checkbox", { name: "Select Special air" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("checkbox", { name: "Select Special REFL" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Unsupported Special")).not.toBeInTheDocument();
   });
 
@@ -603,14 +727,18 @@ describe("GlassVariableModal", () => {
     await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
 
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
-    expect(screen.getByText("Select at least one glass candidate.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Select at least one glass candidate."),
+    ).toBeInTheDocument();
 
     rerender(
       <GlassVariableModal
         isOpen
         optimizationModel={{
           ...model,
-          surfaces: [{ ...model.surfaces[0], medium: "1.6", manufacturer: "40" }],
+          surfaces: [
+            { ...model.surfaces[0], medium: "1.6", manufacturer: "40" },
+          ],
         }}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "constant" }}
@@ -631,7 +759,9 @@ describe("GlassVariableModal", () => {
         isOpen
         optimizationModel={{
           ...model,
-          surfaces: [{ ...model.surfaces[0], medium: "CaF2", manufacturer: "Custom" }],
+          surfaces: [
+            { ...model.surfaces[0], medium: "CaF2", manufacturer: "Custom" },
+          ],
         }}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "constant" }}
@@ -649,8 +779,12 @@ describe("GlassVariableModal", () => {
 
     await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
 
-    expect(screen.getByRole("checkbox", { name: "Select all Custom candidates" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select all Special candidates" })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Custom candidates" }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select all Special candidates" }),
+    ).not.toBeChecked();
   });
 
   it("marks unavailable persisted Custom candidates so they can be removed", async () => {
@@ -662,7 +796,13 @@ describe("GlassVariableModal", () => {
         isOpen
         optimizationModel={{
           ...model,
-          surfaces: [{ ...model.surfaces[0], medium: "CUSTOM_A", manufacturer: "Custom" }],
+          surfaces: [
+            {
+              ...model.surfaces[0],
+              medium: "CUSTOM_A",
+              manufacturer: "Custom",
+            },
+          ],
         }}
         surfaceIndex={1}
         selectedMode={{
@@ -680,12 +820,18 @@ describe("GlassVariableModal", () => {
     );
 
     const grid = screen.getByTestId("ag-grid-mock");
-    expect(within(grid).getByText("DELETED_CUSTOM (Unavailable)")).toBeInTheDocument();
-    const staleCheckbox = screen.getByRole("checkbox", { name: "Select Custom DELETED_CUSTOM" });
+    expect(
+      within(grid).getByText("DELETED_CUSTOM (Unavailable)"),
+    ).toBeInTheDocument();
+    const staleCheckbox = screen.getByRole("checkbox", {
+      name: "Select Custom DELETED_CUSTOM",
+    });
     expect(staleCheckbox).toBeChecked();
     const staleRow = staleCheckbox.closest("tr");
     expect(staleRow).not.toBeNull();
-    expect([...staleRow!.querySelectorAll("td")].map((cell) => cell.textContent)).toEqual([
+    expect(
+      [...staleRow!.querySelectorAll("td")].map((cell) => cell.textContent),
+    ).toEqual([
       "",
       "Custom",
       "DELETED_CUSTOM (Unavailable)",
@@ -698,15 +844,21 @@ describe("GlassVariableModal", () => {
       "",
     ]);
 
-    const customBulkCheckbox = screen.getByRole("checkbox", { name: "Select all Custom candidates" });
+    const customBulkCheckbox = screen.getByRole("checkbox", {
+      name: "Select all Custom candidates",
+    });
     expect(customBulkCheckbox).toBeChecked();
     await user.click(customBulkCheckbox);
     expect(staleCheckbox).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select Custom CUSTOM_A" })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Custom CUSTOM_A" }),
+    ).not.toBeChecked();
 
     await user.click(customBulkCheckbox);
     expect(staleCheckbox).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select Custom CUSTOM_A" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Custom CUSTOM_A" }),
+    ).toBeChecked();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(onSetMode).toHaveBeenCalledWith(1, {
@@ -781,8 +933,12 @@ describe("GlassVariableModal", () => {
     );
 
     expect(screen.getByText("Object medium: air")).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "constant" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "variable" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "constant" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "variable" }),
+    ).toBeInTheDocument();
 
     rerender(
       <GlassVariableModal
@@ -816,8 +972,12 @@ describe("GlassVariableModal", () => {
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-BK7" }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    ).not.toBeChecked();
 
     rerender(
       <GlassVariableModal
@@ -835,8 +995,12 @@ describe("GlassVariableModal", () => {
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-BK7" }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }),
+    ).toBeChecked();
   });
 
   it("leaves empty catalog controls unchecked and not partially checked", async () => {
@@ -855,13 +1019,17 @@ describe("GlassVariableModal", () => {
     );
 
     for (const catalog of CATALOG_NAMES) {
-      const checkbox = screen.getByRole("checkbox", { name: `Select all ${catalog} candidates` });
+      const checkbox = screen.getByRole("checkbox", {
+        name: `Select all ${catalog} candidates`,
+      });
       expect(checkbox).not.toBeChecked();
       expect(checkbox).not.toBePartiallyChecked();
     }
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
-    expect(screen.getByText("Select at least one glass candidate.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Select at least one glass candidate."),
+    ).toBeInTheDocument();
   });
 
   it("updates live rows when catalog data changes while the editor stays open", async () => {
@@ -882,7 +1050,9 @@ describe("GlassVariableModal", () => {
       />,
     );
 
-    expect(screen.queryByRole("checkbox", { name: "Select Custom NEW_GLASS" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("checkbox", { name: "Select Custom NEW_GLASS" }),
+    ).not.toBeInTheDocument();
 
     rerender(
       <GlassVariableModal
@@ -904,7 +1074,9 @@ describe("GlassVariableModal", () => {
     );
 
     const user = userEvent.setup();
-    const newGlassCheckbox = screen.getByRole("checkbox", { name: "Select Custom NEW_GLASS" });
+    const newGlassCheckbox = screen.getByRole("checkbox", {
+      name: "Select Custom NEW_GLASS",
+    });
     expect(newGlassCheckbox).toBeInTheDocument();
     await user.click(newGlassCheckbox);
     await user.click(screen.getByRole("button", { name: "Confirm" }));
@@ -935,7 +1107,9 @@ describe("GlassVariableModal", () => {
     );
 
     expect(screen.getByRole("button", { name: "Confirm" })).not.toBeDisabled();
-    expect(screen.queryByText("Select at least one glass candidate.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Select at least one glass candidate."),
+    ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(onSetMode).toHaveBeenCalledWith(1, { mode: "constant" });

@@ -1,5 +1,8 @@
 import { renderHook } from "@testing-library/react";
-import { useServiceWorkerRegistration, registerServiceWorker } from "../useServiceWorkerRegistration";
+import {
+  useServiceWorkerRegistration,
+  registerServiceWorker,
+} from "../useServiceWorkerRegistration";
 
 const incomingBasePath = process.env.NEXT_PUBLIC_BASE_PATH;
 const incomingNavigator = global.navigator;

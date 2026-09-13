@@ -54,7 +54,9 @@ export function toFieldCategoryLineData(axisData: LineAxisData): number[][] {
 }
 
 /** Builds a predicate that exposes at most five evenly distributed field ticks. */
-export function buildVisibleFieldCategoryPredicate(fieldLabelCount: number): (index: number) => boolean {
+export function buildVisibleFieldCategoryPredicate(
+  fieldLabelCount: number,
+): (index: number) => boolean {
   if (fieldLabelCount <= FIELD_CATEGORY_LINE_MAX_VISIBLE_Y_TICKS) {
     return () => true;
   }
@@ -62,9 +64,16 @@ export function buildVisibleFieldCategoryPredicate(fieldLabelCount: number): (in
   const lastFieldLabelIndex = fieldLabelCount - 1;
   const visibleFieldCategoryIndices = new Set<number>();
 
-  for (let tickIndex = 0; tickIndex < FIELD_CATEGORY_LINE_MAX_VISIBLE_Y_TICKS; tickIndex += 1) {
+  for (
+    let tickIndex = 0;
+    tickIndex < FIELD_CATEGORY_LINE_MAX_VISIBLE_Y_TICKS;
+    tickIndex += 1
+  ) {
     visibleFieldCategoryIndices.add(
-      Math.round((tickIndex * lastFieldLabelIndex) / (FIELD_CATEGORY_LINE_MAX_VISIBLE_Y_TICKS - 1)),
+      Math.round(
+        (tickIndex * lastFieldLabelIndex) /
+          (FIELD_CATEGORY_LINE_MAX_VISIBLE_Y_TICKS - 1),
+      ),
     );
   }
 
@@ -78,7 +87,9 @@ export function buildFieldCategoryLineAxesAndGrid(
   chartHeight: number,
   textColor: string,
 ) {
-  const isVisibleFieldCategory = buildVisibleFieldCategoryPredicate(data.fieldLabels.length);
+  const isVisibleFieldCategory = buildVisibleFieldCategoryPredicate(
+    data.fieldLabels.length,
+  );
 
   return {
     grid: {
@@ -86,14 +97,27 @@ export function buildFieldCategoryLineAxesAndGrid(
       right: FIELD_CATEGORY_LINE_GRID_RIGHT,
       top: FIELD_CATEGORY_LINE_GRID_TOP,
       bottom: FIELD_CATEGORY_LINE_GRID_BOTTOM,
-      width: Math.max(0, chartWidth - FIELD_CATEGORY_LINE_GRID_LEFT - FIELD_CATEGORY_LINE_GRID_RIGHT),
-      height: Math.max(0, chartHeight - FIELD_CATEGORY_LINE_GRID_TOP - FIELD_CATEGORY_LINE_GRID_BOTTOM),
+      width: Math.max(
+        0,
+        chartWidth -
+          FIELD_CATEGORY_LINE_GRID_LEFT -
+          FIELD_CATEGORY_LINE_GRID_RIGHT,
+      ),
+      height: Math.max(
+        0,
+        chartHeight -
+          FIELD_CATEGORY_LINE_GRID_TOP -
+          FIELD_CATEGORY_LINE_GRID_BOTTOM,
+      ),
     },
     xAxis: {
       type: "value",
-      name: data.unitX === "D"
-        ? "Output Vergence (D)"
-        : data.unitX ? `Focus Shift (${data.unitX})` : "Focus Shift",
+      name:
+        data.unitX === "D"
+          ? "Output Vergence (D)"
+          : data.unitX
+            ? `Focus Shift (${data.unitX})`
+            : "Focus Shift",
       nameLocation: "middle",
       nameGap: 34,
       nameTextStyle: {

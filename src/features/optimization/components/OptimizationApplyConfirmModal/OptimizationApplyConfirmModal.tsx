@@ -26,7 +26,7 @@ export function OptimizationApplyConfirmModal({
     <Modal
       isOpen={isOpen}
       title="Apply to Editor"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel}>
             Cancel
@@ -35,7 +35,7 @@ export function OptimizationApplyConfirmModal({
             Apply
           </Button>
         </div>
-      )}
+      }
     >
       <Paragraph className="mb-6">
         This will overwrite the lens prescription in the editor. Continue?

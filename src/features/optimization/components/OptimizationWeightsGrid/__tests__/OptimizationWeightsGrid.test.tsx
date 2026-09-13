@@ -42,7 +42,7 @@ describe("OptimizationWeightsGrid", () => {
         <button type="button" onClick={onAction}>
           Consume weights
         </button>
-      </div>
+      </div>,
     );
 
     await user.clear(screen.getByRole("textbox"));

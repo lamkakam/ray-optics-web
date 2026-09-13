@@ -1,15 +1,15 @@
 import { BoundedVariableModeFields } from "@/features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields";
 import { UnboundedVariableModeFields } from "@/features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields";
-import type {
-  VariableModeFieldsRenderer,
-} from "@/features/optimization/types/optimizationVariableFieldTypes";
+import type { VariableModeFieldsRenderer } from "@/features/optimization/types/optimizationVariableFieldTypes";
 
 const BOUNDED_VARIABLE_MODE_FIELDS_RENDERER: VariableModeFieldsRenderer = {
   Component: (props) => <BoundedVariableModeFields {...props} />,
 };
 
 const UNBOUNDED_VARIABLE_MODE_FIELDS_RENDERER: VariableModeFieldsRenderer = {
-  Component: ({ className }) => <UnboundedVariableModeFields className={className} />,
+  Component: ({ className }) => (
+    <UnboundedVariableModeFields className={className} />
+  ),
 };
 
 /**
@@ -22,7 +22,9 @@ const UNBOUNDED_VARIABLE_MODE_FIELDS_RENDERER: VariableModeFieldsRenderer = {
  *
  * Type definitions for renderer props and return shape live in `features/optimization/types/optimizationVariableFieldTypes.ts`.
  */
-export function getVariableModeFieldsRenderer(canUseBounds: boolean): VariableModeFieldsRenderer {
+export function getVariableModeFieldsRenderer(
+  canUseBounds: boolean,
+): VariableModeFieldsRenderer {
   return canUseBounds
     ? BOUNDED_VARIABLE_MODE_FIELDS_RENDERER
     : UNBOUNDED_VARIABLE_MODE_FIELDS_RENDERER;

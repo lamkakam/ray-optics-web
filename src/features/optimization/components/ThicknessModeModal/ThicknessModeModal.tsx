@@ -2,10 +2,16 @@
 
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
+import type {
+  RadiusMode,
+  RadiusModeDraft,
+} from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields";
-import { getRadiusLabel, getThicknessValue } from "@/features/optimization/lib/optimizationViewModels";
+import {
+  getRadiusLabel,
+  getThicknessValue,
+} from "@/features/optimization/lib/optimizationViewModels";
 import {
   createPickupDraft,
   createVariableDraft,
@@ -65,7 +71,12 @@ export function ThicknessModeModal({
   onSetMode,
   onClose,
 }: ThicknessModeModalProps) {
-  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
+  if (
+    !isOpen ||
+    optimizationModel === undefined ||
+    surfaceIndex === undefined ||
+    selectedMode === undefined
+  ) {
     return <Modal isOpen={false} title="Thickness Variable / Pickup" />;
   }
 
@@ -99,23 +110,32 @@ function ThicknessModeModalEditor({
   onSetMode,
   onClose,
 }: ThicknessModeModalEditorProps) {
-  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() => toRadiusModeDraft(selectedMode));
+  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() =>
+    toRadiusModeDraft(selectedMode),
+  );
   const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 
   const thicknessValue = getThicknessValue(optimizationModel, surfaceIndex);
   const sourceSurfaceOptions = React.useMemo(
-    () => getThicknessPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
+    () =>
+      getThicknessPickupSourceSurfaceOptions(
+        optimizationModel.surfaces.length,
+        surfaceIndex,
+      ),
     [optimizationModel.surfaces.length, surfaceIndex],
   );
-  const variableBoundsErrorText = canUseBounds && draftMode.mode === "variable"
-    ? validateVariableBounds("Thickness", draftMode.min, draftMode.max, [minLessThanMaxRule])
-    : undefined;
+  const variableBoundsErrorText =
+    canUseBounds && draftMode.mode === "variable"
+      ? validateVariableBounds("Thickness", draftMode.min, draftMode.max, [
+          minLessThanMaxRule,
+        ])
+      : undefined;
 
   return (
     <Modal
       isOpen
       title="Thickness Variable / Pickup"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose}>
             Cancel
@@ -131,11 +151,12 @@ function ThicknessModeModalEditor({
             Confirm
           </Button>
         </div>
-      )}
+      }
     >
       <div className="space-y-4">
         <Paragraph>
-          {getRadiusLabel(surfaceIndex, optimizationModel)} thickness: {thicknessValue}
+          {getRadiusLabel(surfaceIndex, optimizationModel)} thickness:{" "}
+          {thicknessValue}
         </Paragraph>
         <ModeSelectField
           id="thickness-mode"
@@ -164,16 +185,20 @@ function ThicknessModeModalEditor({
             minValue={draftMode.min}
             maxAriaLabel="Thickness Max."
             maxValue={draftMode.max}
-            onMinChange={(value) => setDraftMode({
-              mode: "variable",
-              min: value,
-              max: draftMode.max,
-            })}
-            onMaxChange={(value) => setDraftMode({
-              mode: "variable",
-              min: draftMode.min,
-              max: value,
-            })}
+            onMinChange={(value) =>
+              setDraftMode({
+                mode: "variable",
+                min: value,
+                max: draftMode.max,
+              })
+            }
+            onMaxChange={(value) =>
+              setDraftMode({
+                mode: "variable",
+                min: draftMode.min,
+                max: value,
+              })
+            }
             className="grid gap-4 md:grid-cols-2"
             inputRowClassName="contents"
             errorText={variableBoundsErrorText}
@@ -188,28 +213,34 @@ function ThicknessModeModalEditor({
             sourceSurfaceAriaLabel="Source surface"
             sourceSurfaceValue={draftMode.sourceSurfaceIndex}
             sourceSurfaceOptions={sourceSurfaceOptions}
-            onSourceSurfaceChange={(value) => setDraftMode({
-              mode: "pickup",
-              sourceSurfaceIndex: value,
-              scale: draftMode.scale,
-              offset: draftMode.offset,
-            })}
+            onSourceSurfaceChange={(value) =>
+              setDraftMode({
+                mode: "pickup",
+                sourceSurfaceIndex: value,
+                scale: draftMode.scale,
+                offset: draftMode.offset,
+              })
+            }
             scaleAriaLabel="Thickness scale"
             scaleValue={draftMode.scale}
-            onScaleChange={(value) => setDraftMode({
-              mode: "pickup",
-              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-              scale: value,
-              offset: draftMode.offset,
-            })}
+            onScaleChange={(value) =>
+              setDraftMode({
+                mode: "pickup",
+                sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+                scale: value,
+                offset: draftMode.offset,
+              })
+            }
             offsetAriaLabel="Thickness offset"
             offsetValue={draftMode.offset}
-            onOffsetChange={(value) => setDraftMode({
-              mode: "pickup",
-              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-              scale: draftMode.scale,
-              offset: value,
-            })}
+            onOffsetChange={(value) =>
+              setDraftMode({
+                mode: "pickup",
+                sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+                scale: draftMode.scale,
+                offset: value,
+              })
+            }
           />
         ) : null}
       </div>

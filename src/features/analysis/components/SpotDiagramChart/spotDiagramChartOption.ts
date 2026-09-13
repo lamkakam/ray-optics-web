@@ -1,13 +1,23 @@
 import * as echarts from "echarts/core";
 import { ScatterChart } from "echarts/charts";
-import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
+import {
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { buildLegendWrapLayout } from "@/features/analysis/components/legendLayout";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 
-echarts.use([ScatterChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([
+  ScatterChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 const SPOT_DIAGRAM_GRID_TOP = 48;
 const SPOT_DIAGRAM_GRID_BOTTOM = 56;
@@ -15,7 +25,9 @@ const SPOT_DIAGRAM_GRID_LEFT = 72;
 const SPOT_DIAGRAM_GRID_RIGHT = 32;
 const SPOT_DIAGRAM_POINT_SIZE = 5;
 const SPOT_DIAGRAM_POINT_OPACITY = 0.8;
-function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
+function parseWavelengthLabel(
+  wavelengthLabel: string | undefined,
+): number | undefined {
   if (wavelengthLabel === undefined) return undefined;
 
   const matchedValue = wavelengthLabel.match(/-?\d+(?:\.\d+)?/);
@@ -40,7 +52,10 @@ function getAxisExtent(spotDiagramData: SpotDiagramData): number {
   return axisExtent > 0 ? axisExtent : 1e-6;
 }
 
-function getSeriesLabel(wavelengthLabels: readonly string[], wvlIdx: number): string {
+function getSeriesLabel(
+  wavelengthLabels: readonly string[],
+  wvlIdx: number,
+): string {
   return wavelengthLabels[wvlIdx] ?? `Wavelength ${wvlIdx}`;
 }
 
@@ -49,12 +64,19 @@ function getSeriesColors(
   wavelengthLabels: readonly string[],
 ): readonly string[] {
   const seriesWavelengths = spotDiagramData.map((seriesData) =>
-    parseWavelengthLabel(wavelengthLabels[seriesData.wvlIdx]));
-  const numericWavelengths = seriesWavelengths.filter((wavelength) => wavelength !== undefined);
+    parseWavelengthLabel(wavelengthLabels[seriesData.wvlIdx]),
+  );
+  const numericWavelengths = seriesWavelengths.filter(
+    (wavelength) => wavelength !== undefined,
+  );
 
   if (numericWavelengths.length === 0) {
-    return spotDiagramData.map((_, index) =>
-      ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length]);
+    return spotDiagramData.map(
+      (_, index) =>
+        ANALYSIS_HEATMAP_COLOR_PALETTE[
+          index % ANALYSIS_HEATMAP_COLOR_PALETTE.length
+        ],
+    );
   }
 
   const minWavelength = Math.min(...numericWavelengths);
@@ -62,20 +84,27 @@ function getSeriesColors(
   const paletteLastIndex = ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1;
 
   if (minWavelength === maxWavelength) {
-    const middleColor = ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor(paletteLastIndex / 2)];
+    const middleColor =
+      ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor(paletteLastIndex / 2)];
     return spotDiagramData.map((_, index) =>
       seriesWavelengths[index] === undefined
-        ? ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length]
-        : middleColor);
+        ? ANALYSIS_HEATMAP_COLOR_PALETTE[
+            index % ANALYSIS_HEATMAP_COLOR_PALETTE.length
+          ]
+        : middleColor,
+    );
   }
 
   return spotDiagramData.map((_, index) => {
     const wavelength = seriesWavelengths[index];
     if (wavelength === undefined) {
-      return ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length];
+      return ANALYSIS_HEATMAP_COLOR_PALETTE[
+        index % ANALYSIS_HEATMAP_COLOR_PALETTE.length
+      ];
     }
 
-    const normalizedPosition = (wavelength - minWavelength) / (maxWavelength - minWavelength);
+    const normalizedPosition =
+      (wavelength - minWavelength) / (maxWavelength - minWavelength);
     const paletteIndex = Math.round(normalizedPosition * paletteLastIndex);
     return ANALYSIS_HEATMAP_COLOR_PALETTE[paletteIndex];
   });
@@ -110,7 +139,9 @@ export function buildSpotDiagramOption(
   textColor: string,
 ) {
   const axisExtent = getAxisExtent(spotDiagramData);
-  const legendData = spotDiagramData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
+  const legendData = spotDiagramData.map((seriesData) =>
+    getSeriesLabel(wavelengthLabels, seriesData.wvlIdx),
+  );
   const legendLayout = buildLegendWrapLayout(
     legendData,
     chartWidth,
@@ -118,7 +149,8 @@ export function buildSpotDiagramOption(
     SPOT_DIAGRAM_GRID_RIGHT,
   );
   const gridTop = SPOT_DIAGRAM_GRID_TOP + legendLayout.extraTop;
-  const maxPlotWidth = chartWidth - SPOT_DIAGRAM_GRID_LEFT - SPOT_DIAGRAM_GRID_RIGHT;
+  const maxPlotWidth =
+    chartWidth - SPOT_DIAGRAM_GRID_LEFT - SPOT_DIAGRAM_GRID_RIGHT;
   const maxPlotHeight = chartHeight - gridTop - SPOT_DIAGRAM_GRID_BOTTOM;
   const plotSide = Math.max(0, Math.min(maxPlotWidth, maxPlotHeight));
   const extraHorizontalSpace = Math.max(0, maxPlotWidth - plotSide);
@@ -181,7 +213,10 @@ export function buildSpotDiagramOption(
     series: spotDiagramData.map((seriesData, index) => ({
       type: "scatter",
       name: getSeriesLabel(wavelengthLabels, seriesData.wvlIdx),
-      data: seriesData.x.map((x, pointIndex) => [x, seriesData.y[pointIndex] ?? 0]),
+      data: seriesData.x.map((x, pointIndex) => [
+        x,
+        seriesData.y[pointIndex] ?? 0,
+      ]),
       symbolSize: SPOT_DIAGRAM_POINT_SIZE,
       itemStyle: {
         color: seriesColors[index],

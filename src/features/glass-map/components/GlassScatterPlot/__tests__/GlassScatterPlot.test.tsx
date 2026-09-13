@@ -5,7 +5,10 @@ import {
   computeRenderedCircleStyle,
   isSingleTouchGesture,
 } from "@/features/glass-map/components/GlassScatterPlot";
-import type { PlotPoint, SelectedGlass } from "@/features/glass-map/types/glassMap";
+import type {
+  PlotPoint,
+  SelectedGlass,
+} from "@/features/glass-map/types/glassMap";
 
 const glassData = {
   refractiveIndexD: 1.5168,
@@ -15,17 +18,19 @@ const glassData = {
   partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
   dispersionCoeffKind: "Sellmeier3T" as const,
   dispersionCoeffs: [
-    1.03961212,
-    0.231792344,
-    1.01046945,
-    0.00600069867,
-    0.0200179144,
+    1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
     103.560653,
   ],
 };
 
 const points: PlotPoint[] = [
-  { x: 64.17, y: 1.5168, catalogName: "Schott", glassName: "N-BK7", data: glassData },
+  {
+    x: 64.17,
+    y: 1.5168,
+    catalogName: "Schott",
+    glassName: "N-BK7",
+    data: glassData,
+  },
   {
     x: 36.43,
     y: 1.62,
@@ -51,8 +56,12 @@ describe("GlassScatterPlot", () => {
   it("renders a single interaction surface without a separate touch wrapper", () => {
     render(<GlassScatterPlot {...defaultProps} />);
 
-    expect(screen.getByTestId("glass-scatter-interaction-surface")).toBeInTheDocument();
-    expect(screen.queryByTestId("glass-scatter-touch-surface")).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("glass-scatter-interaction-surface"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("glass-scatter-touch-surface"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders an SVG element", () => {
@@ -71,7 +80,9 @@ describe("GlassScatterPlot", () => {
       expect(point).not.toHaveAttribute("tabindex");
       expect(point).not.toHaveAttribute("aria-label");
     }
-    fireEvent.keyDown(screen.getAllByTestId("glass-point")[0], { key: "Enter" });
+    fireEvent.keyDown(screen.getAllByTestId("glass-point")[0], {
+      key: "Enter",
+    });
     expect(defaultProps.onPointClick).not.toHaveBeenCalled();
   });
 
@@ -113,9 +124,15 @@ describe("GlassScatterPlot", () => {
     const axisBottom = container.querySelector(".visx-axis-bottom");
     const axisLeft = container.querySelector(".visx-axis-left");
 
-    expect(axisBottom?.querySelector(".visx-axis-line")?.getAttribute("stroke")).toBe("currentColor");
-    expect(axisLeft?.querySelector(".visx-axis-line")?.getAttribute("stroke")).toBe("currentColor");
-    expect(axisLeft?.querySelector(".visx-axis-tick text")?.getAttribute("fill")).toBe("currentColor");
+    expect(
+      axisBottom?.querySelector(".visx-axis-line")?.getAttribute("stroke"),
+    ).toBe("currentColor");
+    expect(
+      axisLeft?.querySelector(".visx-axis-line")?.getAttribute("stroke"),
+    ).toBe("currentColor");
+    expect(
+      axisLeft?.querySelector(".visx-axis-tick text")?.getAttribute("fill"),
+    ).toBe("currentColor");
   });
 
   it("renders zoom-aligned grid rows and columns", () => {
@@ -138,24 +155,40 @@ describe("GlassScatterPlot", () => {
     const { container } = render(
       <GlassScatterPlot
         {...defaultProps}
-        selectedGlass={{ catalogName: "Hoya", glassName: "N-BK7", data: glassData }}
+        selectedGlass={{
+          catalogName: "Hoya",
+          glassName: "N-BK7",
+          data: glassData,
+        }}
       />,
     );
 
-    expect(container.querySelector("[data-testid='crosshair-h']")).not.toBeInTheDocument();
-    expect(container.querySelector("[data-testid='crosshair-v']")).not.toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-h']"),
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-v']"),
+    ).not.toBeInTheDocument();
   });
 
   it("matches selected glasses by both catalog and glass name", () => {
     const { container } = render(
       <GlassScatterPlot
         {...defaultProps}
-        selectedGlass={{ catalogName: "Schott", glassName: "N-ZK7", data: glassData }}
+        selectedGlass={{
+          catalogName: "Schott",
+          glassName: "N-ZK7",
+          data: glassData,
+        }}
       />,
     );
 
-    expect(container.querySelector("[data-testid='crosshair-h']")).not.toBeInTheDocument();
-    expect(container.querySelector("[data-testid='crosshair-v']")).not.toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-h']"),
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-v']"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders crosshair lines when a glass is selected", () => {
@@ -165,18 +198,26 @@ describe("GlassScatterPlot", () => {
       data: glassData,
     };
     const { container } = render(
-      <GlassScatterPlot {...defaultProps} selectedGlass={selectedGlass} />
+      <GlassScatterPlot {...defaultProps} selectedGlass={selectedGlass} />,
     );
 
-    expect(container.querySelector("[data-testid='crosshair-h']")).toBeInTheDocument();
-    expect(container.querySelector("[data-testid='crosshair-v']")).toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-h']"),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-v']"),
+    ).toBeInTheDocument();
   });
 
   it("does not render crosshair lines when no glass is selected", () => {
     const { container } = render(<GlassScatterPlot {...defaultProps} />);
 
-    expect(container.querySelector("[data-testid='crosshair-h']")).not.toBeInTheDocument();
-    expect(container.querySelector("[data-testid='crosshair-v']")).not.toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-h']"),
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector("[data-testid='crosshair-v']"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the apparent circle size constant while applying the zoom transform to position", () => {
@@ -185,8 +226,13 @@ describe("GlassScatterPlot", () => {
         cx: 120,
         cy: 180,
         isSelected: false,
-        transformMatrix: { scaleX: 2, scaleY: 2, translateX: 30, translateY: -10 },
-      })
+        transformMatrix: {
+          scaleX: 2,
+          scaleY: 2,
+          translateX: 30,
+          translateY: -10,
+        },
+      }),
     ).toEqual({
       cx: 270,
       cy: 350,
@@ -199,8 +245,13 @@ describe("GlassScatterPlot", () => {
         cx: 120,
         cy: 180,
         isSelected: true,
-        transformMatrix: { scaleX: 2, scaleY: 2, translateX: 30, translateY: -10 },
-      })
+        transformMatrix: {
+          scaleX: 2,
+          scaleY: 2,
+          translateX: 30,
+          translateY: -10,
+        },
+      }),
     ).toEqual({
       cx: 270,
       cy: 350,
@@ -214,7 +265,7 @@ describe("GlassScatterPlot", () => {
       computePinchDelta({
         offset: [120, 0],
         lastOffset: [100, 0],
-      })
+      }),
     ).toEqual({
       scaleX: 1.03,
       scaleY: 1.03,
@@ -224,17 +275,17 @@ describe("GlassScatterPlot", () => {
       computePinchDelta({
         offset: [80, 0],
         lastOffset: [100, 0],
-      })
+      }),
     ).toEqual({
       scaleX: 0.97,
-        scaleY: 0.97,
-      });
+      scaleY: 0.97,
+    });
 
     expect(
       computePinchDelta({
         offset: [100, 0],
         lastOffset: [100, 0],
-      })
+      }),
     ).toEqual({
       scaleX: 1.03,
       scaleY: 1.03,
@@ -252,7 +303,11 @@ describe("GlassScatterPlot", () => {
     const point = screen.getAllByTestId("glass-point")[0];
     const touch = { identifier: 0, clientX: 10, clientY: 20, target: point };
 
-    fireEvent.touchStart(point, { touches: [touch], targetTouches: [touch], changedTouches: [touch] });
+    fireEvent.touchStart(point, {
+      touches: [touch],
+      targetTouches: [touch],
+      changedTouches: [touch],
+    });
 
     expect(defaultProps.onPointClick).toHaveBeenCalledWith({
       catalogName: "Schott",
@@ -282,12 +337,12 @@ describe("GlassScatterPlot", () => {
 
   it("respects explicit y-domain bounds for refractive-index plots", () => {
     const { container } = render(
-      <GlassScatterPlot {...defaultProps} yDomainMin={1.4} yDomainMax={2.0} />
+      <GlassScatterPlot {...defaultProps} yDomainMin={1.4} yDomainMax={2.0} />,
     );
     const axisLeft = container.querySelector(".visx-axis-left");
     const ticks = axisLeft?.querySelectorAll(".visx-axis-tick") ?? [];
     const values = Array.from(ticks).map((tick) =>
-      parseFloat(tick.querySelector("text")?.textContent ?? "0")
+      parseFloat(tick.querySelector("text")?.textContent ?? "0"),
     );
 
     expect(Math.min(...values)).toBeLessThan(1.5);
@@ -297,7 +352,13 @@ describe("GlassScatterPlot", () => {
 
   it("uses a data-driven y-domain when no max override is provided", () => {
     const pdPoints: PlotPoint[] = [
-      { x: 64.17, y: 0.5349, catalogName: "Schott", glassName: "N-BK7", data: glassData },
+      {
+        x: 64.17,
+        y: 0.5349,
+        catalogName: "Schott",
+        glassName: "N-BK7",
+        data: glassData,
+      },
       {
         x: 36.43,
         y: 0.5828,
@@ -306,11 +367,13 @@ describe("GlassScatterPlot", () => {
         data: { ...glassData, refractiveIndexD: 1.62, abbeNumberD: 36.43 },
       },
     ];
-    const { container } = render(<GlassScatterPlot {...defaultProps} points={pdPoints} />);
+    const { container } = render(
+      <GlassScatterPlot {...defaultProps} points={pdPoints} />,
+    );
     const axisLeft = container.querySelector(".visx-axis-left");
     const ticks = axisLeft?.querySelectorAll(".visx-axis-tick") ?? [];
     const values = Array.from(ticks).map((tick) =>
-      parseFloat(tick.querySelector("text")?.textContent ?? "0")
+      parseFloat(tick.querySelector("text")?.textContent ?? "0"),
     );
 
     expect(Math.max(...values)).toBeLessThan(0.9);
@@ -319,7 +382,13 @@ describe("GlassScatterPlot", () => {
   it("plots high Abbe values to the left and high y values upward with padded domains", () => {
     const simplePoints: PlotPoint[] = [
       { x: 0, y: 0, catalogName: "Schott", glassName: "Low", data: glassData },
-      { x: 100, y: 10, catalogName: "Schott", glassName: "High", data: glassData },
+      {
+        x: 100,
+        y: 10,
+        catalogName: "Schott",
+        glassName: "High",
+        data: glassData,
+      },
     ];
     render(<GlassScatterPlot {...defaultProps} points={simplePoints} />);
 

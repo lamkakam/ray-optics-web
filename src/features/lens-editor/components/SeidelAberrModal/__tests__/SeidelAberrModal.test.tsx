@@ -8,7 +8,9 @@ jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mathjax-context">{children}</div>
   ),
-  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  MathJax: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -55,15 +57,21 @@ describe("SeidelAberrModal", () => {
 
   it("renders the title '3rd Order Seidel Aberrations'", () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    expect(screen.getByText("3rd Order Seidel Aberrations")).toBeInTheDocument();
+    expect(
+      screen.getByText("3rd Order Seidel Aberrations"),
+    ).toBeInTheDocument();
   });
 
   it("renders 4 tabs with correct labels", () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    expect(screen.getByRole("tab", { name: "Surface by Surface" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "Surface by Surface" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Transverse" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Wavefront" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Field Curvature" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "Field Curvature" }),
+    ).toBeInTheDocument();
   });
 
   it("default tab (Surface by Surface) shows a table", () => {
@@ -73,11 +81,21 @@ describe("SeidelAberrModal", () => {
 
   it("Surface by Surface tab has column headers for Seidel type labels S-I through S-V", () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    expect(screen.getByRole("columnheader", { name: "S-I" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "S-II" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "S-III" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "S-IV" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "S-V" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "S-I" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "S-II" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "S-III" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "S-IV" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "S-V" }),
+    ).toBeInTheDocument();
   });
 
   it("Surface by Surface tab shows surface labels S1, S2 and sum", () => {
@@ -95,9 +113,13 @@ describe("SeidelAberrModal", () => {
   it("clicking Transverse tab shows full aberration label text", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Transverse" }));
-    expect(screen.getByText("Transverse Spherical Aberration (TSA)")).toBeInTheDocument();
+    expect(
+      screen.getByText("Transverse Spherical Aberration (TSA)"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Transverse Coma (TCO)")).toBeInTheDocument();
-    expect(screen.getByText("Tangential Astigmatism (TAS)")).toBeInTheDocument();
+    expect(
+      screen.getByText("Tangential Astigmatism (TAS)"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Sagittal Astigmatism (SAS)")).toBeInTheDocument();
     expect(screen.getByText("Petzval Blur (PTB)")).toBeInTheDocument();
     expect(screen.getByText("Distortion (DST)")).toBeInTheDocument();
@@ -110,22 +132,30 @@ describe("SeidelAberrModal", () => {
     expect(screen.getByText("Coma")).toBeInTheDocument();
     expect(screen.getByText("Astigmatism")).toBeInTheDocument();
     // "Field Curvature" also appears as a tab label, so use getAllByText
-    expect(screen.getAllByText("Field Curvature").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Field Curvature").length,
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Distortion")).toBeInTheDocument();
   });
 
   it("clicking Field Curvature tab shows curvature aberration labels", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Field Curvature" }));
-    expect(screen.getByText("Tangential Field Curvature (TCV)")).toBeInTheDocument();
-    expect(screen.getByText("Sagittal Field Curvature (SCV)")).toBeInTheDocument();
+    expect(
+      screen.getByText("Tangential Field Curvature (TCV)"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Sagittal Field Curvature (SCV)"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Petzval Curvature (PCV)")).toBeInTheDocument();
   });
 
   it("Field Curvature tab shows a 'Curvature Radius' column header", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Field Curvature" }));
-    expect(screen.getByRole("columnheader", { name: "Curvature Radius" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Curvature Radius" }),
+    ).toBeInTheDocument();
   });
 
   it("non-zero curvature value shows 1/value in Curvature Radius column", async () => {

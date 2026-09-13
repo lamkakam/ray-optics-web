@@ -20,7 +20,7 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -33,7 +33,7 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
@@ -47,12 +47,18 @@ describe("DecenterModal", () => {
         onClose={jest.fn()}
         onRemove={jest.fn()}
         readOnly
-      />
+      />,
     );
-    expect(screen.getByRole("combobox", { name: "Coordinate system for this and following surfaces" })).toBeDisabled();
+    expect(
+      screen.getByRole("combobox", {
+        name: "Coordinate system for this and following surfaces",
+      }),
+    ).toBeDisabled();
     expect(screen.getByRole("textbox", { name: "Alpha (°)" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders title 'Decenter & Tilt'", () => {
@@ -63,7 +69,7 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
   });
@@ -76,9 +82,13 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
-    expect(screen.getByRole("combobox", { name: "Coordinate system for this and following surfaces" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", {
+        name: "Coordinate system for this and following surfaces",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("renders all four posAndOrientation options", () => {
@@ -89,13 +99,31 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
-    const select = screen.getByRole("combobox", { name: "Coordinate system for this and following surfaces" });
-    expect(select).toContainElement(screen.getByRole("option", { name: "Tilt & decenter for this surface; double tilt for following surfaces" }));
-    expect(select).toContainElement(screen.getByRole("option", { name: "Apply to this surface only; restore previous coordinate system for following surfaces" }));
-    expect(select).toContainElement(screen.getByRole("option", { name: "New coordinate system for this and following surfaces" }));
-    expect(select).toContainElement(screen.getByRole("option", { name: "No change to this surface; reversed coordinate system for following surfaces" }));
+    const select = screen.getByRole("combobox", {
+      name: "Coordinate system for this and following surfaces",
+    });
+    expect(select).toContainElement(
+      screen.getByRole("option", {
+        name: "Tilt & decenter for this surface; double tilt for following surfaces",
+      }),
+    );
+    expect(select).toContainElement(
+      screen.getByRole("option", {
+        name: "Apply to this surface only; restore previous coordinate system for following surfaces",
+      }),
+    );
+    expect(select).toContainElement(
+      screen.getByRole("option", {
+        name: "New coordinate system for this and following surfaces",
+      }),
+    );
+    expect(select).toContainElement(
+      screen.getByRole("option", {
+        name: "No change to this surface; reversed coordinate system for following surfaces",
+      }),
+    );
   });
 
   it("renders numeric inputs for alpha, beta, gamma, offsetX, offsetY", () => {
@@ -106,13 +134,23 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
-    expect(screen.getByRole("textbox", { name: "Alpha (°)" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Beta (°)" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Gamma (°)" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Offset X" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Offset Y" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Alpha (°)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Beta (°)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Gamma (°)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Offset X" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Offset Y" }),
+    ).toBeInTheDocument();
   });
 
   it("pre-fills inputs with initialDecenter values", () => {
@@ -123,7 +161,7 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     expect(screen.getByRole("textbox", { name: "Alpha (°)" })).toHaveValue("0");
     expect(screen.getByRole("textbox", { name: "Beta (°)" })).toHaveValue("5");
@@ -138,7 +176,7 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     expect(screen.getByRole("textbox", { name: "Alpha (°)" })).toHaveValue("0");
     expect(screen.getByRole("textbox", { name: "Beta (°)" })).toHaveValue("0");
@@ -153,7 +191,7 @@ describe("DecenterModal", () => {
         onConfirm={onConfirm}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onConfirm).toHaveBeenCalledWith({
@@ -175,7 +213,7 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={onClose}
         onRemove={jest.fn()}
-      />
+      />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -190,9 +228,11 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={onRemove}
-      />
+      />,
     );
-    await userEvent.click(screen.getByRole("button", { name: "Remove Decenter" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Remove Decenter" }),
+    );
     expect(onRemove).toHaveBeenCalledTimes(1);
   });
 
@@ -205,14 +245,14 @@ describe("DecenterModal", () => {
         onConfirm={onConfirm}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     const betaInput = screen.getByRole("textbox", { name: "Beta (°)" });
     await userEvent.clear(betaInput);
     await userEvent.type(betaInput, "3.5");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onConfirm).toHaveBeenCalledWith(
-      expect.objectContaining({ beta: 3.5 })
+      expect.objectContaining({ beta: 3.5 }),
     );
   });
 
@@ -224,10 +264,12 @@ describe("DecenterModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
     expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove Decenter" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove Decenter" }),
+    ).toBeInTheDocument();
   });
 });

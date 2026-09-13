@@ -2,7 +2,12 @@ import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { commitAnalysisPlotResult, loadAnalysisPlot, loadFirstOrderData, loadSeidelData } from "@/features/analysis/lib/plotFunctions";
+import {
+  commitAnalysisPlotResult,
+  loadAnalysisPlot,
+  loadFirstOrderData,
+  loadSeidelData,
+} from "@/features/analysis/lib/plotFunctions";
 import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -56,20 +61,38 @@ export async function applyExampleSystem({
 
   specsStore.getState().loadFromSpecs(model.specs);
   lensStore.getState().setRows(surfacesToGridRows(model));
-  lensStore.getState().setAutoAperture(model.setAutoAperture === "autoAperture");
+  lensStore
+    .getState()
+    .setAutoAperture(model.setAutoAperture === "autoAperture");
 
   lensLayoutImageStore.getState().setLayoutLoading(true);
   analysisPlotStore.getState().setPlotLoading(true);
 
   try {
     const selectedFieldIndex = analysisPlotStore.getState().selectedFieldIndex;
-    const selectedWavelengthIndex = analysisPlotStore.getState().selectedWavelengthIndex;
-    const selectedPlotType: PlotType = analysisPlotStore.getState().selectedPlotType;
-    const clampedFieldIndex = specsStore.getState().clampFieldIndex(selectedFieldIndex, model.specs);
-    const clampedWavelengthIndex = specsStore.getState().clampWavelengthIndex(selectedWavelengthIndex, model.specs);
+    const selectedWavelengthIndex =
+      analysisPlotStore.getState().selectedWavelengthIndex;
+    const selectedPlotType: PlotType =
+      analysisPlotStore.getState().selectedPlotType;
+    const clampedFieldIndex = specsStore
+      .getState()
+      .clampFieldIndex(selectedFieldIndex, model.specs);
+    const clampedWavelengthIndex = specsStore
+      .getState()
+      .clampWavelengthIndex(selectedWavelengthIndex, model.specs);
 
-    analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex, model.specs.field.fields.length);
-    analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, model.specs.wavelengths.weights.length);
+    analysisPlotStore
+      .getState()
+      .setSelectedFieldIndex(
+        clampedFieldIndex,
+        model.specs.field.fields.length,
+      );
+    analysisPlotStore
+      .getState()
+      .setSelectedWavelengthIndex(
+        clampedWavelengthIndex,
+        model.specs.wavelengths.weights.length,
+      );
 
     const [fod, layout, plotResult, seidel] = await Promise.all([
       loadFirstOrderData({ proxy, model, imagePoint }),

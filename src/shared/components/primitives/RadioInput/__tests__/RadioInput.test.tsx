@@ -75,8 +75,16 @@ describe("RadioInput", () => {
   });
 
   it("renders labelNode as visual content when provided, keeping label as aria-label", () => {
-    const options: ReadonlyArray<{ value: Fruit; label: string; labelNode?: React.ReactNode }> = [
-      { value: "apple", label: "Apple", labelNode: <span data-testid="custom-apple">🍎 Custom</span> },
+    const options: ReadonlyArray<{
+      value: Fruit;
+      label: string;
+      labelNode?: React.ReactNode;
+    }> = [
+      {
+        value: "apple",
+        label: "Apple",
+        labelNode: <span data-testid="custom-apple">🍎 Custom</span>,
+      },
       { value: "banana", label: "Banana" },
     ];
     render(<RadioInput {...defaultProps} options={options} />);

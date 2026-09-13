@@ -27,8 +27,14 @@ describe("OptimizationOperandsTab", () => {
       "min-[1440px]:h-full",
       "min-[1440px]:min-h-[200px]",
     );
-    expect(screen.getByRole("button", { name: "Add operand" })).toHaveClass("self-start");
-    expect(grid.parentElement).toHaveClass("ag-grid-touch-scroll", "min-h-0", "flex-1");
+    expect(screen.getByRole("button", { name: "Add operand" })).toHaveClass(
+      "self-start",
+    );
+    expect(grid.parentElement).toHaveClass(
+      "ag-grid-touch-scroll",
+      "min-h-0",
+      "flex-1",
+    );
     expect(grid).toHaveAttribute("data-dom-layout", "normal");
     expect(grid).toHaveAttribute("data-suppress-touch", "false");
   });
@@ -41,15 +47,22 @@ describe("OptimizationOperandsTab", () => {
 
     render(
       <OptimizationOperandsTab
-        operands={[{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]}
+        operands={[
+          { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+        ]}
         onAddOperand={onAddOperand}
         onDeleteOperand={onDeleteOperand}
         onUpdateOperand={onUpdateOperand}
       />,
     );
 
-    expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("overflow-y-auto");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
+    expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass(
+      "overflow-y-auto",
+    );
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-default-col-def-suppress-movable",
+      "true",
+    );
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     expect(Array.from(headers, (header) => header.textContent)).toEqual([
@@ -59,38 +72,61 @@ describe("OptimizationOperandsTab", () => {
       "",
     ]);
 
-    expect(screen.getByRole("option", { name: "OPD Difference" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "OPD Difference (Tangential)" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "OPD Difference (Sagittal)" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "OPD Difference" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "OPD Difference (Tangential)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "OPD Difference (Sagittal)" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Ray Fan" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Ray Fan (Tangential)" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Ray Fan (Sagittal)" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Ray Fan (Tangential)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Ray Fan (Sagittal)" }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     expect(onAddOperand).toHaveBeenCalledTimes(1);
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "opd_difference");
-    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", { kind: "opd_difference" });
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Operand Kind" }),
+      "opd_difference",
+    );
+    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", {
+      kind: "opd_difference",
+    });
 
     const inputs = screen.getAllByRole("textbox");
     await user.clear(inputs[0]);
     await user.type(inputs[0], "125");
     await user.tab();
-    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", { target: "125" });
+    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", {
+      target: "125",
+    });
 
     await user.clear(inputs[1]);
     await user.type(inputs[1], "2.75");
     await user.tab();
-    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", { weight: "2.75" });
+    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", {
+      weight: "2.75",
+    });
 
-    await user.click(screen.getByRole("button", { name: "Delete operand operand-1" }));
+    await user.click(
+      screen.getByRole("button", { name: "Delete operand operand-1" }),
+    );
     expect(onDeleteOperand).toHaveBeenCalledWith("operand-1");
   });
 
   it("renders N/A and disables target editing for ray_fan rows", () => {
     render(
       <OptimizationOperandsTab
-        operands={[{ id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" }]}
+        operands={[
+          { id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" },
+        ]}
         onAddOperand={jest.fn()}
         onDeleteOperand={jest.fn()}
         onUpdateOperand={jest.fn()}
@@ -108,7 +144,9 @@ describe("OptimizationOperandsTab", () => {
 
     render(
       <OptimizationOperandsTab
-        operands={[{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]}
+        operands={[
+          { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+        ]}
         onAddOperand={jest.fn()}
         onDeleteOperand={onDeleteOperand}
         onUpdateOperand={onUpdateOperand}
@@ -118,9 +156,13 @@ describe("OptimizationOperandsTab", () => {
     const inputs = screen.getAllByRole("textbox");
     await user.clear(inputs[1]);
     await user.type(inputs[1], "3.25");
-    await user.click(screen.getByRole("button", { name: "Delete operand operand-1" }));
+    await user.click(
+      screen.getByRole("button", { name: "Delete operand operand-1" }),
+    );
 
-    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", { weight: "3.25" });
+    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", {
+      weight: "3.25",
+    });
     expect(onDeleteOperand).toHaveBeenCalledWith("operand-1");
   });
 
@@ -129,8 +171,22 @@ describe("OptimizationOperandsTab", () => {
     const onAddOperand = jest.fn();
     const onDeleteOperand = jest.fn();
     const onUpdateOperand = jest.fn();
-    const firstOperands = [{ id: "operand-1", kind: "focal_length" as const, target: "100", weight: "1" }];
-    const secondOperands = [{ id: "operand-1", kind: "focal_length" as const, target: "100", weight: "1" }];
+    const firstOperands = [
+      {
+        id: "operand-1",
+        kind: "focal_length" as const,
+        target: "100",
+        weight: "1",
+      },
+    ];
+    const secondOperands = [
+      {
+        id: "operand-1",
+        kind: "focal_length" as const,
+        target: "100",
+        weight: "1",
+      },
+    ];
 
     const { rerender } = render(
       <OptimizationOperandsTab

@@ -76,22 +76,30 @@ export function DiffractionGratingModal({
       title="Diffraction Grating"
       titleId="diffraction-grating-modal-title"
       size="md"
-      footer={(
+      footer={
         <div className="flex items-center gap-3">
           {readOnly ? (
             <div className="flex justify-end w-full">
-              <Button variant="secondary" onClick={onClose}>Close</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Close
+              </Button>
             </div>
           ) : (
             <>
-              <Button variant="danger" onClick={onRemove}>Remove</Button>
+              <Button variant="danger" onClick={onRemove}>
+                Remove
+              </Button>
               <span className="flex-1" />
-              <Button variant="secondary" onClick={onClose}>Cancel</Button>
-              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleConfirm}>
+                Confirm
+              </Button>
             </>
           )}
         </div>
-      )}
+      }
     >
       <div className="grid grid-cols-1 gap-4 mb-4">
         <div>

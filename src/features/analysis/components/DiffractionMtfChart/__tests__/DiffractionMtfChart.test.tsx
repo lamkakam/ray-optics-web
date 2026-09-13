@@ -11,13 +11,21 @@ let mockResizeObserverObserve: jest.Mock;
 let mockResizeObserverDisconnect: jest.Mock;
 let mockBuildDiffractionMtfOption: jest.Mock;
 
-jest.mock("echarts/core", () => ({
-  init: (...args: unknown[]) => mockEchartsInit(...args),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    init: (...args: unknown[]) => mockEchartsInit(...args),
+  }),
+  { virtual: true },
+);
 
-jest.mock("@/features/analysis/components/DiffractionMtfChart/diffractionMtfChartOption", () => ({
-  buildDiffractionMtfOption: (...args: unknown[]) => mockBuildDiffractionMtfOption(...args),
-}));
+jest.mock(
+  "@/features/analysis/components/DiffractionMtfChart/diffractionMtfChartOption",
+  () => ({
+    buildDiffractionMtfOption: (...args: unknown[]) =>
+      mockBuildDiffractionMtfOption(...args),
+  }),
+);
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -112,7 +120,9 @@ describe("DiffractionMtfChart", () => {
   });
 
   it("disposes the chart instance on unmount", () => {
-    const { unmount } = render(<DiffractionMtfChart diffractionMtfData={diffractionMtfData} />);
+    const { unmount } = render(
+      <DiffractionMtfChart diffractionMtfData={diffractionMtfData} />,
+    );
 
     act(() => {
       jest.advanceTimersByTime(500);

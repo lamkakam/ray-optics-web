@@ -64,7 +64,10 @@ export function BottomDrawerContainer({
   draggable,
 }: BottomDrawerContainerProps) {
   const lensStore = useLensEditorStore();
-  const activeBottomDrawerTabId = useStore(lensStore, (state) => state.activeBottomDrawerTabId);
+  const activeBottomDrawerTabId = useStore(
+    lensStore,
+    (state) => state.activeBottomDrawerTabId,
+  );
   const initialBottomDrawerHeight = lensStore.getState().bottomDrawerHeight;
   const tabs = useMemo(
     () => [
@@ -77,9 +80,7 @@ export function BottomDrawerContainer({
         id: "prescription",
         label: "Prescription",
         content: (
-          <LensPrescriptionContainer
-            getOpticalModel={getOpticalModel}
-          />
+          <LensPrescriptionContainer getOpticalModel={getOpticalModel} />
         ),
       },
       {
@@ -102,7 +103,7 @@ export function BottomDrawerContainer({
         content: <ImageReferencePanel />,
       },
     ],
-    [getOpticalModel, onUpdateSystem, isReady, computing, proxy, onError]
+    [getOpticalModel, onUpdateSystem, isReady, computing, proxy, onError],
   );
 
   return (
@@ -110,9 +111,13 @@ export function BottomDrawerContainer({
       tabs={tabs}
       draggable={draggable}
       activeTabId={activeBottomDrawerTabId}
-      onTabChange={(tabId) => lensStore.getState().setActiveBottomDrawerTabId(tabId)}
+      onTabChange={(tabId) =>
+        lensStore.getState().setActiveBottomDrawerTabId(tabId)
+      }
       initialHeight={initialBottomDrawerHeight}
-      onHeightCommit={(height) => lensStore.getState().setBottomDrawerHeight(height)}
+      onHeightCommit={(height) =>
+        lensStore.getState().setBottomDrawerHeight(height)
+      }
     />
   );
 }

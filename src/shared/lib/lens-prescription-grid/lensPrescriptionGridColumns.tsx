@@ -61,7 +61,10 @@ export const lensPrescriptionGridIndexColumnDef = {
 const VALID_NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
 
 /** Parses a finite numeric edit and otherwise preserves the old value. */
-export function numberValueParser(params: { readonly newValue: string; readonly oldValue: unknown }) {
+export function numberValueParser(params: {
+  readonly newValue: string;
+  readonly oldValue: unknown;
+}) {
   const raw = String(params.newValue ?? "").trim();
   if (raw === "" || !VALID_NUMBER.test(raw)) return params.oldValue;
   const num = parseFloat(raw);
@@ -76,7 +79,10 @@ interface BaseColumnOptions<TData> {
 }
 
 interface SurfaceColumnOptions<TData> extends BaseColumnOptions<TData> {
-  readonly onSurfaceLabelChange?: (row: GridRow, label: "Default" | "Stop") => void;
+  readonly onSurfaceLabelChange?: (
+    row: GridRow,
+    label: "Default" | "Stop",
+  ) => void;
 }
 
 interface CommentColumnOptions<TData> extends BaseColumnOptions<TData> {
@@ -117,7 +123,8 @@ interface DecenterColumnOptions<TData> extends BaseColumnOptions<TData> {
   readonly tooltipText?: string;
 }
 
-interface DiffractionGratingColumnOptions<TData> extends BaseColumnOptions<TData> {
+interface DiffractionGratingColumnOptions<TData>
+  extends BaseColumnOptions<TData> {
   readonly onOpenDiffractionGratingModal?: GridRowModalCallback;
   readonly tooltipText?: string;
 }
@@ -138,14 +145,19 @@ export function createSurfaceColumn<TData>({
       return row.label;
     },
     editable: (params) => {
-      if (params.data === undefined || onSurfaceLabelChange === undefined) return false;
+      if (params.data === undefined || onSurfaceLabelChange === undefined)
+        return false;
       return getGridRow(params.data).kind === "surface";
     },
     cellEditor: "agSelectCellEditor",
     cellEditorParams: { values: ["Default", "Stop"] },
     valueSetter: (params) => {
-      if (params.data === undefined || onSurfaceLabelChange === undefined) return false;
-      onSurfaceLabelChange(getGridRow(params.data), params.newValue as "Default" | "Stop");
+      if (params.data === undefined || onSurfaceLabelChange === undefined)
+        return false;
+      onSurfaceLabelChange(
+        getGridRow(params.data),
+        params.newValue as "Default" | "Stop",
+      );
       return true;
     },
   };
@@ -162,15 +174,17 @@ export function createCommentColumn<TData>({
     valueGetter: (params) => {
       if (params.data === undefined) return "";
       const row = getGridRow(params.data);
-      return row.kind === "surface" ? row.comment ?? "" : "";
+      return row.kind === "surface" ? (row.comment ?? "") : "";
     },
     editable: (params) => {
-      if (params.data === undefined || onCommentChange === undefined) return false;
+      if (params.data === undefined || onCommentChange === undefined)
+        return false;
       return getGridRow(params.data).kind === "surface";
     },
     cellEditor: "agTextCellEditor",
     valueSetter: (params) => {
-      if (params.data === undefined || onCommentChange === undefined) return false;
+      if (params.data === undefined || onCommentChange === undefined)
+        return false;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return false;
       onCommentChange(row, String(params.newValue ?? ""));
@@ -194,12 +208,14 @@ export function createRadiusOfCurvatureColumn<TData>({
       return row.curvatureRadius;
     },
     editable: (params) => {
-      if (params.data === undefined || onRadiusChange === undefined) return false;
+      if (params.data === undefined || onRadiusChange === undefined)
+        return false;
       return getGridRow(params.data).kind !== "object";
     },
     valueParser: numberValueParser,
     valueSetter: (params) => {
-      if (params.data === undefined || onRadiusChange === undefined) return false;
+      if (params.data === undefined || onRadiusChange === undefined)
+        return false;
       onRadiusChange(getGridRow(params.data), params.newValue as number);
       return true;
     },
@@ -222,12 +238,14 @@ export function createThicknessColumn<TData>({
       return row.thickness;
     },
     editable: (params) => {
-      if (params.data === undefined || onThicknessChange === undefined) return false;
+      if (params.data === undefined || onThicknessChange === undefined)
+        return false;
       return getGridRow(params.data).kind !== "image";
     },
     valueParser: numberValueParser,
     valueSetter: (params) => {
-      if (params.data === undefined || onThicknessChange === undefined) return false;
+      if (params.data === undefined || onThicknessChange === undefined)
+        return false;
       onThicknessChange(getGridRow(params.data), params.newValue as number);
       return true;
     },
@@ -250,7 +268,8 @@ export function createMediumColumn<TData>({
       return row.medium;
     },
     cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenMediumModal === undefined) return undefined;
+      if (params.data === undefined || onOpenMediumModal === undefined)
+        return undefined;
       const row = getGridRow(params.data);
       if (row.kind === "image") return undefined;
       return (
@@ -283,25 +302,34 @@ export function createSemiDiameterColumn<TData>({
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
-      if (semiDiameterReadonly) return computedSemiDiameters[row.id] ?? row.semiDiameter;
+      if (semiDiameterReadonly)
+        return computedSemiDiameters[row.id] ?? row.semiDiameter;
       if (isRectangularClearApertureRow(row)) return undefined;
       return row.semiDiameter;
     },
     editable: (params) => {
-      if (params.data === undefined || onSemiDiameterChange === undefined || semiDiameterReadonly) return false;
+      if (
+        params.data === undefined ||
+        onSemiDiameterChange === undefined ||
+        semiDiameterReadonly
+      )
+        return false;
       const row = getGridRow(params.data);
       return row.kind === "surface" && !isRectangularClearApertureRow(row);
     },
     cellStyle: (params) => {
       if (params.data === undefined) return { opacity: 0.5 };
       const row = getGridRow(params.data);
-      return !semiDiameterReadonly && row.kind === "surface" && !isRectangularClearApertureRow(row)
+      return !semiDiameterReadonly &&
+        row.kind === "surface" &&
+        !isRectangularClearApertureRow(row)
         ? undefined
         : { opacity: 0.5 };
     },
     valueParser: numberValueParser,
     valueSetter: (params) => {
-      if (params.data === undefined || onSemiDiameterChange === undefined) return false;
+      if (params.data === undefined || onSemiDiameterChange === undefined)
+        return false;
       onSemiDiameterChange(getGridRow(params.data), params.newValue as number);
       return true;
     },
@@ -324,11 +352,14 @@ export function createApertureColumn<TData>({
       return formatApertureLabel(row.clear_aperture, row.edge_aperture);
     },
     cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenApertureModal === undefined) return undefined;
+      if (params.data === undefined || onOpenApertureModal === undefined)
+        return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
       return (
-        <LensPrescriptionActionWrapper onAction={() => onOpenApertureModal(row)}>
+        <LensPrescriptionActionWrapper
+          onAction={() => onOpenApertureModal(row)}
+        >
           <ApertureCell
             clearAperture={row.clear_aperture}
             edgeAperture={row.edge_aperture}
@@ -357,11 +388,14 @@ export function createAsphericalColumn<TData>({
       return row.aspherical;
     },
     cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenAsphericalModal === undefined) return undefined;
+      if (params.data === undefined || onOpenAsphericalModal === undefined)
+        return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
       return (
-        <LensPrescriptionActionWrapper onAction={() => onOpenAsphericalModal(row)}>
+        <LensPrescriptionActionWrapper
+          onAction={() => onOpenAsphericalModal(row)}
+        >
           <AsphericalCell
             aspherical={row.aspherical}
             onOpenModal={() => onOpenAsphericalModal(row)}
@@ -389,11 +423,14 @@ export function createDecenterColumn<TData>({
       return row.decenter;
     },
     cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenDecenterModal === undefined) return undefined;
+      if (params.data === undefined || onOpenDecenterModal === undefined)
+        return undefined;
       const row = getGridRow(params.data);
       if (row.kind === "object") return undefined;
       return (
-        <LensPrescriptionActionWrapper onAction={() => onOpenDecenterModal(row)}>
+        <LensPrescriptionActionWrapper
+          onAction={() => onOpenDecenterModal(row)}
+        >
           <DecenterCell
             decenter={row.decenter}
             onOpenModal={() => onOpenDecenterModal(row)}
@@ -421,11 +458,17 @@ export function createDiffractionGratingColumn<TData>({
       return row.diffractiveElement?.diffractionGrating;
     },
     cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenDiffractionGratingModal === undefined) return undefined;
+      if (
+        params.data === undefined ||
+        onOpenDiffractionGratingModal === undefined
+      )
+        return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
       return (
-        <LensPrescriptionActionWrapper onAction={() => onOpenDiffractionGratingModal(row)}>
+        <LensPrescriptionActionWrapper
+          onAction={() => onOpenDiffractionGratingModal(row)}
+        >
           <DiffractionGratingCell
             diffractionGrating={row.diffractiveElement?.diffractionGrating}
             onOpenModal={() => onOpenDiffractionGratingModal(row)}

@@ -33,24 +33,37 @@ const documentedData = {
 
 describe("ParaxialDataModal", () => {
   it("does not render when closed", () => {
-    render(<ParaxialDataModal isOpen={false} data={documentedData} onClose={jest.fn()} />);
+    render(
+      <ParaxialDataModal
+        isOpen={false}
+        data={documentedData}
+        onClose={jest.fn()}
+      />,
+    );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders the title and a complete two-column read-only table", () => {
-    render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
+    render(
+      <ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />,
+    );
 
-    expect(screen.getByRole("dialog", { name: "Paraxial Data" })).toBeInTheDocument();
-    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
-      "Attribute",
-      "Data",
-    ]);
-    expect(screen.getAllByRole("row")).toHaveLength(Object.keys(documentedData).length + 1);
+    expect(
+      screen.getByRole("dialog", { name: "Paraxial Data" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("columnheader").map((header) => header.textContent),
+    ).toEqual(["Attribute", "Data"]);
+    expect(screen.getAllByRole("row")).toHaveLength(
+      Object.keys(documentedData).length + 1,
+    );
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
   it("renders readable labels with normalized key Chips for every documented RayOptics field", () => {
-    render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
+    render(
+      <ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />,
+    );
 
     const expectedLabelsAndChips = [
       ["Optical Invariant", "OPT INV"],
@@ -88,7 +101,9 @@ describe("ParaxialDataModal", () => {
   });
 
   it("renders unknown fields as a normalized Chip without duplicated plain text", () => {
-    render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
+    render(
+      <ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />,
+    );
 
     const cell = screen.getByRole("cell", { name: "FUTURE METRIC" });
     expect(within(cell).getByText("FUTURE METRIC")).toBeInTheDocument();
@@ -96,17 +111,25 @@ describe("ParaxialDataModal", () => {
   });
 
   it("preserves worker entry order and formats numeric values to six decimal places", () => {
-    render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
+    render(
+      <ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />,
+    );
     const bodyRows = screen.getAllByRole("row").slice(1);
 
-    expect(within(bodyRows[0]).getByText("Optical Invariant")).toBeInTheDocument();
+    expect(
+      within(bodyRows[0]).getByText("Optical Invariant"),
+    ).toBeInTheDocument();
     expect(within(bodyRows[1]).getByText("Optical Power")).toBeInTheDocument();
-    expect(within(bodyRows[0]).getByRole("cell", { name: "0.100000" })).toBeInTheDocument();
+    expect(
+      within(bodyRows[0]).getByRole("cell", { name: "0.100000" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "50.123457" })).toBeInTheDocument();
   });
 
   it("delegates two-dimensional scrolling to the shared modal body", () => {
-    render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
+    render(
+      <ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />,
+    );
 
     const body = screen.getByTestId("modal-body");
     expect(body).toHaveClass("overflow-auto");
@@ -115,7 +138,9 @@ describe("ParaxialDataModal", () => {
 
   it("can only be dismissed with the fixed-footer Ok action", async () => {
     const onClose = jest.fn();
-    render(<ParaxialDataModal isOpen data={documentedData} onClose={onClose} />);
+    render(
+      <ParaxialDataModal isOpen data={documentedData} onClose={onClose} />,
+    );
 
     fireEvent.click(screen.getByTestId("modal-backdrop"));
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });

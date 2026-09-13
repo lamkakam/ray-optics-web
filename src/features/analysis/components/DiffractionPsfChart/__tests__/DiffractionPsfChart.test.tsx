@@ -10,18 +10,30 @@ interface MockDeckGLProps {
       readonly zoom?: number;
     };
   }) => void;
-  readonly viewState?: Record<string, {
-    readonly target: readonly [number, number, number];
-    readonly zoom: number;
-  }>;
+  readonly viewState?: Record<
+    string,
+    {
+      readonly target: readonly [number, number, number];
+      readonly zoom: number;
+    }
+  >;
 }
 
 const mockDeckGL = jest.fn(({ children }: MockDeckGLProps) => (
   <div data-testid="deck-gl">{children}</div>
 ));
-const mockBitmapLayer = jest.fn((props: unknown) => ({ id: "bitmap-layer", props }));
-const mockGridLayer = jest.fn((props: unknown) => ({ id: "grid-layer", props }));
-const mockOrthographicView = jest.fn((props: unknown) => ({ id: "orthographic-view", props }));
+const mockBitmapLayer = jest.fn((props: unknown) => ({
+  id: "bitmap-layer",
+  props,
+}));
+const mockGridLayer = jest.fn((props: unknown) => ({
+  id: "grid-layer",
+  props,
+}));
+const mockOrthographicView = jest.fn((props: unknown) => ({
+  id: "orthographic-view",
+  props,
+}));
 
 jest.mock("deck.gl", () => ({
   COORDINATE_SYSTEM: {
@@ -80,16 +92,18 @@ describe("DiffractionPsfChart", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
 
     expect(mockGridLayer).not.toHaveBeenCalled();
-    expect(mockBitmapLayer).toHaveBeenCalledWith(expect.objectContaining({
-      id: "diffraction-psf-bitmap",
-      coordinateSystem: "cartesian",
-      bounds: [-0.03, -0.015, 0.03, 0.015],
-      pickable: false,
-      textureParameters: {
-        minFilter: "nearest",
-        magFilter: "nearest",
-      },
-    }));
+    expect(mockBitmapLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "diffraction-psf-bitmap",
+        coordinateSystem: "cartesian",
+        bounds: [-0.03, -0.015, 0.03, 0.015],
+        pickable: false,
+        textureParameters: {
+          minFilter: "nearest",
+          magFilter: "nearest",
+        },
+      }),
+    );
 
     const layerProps = mockBitmapLayer.mock.calls[0][0] as {
       readonly image: ImageData;
@@ -102,19 +116,23 @@ describe("DiffractionPsfChart", () => {
   it("uses an OrthographicView and initial zoom that fits the symmetric PSF extent", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
 
-    expect(mockOrthographicView).toHaveBeenCalledWith(expect.objectContaining({
-      flipY: false,
-      controller: true,
-    }));
-    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
-      views: [expect.objectContaining({ id: "orthographic-view" })],
-      viewState: expect.objectContaining({
-        "diffraction-psf-view": expect.objectContaining({
-          target: [0, 0, 0],
-          zoom: expect.closeTo(Math.log2(192 / (2 * 0.02 * 1.12))),
+    expect(mockOrthographicView).toHaveBeenCalledWith(
+      expect.objectContaining({
+        flipY: false,
+        controller: true,
+      }),
+    );
+    expect(mockDeckGL).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        views: [expect.objectContaining({ id: "orthographic-view" })],
+        viewState: expect.objectContaining({
+          "diffraction-psf-view": expect.objectContaining({
+            target: [0, 0, 0],
+            zoom: expect.closeTo(Math.log2(192 / (2 * 0.02 * 1.12))),
+          }),
         }),
       }),
-    }));
+    );
   });
 
   it("keeps DeckGL view state controlled under the diffraction PSF view id after panning", () => {
@@ -130,14 +148,16 @@ describe("DiffractionPsfChart", () => {
       });
     });
 
-    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
-      viewState: {
-        "diffraction-psf-view": {
-          target: [0.01, -0.01, 0],
-          zoom: Math.log2(192 / (2 * 0.02)),
+    expect(mockDeckGL).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        viewState: {
+          "diffraction-psf-view": {
+            target: [0.01, -0.01, 0],
+            zoom: Math.log2(192 / (2 * 0.02)),
+          },
         },
-      },
-    }));
+      }),
+    );
   });
 
   it("updates x and y tick labels from the panned orthographic viewport", () => {
@@ -208,7 +228,10 @@ describe("DiffractionPsfChart", () => {
 
     expect(screen.getByText("x (mm)")).toHaveAttribute("fill", "currentColor");
     expect(screen.getByText("y (mm)")).toHaveAttribute("fill", "currentColor");
-    expect(screen.getByText("Normalized flux/bin")).toHaveAttribute("fill", "currentColor");
+    expect(screen.getByText("Normalized flux/bin")).toHaveAttribute(
+      "fill",
+      "currentColor",
+    );
 
     for (const tickLabel of screen.getAllByText("-0.022")) {
       expect(tickLabel).toHaveAttribute("fill", "currentColor");
@@ -216,7 +239,12 @@ describe("DiffractionPsfChart", () => {
   });
 
   it("uses a square auto-height chart when requested", () => {
-    render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} autoHeight />);
+    render(
+      <DiffractionPsfChart
+        diffractionPsfData={diffractionPsfData}
+        autoHeight
+      />,
+    );
 
     expect(screen.getByTestId("diffraction-psf-chart")).toHaveStyle({
       width: "400px",

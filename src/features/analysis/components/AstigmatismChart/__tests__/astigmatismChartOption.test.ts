@@ -3,23 +3,39 @@ import { buildAstigmatismOption } from "@/features/analysis/components/Astigmati
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { AstigmatismCurveData } from "@/features/analysis/types/plotData";
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  LineChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    LineChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: { component: "grid" },
-  LegendComponent: { component: "legend" },
-  TooltipComponent: { component: "tooltip" },
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: { component: "grid" },
+    LegendComponent: { component: "legend" },
+    TooltipComponent: { component: "tooltip" },
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 describe("astigmatismChartOption", () => {
   const astigmatismCurveData: AstigmatismCurveData = {
@@ -44,7 +60,11 @@ describe("astigmatismChartOption", () => {
         name: "Astigmatism",
         type: "line",
         showSymbol: false,
-        data: [[0.1, 0], [0, 1], [-0.1, 2]],
+        data: [
+          [0.1, 0],
+          [0, 1],
+          [-0.1, 2],
+        ],
       }),
     ]);
   });
@@ -58,8 +78,8 @@ describe("astigmatismChartOption", () => {
     );
 
     expect(option).not.toHaveProperty("legend");
-    expect(echarts.use).toHaveBeenCalledWith(expect.not.arrayContaining([
-      { component: "legend" },
-    ]));
+    expect(echarts.use).toHaveBeenCalledWith(
+      expect.not.arrayContaining([{ component: "legend" }]),
+    );
   });
 });

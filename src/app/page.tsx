@@ -14,10 +14,6 @@ export default function HomePage() {
   const { proxy, isReady, openErrorModal } = useAppShell();
 
   return (
-    <LensEditor
-      proxy={proxy}
-      isReady={isReady}
-      onError={openErrorModal}
-    />
+    <LensEditor proxy={proxy} isReady={isReady} onError={openErrorModal} />
   );
 }

@@ -5,7 +5,6 @@
 import type { SetAutoApertureFlag } from "@/shared/lib/utils/apertureFlag";
 export type { SetAutoApertureFlag };
 
-
 /** Supported physical pupil definitions; cross-space combinations are invalid. */
 export type PupilSpec =
   | { space: "object"; type: "epd" | "NA"; value: number }
@@ -46,68 +45,92 @@ export interface OpticalSpecs {
 /** Surface orientation and signed positional offset. */
 export type DecenterConfig = {
   coordinateSystemStrategy: "bend" | "dec and return" | "decenter" | "reverse";
-  alpha: number,
-  beta: number,
-  gamma: number,
-  offsetX: number,
-  offsetY: number,
+  alpha: number;
+  beta: number;
+  gamma: number;
+  offsetX: number;
+  offsetY: number;
 };
 
 /** Surface grating density and diffraction order. */
 export type DiffractionGrating = {
-  lpmm: number,
-  order: number,
+  lpmm: number;
+  order: number;
 };
 
 type BaseAperture = {
-  offsetX: number,
-  offsetY: number,
+  offsetX: number;
+  offsetY: number;
 };
 
 /** Annular aperture whose outer radius comes from the surface semi-diameter. */
 export type AnnularAperture = {
-  shape: "annular",
-  obstructionRadius: number,
+  shape: "annular";
+  obstructionRadius: number;
 };
 
 /** Rotated rectangular aperture dimensions. */
 export type RectangularAperture = {
-  shape: "rectangular",
-  xHalfWidth: number,
-  yHalfWidth: number,
-  rotation: number,
+  shape: "rectangular";
+  xHalfWidth: number;
+  yHalfWidth: number;
+  rotation: number;
 };
 
 /** Binary Ronchi ruling whose circular outer radius comes from the surface semi-diameter. */
 export type RonchiRulingAperture = {
-  shape: "ronchi",
+  shape: "ronchi";
   /** Line-pair density in cycles per millimetre. */
-  lpmm: number,
+  lpmm: number;
   /** In-plane rotation in degrees; zero produces vertical lines. */
-  rotation: number,
+  rotation: number;
 };
 
 /** Circular, annular, rectangular, or Ronchi clear aperture with signed offsets. */
-export type ClearAperture = ({
-  shape: "circular",
-} | AnnularAperture | RectangularAperture | RonchiRulingAperture) & BaseAperture;
+export type ClearAperture = (
+  | {
+      shape: "circular";
+    }
+  | AnnularAperture
+  | RectangularAperture
+  | RonchiRulingAperture
+) &
+  BaseAperture;
 
 /** Explicit circular or rectangular edge aperture; omission means follow the clear aperture. */
-export type EdgeAperture = ({
-  shape: "circular",
-  radius: number,
-} | RectangularAperture) & BaseAperture;
+export type EdgeAperture = (
+  | {
+      shape: "circular";
+      radius: number;
+    }
+  | RectangularAperture
+) &
+  BaseAperture;
 
 /** At most ten polynomial coefficients for coefficient-bearing aspheres. */
 export type AsphericalPolynomialCoeffs = number[];
 
 type AsphericalConfigMap = {
-  "Conic": { conicConstant: number },
+  Conic: { conicConstant: number };
   // length <= 10
-  "EvenAspherical": { conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
-  "RadialPolynomial": { conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
-  "XToroid": { toricSweepRadiusOfCurvature: number, conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
-  "YToroid": { toricSweepRadiusOfCurvature: number, conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+  EvenAspherical: {
+    conicConstant: number;
+    polynomialCoefficients: AsphericalPolynomialCoeffs;
+  };
+  RadialPolynomial: {
+    conicConstant: number;
+    polynomialCoefficients: AsphericalPolynomialCoeffs;
+  };
+  XToroid: {
+    toricSweepRadiusOfCurvature: number;
+    conicConstant: number;
+    polynomialCoefficients: AsphericalPolynomialCoeffs;
+  };
+  YToroid: {
+    toricSweepRadiusOfCurvature: number;
+    conicConstant: number;
+    polynomialCoefficients: AsphericalPolynomialCoeffs;
+  };
 };
 
 type AsphericalConfigConstructor<T extends keyof AsphericalConfigMap> = {
@@ -115,7 +138,7 @@ type AsphericalConfigConstructor<T extends keyof AsphericalConfigMap> = {
 }[T];
 
 /** Discriminated conic, polynomial, or toroidal asphere configuration. */
-type AsphericalConfig = 
+type AsphericalConfig =
   | AsphericalConfigConstructor<"Conic">
   | AsphericalConfigConstructor<"EvenAspherical">
   | AsphericalConfigConstructor<"RadialPolynomial">
@@ -142,26 +165,26 @@ export interface Surface {
   edge_aperture?: EdgeAperture;
   /** Optional discriminated aspherical surface configuration. */
   aspherical?: AsphericalConfig;
-  decenter?: DecenterConfig,
+  decenter?: DecenterConfig;
   /** Optional diffractive-element wrapper; an empty wrapper is a valid no-op. */
   diffractiveElement?: {
     /** Optional ruled diffraction grating applied as the surface phase element. */
-    diffractionGrating?: DiffractionGrating,
-  },
+    diffractionGrating?: DiffractionGrating;
+  };
 }
 
 /** Object plane, ordered physical surfaces, and image plane. */
 export interface Surfaces {
   /** Object-space gap and non-reflective medium. */
   object: {
-    distance: number,
-    medium: Exclude<string, "REFL" | "refl">,
-    manufacturer: string,
-  },
+    distance: number;
+    medium: Exclude<string, "REFL" | "refl">;
+    manufacturer: string;
+  };
   image: {
-    curvatureRadius: number, // 0 means flat (infinite radius)
-    decenter?: DecenterConfig,
-  },
+    curvatureRadius: number; // 0 means flat (infinite radius)
+    decenter?: DecenterConfig;
+  };
   surfaces: Surface[];
 }
 

@@ -1,8 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import {
-  useScreenBreakpoint,
-  _resetRegistry,
-} from "../useScreenBreakpoint";
+import { useScreenBreakpoint, _resetRegistry } from "../useScreenBreakpoint";
 
 // --- matchMedia mock infrastructure ---
 
@@ -118,7 +115,10 @@ describe("useScreenBreakpoint", () => {
     _resetRegistry();
 
     expect(mockMQL.listeners).toHaveLength(0);
-    expect(mockMQL.mql.removeEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+    expect(mockMQL.mql.removeEventListener).toHaveBeenCalledWith(
+      "change",
+      expect.any(Function),
+    );
   });
 
   test("multiple hook instances each get their own listener", () => {

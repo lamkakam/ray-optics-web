@@ -54,7 +54,10 @@ const CONTENT_OFFSET_CLASSES = {
     checked: sz.contentOffsetCheckedMd,
     unchecked: sz.contentOffsetUncheckedMd,
   },
-} as const satisfies Record<SwitchSize, Record<"checked" | "unchecked", string>>;
+} as const satisfies Record<
+  SwitchSize,
+  Record<"checked" | "unchecked", string>
+>;
 
 /**
  * Controlled switch primitive for binary settings. It renders a native button with `role="switch"` and tokenized track, thumb, disabled, and animation classes.
@@ -99,54 +102,64 @@ export function Switch({
           onCheckedChange(!checked);
         }
       }}
-      className={twMerge(clsx(
-        "relative inline-flex shrink-0 items-center border-0",
-        TRACK_SIZE_CLASSES[size],
-        sz.trackPadding,
-        checked ? c.checkedTrackColor : c.uncheckedTrackColor,
-        s.trackBorderRadius,
-        s.trackTransition,
-        s.transitionDuration,
-        s.transitionEase,
-        s.focusOutline,
-        s.focusRingWidth,
-        c.focusRingColor,
-        s.enabledCursor,
-        s.cursor,
-        s.opacity,
-        className,
-      ))}
+      className={twMerge(
+        clsx(
+          "relative inline-flex shrink-0 items-center border-0",
+          TRACK_SIZE_CLASSES[size],
+          sz.trackPadding,
+          checked ? c.checkedTrackColor : c.uncheckedTrackColor,
+          s.trackBorderRadius,
+          s.trackTransition,
+          s.transitionDuration,
+          s.transitionEase,
+          s.focusOutline,
+          s.focusRingWidth,
+          c.focusRingColor,
+          s.enabledCursor,
+          s.cursor,
+          s.opacity,
+          className,
+        ),
+      )}
     >
       <span
         data-testid="switch-content"
         aria-hidden="true"
-        className={twMerge(clsx(
-          "pointer-events-none absolute bottom-0 top-0 flex items-center justify-center font-medium leading-none",
-          CONTENT_SIZE_CLASSES[size],
-          checked ? CONTENT_OFFSET_CLASSES[size].checked : CONTENT_OFFSET_CLASSES[size].unchecked,
-          checked ? c.checkedContentColor : c.uncheckedContentColor,
-          s.contentTransition,
-          s.transitionDuration,
-          s.transitionEase,
-        ))}
+        className={twMerge(
+          clsx(
+            "pointer-events-none absolute bottom-0 top-0 flex items-center justify-center font-medium leading-none",
+            CONTENT_SIZE_CLASSES[size],
+            checked
+              ? CONTENT_OFFSET_CLASSES[size].checked
+              : CONTENT_OFFSET_CLASSES[size].unchecked,
+            checked ? c.checkedContentColor : c.uncheckedContentColor,
+            s.contentTransition,
+            s.transitionDuration,
+            s.transitionEase,
+          ),
+        )}
       >
         {visibleContent}
       </span>
       <span
         data-testid="switch-thumb"
         aria-hidden="true"
-        className={twMerge(clsx(
-          "pointer-events-none relative z-10 block",
-          THUMB_SIZE_CLASSES[size],
-          checked ? THUMB_CHECKED_TRANSLATE_CLASSES[size] : sz.thumbTranslateUnchecked,
-          c.thumbColor,
-          c.thumbShadowColor,
-          s.thumbBorderRadius,
-          s.thumbTransition,
-          s.transitionDuration,
-          s.transitionEase,
-          s.thumbWillChange,
-        ))}
+        className={twMerge(
+          clsx(
+            "pointer-events-none relative z-10 block",
+            THUMB_SIZE_CLASSES[size],
+            checked
+              ? THUMB_CHECKED_TRANSLATE_CLASSES[size]
+              : sz.thumbTranslateUnchecked,
+            c.thumbColor,
+            c.thumbShadowColor,
+            s.thumbBorderRadius,
+            s.thumbTransition,
+            s.transitionDuration,
+            s.transitionEase,
+            s.thumbWillChange,
+          ),
+        )}
       />
     </button>
   );

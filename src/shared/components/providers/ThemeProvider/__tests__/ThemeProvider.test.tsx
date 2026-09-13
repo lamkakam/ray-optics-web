@@ -1,7 +1,10 @@
 /** Focused browser-storage, media-query, DOM-class, and context tests for theme state. */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ThemeProvider, useTheme } from "@/shared/components/providers/ThemeProvider";
+import {
+  ThemeProvider,
+  useTheme,
+} from "@/shared/components/providers/ThemeProvider";
 
 /** Exposes the provider contract through accessible controls for state assertions. */
 function ThemeHarness() {
@@ -10,9 +13,15 @@ function ThemeHarness() {
   return (
     <>
       <div data-testid="theme">{theme}</div>
-      <button type="button" onClick={() => setTheme("dark")}>Dark</button>
-      <button type="button" onClick={() => setTheme("light")}>Light</button>
-      <button type="button" onClick={() => setTheme("invalid" as never)}>Invalid</button>
+      <button type="button" onClick={() => setTheme("dark")}>
+        Dark
+      </button>
+      <button type="button" onClick={() => setTheme("light")}>
+        Light
+      </button>
+      <button type="button" onClick={() => setTheme("invalid" as never)}>
+        Invalid
+      </button>
     </>
   );
 }
@@ -35,25 +44,30 @@ describe("ThemeProvider", () => {
 
     expect(screen.getByTestId("theme")).toHaveTextContent("dark");
     expect(document.documentElement).toHaveClass("dark");
-    expect(window.matchMedia).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
+    expect(window.matchMedia).toHaveBeenCalledWith(
+      "(prefers-color-scheme: dark)",
+    );
   });
 
   it.each([
     ["dark", false, "dark"],
     ["light", true, "light"],
-  ] as const)("uses the persisted %s theme before checking the OS", (stored, osMatches, expected) => {
-    localStorage.setItem("ray-optics-theme", stored);
-    window.matchMedia = jest.fn().mockReturnValue({ matches: osMatches });
+  ] as const)(
+    "uses the persisted %s theme before checking the OS",
+    (stored, osMatches, expected) => {
+      localStorage.setItem("ray-optics-theme", stored);
+      window.matchMedia = jest.fn().mockReturnValue({ matches: osMatches });
 
-    render(
-      <ThemeProvider>
-        <ThemeHarness />
-      </ThemeProvider>,
-    );
+      render(
+        <ThemeProvider>
+          <ThemeHarness />
+        </ThemeProvider>,
+      );
 
-    expect(screen.getByTestId("theme")).toHaveTextContent(expected);
-    expect(window.matchMedia).not.toHaveBeenCalled();
-  });
+      expect(screen.getByTestId("theme")).toHaveTextContent(expected);
+      expect(window.matchMedia).not.toHaveBeenCalled();
+    },
+  );
 
   it("falls back to the OS when the persisted value is invalid", () => {
     localStorage.setItem("ray-optics-theme", "sepia");
@@ -102,8 +116,9 @@ describe("ThemeProvider", () => {
     expect(localStorage.getItem("ray-optics-theme")).toBeNull();
   });
 
-
   it("throws when useTheme is rendered outside a provider", () => {
-    expect(() => render(<ThemeHarness />)).toThrow("useTheme must be used within a ThemeProvider");
+    expect(() => render(<ThemeHarness />)).toThrow(
+      "useTheme must be used within a ThemeProvider",
+    );
   });
 });

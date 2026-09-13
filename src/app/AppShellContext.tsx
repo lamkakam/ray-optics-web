@@ -15,7 +15,9 @@ interface AppShellContextValue {
 }
 
 /** Client-only context for app routes rendered inside the shared shell. Exposes shared Pyodide state and shell-level UI actions without prop drilling through every page. */
-const AppShellContext = createContext<AppShellContextValue | undefined>(undefined);
+const AppShellContext = createContext<AppShellContextValue | undefined>(
+  undefined,
+);
 
 interface AppShellProviderProps {
   readonly value: AppShellContextValue;

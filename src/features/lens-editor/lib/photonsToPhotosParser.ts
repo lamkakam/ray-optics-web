@@ -1,6 +1,10 @@
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import { resolvePrescriptionMedium } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
-import type { OpticalModel, OpticalSpecs, Surface } from "@/shared/lib/types/opticalModel";
+import type {
+  OpticalModel,
+  OpticalSpecs,
+  Surface,
+} from "@/shared/lib/types/opticalModel";
 
 /** Selectable focal-length column discovered in a zoom prescription. */
 export interface PhotonsToPhotosFocalLengthChoice {
@@ -46,7 +50,11 @@ interface AsphericalRow {
   readonly coefficients: readonly number[];
 }
 
-const REQUIRED_SECTIONS: readonly SectionName[] = ["descriptive data", "variable distances", "lens data"];
+const REQUIRED_SECTIONS: readonly SectionName[] = [
+  "descriptive data",
+  "variable distances",
+  "lens data",
+];
 const IGNORED_SECTIONS = new Set<SectionName>(["figure", "notes"]);
 const RADIUS_TOLERANCE = 1e-6;
 
@@ -91,32 +99,48 @@ export function parsePhotonsToPhotosText(
   const sections = parseSections(text);
   for (const sectionName of REQUIRED_SECTIONS) {
     if (!sections.has(sectionName)) {
-      throw new Error(`Photons to Photos file is missing required section [${sectionName}].`);
+      throw new Error(
+        `Photons to Photos file is missing required section [${sectionName}].`,
+      );
     }
   }
 
-  const variableDistances = parseVariableDistances(sections.get("variable distances") ?? []);
+  const variableDistances = parseVariableDistances(
+    sections.get("variable distances") ?? [],
+  );
   const lensRows = parseLensRows(sections.get("lens data") ?? []);
-  const asphericalRows = parseAsphericalRows(sections.get("aspherical data") ?? []);
+  const asphericalRows = parseAsphericalRows(
+    sections.get("aspherical data") ?? [],
+  );
   const focalLengths = getRequiredVariable(variableDistances, "Focal Length");
 
   if (focalLengths.length <= 1) {
     return {
       kind: "prime",
-      model: buildOpticalModel(variableDistances, lensRows, asphericalRows, 0, lookupMaps),
+      model: buildOpticalModel(
+        variableDistances,
+        lensRows,
+        asphericalRows,
+        0,
+        lookupMaps,
+      ),
     };
   }
 
   return {
     kind: "zoom",
-    focalLengthChoices: focalLengths.map((focalLength, index) => ({ index, focalLength })),
-    resolve: (choiceIndex) => buildOpticalModel(
-      variableDistances,
-      lensRows,
-      asphericalRows,
-      choiceIndex,
-      lookupMaps,
-    ),
+    focalLengthChoices: focalLengths.map((focalLength, index) => ({
+      index,
+      focalLength,
+    })),
+    resolve: (choiceIndex) =>
+      buildOpticalModel(
+        variableDistances,
+        lensRows,
+        asphericalRows,
+        choiceIndex,
+        lookupMaps,
+      ),
   };
 }
 
@@ -138,19 +162,27 @@ function parseSections(text: string): Map<SectionName, string[][]> {
       continue;
     }
 
-    if (currentSection === undefined || IGNORED_SECTIONS.has(currentSection)) continue;
-    sections.get(currentSection)?.push(rawLine.split("\t").map((cell) => cell.trim()));
+    if (currentSection === undefined || IGNORED_SECTIONS.has(currentSection))
+      continue;
+    sections
+      .get(currentSection)
+      ?.push(rawLine.split("\t").map((cell) => cell.trim()));
   }
 
   return sections;
 }
 
-function parseVariableDistances(rows: readonly string[][]): Map<string, readonly number[]> {
+function parseVariableDistances(
+  rows: readonly string[][],
+): Map<string, readonly number[]> {
   const variables = new Map<string, readonly number[]>();
   for (const row of rows) {
     const key = row[0]?.trim();
     if (!key) continue;
-    const values = row.slice(1).filter((cell) => cell !== "").map(parseNumberToken);
+    const values = row
+      .slice(1)
+      .filter((cell) => cell !== "")
+      .map(parseNumberToken);
     variables.set(key, values);
   }
   return variables;
@@ -171,14 +203,21 @@ function parseLensRows(rows: readonly string[][]): readonly LensRow[] {
     }));
 }
 
-function parseAsphericalRows(rows: readonly string[][]): readonly AsphericalRow[] {
+function parseAsphericalRows(
+  rows: readonly string[][],
+): readonly AsphericalRow[] {
   return rows
     .filter((row) => row[0] !== undefined && row[0] !== "")
     .map((row) => ({
       surfaceNumber: parseSurfaceNumber(row[0]),
       radius: parseFiniteNumber(requiredCell(row, 1, "aspherical radius")),
-      conicConstant: parseFiniteNumber(requiredCell(row, 2, "aspherical conic constant")),
-      coefficients: row.slice(3).filter((cell) => cell !== "").map(parseFiniteNumber),
+      conicConstant: parseFiniteNumber(
+        requiredCell(row, 2, "aspherical conic constant"),
+      ),
+      coefficients: row
+        .slice(3)
+        .filter((cell) => cell !== "")
+        .map(parseFiniteNumber),
     }));
 }
 
@@ -191,7 +230,11 @@ function buildOpticalModel(
 ): OpticalModel {
   const surfaces = lensRows.map((row): Surface => {
     const radius = parseRadius(row.radiusToken);
-    const thickness = resolveDistance(row.thicknessToken, variableDistances, choiceIndex);
+    const thickness = resolveDistance(
+      row.thicknessToken,
+      variableDistances,
+      choiceIndex,
+    );
     const material = resolveMaterial(row, lookupMaps);
     return {
       label: isApertureStop(row.radiusToken) ? "Stop" : "Default",
@@ -205,10 +248,14 @@ function buildOpticalModel(
   for (const row of asphericalRows) {
     const surface = surfaces[row.surfaceNumber - 1];
     if (!surface) {
-      throw new Error(`Aspherical data references missing surface ${row.surfaceNumber}.`);
+      throw new Error(
+        `Aspherical data references missing surface ${row.surfaceNumber}.`,
+      );
     }
     if (Math.abs(surface.curvatureRadius - row.radius) > RADIUS_TOLERANCE) {
-      throw new Error(`Aspherical radius disagrees with lens data on surface ${row.surfaceNumber}.`);
+      throw new Error(
+        `Aspherical radius disagrees with lens data on surface ${row.surfaceNumber}.`,
+      );
     }
     surface.aspherical = {
       kind: "EvenAspherical",
@@ -230,7 +277,11 @@ function buildOpticalModel(
       pupil,
       field,
       wavelengths: {
-        weights: [[587.562, 2], [486.133, 1], [656.273, 1]],
+        weights: [
+          [587.562, 2],
+          [486.133, 1],
+          [656.273, 1],
+        ],
         referenceIndex: 0,
       },
     },
@@ -250,7 +301,9 @@ function buildObjectSide(
     };
   }
 
-  const objectSurfaceIndex = surfaces.findIndex((surface) => surface.thickness !== 0);
+  const objectSurfaceIndex = surfaces.findIndex(
+    (surface) => surface.thickness !== 0,
+  );
   const objectSurface = surfaces[objectSurfaceIndex];
   if (objectSurface === undefined) {
     return {
@@ -273,7 +326,11 @@ function buildPupilSpec(
   variableDistances: ReadonlyMap<string, readonly number[]>,
   choiceIndex: number,
 ): OpticalSpecs["pupil"] {
-  const fNumber = getOptionalVariableValue(variableDistances, "F-Number", choiceIndex);
+  const fNumber = getOptionalVariableValue(
+    variableDistances,
+    "F-Number",
+    choiceIndex,
+  );
   if (fNumber !== undefined) {
     return { space: "image", type: "f/#", value: fNumber };
   }
@@ -290,7 +347,11 @@ function buildFieldSpec(
   choiceIndex: number,
   pupil: OpticalSpecs["pupil"],
 ): OpticalSpecs["field"] {
-  const fullAngleOfView = getOptionalVariableValue(variableDistances, "Angle of View", choiceIndex);
+  const fullAngleOfView = getOptionalVariableValue(
+    variableDistances,
+    "Angle of View",
+    choiceIndex,
+  );
   if (fullAngleOfView !== undefined) {
     return {
       space: "object",
@@ -302,7 +363,11 @@ function buildFieldSpec(
     };
   }
 
-  const imageHeight = getVariableValue(variableDistances, "Image Height", choiceIndex);
+  const imageHeight = getVariableValue(
+    variableDistances,
+    "Image Height",
+    choiceIndex,
+  );
   return {
     space: "image",
     type: "height",
@@ -356,7 +421,9 @@ function resolveMaterial(
   return fallbackModelGlassMaterial(row);
 }
 
-function fallbackModelGlassMaterial(row: LensRow): Pick<Surface, "medium" | "manufacturer"> {
+function fallbackModelGlassMaterial(
+  row: LensRow,
+): Pick<Surface, "medium" | "manufacturer"> {
   if (row.nd !== "") {
     return { medium: row.nd, manufacturer: row.vd };
   }
@@ -380,7 +447,9 @@ function getRequiredVariable(
 ): readonly number[] {
   const values = variableDistances.get(key);
   if (!values || values.length === 0) {
-    throw new Error(`Photons to Photos file is missing variable distance "${key}".`);
+    throw new Error(
+      `Photons to Photos file is missing variable distance "${key}".`,
+    );
   }
   return values;
 }
@@ -393,7 +462,9 @@ function getVariableValue(
   const values = getRequiredVariable(variableDistances, key);
   const value = values[choiceIndex];
   if (value === undefined) {
-    throw new Error(`Variable distance "${key}" has no value for focal-length column ${choiceIndex + 1}.`);
+    throw new Error(
+      `Variable distance "${key}" has no value for focal-length column ${choiceIndex + 1}.`,
+    );
   }
   return value;
 }
@@ -423,7 +494,11 @@ function parseFiniteNumber(token: string): number {
   return value;
 }
 
-function requiredCell(row: readonly string[], index: number, label: string): string {
+function requiredCell(
+  row: readonly string[],
+  index: number,
+  label: string,
+): string {
   const value = row[index];
   if (value === undefined || value === "") {
     throw new Error(`Missing ${label}.`);

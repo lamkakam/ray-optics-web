@@ -68,7 +68,7 @@ export async function reloadAndWait(page: Page): Promise<void> {
 export async function getColId(
   page: Page,
   gridSel: string,
-  headerText: string
+  headerText: string,
 ): Promise<string> {
   const header = page
     .locator(`${gridSel} [role="columnheader"]:has-text("${headerText}")`)
@@ -84,7 +84,7 @@ export async function editNumberCell(
   gridSel: string,
   rowIndex: number,
   colId: string,
-  value: string
+  value: string,
 ): Promise<void> {
   const cellSel = `${gridSel} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="${colId}"]`;
   const cell = page.locator(cellSel);
@@ -103,10 +103,10 @@ export async function selectGridOption(
   gridSel: string,
   rowIndex: number,
   colId: string,
-  option: string
+  option: string,
 ): Promise<void> {
   const cell = page.locator(
-    `${gridSel} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="${colId}"]`
+    `${gridSel} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="${colId}"]`,
   );
   await cell.scrollIntoViewIfNeeded();
   await cell.click();
@@ -123,7 +123,7 @@ export async function selectGridOption(
 export async function insertRowAfter(
   page: Page,
   gridSel: string,
-  rowIndex: number
+  rowIndex: number,
 ): Promise<void> {
   const row = page.locator(`${gridSel} .ag-row[row-index="${rowIndex}"]`);
   await row.getByRole("button", { name: "Insert row" }).click();
@@ -139,15 +139,19 @@ function exactCellText(value: number): RegExp {
 export async function getPrescriptionSurfaceRow(
   page: Page,
   gridSel: string,
-  surfaceIndex: number
+  surfaceIndex: number,
 ): Promise<Locator> {
-  return getPrescriptionRowByIndexText(page, gridSel, exactCellText(surfaceIndex));
+  return getPrescriptionRowByIndexText(
+    page,
+    gridSel,
+    exactCellText(surfaceIndex),
+  );
 }
 
 export async function getPrescriptionSpecialRow(
   page: Page,
   gridSel: string,
-  rowLabel: "Object" | "Image"
+  rowLabel: "Object" | "Image",
 ): Promise<Locator> {
   const surfaceColId = await getColId(page, gridSel, "Surface");
   const row = page.locator(`${gridSel} .ag-center-cols-container .ag-row`, {
@@ -162,7 +166,7 @@ export async function getPrescriptionSpecialRow(
 export async function getPrescriptionSpecialRowByEndpoint(
   page: Page,
   gridSel: string,
-  rowLabel: "Object" | "Image"
+  rowLabel: "Object" | "Image",
 ): Promise<Locator> {
   const indexColId = await getColId(page, gridSel, "Index");
   const indexRows = page.locator(
@@ -171,7 +175,7 @@ export async function getPrescriptionSpecialRowByEndpoint(
       has: page.locator(`.ag-cell[col-id="${indexColId}"]`, {
         hasText: /^\s*$/,
       }),
-    }
+    },
   );
   const indexRow = rowLabel === "Object" ? indexRows.first() : indexRows.last();
   await expect(indexRow).toBeAttached({ timeout: 3_000 });
@@ -180,7 +184,7 @@ export async function getPrescriptionSpecialRowByEndpoint(
   if (!rowIndex) throw new Error(`row-index not found for ${rowLabel}`);
 
   const centerRow = page.locator(
-    `${gridSel} .ag-center-cols-container .ag-row[row-index="${rowIndex}"]`
+    `${gridSel} .ag-center-cols-container .ag-row[row-index="${rowIndex}"]`,
   );
   await expect(centerRow).toHaveCount(1, { timeout: 3_000 });
   return centerRow.first();
@@ -189,21 +193,24 @@ export async function getPrescriptionSpecialRowByEndpoint(
 async function getPrescriptionRowByIndexText(
   page: Page,
   gridSel: string,
-  indexText: RegExp
+  indexText: RegExp,
 ): Promise<Locator> {
   const indexColId = await getColId(page, gridSel, "Index");
-  const indexRow = page.locator(`${gridSel} .ag-pinned-left-cols-container .ag-row`, {
-    has: page.locator(`.ag-cell[col-id="${indexColId}"]`, {
-      hasText: indexText,
-    }),
-  });
+  const indexRow = page.locator(
+    `${gridSel} .ag-pinned-left-cols-container .ag-row`,
+    {
+      has: page.locator(`.ag-cell[col-id="${indexColId}"]`, {
+        hasText: indexText,
+      }),
+    },
+  );
   await expect(indexRow).toHaveCount(1, { timeout: 3_000 });
 
   const rowIndex = await indexRow.first().getAttribute("row-index");
   if (!rowIndex) throw new Error(`row-index not found for ${indexText}`);
 
   const centerRow = page.locator(
-    `${gridSel} .ag-center-cols-container .ag-row[row-index="${rowIndex}"]`
+    `${gridSel} .ag-center-cols-container .ag-row[row-index="${rowIndex}"]`,
   );
   await expect(centerRow).toHaveCount(1, { timeout: 3_000 });
   return centerRow.first();
@@ -212,12 +219,12 @@ async function getPrescriptionRowByIndexText(
 export async function waitForPrescriptionSurfaceCount(
   page: Page,
   gridSel: string,
-  expectedCount: number
+  expectedCount: number,
 ): Promise<void> {
   const indexColId = await getColId(page, gridSel, "Index");
   const surfaceIndexCells = page
     .locator(
-      `${gridSel} .ag-pinned-left-cols-container .ag-cell[col-id="${indexColId}"]`
+      `${gridSel} .ag-pinned-left-cols-container .ag-cell[col-id="${indexColId}"]`,
     )
     .filter({ hasText: /^\s*\d+\s*$/ });
   await expect(surfaceIndexCells).toHaveCount(expectedCount, {
@@ -229,7 +236,7 @@ export async function getGridCellByHeaderText(
   page: Page,
   gridSel: string,
   row: Locator,
-  headerText: string
+  headerText: string,
 ): Promise<Locator> {
   const colId = await getColId(page, gridSel, headerText);
   return row.locator(`.ag-cell[col-id="${colId}"]`);
@@ -239,7 +246,7 @@ export async function getPrescriptionCell(
   page: Page,
   gridSel: string,
   surfaceIndex: number,
-  headerText: string
+  headerText: string,
 ): Promise<Locator> {
   const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
   const cell = await getGridCellByHeaderText(page, gridSel, row, headerText);
@@ -251,7 +258,7 @@ export async function getPrescriptionSpecialCell(
   page: Page,
   gridSel: string,
   rowLabel: "Object" | "Image",
-  headerText: string
+  headerText: string,
 ): Promise<Locator> {
   const row =
     headerText === "Surface"
@@ -267,9 +274,14 @@ export async function getPrescriptionActionButton(
   gridSel: string,
   surfaceIndex: number,
   headerText: string,
-  buttonName: string
+  buttonName: string,
 ): Promise<Locator> {
-  const cell = await getPrescriptionCell(page, gridSel, surfaceIndex, headerText);
+  const cell = await getPrescriptionCell(
+    page,
+    gridSel,
+    surfaceIndex,
+    headerText,
+  );
   return cell.getByRole("button", { name: buttonName });
 }
 
@@ -278,16 +290,21 @@ export async function getPrescriptionSpecialActionButton(
   gridSel: string,
   rowLabel: "Object" | "Image",
   headerText: string,
-  buttonName: string
+  buttonName: string,
 ): Promise<Locator> {
-  const cell = await getPrescriptionSpecialCell(page, gridSel, rowLabel, headerText);
+  const cell = await getPrescriptionSpecialCell(
+    page,
+    gridSel,
+    rowLabel,
+    headerText,
+  );
   return cell.getByRole("button", { name: buttonName });
 }
 
 export async function insertPrescriptionSurfaceAtEnd(
   page: Page,
   gridSel: string,
-  expectedSurfaceCount: number
+  expectedSurfaceCount: number,
 ): Promise<void> {
   const insertButtons = page
     .locator(`${gridSel} .ag-row`)
@@ -301,9 +318,14 @@ export async function editPrescriptionNumberCell(
   gridSel: string,
   surfaceIndex: number,
   headerText: string,
-  value: string
+  value: string,
 ): Promise<void> {
-  const cell = await getPrescriptionCell(page, gridSel, surfaceIndex, headerText);
+  const cell = await getPrescriptionCell(
+    page,
+    gridSel,
+    surfaceIndex,
+    headerText,
+  );
   await cell.scrollIntoViewIfNeeded();
   await cell.dblclick();
   const input = cell.locator("input").first();
@@ -318,9 +340,14 @@ export async function selectPrescriptionGridOption(
   gridSel: string,
   surfaceIndex: number,
   headerText: string,
-  option: string
+  option: string,
 ): Promise<void> {
-  const cell = await getPrescriptionCell(page, gridSel, surfaceIndex, headerText);
+  const cell = await getPrescriptionCell(
+    page,
+    gridSel,
+    surfaceIndex,
+    headerText,
+  );
   await cell.scrollIntoViewIfNeeded();
   await cell.click();
   await page.keyboard.press("Enter");
@@ -337,7 +364,7 @@ export async function setPrescriptionMedium(
   gridSel: string,
   surfaceIndex: number,
   manufacturer: string,
-  glass: string
+  glass: string,
 ): Promise<void> {
   const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
   await row.hover();
@@ -356,7 +383,7 @@ export async function setMedium(
   gridSel: string,
   rowIndex: number,
   manufacturer: string,
-  glass: string
+  glass: string,
 ): Promise<void> {
   const row = page.locator(`${gridSel} .ag-row[row-index="${rowIndex}"]`);
   await row.hover();
@@ -374,10 +401,10 @@ export async function editFieldRow(
   page: Page,
   modalGrid: string,
   rowIndex: number,
-  value: string
+  value: string,
 ): Promise<void> {
   const cell = page.locator(
-    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="value"]`
+    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="value"]`,
   );
   await cell.scrollIntoViewIfNeeded();
   await cell.dblclick();
@@ -393,10 +420,10 @@ export async function selectFraunhofer(
   page: Page,
   modalGrid: string,
   rowIndex: number,
-  symbol: string
+  symbol: string,
 ): Promise<void> {
   const cell = page.locator(
-    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="fraunhofer"]`
+    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="fraunhofer"]`,
   );
   await cell.scrollIntoViewIfNeeded();
   await cell.click();
@@ -414,10 +441,10 @@ export async function editWeightCell(
   page: Page,
   modalGrid: string,
   rowIndex: number,
-  value: string
+  value: string,
 ): Promise<void> {
   const cell = page.locator(
-    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="weight"]`
+    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="weight"]`,
   );
   await cell.scrollIntoViewIfNeeded();
   await cell.dblclick();

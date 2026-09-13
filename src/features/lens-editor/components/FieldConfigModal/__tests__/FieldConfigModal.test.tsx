@@ -78,7 +78,10 @@ describe("FieldConfigModal", () => {
     const onApply = jest.fn();
     render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Field space"), "image");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Field space"),
+      "image",
+    );
     expect(screen.getByLabelText("Field type")).toHaveValue("height");
     expect(
       within(screen.getByLabelText("Field type")).queryByRole("option", {
@@ -118,7 +121,7 @@ describe("FieldConfigModal", () => {
     expect(grid.parentElement).toHaveClass(
       "h-[200px]",
       "min-[1440px]:h-[400px]",
-      "ag-grid-touch-scroll"
+      "ag-grid-touch-scroll",
     );
     expect(grid).toHaveAttribute("data-dom-layout", "normal");
     expect(grid).toHaveAttribute("data-suppress-touch", "false");
@@ -155,7 +158,9 @@ describe("FieldConfigModal", () => {
 
   it("does not add more than 10 rows", async () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
-    render(<FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />);
+    render(
+      <FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />,
+    );
     const addBtns = screen.getAllByLabelText("Add field row");
     await userEvent.click(addBtns[0]);
 
@@ -251,7 +256,7 @@ describe("FieldConfigModal", () => {
     expect(
       screen.getByRole("checkbox", {
         name: "Use wide angle mode for more robust ray aiming",
-      })
+      }),
     ).toBeInTheDocument();
   });
 
@@ -260,7 +265,7 @@ describe("FieldConfigModal", () => {
     expect(
       screen.getByRole("checkbox", {
         name: "Use wide angle mode for more robust ray aiming",
-      })
+      }),
     ).not.toBeChecked();
   });
 
@@ -269,7 +274,7 @@ describe("FieldConfigModal", () => {
     expect(
       screen.getByRole("checkbox", {
         name: "Use wide angle mode for more robust ray aiming",
-      })
+      }),
     ).toBeChecked();
   });
 
@@ -309,7 +314,10 @@ describe("FieldConfigModal", () => {
       />,
     );
 
-    await userEvent.selectOptions(screen.getByLabelText("Field type"), "height");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Field type"),
+      "height",
+    );
     const checkbox = screen.getByRole("checkbox", {
       name: "Use wide angle mode for more robust ray aiming",
     });
@@ -328,7 +336,9 @@ describe("FieldConfigModal", () => {
 
   it("hides add buttons when at 10 rows", () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
-    render(<FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />);
+    render(
+      <FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />,
+    );
     const addBtns = screen.getAllByLabelText("Add field row");
     addBtns.forEach((btn) => {
       expect(btn).toHaveStyle({ visibility: "hidden" });
@@ -337,7 +347,9 @@ describe("FieldConfigModal", () => {
 
   it("shows add buttons after deleting a row from 10", async () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
-    render(<FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />);
+    render(
+      <FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />,
+    );
     const deleteBtns = screen.getAllByLabelText("Delete field row");
     await userEvent.click(deleteBtns[0]);
 
@@ -354,7 +366,7 @@ describe("FieldConfigModal", () => {
     await userEvent.click(
       screen.getByRole("checkbox", {
         name: "Use wide angle mode for more robust ray aiming",
-      })
+      }),
     );
     await userEvent.click(screen.getByText("Apply"));
 
@@ -376,20 +388,38 @@ describe("FieldConfigModal", () => {
     await userEvent.click(checkbox);
     expect(checkbox).toBeChecked();
 
-    rerender(<FieldConfigModal {...defaultProps} isOpen={false} initialIsWideAngle={false} />);
-    rerender(<FieldConfigModal {...defaultProps} isOpen initialIsWideAngle={false} />);
+    rerender(
+      <FieldConfigModal
+        {...defaultProps}
+        isOpen={false}
+        initialIsWideAngle={false}
+      />,
+    );
+    rerender(
+      <FieldConfigModal {...defaultProps} isOpen initialIsWideAngle={false} />,
+    );
 
     expect(
       screen.getByRole("checkbox", {
         name: "Use wide angle mode for more robust ray aiming",
-      })
+      }),
     ).not.toBeChecked();
   });
 
   it("sets initial dropdown values from props", () => {
-    render(<FieldConfigModal {...defaultProps} initialSpace="image" initialType="height" />);
-    const spaceDropdown = screen.getByLabelText("Field space") as HTMLSelectElement;
-    const typeDropdown = screen.getByLabelText("Field type") as HTMLSelectElement;
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialSpace="image"
+        initialType="height"
+      />,
+    );
+    const spaceDropdown = screen.getByLabelText(
+      "Field space",
+    ) as HTMLSelectElement;
+    const typeDropdown = screen.getByLabelText(
+      "Field type",
+    ) as HTMLSelectElement;
     expect(spaceDropdown.value).toBe("image");
     expect(typeDropdown.value).toBe("height");
   });
@@ -407,7 +437,7 @@ describe("FieldConfigModal", () => {
         {...defaultProps}
         initialMaxField={30}
         initialRelativeFields={[0, 0.5, 1]}
-      />
+      />,
     );
 
     expect(screen.getByLabelText("Max half-field value")).toHaveValue("45");
@@ -430,14 +460,14 @@ describe("FieldConfigModal", () => {
         {...defaultProps}
         initialRelativeFields={[0.1, 0.2]}
         onApply={onApply}
-      />
+      />,
     );
 
     await userEvent.click(screen.getAllByLabelText("Add field row")[0]);
     await userEvent.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ relativeFields: [0.1, 0, 0.2] })
+      expect.objectContaining({ relativeFields: [0.1, 0, 0.2] }),
     );
   });
 
@@ -449,7 +479,7 @@ describe("FieldConfigModal", () => {
     await userEvent.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ relativeFields: [0, 0.7, 1, 0] })
+      expect.objectContaining({ relativeFields: [0, 0.7, 1, 0] }),
     );
   });
 
@@ -463,7 +493,7 @@ describe("FieldConfigModal", () => {
     await userEvent.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ maxField: 0 })
+      expect.objectContaining({ maxField: 0 }),
     );
   });
 });

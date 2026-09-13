@@ -15,7 +15,8 @@ type ContextValue = StoreApi<ImportCustomGlassStore> | undefined;
  * ### `ImportCustomGlassStoreContext`
  * Raw context object for tests that need to inject a pre-built store.
  */
-export const ImportCustomGlassStoreContext = createContext<ContextValue>(undefined);
+export const ImportCustomGlassStoreContext =
+  createContext<ContextValue>(undefined);
 
 /** Initial state and child tree for an isolated custom-glass store. */
 export interface ImportCustomGlassStoreProviderProps {
@@ -46,7 +47,9 @@ export function ImportCustomGlassStoreProvider({
 export function useImportCustomGlassStore(): StoreApi<ImportCustomGlassStore> {
   const store = useContext(ImportCustomGlassStoreContext);
   if (store === undefined) {
-    throw new Error("`useImportCustomGlassStore` must be used within `ImportCustomGlassStoreProvider`");
+    throw new Error(
+      "`useImportCustomGlassStore` must be used within `ImportCustomGlassStoreProvider`",
+    );
   }
   return store;
 }

@@ -1,8 +1,11 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from 'react';
-import { createStore, type StoreApi } from 'zustand';
-import { createAnalysisPlotSlice, type AnalysisPlotState } from '@/features/analysis/stores/analysisPlotStore';
+import { createContext, type ReactNode, useContext, useState } from "react";
+import { createStore, type StoreApi } from "zustand";
+import {
+  createAnalysisPlotSlice,
+  type AnalysisPlotState,
+} from "@/features/analysis/stores/analysisPlotStore";
 
 type ContextValue = StoreApi<AnalysisPlotState> | undefined;
 
@@ -15,7 +18,9 @@ export interface AnalysisPlotStoreProviderProps {
 }
 
 /** Provides a single `StoreApi<AnalysisPlotState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes. */
-export const AnalysisPlotStoreProvider: React.FC<AnalysisPlotStoreProviderProps> = ({ children }) => {
+export const AnalysisPlotStoreProvider: React.FC<
+  AnalysisPlotStoreProviderProps
+> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 
   if (store === undefined) {
@@ -33,7 +38,9 @@ export const AnalysisPlotStoreProvider: React.FC<AnalysisPlotStoreProviderProps>
 export const useAnalysisPlotStore = (): StoreApi<AnalysisPlotState> => {
   const store = useContext(AnalysisPlotStoreContext);
   if (store === undefined) {
-    throw new Error('`useAnalysisPlotStore` must be used within `AnalysisPlotStoreContext`');
+    throw new Error(
+      "`useAnalysisPlotStore` must be used within `AnalysisPlotStoreContext`",
+    );
   }
   return store;
 };

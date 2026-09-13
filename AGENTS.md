@@ -20,7 +20,7 @@
 
 - Never push to main branch. Always push to a feature branch and open a PR for human approval
 
-- All type checking and linting (commands specified in the skill of "commands-for-development") must be passed
+- All type checking, linting and formatting (commands specified in the skill of "commands-for-development") must be passed
 
 - TypeScript, TSX, and Python specifications are embedded in their source files. Symbol-specific documentation belongs at the narrowest corresponding function, component, class, type, interface, or constant; reserve the file header or module docstring for genuinely module-wide documentation. Read the relevant embedded documentation before planning or implementation. JavaScript (including MJS) and shell specifications remain in `<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` sidecars. The generated `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts` also retains its sidecar because its source is generated.
 

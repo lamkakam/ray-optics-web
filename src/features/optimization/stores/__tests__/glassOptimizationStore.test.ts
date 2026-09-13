@@ -1,8 +1,14 @@
 import { createStore } from "zustand";
-import type { AllGlassCatalogsData, CatalogGlassData } from "@/features/glass-map/types/glassMap";
+import type {
+  AllGlassCatalogsData,
+  CatalogGlassData,
+} from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { GlassOptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
-import { createOptimizationSlice, type OptimizationState } from "@/features/optimization/stores/optimizationStore";
+import {
+  createOptimizationSlice,
+  type OptimizationState,
+} from "@/features/optimization/stores/optimizationStore";
 
 function glass(nd: number, vd: number): CatalogGlassData {
   return {
@@ -63,7 +69,13 @@ const baseModel: OpticalModel = {
   ],
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20, fields: [0], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      fields: [0],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
   },
 };
@@ -71,9 +83,11 @@ const baseModel: OpticalModel = {
 function createInitializedStore(model: OpticalModel = baseModel) {
   const store = createStore<OptimizationState>(createOptimizationSlice);
   store.getState().initializeFromOpticalModel(model);
-  store.getState().replaceOperands([
-    { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
-  ]);
+  store
+    .getState()
+    .replaceOperands([
+      { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+    ]);
   return store;
 }
 
@@ -126,17 +140,28 @@ describe("glass optimization store", () => {
       ],
     });
 
-    store.getState().syncFromOpticalModel({
-      ...baseModel,
-      surfaces: [{ ...baseModel.surfaces[0], curvatureRadius: 55 }, baseModel.surfaces[1]],
-    }, { prescriptionSyncPolicy: "preserveOptimizationModes" });
+    store.getState().syncFromOpticalModel(
+      {
+        ...baseModel,
+        surfaces: [
+          { ...baseModel.surfaces[0], curvatureRadius: 55 },
+          baseModel.surfaces[1],
+        ],
+      },
+      { prescriptionSyncPolicy: "preserveOptimizationModes" },
+    );
     expect(store.getState().glassModes[1]).toMatchObject({ mode: "variable" });
 
     store.getState().syncFromOpticalModel({
       ...baseModel,
-      surfaces: [{ ...baseModel.surfaces[0], curvatureRadius: 60 }, baseModel.surfaces[1]],
+      surfaces: [
+        { ...baseModel.surfaces[0], curvatureRadius: 60 },
+        baseModel.surfaces[1],
+      ],
     });
-    expect(store.getState().glassModes.every((mode) => mode.mode === "constant")).toBe(true);
+    expect(
+      store.getState().glassModes.every((mode) => mode.mode === "constant"),
+    ).toBe(true);
   });
 
   it("builds Glass Expert run config and a separate bounded trf evaluation config", () => {
@@ -149,8 +174,12 @@ describe("glass optimization store", () => {
         { catalog: "Schott", name: "BK7" },
       ],
     });
-    store.getState().setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store.getState().setThicknessMode(2, { mode: "variable", min: "10", max: "30" });
+    store
+      .getState()
+      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store
+      .getState()
+      .setThicknessMode(2, { mode: "variable", min: "10", max: "30" });
 
     expect(store.getState().buildOptimizationConfig(catalogs)).toEqual({
       glass_optimizer: {
@@ -158,13 +187,15 @@ describe("glass optimization store", () => {
         maxiter: 1000,
         tol: 1e-3,
       },
-      glass_variables: [{
-        surface_index: 1,
-        candidates: [
-          { catalog: "Schott", name: "BK7" },
-          { catalog: "Schott", name: "N-LAK9" },
-        ],
-      }],
+      glass_variables: [
+        {
+          surface_index: 1,
+          candidates: [
+            { catalog: "Schott", name: "BK7" },
+            { catalog: "Schott", name: "N-LAK9" },
+          ],
+        },
+      ],
       variables: [
         { kind: "radius", surface_index: 1, min: 40, max: 60 },
         { kind: "thickness", surface_index: 2, min: 10, max: 30 },
@@ -175,7 +206,9 @@ describe("glass optimization store", () => {
       },
     });
 
-    expect(store.getState().buildOptimizationEvaluationConfig(catalogs)).toEqual({
+    expect(
+      store.getState().buildOptimizationEvaluationConfig(catalogs),
+    ).toEqual({
       optimizer: {
         kind: "least_squares",
         method: "trf",
@@ -198,8 +231,12 @@ describe("glass optimization store", () => {
   it("allows continuous-only Glass Expert runs and does not impose the lm residual dimension rule", () => {
     const store = createInitializedStore();
     store.getState().setOptimizerKind("glass_expert");
-    store.getState().setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store.getState().setThicknessMode(2, { mode: "variable", min: "10", max: "30" });
+    store
+      .getState()
+      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store
+      .getState()
+      .setThicknessMode(2, { mode: "variable", min: "10", max: "30" });
 
     expect(store.getState().buildOptimizationConfig(catalogs)).toMatchObject({
       glass_variables: [],
@@ -244,19 +281,28 @@ describe("glass optimization store", () => {
     if (!("glass_variables" in config)) {
       throw new Error("Expected a Glass Expert configuration");
     }
-    expect(config.glass_variables).toEqual([{
-      surface_index: 0,
-      candidates: [
-        { catalog: "Special", name: "CaF2" },
-        { catalog: "Special", name: "Water" },
-      ],
-    }]);
+    expect(config.glass_variables).toEqual([
+      {
+        surface_index: 0,
+        candidates: [
+          { catalog: "Special", name: "CaF2" },
+          { catalog: "Special", name: "Water" },
+        ],
+      },
+    ]);
   });
 
   it("validates selected and incumbent candidates against every live catalog snapshot", () => {
     const store = createInitializedStore({
       ...baseModel,
-      surfaces: [{ ...baseModel.surfaces[0], medium: "CUSTOM_A", manufacturer: "Custom" }, baseModel.surfaces[1]],
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          medium: "CUSTOM_A",
+          manufacturer: "Custom",
+        },
+        baseModel.surfaces[1],
+      ],
     });
     store.getState().setOptimizerKind("glass_expert");
     store.getState().setGlassMode(1, {
@@ -280,12 +326,16 @@ describe("glass optimization store", () => {
       mode: "variable",
       candidates: [{ catalog: "Custom", name: "CUSTOM_A" }],
     });
-    expect(() => store.getState().buildOptimizationConfig(catalogs)).not.toThrow();
+    expect(() =>
+      store.getState().buildOptimizationConfig(catalogs),
+    ).not.toThrow();
 
-    expect(() => store.getState().buildOptimizationConfig({
-      ...catalogs,
-      Custom: {},
-    })).toThrow('Glass candidate "Custom: CUSTOM_A" is unavailable.');
+    expect(() =>
+      store.getState().buildOptimizationConfig({
+        ...catalogs,
+        Custom: {},
+      }),
+    ).toThrow('Glass candidate "Custom: CUSTOM_A" is unavailable.');
   });
 
   it("blocks air and REFL variable rows and rejects ineligible Special candidates", () => {
@@ -313,7 +363,10 @@ describe("glass optimization store", () => {
     for (const medium of ["AiR", "rEfL"]) {
       const store = createInitializedStore({
         ...baseModel,
-        surfaces: [{ ...baseModel.surfaces[0], medium, manufacturer: "" }, baseModel.surfaces[1]],
+        surfaces: [
+          { ...baseModel.surfaces[0], medium, manufacturer: "" },
+          baseModel.surfaces[1],
+        ],
       });
       store.getState().setOptimizerKind("glass_expert");
       store.getState().setGlassMode(1, {
@@ -330,7 +383,10 @@ describe("glass optimization store", () => {
   it("keeps numeric ModelGlass incumbents as the membership-validation exception", () => {
     const store = createInitializedStore({
       ...baseModel,
-      surfaces: [{ ...baseModel.surfaces[0], medium: "1.6", manufacturer: "40" }, baseModel.surfaces[1]],
+      surfaces: [
+        { ...baseModel.surfaces[0], medium: "1.6", manufacturer: "40" },
+        baseModel.surfaces[1],
+      ],
     });
     store.getState().setOptimizerKind("glass_expert");
     store.getState().setGlassMode(1, {
@@ -338,16 +394,18 @@ describe("glass optimization store", () => {
       candidates: [{ catalog: "Hoya", name: "BSC7" }],
     });
 
-    expect(() => store.getState().buildOptimizationConfig(catalogs)).not.toThrow();
+    expect(() =>
+      store.getState().buildOptimizationConfig(catalogs),
+    ).not.toThrow();
   });
 
   it("rejects empty, duplicate, unloaded, unsupported, and out-of-range glass pools", () => {
     const emptyStore = createInitializedStore();
     emptyStore.getState().setOptimizerKind("glass_expert");
     emptyStore.getState().setGlassMode(1, { mode: "variable", candidates: [] });
-    expect(() => emptyStore.getState().buildOptimizationConfig(catalogs)).toThrow(
-      "Glass variable surface 1 must provide candidates.",
-    );
+    expect(() =>
+      emptyStore.getState().buildOptimizationConfig(catalogs),
+    ).toThrow("Glass variable surface 1 must provide candidates.");
 
     const duplicateStore = createInitializedStore();
     duplicateStore.getState().setOptimizerKind("glass_expert");
@@ -358,29 +416,39 @@ describe("glass optimization store", () => {
         { catalog: "Schott", name: "BK7" },
       ],
     });
-    expect(() => duplicateStore.getState().buildOptimizationConfig(catalogs)).toThrow(
-      'Duplicate glass candidate "Schott: BK7".',
-    );
+    expect(() =>
+      duplicateStore.getState().buildOptimizationConfig(catalogs),
+    ).toThrow('Duplicate glass candidate "Schott: BK7".');
 
     const unloadedStore = createInitializedStore();
     unloadedStore.getState().setOptimizerKind("glass_expert");
     unloadedStore.getState().setGlassMode(1, {
-      mode: "variable", candidates: [{ catalog: "Schott", name: "BK7" }],
+      mode: "variable",
+      candidates: [{ catalog: "Schott", name: "BK7" }],
     });
-    expect(() => unloadedStore.getState().buildOptimizationConfig()).toThrow("Glass catalog data is not loaded.");
+    expect(() => unloadedStore.getState().buildOptimizationConfig()).toThrow(
+      "Glass catalog data is not loaded.",
+    );
 
     const unsupportedStore = createInitializedStore({
       ...baseModel,
-      surfaces: [{ ...baseModel.surfaces[0], medium: "Mystery", manufacturer: "Unknown" }, baseModel.surfaces[1]],
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          medium: "Mystery",
+          manufacturer: "Unknown",
+        },
+        baseModel.surfaces[1],
+      ],
     });
     unsupportedStore.getState().setOptimizerKind("glass_expert");
     unsupportedStore.getState().setGlassMode(1, {
-      mode: "variable", candidates: [{ catalog: "Schott", name: "BK7" }],
+      mode: "variable",
+      candidates: [{ catalog: "Schott", name: "BK7" }],
     });
-    expect(() => unsupportedStore.getState().buildOptimizationConfig(catalogs)).toThrow(
-      "Unsupported current material at surface 1: Mystery, Unknown",
-    );
-
+    expect(() =>
+      unsupportedStore.getState().buildOptimizationConfig(catalogs),
+    ).toThrow("Unsupported current material at surface 1: Mystery, Unknown");
   });
 
   it("applies standard, Special, and Custom final glass identities and marks them unapplied", () => {
@@ -389,15 +457,21 @@ describe("glass optimization store", () => {
       object: { ...baseModel.object, medium: "CaF2" },
       surfaces: [
         { ...baseModel.surfaces[0], medium: "BK7", manufacturer: "Schott" },
-        { ...baseModel.surfaces[1], medium: "CUSTOM_A", manufacturer: "Custom" },
+        {
+          ...baseModel.surfaces[1],
+          medium: "CUSTOM_A",
+          manufacturer: "Custom",
+        },
       ],
     });
 
-    store.getState().applyOptimizationResult(glassReport([
-      { surface_index: 0, name: "Fused Silica", catalog: "Special" },
-      { surface_index: 1, name: "BSC7", catalog: "Hoya" },
-      { surface_index: 2, name: "CUSTOM_A", catalog: "Custom" },
-    ]));
+    store.getState().applyOptimizationResult(
+      glassReport([
+        { surface_index: 0, name: "Fused Silica", catalog: "Special" },
+        { surface_index: 1, name: "BSC7", catalog: "Hoya" },
+        { surface_index: 2, name: "CUSTOM_A", catalog: "Custom" },
+      ]),
+    );
 
     expect(store.getState().optimizationModel?.object).toMatchObject({
       medium: "Fused Silica",
@@ -411,7 +485,9 @@ describe("glass optimization store", () => {
       medium: "CUSTOM_A",
       manufacturer: "Custom",
     });
-    expect(store.getState().lastOptimizationReport?.optimizer.kind).toBe("glass_expert");
+    expect(store.getState().lastOptimizationReport?.optimizer.kind).toBe(
+      "glass_expert",
+    );
     expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
   });
 

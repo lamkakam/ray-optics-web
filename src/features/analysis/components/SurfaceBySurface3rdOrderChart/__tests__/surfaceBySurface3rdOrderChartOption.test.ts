@@ -24,15 +24,13 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     );
 
     expect(option.legend.data).toEqual(["S-I", "S-II", "S-III", "S-IV", "S-V"]);
-    expect(option.legend.textStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.legend.textStyle).toEqual({
+      color: globalTokens.echarts.text.light,
+    });
     expect(option.series).toHaveLength(5);
-    expect(option.series.map((series: { name: string }) => series.name)).toEqual([
-      "S-I",
-      "S-II",
-      "S-III",
-      "S-IV",
-      "S-V",
-    ]);
+    expect(
+      option.series.map((series: { name: string }) => series.name),
+    ).toEqual(["S-I", "S-II", "S-III", "S-IV", "S-V"]);
   });
 
   it("uses a shadow axis pointer tooltip", () => {
@@ -60,7 +58,12 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     );
 
     const formatter = option.tooltip.formatter as (
-      params: Array<{ axisValueLabel: string; seriesName: string; value: number; marker: string }>
+      params: Array<{
+        axisValueLabel: string;
+        seriesName: string;
+        value: number;
+        marker: string;
+      }>,
     ) => string;
 
     expect(
@@ -116,8 +119,12 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     );
 
     expect(option.xAxis.data).toEqual(["S1", "S2", "sum"]);
-    expect(option.xAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
-    expect(option.xAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis.nameTextStyle).toEqual({
+      color: globalTokens.echarts.text.light,
+    });
+    expect(option.xAxis.axisLabel).toEqual(
+      expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    );
     expect(option.series[0].data).toEqual([0.1, 0.2, 0.3]);
     expect(option.series[4].data).toEqual([1.0, 1.1, 2.1]);
   });
@@ -131,9 +138,15 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     );
 
     expect("title" in option).toBe(false);
-    expect(option.yAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
-    expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
-    const formatter = option.yAxis.axisLabel.formatter as (value: number) => string;
+    expect(option.yAxis.nameTextStyle).toEqual({
+      color: globalTokens.echarts.text.light,
+    });
+    expect(option.yAxis.axisLabel).toEqual(
+      expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    );
+    const formatter = option.yAxis.axisLabel.formatter as (
+      value: number,
+    ) => string;
 
     expect(formatter(0.1234)).toBe("0.12");
     expect(formatter(12.34)).toBe("12");
@@ -150,11 +163,37 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     );
     const formatter = option.tooltip.formatter as (params: unknown) => string;
 
-    expect(formatter({ value: "0.1234", seriesName: "S-I", axisValueLabel: "S1" })).toContain("0.12");
-    expect(formatter({ value: "not numeric", seriesName: "S-I", axisValueLabel: "S1" })).toContain("not numeric");
-    expect(formatter({ value: ["S1", "0.1234"], seriesName: "S-I", axisValueLabel: "S1" })).toContain("0.12");
-    expect(formatter({ value: ["S1", "not numeric"], seriesName: "S-I", axisValueLabel: "S1" })).toContain("not numeric");
+    expect(
+      formatter({ value: "0.1234", seriesName: "S-I", axisValueLabel: "S1" }),
+    ).toContain("0.12");
+    expect(
+      formatter({
+        value: "not numeric",
+        seriesName: "S-I",
+        axisValueLabel: "S1",
+      }),
+    ).toContain("not numeric");
+    expect(
+      formatter({
+        value: ["S1", "0.1234"],
+        seriesName: "S-I",
+        axisValueLabel: "S1",
+      }),
+    ).toContain("0.12");
+    expect(
+      formatter({
+        value: ["S1", "not numeric"],
+        seriesName: "S-I",
+        axisValueLabel: "S1",
+      }),
+    ).toContain("not numeric");
     expect(formatter({})).toBe("<br/>: ");
-    expect(formatter({ value: undefined, seriesName: undefined, axisValueLabel: undefined })).not.toContain("undefined");
+    expect(
+      formatter({
+        value: undefined,
+        seriesName: undefined,
+        axisValueLabel: undefined,
+      }),
+    ).not.toContain("undefined");
   });
 });

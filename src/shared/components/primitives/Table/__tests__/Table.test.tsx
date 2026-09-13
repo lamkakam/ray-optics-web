@@ -56,5 +56,4 @@ describe("Table", () => {
     const tbody = screen.getByRole("table").querySelector("tbody");
     expect(tbody?.querySelectorAll("tr")).toHaveLength(0);
   });
-
 });

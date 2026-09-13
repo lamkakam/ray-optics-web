@@ -26,7 +26,10 @@ function isNextStaticAsset(url) {
   const parsedUrl = new URL(url);
   const scopePath = new URL(self.registration.scope).pathname;
   const staticPath = `${scopePath.endsWith("/") ? scopePath : `${scopePath}/`}_next/static/`;
-  return parsedUrl.origin === self.location.origin && parsedUrl.pathname.startsWith(staticPath);
+  return (
+    parsedUrl.origin === self.location.origin &&
+    parsedUrl.pathname.startsWith(staticPath)
+  );
 }
 
 self.addEventListener("install", (event) => {
@@ -39,7 +42,7 @@ self.addEventListener("install", (event) => {
     caches
       .open(NEXT_STATIC_CACHE_NAME)
       .then((cache) => cache.addAll(NEXT_STATIC_MANIFEST))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -48,27 +51,28 @@ self.addEventListener("activate", (event) => {
     caches.keys().then(async (names) => {
       const cacheNamesToDelete = names.filter(
         (name) =>
-          (name.startsWith(PYODIDE_CACHE_PREFIX) && name !== PYODIDE_CACHE_NAME) ||
-          (IS_DEVELOPMENT && name === NEXT_STATIC_CACHE_NAME)
+          (name.startsWith(PYODIDE_CACHE_PREFIX) &&
+            name !== PYODIDE_CACHE_NAME) ||
+          (IS_DEVELOPMENT && name === NEXT_STATIC_CACHE_NAME),
       );
       const deletionResults = await Promise.all(
         cacheNamesToDelete.map(async (name) => ({
           name,
           deleted: await caches.delete(name),
-        }))
+        })),
       );
       const removedStaleNextAssets = deletionResults.some(
-        ({ name, deleted }) => name === NEXT_STATIC_CACHE_NAME && deleted
+        ({ name, deleted }) => name === NEXT_STATIC_CACHE_NAME && deleted,
       );
 
       await self.clients.claim();
       if (removedStaleNextAssets) {
         const windowClients = await self.clients.matchAll({ type: "window" });
         await Promise.all(
-          windowClients.map((client) => client.navigate(client.url))
+          windowClients.map((client) => client.navigate(client.url)),
         );
       }
-    })
+    }),
   );
 });
 
@@ -86,7 +90,7 @@ self.addEventListener("fetch", (event) => {
           await cache.put(event.request, response.clone());
         }
         return response;
-      })
+      }),
     );
     return;
   }
@@ -107,10 +111,12 @@ self.addEventListener("fetch", (event) => {
         }
 
         const clone = response.clone();
-        caches.open(PYODIDE_CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        caches
+          .open(PYODIDE_CACHE_NAME)
+          .then((cache) => cache.put(event.request, clone));
 
         return response;
       });
-    })
+    }),
   );
 });

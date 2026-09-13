@@ -33,18 +33,24 @@ describe("buildSpotDiagramOption", () => {
     );
 
     expect(option.legend?.data).toEqual(["486.1 nm", "656.3 nm"]);
-    expect(option.legend?.textStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.legend?.textStyle).toEqual({
+      color: globalTokens.echarts.text.light,
+    });
     expect(option.series).toHaveLength(2);
-    expect(option.series[0]).toEqual(expect.objectContaining({
-      type: "scatter",
-      name: "486.1 nm",
-      symbolSize: 5,
-    }));
-    expect(option.series[1]).toEqual(expect.objectContaining({
-      type: "scatter",
-      name: "656.3 nm",
-      symbolSize: 5,
-    }));
+    expect(option.series[0]).toEqual(
+      expect.objectContaining({
+        type: "scatter",
+        name: "486.1 nm",
+        symbolSize: 5,
+      }),
+    );
+    expect(option.series[1]).toEqual(
+      expect.objectContaining({
+        type: "scatter",
+        name: "656.3 nm",
+        symbolSize: 5,
+      }),
+    );
   });
 
   it("uses distinct colors, no visualMap, and cross axis pointer", () => {
@@ -63,7 +69,9 @@ describe("buildSpotDiagramOption", () => {
         type: "cross",
       },
     });
-    expect(option.series[0]?.itemStyle?.color).not.toBe(option.series[1]?.itemStyle?.color);
+    expect(option.series[0]?.itemStyle?.color).not.toBe(
+      option.series[1]?.itemStyle?.color,
+    );
   });
 
   it("maps wavelength labels to the nearest shared heatmap colors", () => {
@@ -102,9 +110,15 @@ describe("buildSpotDiagramOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.series[0]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[0]);
-    expect(option.series[1]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[6]);
-    expect(option.series[2]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[10]);
+    expect(option.series[0]?.itemStyle?.color).toBe(
+      ANALYSIS_HEATMAP_COLOR_PALETTE[0],
+    );
+    expect(option.series[1]?.itemStyle?.color).toBe(
+      ANALYSIS_HEATMAP_COLOR_PALETTE[6],
+    );
+    expect(option.series[2]?.itemStyle?.color).toBe(
+      ANALYSIS_HEATMAP_COLOR_PALETTE[10],
+    );
   });
 
   it("falls back to a stable palette color when a wavelength label is not numeric", () => {
@@ -116,8 +130,12 @@ describe("buildSpotDiagramOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.series[0]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[0]);
-    expect(option.series[1]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[1]);
+    expect(option.series[0]?.itemStyle?.color).toBe(
+      ANALYSIS_HEATMAP_COLOR_PALETTE[0],
+    );
+    expect(option.series[1]?.itemStyle?.color).toBe(
+      ANALYSIS_HEATMAP_COLOR_PALETTE[1],
+    );
   });
 
   it("uses symmetric axes covering every wavelength group", () => {
@@ -129,37 +147,50 @@ describe("buildSpotDiagramOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.xAxis).toEqual(expect.objectContaining({
-      min: -0.03,
-      max: 0.03,
-      name: "x (mm)",
-      nameTextStyle: { color: globalTokens.echarts.text.light },
-    }));
-    expect(option.yAxis).toEqual(expect.objectContaining({
-      min: -0.03,
-      max: 0.03,
-      name: "y (mm)",
-      nameTextStyle: { color: globalTokens.echarts.text.light },
-    }));
-    expect(option.xAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
-    expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis).toEqual(
+      expect.objectContaining({
+        min: -0.03,
+        max: 0.03,
+        name: "x (mm)",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+      }),
+    );
+    expect(option.yAxis).toEqual(
+      expect.objectContaining({
+        min: -0.03,
+        max: 0.03,
+        name: "y (mm)",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+      }),
+    );
+    expect(option.xAxis.axisLabel).toEqual(
+      expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    );
+    expect(option.yAxis.axisLabel).toEqual(
+      expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    );
     expect(option.xAxis.axisLabel.formatter(5e-5)).toBe("5e-5");
     expect(option.yAxis.axisLabel.formatter(-5e-5)).toBe("-5e-5");
-    expect(option.grid).toEqual(expect.objectContaining({
-      width: 196,
-      height: 196,
-    }));
+    expect(option.grid).toEqual(
+      expect.objectContaining({
+        width: 196,
+        height: 196,
+      }),
+    );
   });
 
   it("reserves extra top space for wrapped wavelength legends while keeping the plot square", () => {
-    const sixWavelengthSpotDiagramData: SpotDiagramData = Array.from({ length: 6 }, (_, index) => ({
-      fieldIdx: 0,
-      wvlIdx: index,
-      x: [-0.02, 0, 0.02],
-      y: [-0.01, 0, 0.01],
-      unitX: "mm",
-      unitY: "mm",
-    }));
+    const sixWavelengthSpotDiagramData: SpotDiagramData = Array.from(
+      { length: 6 },
+      (_, index) => ({
+        fieldIdx: 0,
+        wvlIdx: index,
+        x: [-0.02, 0, 0.02],
+        y: [-0.01, 0, 0.01],
+        unitX: "mm",
+        unitY: "mm",
+      }),
+    );
 
     const option = buildSpotDiagramOption(
       sixWavelengthSpotDiagramData,
@@ -169,24 +200,31 @@ describe("buildSpotDiagramOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.legend).toEqual(expect.objectContaining({ left: 72, right: 32 }));
-    expect(option.grid).toEqual(expect.objectContaining({
-      top: 96,
-      width: 216,
-      height: 216,
-    }));
+    expect(option.legend).toEqual(
+      expect.objectContaining({ left: 72, right: 32 }),
+    );
+    expect(option.grid).toEqual(
+      expect.objectContaining({
+        top: 96,
+        width: 216,
+        height: 216,
+      }),
+    );
     expect(option.grid.width).toBe(option.grid.height);
   });
 
   it("centers wide one-row wavelength legends over the plot band", () => {
-    const sixWavelengthSpotDiagramData: SpotDiagramData = Array.from({ length: 6 }, (_, index) => ({
-      fieldIdx: 0,
-      wvlIdx: index,
-      x: [-0.02, 0, 0.02],
-      y: [-0.01, 0, 0.01],
-      unitX: "mm",
-      unitY: "mm",
-    }));
+    const sixWavelengthSpotDiagramData: SpotDiagramData = Array.from(
+      { length: 6 },
+      (_, index) => ({
+        fieldIdx: 0,
+        wvlIdx: index,
+        x: [-0.02, 0, 0.02],
+        y: [-0.01, 0, 0.01],
+        unitX: "mm",
+        unitY: "mm",
+      }),
+    );
 
     const option = buildSpotDiagramOption(
       sixWavelengthSpotDiagramData,
@@ -196,7 +234,9 @@ describe("buildSpotDiagramOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.legend).toEqual(expect.objectContaining({ left: 102, right: 62 }));
+    expect(option.legend).toEqual(
+      expect.objectContaining({ left: 102, right: 62 }),
+    );
     expect(option.grid).toEqual(expect.objectContaining({ top: 48 }));
   });
 
@@ -231,9 +271,14 @@ describe("buildSpotDiagramOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    const middleColor = ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor((ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1) / 2)];
+    const middleColor =
+      ANALYSIS_HEATMAP_COLOR_PALETTE[
+        Math.floor((ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1) / 2)
+      ];
     expect(option.series[0]?.itemStyle?.color).toBe(middleColor);
-    expect(option.series[1]?.itemStyle?.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE[1]);
+    expect(option.series[1]?.itemStyle?.color).toBe(
+      ANALYSIS_HEATMAP_COLOR_PALETTE[1],
+    );
   });
 
   it("pairs the axis extent using the shorter coordinate array and fills missing plotted ordinates with zero", () => {
@@ -254,16 +299,33 @@ describe("buildSpotDiagramOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.xAxis).toEqual(expect.objectContaining({ min: -0.2, max: 0.2 }));
-    expect(option.yAxis).toEqual(expect.objectContaining({ min: -0.2, max: 0.2 }));
-    expect(option.series[0]?.data).toEqual([[0.1, 0.2], [9, 0]]);
+    expect(option.xAxis).toEqual(
+      expect.objectContaining({ min: -0.2, max: 0.2 }),
+    );
+    expect(option.yAxis).toEqual(
+      expect.objectContaining({ min: -0.2, max: 0.2 }),
+    );
+    expect(option.series[0]?.data).toEqual([
+      [0.1, 0.2],
+      [9, 0],
+    ]);
   });
 
   it("falls back to a finite extent and axis names for empty spot data", () => {
-    const option = buildSpotDiagramOption([], [], 400, 400, globalTokens.echarts.text.light);
+    const option = buildSpotDiagramOption(
+      [],
+      [],
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
-    expect(option.xAxis).toEqual(expect.objectContaining({ min: -0.000001, max: 0.000001, name: "x" }));
-    expect(option.yAxis).toEqual(expect.objectContaining({ min: -0.000001, max: 0.000001, name: "y" }));
+    expect(option.xAxis).toEqual(
+      expect.objectContaining({ min: -0.000001, max: 0.000001, name: "x" }),
+    );
+    expect(option.yAxis).toEqual(
+      expect.objectContaining({ min: -0.000001, max: 0.000001, name: "y" }),
+    );
     expect(option.series).toEqual([]);
   });
 });

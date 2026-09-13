@@ -32,7 +32,10 @@ describe("Tabs", () => {
   it("renders the controlled active tab when activeTabId is provided", () => {
     render(<Tabs tabs={TABS} activeTabId="c" />);
     expect(screen.getByText("Gamma content")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Gamma" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Gamma" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 
   it("calls onTabChange in controlled mode when a different tab is clicked", async () => {
@@ -48,14 +51,26 @@ describe("Tabs", () => {
   it("falls back to the first tab when controlled activeTabId does not exist", () => {
     render(<Tabs tabs={TABS} activeTabId="missing" />);
     expect(screen.getByText("Alpha content")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Alpha" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Alpha" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 
   it("active tab has aria-selected=true, others aria-selected=false", () => {
     render(<Tabs tabs={TABS} />);
-    expect(screen.getByRole("tab", { name: "Alpha" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "Beta" })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("tab", { name: "Gamma" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Alpha" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("tab", { name: "Beta" })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
+    expect(screen.getByRole("tab", { name: "Gamma" })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
   });
 
   it("active tab applies activeBgColor and activeTextColor token classes", () => {
@@ -79,7 +94,9 @@ describe("Tabs", () => {
   it("does not render actions when omitted", () => {
     const { container } = render(<Tabs tabs={TABS} />);
     // only tab buttons should be present, no extra buttons
-    expect(screen.queryByRole("button", { name: "Extra" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Extra" }),
+    ).not.toBeInTheDocument();
     // sanity: tab buttons still there
     expect(container.querySelectorAll('[role="tab"]')).toHaveLength(3);
   });

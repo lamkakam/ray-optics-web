@@ -10,17 +10,26 @@ interface MockDeckGLProps {
       readonly zoom?: number;
     };
   }) => void;
-  readonly viewState?: Record<string, {
-    readonly target: readonly [number, number, number];
-    readonly zoom: number;
-  }>;
+  readonly viewState?: Record<
+    string,
+    {
+      readonly target: readonly [number, number, number];
+      readonly zoom: number;
+    }
+  >;
 }
 
 const mockDeckGL = jest.fn(({ children }: MockDeckGLProps) => (
   <div data-testid="deck-gl">{children}</div>
 ));
-const mockScatterplotLayer = jest.fn((props: unknown) => ({ id: "scatterplot-layer", props }));
-const mockOrthographicView = jest.fn((props: unknown) => ({ id: "orthographic-view", props }));
+const mockScatterplotLayer = jest.fn((props: unknown) => ({
+  id: "scatterplot-layer",
+  props,
+}));
+const mockOrthographicView = jest.fn((props: unknown) => ({
+  id: "orthographic-view",
+  props,
+}));
 
 jest.mock("deck.gl", () => ({
   COORDINATE_SYSTEM: {
@@ -69,43 +78,54 @@ describe("GeoPsfChart", () => {
   it("creates a ScatterplotLayer in Cartesian coordinates from geometric PSF points", () => {
     render(<GeoPsfChart geoPsfData={geoPsfData} />);
 
-    expect(mockScatterplotLayer).toHaveBeenCalledWith(expect.objectContaining({
-      coordinateSystem: "cartesian",
-      getFillColor: [84, 112, 198, 166],
-      getRadius: 1,
-      radiusUnits: "pixels",
-      pickable: false,
-    }));
+    expect(mockScatterplotLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coordinateSystem: "cartesian",
+        getFillColor: [84, 112, 198, 166],
+        getRadius: 1,
+        radiusUnits: "pixels",
+        pickable: false,
+      }),
+    );
 
     const layerProps = mockScatterplotLayer.mock.calls[0][0] as {
       readonly data: readonly unknown[];
-      readonly getPosition: (datum: { readonly x: number; readonly y: number }) => [number, number];
+      readonly getPosition: (datum: {
+        readonly x: number;
+        readonly y: number;
+      }) => [number, number];
     };
     expect(layerProps.data).toEqual([
       { x: -0.02, y: -0.01 },
       { x: 0, y: 0 },
       { x: 0.02, y: 0.01 },
     ]);
-    expect(layerProps.getPosition({ x: 0.02, y: -0.01 })).toEqual([0.02, -0.01]);
+    expect(layerProps.getPosition({ x: 0.02, y: -0.01 })).toEqual([
+      0.02, -0.01,
+    ]);
   });
 
   it("uses an OrthographicView and initial zoom that fits the symmetric PSF extent", () => {
     render(<GeoPsfChart geoPsfData={geoPsfData} />);
 
-    expect(mockOrthographicView).toHaveBeenCalledWith(expect.objectContaining({
-      id: "geo-psf-view",
-      flipY: false,
-      controller: true,
-    }));
-    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
-      views: [expect.objectContaining({ id: "orthographic-view" })],
-      viewState: expect.objectContaining({
-        "geo-psf-view": expect.objectContaining({
-          target: [0, 0, 0],
-          zoom: expect.closeTo(Math.log2(192 / (2 * 0.02 * 1.12))),
+    expect(mockOrthographicView).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "geo-psf-view",
+        flipY: false,
+        controller: true,
+      }),
+    );
+    expect(mockDeckGL).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        views: [expect.objectContaining({ id: "orthographic-view" })],
+        viewState: expect.objectContaining({
+          "geo-psf-view": expect.objectContaining({
+            target: [0, 0, 0],
+            zoom: expect.closeTo(Math.log2(192 / (2 * 0.02 * 1.12))),
+          }),
         }),
       }),
-    }));
+    );
   });
 
   it("keeps DeckGL view state controlled under the geometric PSF view id after panning", () => {
@@ -121,14 +141,16 @@ describe("GeoPsfChart", () => {
       });
     });
 
-    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
-      viewState: {
-        "geo-psf-view": {
-          target: [0.01, -0.01, 0],
-          zoom: Math.log2(192 / (2 * 0.02)),
+    expect(mockDeckGL).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        viewState: {
+          "geo-psf-view": {
+            target: [0.01, -0.01, 0],
+            zoom: Math.log2(192 / (2 * 0.02)),
+          },
         },
-      },
-    }));
+      }),
+    );
   });
 
   it("updates x and y tick labels after panning and zooming", () => {

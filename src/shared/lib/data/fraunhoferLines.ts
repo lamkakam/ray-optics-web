@@ -1,5 +1,19 @@
 /** Supported Fraunhofer spectral-line symbol. */
-export type FraunhoferSymbol = "t" | "s" | "A'" | "r" | "C" | "C'" | "D" | "d" | "e" | "F" | "F'" | "g" | "h" | "i";
+export type FraunhoferSymbol =
+  | "t"
+  | "s"
+  | "A'"
+  | "r"
+  | "C"
+  | "C'"
+  | "D"
+  | "d"
+  | "e"
+  | "F"
+  | "F'"
+  | "g"
+  | "h"
+  | "i";
 
 /** Fraunhofer symbol and wavelength in nanometers. */
 export interface FraunhoferLine {
@@ -26,7 +40,7 @@ export const FRAUNHOFER_LINES: readonly FraunhoferLine[] = [
 ] as const;
 
 const wavelengthMap = new Map<FraunhoferSymbol, number>(
-  FRAUNHOFER_LINES.map((l) => [l.symbol, l.wavelength])
+  FRAUNHOFER_LINES.map((l) => [l.symbol, l.wavelength]),
 );
 
 /** Looks up a wavelength in nanometers by its case-sensitive Fraunhofer symbol. */

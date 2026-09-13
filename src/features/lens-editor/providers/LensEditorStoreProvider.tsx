@@ -1,8 +1,11 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from 'react';
-import { createStore, type StoreApi } from 'zustand';
-import { createLensEditorSlice, type LensEditorState } from '@/features/lens-editor/stores/lensEditorStore';
+import { createContext, type ReactNode, useContext, useState } from "react";
+import { createStore, type StoreApi } from "zustand";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
 
 type ContextValue = StoreApi<LensEditorState> | undefined;
 
@@ -15,7 +18,9 @@ export interface LensEditorStoreProviderProps {
 }
 
 /** Provides a single `StoreApi<LensEditorState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes. */
-export const LensEditorStoreProvider: React.FC<LensEditorStoreProviderProps> = ({ children }) => {
+export const LensEditorStoreProvider: React.FC<
+  LensEditorStoreProviderProps
+> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 
   if (store === undefined) {
@@ -33,7 +38,9 @@ export const LensEditorStoreProvider: React.FC<LensEditorStoreProviderProps> = (
 export const useLensEditorStore = (): StoreApi<LensEditorState> => {
   const store = useContext(LensEditorStoreContext);
   if (store === undefined) {
-    throw new Error('`useLensEditorStore` must be used within `LensEditorStoreProvider`');
+    throw new Error(
+      "`useLensEditorStore` must be used within `LensEditorStoreProvider`",
+    );
   }
   return store;
 };

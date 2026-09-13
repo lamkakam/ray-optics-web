@@ -56,7 +56,8 @@ function getViewportSafeOffset(
   currentOffset: number,
   viewportWidth: number,
 ): number {
-  const tooltipLeftWithinTrigger = tooltipRect.left - triggerRect.left - currentOffset;
+  const tooltipLeftWithinTrigger =
+    tooltipRect.left - triggerRect.left - currentOffset;
   const tooltipLeft = triggerRect.left + tooltipLeftWithinTrigger;
   const availableWidth = Math.max(viewportWidth - VIEWPORT_GUTTER * 2, 0);
 
@@ -154,8 +155,10 @@ export function Tooltip({
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         const y =
-          position === "top" || position === "top-start" ? rect.top - 4
-            : position === "no-transform" || position === "start" ? rect.top
+          position === "top" || position === "top-start"
+            ? rect.top - 4
+            : position === "no-transform" || position === "start"
+              ? rect.top
               : rect.bottom + 4;
         setCoords({
           x: rect.left + rect.width / 2,
@@ -168,15 +171,22 @@ export function Tooltip({
     const tooltipElement = (
       <span
         role="tooltip"
-        className={clsx(portalBaseClasses, visible ? "opacity-100" : "opacity-0")}
+        className={clsx(
+          portalBaseClasses,
+          visible ? "opacity-100" : "opacity-0",
+        )}
         style={{
           left: coords.x,
           top: coords.y,
           transform:
-            position === "top" ? "translate(-50%, -100%)"
-              : position === "bottom" ? "translateX(-50%)"
-                : position === "top-start" ? "translate(-25%, -100%)"
-                  : position === "start" ? "translateX(-25%)"
+            position === "top"
+              ? "translate(-50%, -100%)"
+              : position === "bottom"
+                ? "translateX(-50%)"
+                : position === "top-start"
+                  ? "translate(-25%, -100%)"
+                  : position === "start"
+                    ? "translateX(-25%)"
                     : undefined,
         }}
       >
@@ -188,9 +198,18 @@ export function Tooltip({
       <span
         ref={triggerRef}
         className={clsx("relative inline-flex", triggerClassName)}
-        onTouchStart={noTouch ? () => { isTouchingRef.current = true; } : undefined}
+        onTouchStart={
+          noTouch
+            ? () => {
+                isTouchingRef.current = true;
+              }
+            : undefined
+        }
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => { isTouchingRef.current = false; setVisible(false); }}
+        onMouseLeave={() => {
+          isTouchingRef.current = false;
+          setVisible(false);
+        }}
       >
         {children}
         {createPortal(tooltipElement, document.body)}
@@ -199,10 +218,14 @@ export function Tooltip({
   }
 
   const positionClasses =
-    position === "top" ? "left-1/2 -translate-x-1/2 bottom-full mb-1"
-      : position === "bottom" ? "left-1/2 -translate-x-1/2 top-full mt-1"
-        : position === "top-start" ? "left-1/2 -translate-x-1/4 bottom-full mb-1"
-          : position === "start" ? "left-1/2 -translate-x-1/4"
+    position === "top"
+      ? "left-1/2 -translate-x-1/2 bottom-full mb-1"
+      : position === "bottom"
+        ? "left-1/2 -translate-x-1/2 top-full mt-1"
+        : position === "top-start"
+          ? "left-1/2 -translate-x-1/4 bottom-full mb-1"
+          : position === "start"
+            ? "left-1/2 -translate-x-1/4"
             : "";
 
   return (

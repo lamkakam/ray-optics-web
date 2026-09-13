@@ -1,13 +1,25 @@
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
-import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
+import {
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+} from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { buildLegendWrapLayout } from "@/features/analysis/components/legendLayout";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { OpdFanData } from "@/features/analysis/types/plotData";
 
-echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([
+  LineChart,
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 const OPD_FAN_GRID_TOP = 72;
 const OPD_FAN_GRID_BOTTOM = 52;
@@ -22,7 +34,9 @@ function formatOpdFanAxisTick(value: number): string {
   return formatPlotValue(value);
 }
 
-function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
+function parseWavelengthLabel(
+  wavelengthLabel: string | undefined,
+): number | undefined {
   if (wavelengthLabel === undefined) return undefined;
 
   const matchedValue = wavelengthLabel.match(/-?\d+(?:\.\d+)?/);
@@ -32,7 +46,10 @@ function parseWavelengthLabel(wavelengthLabel: string | undefined): number | und
   return Number.isFinite(wavelength) ? wavelength : undefined;
 }
 
-function getSeriesLabel(wavelengthLabels: readonly string[], wvlIdx: number): string {
+function getSeriesLabel(
+  wavelengthLabels: readonly string[],
+  wvlIdx: number,
+): string {
   return wavelengthLabels[wvlIdx] ?? `Wavelength ${wvlIdx}`;
 }
 
@@ -41,12 +58,19 @@ function getSeriesColors(
   wavelengthLabels: readonly string[],
 ): readonly string[] {
   const seriesWavelengths = opdFanData.map((seriesData) =>
-    parseWavelengthLabel(wavelengthLabels[seriesData.wvlIdx]));
-  const numericWavelengths = seriesWavelengths.filter((wavelength) => wavelength !== undefined);
+    parseWavelengthLabel(wavelengthLabels[seriesData.wvlIdx]),
+  );
+  const numericWavelengths = seriesWavelengths.filter(
+    (wavelength) => wavelength !== undefined,
+  );
 
   if (numericWavelengths.length === 0) {
-    return opdFanData.map((_, index) =>
-      ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length]);
+    return opdFanData.map(
+      (_, index) =>
+        ANALYSIS_HEATMAP_COLOR_PALETTE[
+          index % ANALYSIS_HEATMAP_COLOR_PALETTE.length
+        ],
+    );
   }
 
   const minWavelength = Math.min(...numericWavelengths);
@@ -54,20 +78,27 @@ function getSeriesColors(
   const paletteLastIndex = ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1;
 
   if (minWavelength === maxWavelength) {
-    const middleColor = ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor(paletteLastIndex / 2)];
+    const middleColor =
+      ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor(paletteLastIndex / 2)];
     return opdFanData.map((_, index) =>
       seriesWavelengths[index] === undefined
-        ? ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length]
-        : middleColor);
+        ? ANALYSIS_HEATMAP_COLOR_PALETTE[
+            index % ANALYSIS_HEATMAP_COLOR_PALETTE.length
+          ]
+        : middleColor,
+    );
   }
 
   return opdFanData.map((_, index) => {
     const wavelength = seriesWavelengths[index];
     if (wavelength === undefined) {
-      return ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length];
+      return ANALYSIS_HEATMAP_COLOR_PALETTE[
+        index % ANALYSIS_HEATMAP_COLOR_PALETTE.length
+      ];
     }
 
-    const normalizedPosition = (wavelength - minWavelength) / (maxWavelength - minWavelength);
+    const normalizedPosition =
+      (wavelength - minWavelength) / (maxWavelength - minWavelength);
     const paletteIndex = Math.round(normalizedPosition * paletteLastIndex);
     return ANALYSIS_HEATMAP_COLOR_PALETTE[paletteIndex];
   });
@@ -86,11 +117,17 @@ function formatAxisExtent(value: number): number {
   return Number(formatPlotValue(value));
 }
 
-function formatSeriesPoint(x: number, y: number | undefined): [number, number | null] {
+function formatSeriesPoint(
+  x: number,
+  y: number | undefined,
+): [number, number | null] {
   return [x, y === undefined ? null : y];
 }
 
-function formatYExtents(yMin: number, yMax: number): { readonly yMin: number; readonly yMax: number } {
+function formatYExtents(
+  yMin: number,
+  yMax: number,
+): { readonly yMin: number; readonly yMax: number } {
   if (!Number.isFinite(yMin) || !Number.isFinite(yMax) || yMin === yMax) {
     return {
       yMin: formatAxisExtent(-1e-6),
@@ -199,7 +236,9 @@ export function buildOpdFanChartOption(
   textColor: string,
   isSmallScreen = false,
 ) {
-  const legendData = opdFanData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
+  const legendData = opdFanData.map((seriesData) =>
+    getSeriesLabel(wavelengthLabels, seriesData.wvlIdx),
+  );
   const legendLayout = buildLegendWrapLayout(
     legendData,
     chartWidth,
@@ -210,16 +249,28 @@ export function buildOpdFanChartOption(
   const titleTop = OPD_FAN_TITLE_TOP + legendLayout.extraTop;
   const sideBySideSubplotWidth = Math.max(
     0,
-    (chartWidth - OPD_FAN_GRID_LEFT - OPD_FAN_GRID_RIGHT - OPD_FAN_GRID_GAP) / 2,
+    (chartWidth - OPD_FAN_GRID_LEFT - OPD_FAN_GRID_RIGHT - OPD_FAN_GRID_GAP) /
+      2,
   );
-  const sideBySideSubplotHeight = Math.max(0, chartHeight - gridTop - OPD_FAN_GRID_BOTTOM);
-  const stackedSubplotWidth = Math.max(0, chartWidth - OPD_FAN_GRID_LEFT - OPD_FAN_GRID_RIGHT);
+  const sideBySideSubplotHeight = Math.max(
+    0,
+    chartHeight - gridTop - OPD_FAN_GRID_BOTTOM,
+  );
+  const stackedSubplotWidth = Math.max(
+    0,
+    chartWidth - OPD_FAN_GRID_LEFT - OPD_FAN_GRID_RIGHT,
+  );
   const stackedSubplotHeight = Math.max(
     0,
-    (chartHeight - gridTop - OPD_FAN_GRID_BOTTOM - OPD_FAN_STACKED_GRID_GAP) / 2,
+    (chartHeight - gridTop - OPD_FAN_GRID_BOTTOM - OPD_FAN_STACKED_GRID_GAP) /
+      2,
   );
-  const subplotWidth = isSmallScreen ? stackedSubplotWidth : sideBySideSubplotWidth;
-  const subplotHeight = isSmallScreen ? stackedSubplotHeight : sideBySideSubplotHeight;
+  const subplotWidth = isSmallScreen
+    ? stackedSubplotWidth
+    : sideBySideSubplotWidth;
+  const subplotHeight = isSmallScreen
+    ? stackedSubplotHeight
+    : sideBySideSubplotHeight;
   const tangentialGridLeft = OPD_FAN_GRID_LEFT;
   const tangentialGridTop = gridTop;
   const sagittalGridLeft = isSmallScreen
@@ -363,7 +414,9 @@ export function buildOpdFanChartOption(
           xAxisIndex: 0,
           yAxisIndex: 0,
           showSymbol: false,
-          data: seriesData.Tangential.x.map((x, pointIndex) => formatSeriesPoint(x, seriesData.Tangential.y[pointIndex])),
+          data: seriesData.Tangential.x.map((x, pointIndex) =>
+            formatSeriesPoint(x, seriesData.Tangential.y[pointIndex]),
+          ),
           lineStyle: {
             color,
           },
@@ -377,7 +430,9 @@ export function buildOpdFanChartOption(
           xAxisIndex: 1,
           yAxisIndex: 1,
           showSymbol: false,
-          data: seriesData.Sagittal.x.map((x, pointIndex) => formatSeriesPoint(x, seriesData.Sagittal.y[pointIndex])),
+          data: seriesData.Sagittal.x.map((x, pointIndex) =>
+            formatSeriesPoint(x, seriesData.Sagittal.y[pointIndex]),
+          ),
           lineStyle: {
             color,
           },

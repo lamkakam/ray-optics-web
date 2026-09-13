@@ -20,12 +20,18 @@ function makeValue(): GlassCatalogContextValue {
 }
 
 /** Renders identity-sensitive context state for provider and boundary assertions. */
-function ContextReader({ expected }: { readonly expected: GlassCatalogContextValue }) {
+function ContextReader({
+  expected,
+}: {
+  readonly expected: GlassCatalogContextValue;
+}) {
   const context = useGlassCatalogs();
 
   return (
     <output data-testid="catalog-context">
-      {context === expected ? `${context.isLoaded}:${context.isLoading}` : "different"}
+      {context === expected
+        ? `${context.isLoaded}:${context.isLoading}`
+        : "different"}
     </output>
   );
 }
@@ -40,7 +46,9 @@ describe("GlassCatalogProvider", () => {
       </GlassCatalogProvider>,
     );
 
-    expect(screen.getByTestId("catalog-context")).toHaveTextContent("true:false");
+    expect(screen.getByTestId("catalog-context")).toHaveTextContent(
+      "true:false",
+    );
   });
 
   it("requires useGlassCatalogs to be called inside the provider", () => {

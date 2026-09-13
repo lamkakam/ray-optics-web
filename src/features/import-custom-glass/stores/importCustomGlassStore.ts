@@ -31,9 +31,16 @@ export const IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS = [
   "pFd",
 ] as const;
 
-export type ImportCustomGlassDataColumnId = typeof IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS[number];
-export type ImportCustomGlassFilterModel = Record<ImportCustomGlassDataColumnId, unknown>;
-export type ImportCustomGlassSortState = Pick<ColumnState, "colId" | "sort" | "sortIndex">;
+export type ImportCustomGlassDataColumnId =
+  (typeof IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS)[number];
+export type ImportCustomGlassFilterModel = Record<
+  ImportCustomGlassDataColumnId,
+  unknown
+>;
+export type ImportCustomGlassSortState = Pick<
+  ColumnState,
+  "colId" | "sort" | "sortIndex"
+>;
 
 export interface ImportCustomGlassState {
   /** Sanitized AG Grid sort state for readonly custom-glass data columns. Defaults to an empty array. */
@@ -52,21 +59,29 @@ export interface ImportCustomGlassActions {
 }
 
 /** Zustand store slice for Import Custom Glass table UI state that should survive route/component remounts while the app root providers remain mounted. */
-export type ImportCustomGlassStore = ImportCustomGlassState & ImportCustomGlassActions;
+export type ImportCustomGlassStore = ImportCustomGlassState &
+  ImportCustomGlassActions;
 
-const IMPORT_CUSTOM_GLASS_DATA_COLUMN_ID_SET = new Set<string>(IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS);
+const IMPORT_CUSTOM_GLASS_DATA_COLUMN_ID_SET = new Set<string>(
+  IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS,
+);
 
-function isImportCustomGlassDataColumnId(value: string): value is ImportCustomGlassDataColumnId {
+function isImportCustomGlassDataColumnId(
+  value: string,
+): value is ImportCustomGlassDataColumnId {
   return IMPORT_CUSTOM_GLASS_DATA_COLUMN_ID_SET.has(value);
 }
 
-function sanitizeSortState(state: readonly ColumnState[]): readonly ImportCustomGlassSortState[] {
+function sanitizeSortState(
+  state: readonly ColumnState[],
+): readonly ImportCustomGlassSortState[] {
   return state
-    .filter((columnState) => (
-      columnState.colId !== undefined
-      && isImportCustomGlassDataColumnId(columnState.colId)
-      && columnState.sort !== undefined
-    ))
+    .filter(
+      (columnState) =>
+        columnState.colId !== undefined &&
+        isImportCustomGlassDataColumnId(columnState.colId) &&
+        columnState.sort !== undefined,
+    )
     .map((columnState) => ({
       colId: columnState.colId,
       sort: columnState.sort,
@@ -74,7 +89,9 @@ function sanitizeSortState(state: readonly ColumnState[]): readonly ImportCustom
     }));
 }
 
-function sanitizeFilterModel(model: Record<string, unknown>): Partial<ImportCustomGlassFilterModel> {
+function sanitizeFilterModel(
+  model: Record<string, unknown>,
+): Partial<ImportCustomGlassFilterModel> {
   const sanitized: Partial<ImportCustomGlassFilterModel> = {};
 
   for (const [columnId, value] of Object.entries(model)) {
@@ -86,7 +103,9 @@ function sanitizeFilterModel(model: Record<string, unknown>): Partial<ImportCust
   return sanitized;
 }
 
-export const createImportCustomGlassSlice: StateCreator<ImportCustomGlassStore> = (set) => ({
+export const createImportCustomGlassSlice: StateCreator<
+  ImportCustomGlassStore
+> = (set) => ({
   sortState: [],
   filterModel: {},
   setSortState: (state) => set({ sortState: sanitizeSortState(state) }),

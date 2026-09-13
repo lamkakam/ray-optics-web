@@ -1,6 +1,10 @@
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
-import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
+import {
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import {
   FIELD_CATEGORY_LINE_GRID_BOTTOM,
@@ -14,7 +18,13 @@ import { buildLegendWrapLayout } from "@/features/analysis/components/legendLayo
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { LongitudinalSphericalAberrationData } from "@/features/analysis/types/plotData";
 
-echarts.use([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([
+  LineChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 /**
  * Builds the ECharts option for longitudinal spherical aberration plots.
@@ -39,7 +49,11 @@ export function buildLongitudinalSphericalAberrationOption(
   textColor: string,
 ) {
   const unitX = lsaData[0]?.unitX;
-  const legendData = lsaData.map((seriesData) => wavelengthLabels[seriesData.wvlIdx] ?? `Wavelength ${seriesData.wvlIdx + 1}`);
+  const legendData = lsaData.map(
+    (seriesData) =>
+      wavelengthLabels[seriesData.wvlIdx] ??
+      `Wavelength ${seriesData.wvlIdx + 1}`,
+  );
   const legendLayout = buildLegendWrapLayout(
     legendData,
     chartWidth,
@@ -70,14 +84,25 @@ export function buildLongitudinalSphericalAberrationOption(
       right: FIELD_CATEGORY_LINE_GRID_RIGHT,
       top: gridTop,
       bottom: FIELD_CATEGORY_LINE_GRID_BOTTOM,
-      width: Math.max(0, chartWidth - FIELD_CATEGORY_LINE_GRID_LEFT - FIELD_CATEGORY_LINE_GRID_RIGHT),
-      height: Math.max(0, chartHeight - gridTop - FIELD_CATEGORY_LINE_GRID_BOTTOM),
+      width: Math.max(
+        0,
+        chartWidth -
+          FIELD_CATEGORY_LINE_GRID_LEFT -
+          FIELD_CATEGORY_LINE_GRID_RIGHT,
+      ),
+      height: Math.max(
+        0,
+        chartHeight - gridTop - FIELD_CATEGORY_LINE_GRID_BOTTOM,
+      ),
     },
     xAxis: {
       type: "value",
-      name: unitX === "D"
-        ? "Output Vergence (D)"
-        : unitX ? `Longitudinal Focus Shift (${unitX})` : "Longitudinal Focus Shift",
+      name:
+        unitX === "D"
+          ? "Output Vergence (D)"
+          : unitX
+            ? `Longitudinal Focus Shift (${unitX})`
+            : "Longitudinal Focus Shift",
       nameLocation: "middle",
       nameGap: 34,
       nameTextStyle: {

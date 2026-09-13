@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
-import { RadioInput, type RadioOption } from "@/shared/components/primitives/RadioInput";
+import {
+  RadioInput,
+  type RadioOption,
+} from "@/shared/components/primitives/RadioInput";
 import type { PhotonsToPhotosFocalLengthChoice } from "@/features/lens-editor/lib/photonsToPhotosParser";
 
 interface FocalLengthSelectionModalProps {
@@ -49,7 +52,7 @@ export function FocalLengthSelectionModal({
     <Modal
       isOpen={isOpen}
       title="Select Focal Length"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel} aria-label="Cancel">
             Cancel
@@ -62,7 +65,7 @@ export function FocalLengthSelectionModal({
             Confirm
           </Button>
         </div>
-      )}
+      }
     >
       <RadioInput
         name="photons-to-photos-focal-length"

@@ -35,7 +35,9 @@ function buildOptimizationProgressOption(
   progress: ReadonlyArray<OptimizationProgressEntry>,
   textColor: string,
 ): EChartsCoreOption {
-  const plottedProgress = progress.slice(-OPTIMIZATION_PROGRESS_CHART_POINT_LIMIT);
+  const plottedProgress = progress.slice(
+    -OPTIMIZATION_PROGRESS_CHART_POINT_LIMIT,
+  );
   const firstPlottedIteration = plottedProgress[0]?.iteration;
 
   return {
@@ -133,10 +135,13 @@ export function OptimizationProgressModal({
 }: OptimizationProgressModalProps) {
   const { theme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
-  const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
-  const textColor = theme === "dark"
-    ? globalTokens.echarts.text.dark
-    : globalTokens.echarts.text.light;
+  const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(
+    undefined,
+  );
+  const textColor =
+    theme === "dark"
+      ? globalTokens.echarts.text.dark
+      : globalTokens.echarts.text.light;
 
   useEffect(() => {
     if (!isOpen) {
@@ -151,17 +156,25 @@ export function OptimizationProgressModal({
     }
 
     if (chartRef.current === undefined) {
-      chartRef.current = echarts.init(container, undefined, { renderer: "canvas" });
+      chartRef.current = echarts.init(container, undefined, {
+        renderer: "canvas",
+      });
     }
 
-    chartRef.current.setOption(buildOptimizationProgressOption(progress, textColor), true);
+    chartRef.current.setOption(
+      buildOptimizationProgressOption(progress, textColor),
+      true,
+    );
     chartRef.current.resize();
   }, [isOpen, progress, textColor]);
 
-  useEffect(() => () => {
-    chartRef.current?.dispose();
-    chartRef.current = undefined;
-  }, []);
+  useEffect(
+    () => () => {
+      chartRef.current?.dispose();
+      chartRef.current = undefined;
+    },
+    [],
+  );
 
   return (
     <Modal
@@ -170,30 +183,32 @@ export function OptimizationProgressModal({
       titleId="optimization-progress-modal-title"
       size="4xl"
       onBackdropClick={isOptimizing ? undefined : onClose}
-      footer={isOptimizing ? (
-        <div className="flex justify-end">
-          <Button
-            variant="danger"
-            aria-label={
-              !canStop
-                ? "Stop unavailable: optimization interrupts are unsupported"
-                : isStopping
-                  ? "Stopping optimization"
-                  : "Stop optimization"
-            }
-            disabled={!canStop || isStopping}
-            onClick={onStop}
-          >
-            {isStopping ? "Stopping..." : "Stop"}
-          </Button>
-        </div>
-      ) : (
-        <div className="flex justify-end">
-          <Button variant="primary" aria-label="OK" onClick={onClose}>
-            OK
-          </Button>
-        </div>
-      )}
+      footer={
+        isOptimizing ? (
+          <div className="flex justify-end">
+            <Button
+              variant="danger"
+              aria-label={
+                !canStop
+                  ? "Stop unavailable: optimization interrupts are unsupported"
+                  : isStopping
+                    ? "Stopping optimization"
+                    : "Stop optimization"
+              }
+              disabled={!canStop || isStopping}
+              onClick={onStop}
+            >
+              {isStopping ? "Stopping..." : "Stop"}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            <Button variant="primary" aria-label="OK" onClick={onClose}>
+              OK
+            </Button>
+          </div>
+        )
+      }
     >
       <div className="space-y-4">
         <Paragraph>

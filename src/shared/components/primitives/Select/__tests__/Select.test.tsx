@@ -26,7 +26,9 @@ describe("Select", () => {
 
   it("renders a <select> element", () => {
     render(<Select options={OPTIONS} aria-label="test-select" />);
-    expect(screen.getByRole("combobox", { name: "test-select" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "test-select" }),
+    ).toBeInTheDocument();
   });
 
   it("renders correct number of options", () => {
@@ -47,13 +49,13 @@ describe("Select", () => {
   it("uses a mobile-safe font size to prevent browser zoom", () => {
     render(<Select options={OPTIONS} aria-label="test" />);
     const el = screen.getByRole("combobox");
-    expectClasses(el,
-      responsiveSelectFontSize,
-    );
+    expectClasses(el, responsiveSelectFontSize);
   });
 
   it("renders a disabled placeholder option first when placeholder provided", () => {
-    render(<Select options={OPTIONS} placeholder="Choose..." aria-label="test" />);
+    render(
+      <Select options={OPTIONS} placeholder="Choose..." aria-label="test" />,
+    );
     const opts = screen.getAllByRole("option") as HTMLOptionElement[];
     expect(opts).toHaveLength(OPTIONS.length + 1);
     expect(opts[0]).toHaveTextContent("Choose...");
@@ -74,14 +76,21 @@ describe("Select", () => {
         aria-label="test"
         value="b"
         onChange={() => undefined}
-      />
+      />,
     );
     expect(screen.getByRole("combobox")).toHaveValue("b");
   });
 
   it("forwards onChange", async () => {
     const onChange = jest.fn();
-    render(<Select options={OPTIONS} aria-label="test" defaultValue="a" onChange={onChange} />);
+    render(
+      <Select
+        options={OPTIONS}
+        aria-label="test"
+        defaultValue="a"
+        onChange={onChange}
+      />,
+    );
     await userEvent.selectOptions(screen.getByRole("combobox"), "b");
     expect(onChange).toHaveBeenCalledTimes(1);
   });
@@ -93,7 +102,9 @@ describe("Select", () => {
 
   it("forwards aria-label", () => {
     render(<Select options={OPTIONS} aria-label="my label" />);
-    expect(screen.getByRole("combobox", { name: "my label" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "my label" }),
+    ).toBeInTheDocument();
   });
 
   it("forwards disabled", () => {
@@ -125,5 +136,4 @@ describe("Select", () => {
     render(<Select options={OPTIONS} aria-label="test" ref={ref} />);
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
   });
-
 });

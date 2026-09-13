@@ -7,13 +7,20 @@ import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
-import type { ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
+import type {
+  ClearAperture,
+  EdgeAperture,
+} from "@/shared/lib/types/opticalModel";
 
 type ClearApertureShape = ClearAperture["shape"];
 type EdgeApertureShape = "default" | EdgeAperture["shape"];
 type StringSetter = React.Dispatch<React.SetStateAction<string>>;
-type ClearApertureSectionValue = { readonly value: ClearAperture } | { readonly error: string };
-type EdgeApertureSectionValue = { readonly value: EdgeAperture | undefined } | { readonly error: string };
+type ClearApertureSectionValue =
+  | { readonly value: ClearAperture }
+  | { readonly error: string };
+type EdgeApertureSectionValue =
+  | { readonly value: EdgeAperture | undefined }
+  | { readonly error: string };
 
 interface ApertureConfirmValue {
   readonly clear_aperture: ClearAperture;
@@ -135,13 +142,21 @@ function getInitialObstructionValue(
   autoAperture: boolean,
   semiDiameter: number,
 ): string {
-  const obstructionRadius = initialClearAperture?.shape === "annular"
-    ? initialClearAperture.obstructionRadius
-    : semiDiameter / 2;
-  return String(autoAperture ? obstructionRadius / semiDiameter : obstructionRadius);
+  const obstructionRadius =
+    initialClearAperture?.shape === "annular"
+      ? initialClearAperture.obstructionRadius
+      : semiDiameter / 2;
+  return String(
+    autoAperture ? obstructionRadius / semiDiameter : obstructionRadius,
+  );
 }
 
-function convertObstructionValue(value: string, fromAutoAperture: boolean, toAutoAperture: boolean, semiDiameter: number): string {
+function convertObstructionValue(
+  value: string,
+  fromAutoAperture: boolean,
+  toAutoAperture: boolean,
+  semiDiameter: number,
+): string {
   if (fromAutoAperture === toAutoAperture) {
     return value;
   }
@@ -151,7 +166,9 @@ function convertObstructionValue(value: string, fromAutoAperture: boolean, toAut
     return value;
   }
 
-  return String(toAutoAperture ? parsedValue / semiDiameter : parsedValue * semiDiameter);
+  return String(
+    toAutoAperture ? parsedValue / semiDiameter : parsedValue * semiDiameter,
+  );
 }
 
 function ClearCircularFields({
@@ -204,8 +221,12 @@ function ClearAnnularFields(props: ClearAnnularFieldsProps) {
     setObstructionValue,
     clearError,
   } = props;
-  const obstructionLabel = autoAperture ? "Central Obstruction Ratio" : "Central Obstruction Radius";
-  const obstructionId = autoAperture ? "clear-aperture-obstruction-ratio" : "clear-aperture-obstruction-radius";
+  const obstructionLabel = autoAperture
+    ? "Central Obstruction Ratio"
+    : "Central Obstruction Radius";
+  const obstructionId = autoAperture
+    ? "clear-aperture-obstruction-ratio"
+    : "clear-aperture-obstruction-radius";
 
   return (
     <div className="space-y-3">
@@ -488,48 +509,85 @@ const EDGE_APERTURE_SHAPE_COMPONENTS = {
   readonly rectangular: React.ComponentType<RectangularFieldsProps>;
 };
 
-const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertureSectionProps>(function ClearApertureSection(
-  {
-    autoAperture,
-    semiDiameter,
-    initialClearAperture,
-    readOnly,
-    clearError,
-  },
+const ClearApertureSection = forwardRef<
+  ClearApertureSectionHandle,
+  ClearApertureSectionProps
+>(function ClearApertureSection(
+  { autoAperture, semiDiameter, initialClearAperture, readOnly, clearError },
   ref,
 ) {
-  const [clearShape, setClearShape] = useState<ClearApertureShape>(initialClearAperture?.shape ?? "circular");
+  const [clearShape, setClearShape] = useState<ClearApertureShape>(
+    initialClearAperture?.shape ?? "circular",
+  );
   const [obstructionDraft, setObstructionDraft] = useState({
     autoAperture,
-    value: getInitialObstructionValue(initialClearAperture, autoAperture, semiDiameter),
+    value: getInitialObstructionValue(
+      initialClearAperture,
+      autoAperture,
+      semiDiameter,
+    ),
   });
-  const [clearOffsetX, setClearOffsetX] = useState(String(
-    initialClearAperture?.shape === "ronchi" ? 0 : (initialClearAperture?.offsetX ?? 0),
-  ));
-  const [clearOffsetY, setClearOffsetY] = useState(String(
-    initialClearAperture?.shape === "ronchi" ? 0 : (initialClearAperture?.offsetY ?? 0),
-  ));
-  const [clearXHalfWidth, setClearXHalfWidth] = useState(String(
-    initialClearAperture?.shape === "rectangular" ? initialClearAperture.xHalfWidth : semiDiameter,
-  ));
-  const [clearYHalfWidth, setClearYHalfWidth] = useState(String(
-    initialClearAperture?.shape === "rectangular" ? initialClearAperture.yHalfWidth : semiDiameter,
-  ));
-  const [clearRotation, setClearRotation] = useState(String(
-    initialClearAperture?.shape === "rectangular" ? initialClearAperture.rotation : 0,
-  ));
-  const [ronchiLpmm, setRonchiLpmm] = useState(String(
-    initialClearAperture?.shape === "ronchi" ? initialClearAperture.lpmm : 10,
-  ));
-  const [ronchiRotation, setRonchiRotation] = useState(String(
-    initialClearAperture?.shape === "ronchi" ? initialClearAperture.rotation : 0,
-  ));
-  const [ronchiOffsetX, setRonchiOffsetX] = useState(String(
-    initialClearAperture?.shape === "ronchi" ? initialClearAperture.offsetX : 0,
-  ));
-  const [ronchiOffsetY, setRonchiOffsetY] = useState(String(
-    initialClearAperture?.shape === "ronchi" ? initialClearAperture.offsetY : 0,
-  ));
+  const [clearOffsetX, setClearOffsetX] = useState(
+    String(
+      initialClearAperture?.shape === "ronchi"
+        ? 0
+        : (initialClearAperture?.offsetX ?? 0),
+    ),
+  );
+  const [clearOffsetY, setClearOffsetY] = useState(
+    String(
+      initialClearAperture?.shape === "ronchi"
+        ? 0
+        : (initialClearAperture?.offsetY ?? 0),
+    ),
+  );
+  const [clearXHalfWidth, setClearXHalfWidth] = useState(
+    String(
+      initialClearAperture?.shape === "rectangular"
+        ? initialClearAperture.xHalfWidth
+        : semiDiameter,
+    ),
+  );
+  const [clearYHalfWidth, setClearYHalfWidth] = useState(
+    String(
+      initialClearAperture?.shape === "rectangular"
+        ? initialClearAperture.yHalfWidth
+        : semiDiameter,
+    ),
+  );
+  const [clearRotation, setClearRotation] = useState(
+    String(
+      initialClearAperture?.shape === "rectangular"
+        ? initialClearAperture.rotation
+        : 0,
+    ),
+  );
+  const [ronchiLpmm, setRonchiLpmm] = useState(
+    String(
+      initialClearAperture?.shape === "ronchi" ? initialClearAperture.lpmm : 10,
+    ),
+  );
+  const [ronchiRotation, setRonchiRotation] = useState(
+    String(
+      initialClearAperture?.shape === "ronchi"
+        ? initialClearAperture.rotation
+        : 0,
+    ),
+  );
+  const [ronchiOffsetX, setRonchiOffsetX] = useState(
+    String(
+      initialClearAperture?.shape === "ronchi"
+        ? initialClearAperture.offsetX
+        : 0,
+    ),
+  );
+  const [ronchiOffsetY, setRonchiOffsetY] = useState(
+    String(
+      initialClearAperture?.shape === "ronchi"
+        ? initialClearAperture.offsetY
+        : 0,
+    ),
+  );
   const obstructionValue = convertObstructionValue(
     obstructionDraft.value,
     obstructionDraft.autoAperture,
@@ -546,113 +604,161 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
       );
       return {
         autoAperture,
-        value: typeof nextValue === "function" ? nextValue(currentValue) : nextValue,
+        value:
+          typeof nextValue === "function" ? nextValue(currentValue) : nextValue,
       };
     });
   };
 
-  useImperativeHandle(ref, () => ({
-    getValue: () => {
-      if (clearShape === "ronchi") {
-        const parsedOffsetX = parseFiniteNumber(ronchiOffsetX);
-        const parsedOffsetY = parseFiniteNumber(ronchiOffsetY);
-        if (parsedOffsetX === undefined || parsedOffsetY === undefined) {
+  useImperativeHandle(
+    ref,
+    () => ({
+      getValue: () => {
+        if (clearShape === "ronchi") {
+          const parsedOffsetX = parseFiniteNumber(ronchiOffsetX);
+          const parsedOffsetY = parseFiniteNumber(ronchiOffsetY);
+          if (parsedOffsetX === undefined || parsedOffsetY === undefined) {
+            return { error: "Offsets must be finite numbers." };
+          }
+
+          const parsedLpmm = parsePositiveFiniteNumber(ronchiLpmm);
+          if (parsedLpmm === undefined) {
+            return { error: "Line density must be greater than 0." };
+          }
+
+          const parsedRotation = parseFiniteNumber(ronchiRotation);
+          if (parsedRotation === undefined) {
+            return { error: "Rotation must be a finite number." };
+          }
+
+          if (parsePositiveFiniteNumber(String(semiDiameter)) === undefined) {
+            return { error: "Semi-diameter must be greater than 0." };
+          }
+
+          return {
+            value: {
+              shape: "ronchi",
+              lpmm: parsedLpmm,
+              rotation: parsedRotation,
+              offsetX: parsedOffsetX,
+              offsetY: parsedOffsetY,
+            },
+          };
+        }
+
+        const parsedClearOffsetX = parseFiniteNumber(clearOffsetX);
+        const parsedClearOffsetY = parseFiniteNumber(clearOffsetY);
+        if (
+          parsedClearOffsetX === undefined ||
+          parsedClearOffsetY === undefined
+        ) {
           return { error: "Offsets must be finite numbers." };
         }
 
-        const parsedLpmm = parsePositiveFiniteNumber(ronchiLpmm);
-        if (parsedLpmm === undefined) {
-          return { error: "Line density must be greater than 0." };
-        }
+        if (clearShape === "annular") {
+          const parsedObstructionValue =
+            parsePositiveFiniteNumber(obstructionValue);
+          if (autoAperture) {
+            if (
+              parsedObstructionValue === undefined ||
+              parsedObstructionValue >= 1
+            ) {
+              return {
+                error:
+                  "Central obstruction ratio must be greater than 0 and smaller than 1.",
+              };
+            }
 
-        const parsedRotation = parseFiniteNumber(ronchiRotation);
-        if (parsedRotation === undefined) {
-          return { error: "Rotation must be a finite number." };
-        }
+            return {
+              value: {
+                shape: "annular",
+                obstructionRadius: parsedObstructionValue * semiDiameter,
+                offsetX: parsedClearOffsetX,
+                offsetY: parsedClearOffsetY,
+              },
+            };
+          }
 
-        if (parsePositiveFiniteNumber(String(semiDiameter)) === undefined) {
-          return { error: "Semi-diameter must be greater than 0." };
-        }
-
-        return {
-          value: {
-            shape: "ronchi",
-            lpmm: parsedLpmm,
-            rotation: parsedRotation,
-            offsetX: parsedOffsetX,
-            offsetY: parsedOffsetY,
-          },
-        };
-      }
-
-      const parsedClearOffsetX = parseFiniteNumber(clearOffsetX);
-      const parsedClearOffsetY = parseFiniteNumber(clearOffsetY);
-      if (parsedClearOffsetX === undefined || parsedClearOffsetY === undefined) {
-        return { error: "Offsets must be finite numbers." };
-      }
-
-      if (clearShape === "annular") {
-        const parsedObstructionValue = parsePositiveFiniteNumber(obstructionValue);
-        if (autoAperture) {
-          if (parsedObstructionValue === undefined || parsedObstructionValue >= 1) {
-            return { error: "Central obstruction ratio must be greater than 0 and smaller than 1." };
+          if (
+            parsedObstructionValue === undefined ||
+            parsedObstructionValue >= semiDiameter
+          ) {
+            return {
+              error:
+                "Central obstruction radius must be greater than 0 and smaller than the clear aperture radius.",
+            };
           }
 
           return {
             value: {
               shape: "annular",
-              obstructionRadius: parsedObstructionValue * semiDiameter,
+              obstructionRadius: parsedObstructionValue,
               offsetX: parsedClearOffsetX,
               offsetY: parsedClearOffsetY,
             },
           };
         }
 
-        if (parsedObstructionValue === undefined || parsedObstructionValue >= semiDiameter) {
-          return { error: "Central obstruction radius must be greater than 0 and smaller than the clear aperture radius." };
+        if (clearShape === "rectangular") {
+          const parsedXHalfWidth = parsePositiveFiniteNumber(clearXHalfWidth);
+          const parsedYHalfWidth = parsePositiveFiniteNumber(clearYHalfWidth);
+          if (
+            parsedXHalfWidth === undefined ||
+            parsedYHalfWidth === undefined
+          ) {
+            return {
+              error: "Half-Length and Half-Width must be greater than 0.",
+            };
+          }
+
+          const parsedRotation = parseFiniteNumber(clearRotation);
+          if (parsedRotation === undefined) {
+            return { error: "Rotation must be a finite number." };
+          }
+
+          return {
+            value: {
+              shape: "rectangular",
+              xHalfWidth: parsedXHalfWidth,
+              yHalfWidth: parsedYHalfWidth,
+              rotation: parsedRotation,
+              offsetX: parsedClearOffsetX,
+              offsetY: parsedClearOffsetY,
+            },
+          };
         }
 
         return {
           value: {
-            shape: "annular",
-            obstructionRadius: parsedObstructionValue,
+            shape: "circular",
             offsetX: parsedClearOffsetX,
             offsetY: parsedClearOffsetY,
           },
         };
-      }
-
-      if (clearShape === "rectangular") {
-        const parsedXHalfWidth = parsePositiveFiniteNumber(clearXHalfWidth);
-        const parsedYHalfWidth = parsePositiveFiniteNumber(clearYHalfWidth);
-        if (parsedXHalfWidth === undefined || parsedYHalfWidth === undefined) {
-          return { error: "Half-Length and Half-Width must be greater than 0." };
-        }
-
-        const parsedRotation = parseFiniteNumber(clearRotation);
-        if (parsedRotation === undefined) {
-          return { error: "Rotation must be a finite number." };
-        }
-
-        return {
-          value: {
-            shape: "rectangular",
-            xHalfWidth: parsedXHalfWidth,
-            yHalfWidth: parsedYHalfWidth,
-            rotation: parsedRotation,
-            offsetX: parsedClearOffsetX,
-            offsetY: parsedClearOffsetY,
-          },
-        };
-      }
-
-      return { value: { shape: "circular", offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY } };
-    },
-  }), [autoAperture, clearOffsetX, clearOffsetY, clearRotation, clearShape, clearXHalfWidth, clearYHalfWidth, obstructionValue, ronchiLpmm, ronchiOffsetX, ronchiOffsetY, ronchiRotation, semiDiameter]);
+      },
+    }),
+    [
+      autoAperture,
+      clearOffsetX,
+      clearOffsetY,
+      clearRotation,
+      clearShape,
+      clearXHalfWidth,
+      clearYHalfWidth,
+      obstructionValue,
+      ronchiLpmm,
+      ronchiOffsetX,
+      ronchiOffsetY,
+      ronchiRotation,
+      semiDiameter,
+    ],
+  );
 
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Clear Aperture</h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        Clear Aperture
+      </h3>
       <div>
         <Label htmlFor="clear-aperture-shape">Aperture Shape</Label>
         <Select
@@ -730,76 +836,128 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
   );
 });
 
-const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSectionProps>(function EdgeApertureSection(
-  {
-    initialEdgeAperture,
-    readOnly,
-    clearError,
-  },
+const EdgeApertureSection = forwardRef<
+  EdgeApertureSectionHandle,
+  EdgeApertureSectionProps
+>(function EdgeApertureSection(
+  { initialEdgeAperture, readOnly, clearError },
   ref,
 ) {
-  const [edgeShape, setEdgeShape] = useState<EdgeApertureShape>(initialEdgeAperture?.shape ?? "default");
-  const [edgeRadius, setEdgeRadius] = useState(String(initialEdgeAperture?.shape === "circular" ? initialEdgeAperture.radius : 1));
-  const [edgeOffsetX, setEdgeOffsetX] = useState(String(initialEdgeAperture?.offsetX ?? 0));
-  const [edgeOffsetY, setEdgeOffsetY] = useState(String(initialEdgeAperture?.offsetY ?? 0));
-  const [edgeXHalfWidth, setEdgeXHalfWidth] = useState(String(
-    initialEdgeAperture?.shape === "rectangular" ? initialEdgeAperture.xHalfWidth : 1,
-  ));
-  const [edgeYHalfWidth, setEdgeYHalfWidth] = useState(String(
-    initialEdgeAperture?.shape === "rectangular" ? initialEdgeAperture.yHalfWidth : 1,
-  ));
-  const [edgeRotation, setEdgeRotation] = useState(String(
-    initialEdgeAperture?.shape === "rectangular" ? initialEdgeAperture.rotation : 0,
-  ));
+  const [edgeShape, setEdgeShape] = useState<EdgeApertureShape>(
+    initialEdgeAperture?.shape ?? "default",
+  );
+  const [edgeRadius, setEdgeRadius] = useState(
+    String(
+      initialEdgeAperture?.shape === "circular"
+        ? initialEdgeAperture.radius
+        : 1,
+    ),
+  );
+  const [edgeOffsetX, setEdgeOffsetX] = useState(
+    String(initialEdgeAperture?.offsetX ?? 0),
+  );
+  const [edgeOffsetY, setEdgeOffsetY] = useState(
+    String(initialEdgeAperture?.offsetY ?? 0),
+  );
+  const [edgeXHalfWidth, setEdgeXHalfWidth] = useState(
+    String(
+      initialEdgeAperture?.shape === "rectangular"
+        ? initialEdgeAperture.xHalfWidth
+        : 1,
+    ),
+  );
+  const [edgeYHalfWidth, setEdgeYHalfWidth] = useState(
+    String(
+      initialEdgeAperture?.shape === "rectangular"
+        ? initialEdgeAperture.yHalfWidth
+        : 1,
+    ),
+  );
+  const [edgeRotation, setEdgeRotation] = useState(
+    String(
+      initialEdgeAperture?.shape === "rectangular"
+        ? initialEdgeAperture.rotation
+        : 0,
+    ),
+  );
 
-  useImperativeHandle(ref, () => ({
-    getValue: () => {
-      if (edgeShape === "default") {
-        return { value: undefined };
-      }
-
-      const parsedEdgeOffsetX = parseFiniteNumber(edgeOffsetX);
-      const parsedEdgeOffsetY = parseFiniteNumber(edgeOffsetY);
-      if (parsedEdgeOffsetX === undefined || parsedEdgeOffsetY === undefined) {
-        return { error: "Offsets must be finite numbers." };
-      }
-
-      if (edgeShape === "rectangular") {
-        const parsedXHalfWidth = parsePositiveFiniteNumber(edgeXHalfWidth);
-        const parsedYHalfWidth = parsePositiveFiniteNumber(edgeYHalfWidth);
-        if (parsedXHalfWidth === undefined || parsedYHalfWidth === undefined) {
-          return { error: "Half-Length and Half-Width must be greater than 0." };
+  useImperativeHandle(
+    ref,
+    () => ({
+      getValue: () => {
+        if (edgeShape === "default") {
+          return { value: undefined };
         }
 
-        const parsedRotation = parseFiniteNumber(edgeRotation);
-        if (parsedRotation === undefined) {
-          return { error: "Rotation must be a finite number." };
+        const parsedEdgeOffsetX = parseFiniteNumber(edgeOffsetX);
+        const parsedEdgeOffsetY = parseFiniteNumber(edgeOffsetY);
+        if (
+          parsedEdgeOffsetX === undefined ||
+          parsedEdgeOffsetY === undefined
+        ) {
+          return { error: "Offsets must be finite numbers." };
+        }
+
+        if (edgeShape === "rectangular") {
+          const parsedXHalfWidth = parsePositiveFiniteNumber(edgeXHalfWidth);
+          const parsedYHalfWidth = parsePositiveFiniteNumber(edgeYHalfWidth);
+          if (
+            parsedXHalfWidth === undefined ||
+            parsedYHalfWidth === undefined
+          ) {
+            return {
+              error: "Half-Length and Half-Width must be greater than 0.",
+            };
+          }
+
+          const parsedRotation = parseFiniteNumber(edgeRotation);
+          if (parsedRotation === undefined) {
+            return { error: "Rotation must be a finite number." };
+          }
+
+          return {
+            value: {
+              shape: "rectangular",
+              xHalfWidth: parsedXHalfWidth,
+              yHalfWidth: parsedYHalfWidth,
+              rotation: parsedRotation,
+              offsetX: parsedEdgeOffsetX,
+              offsetY: parsedEdgeOffsetY,
+            },
+          };
+        }
+
+        const radius = parsePositiveFiniteNumber(edgeRadius);
+        if (radius === undefined) {
+          return { error: "Radius must be greater than 0." };
         }
 
         return {
           value: {
-            shape: "rectangular",
-            xHalfWidth: parsedXHalfWidth,
-            yHalfWidth: parsedYHalfWidth,
-            rotation: parsedRotation,
+            shape: "circular",
+            radius,
             offsetX: parsedEdgeOffsetX,
             offsetY: parsedEdgeOffsetY,
           },
         };
-      }
-
-      const radius = parsePositiveFiniteNumber(edgeRadius);
-      if (radius === undefined) {
-        return { error: "Radius must be greater than 0." };
-      }
-
-      return { value: { shape: "circular", radius, offsetX: parsedEdgeOffsetX, offsetY: parsedEdgeOffsetY } };
-    },
-  }), [edgeOffsetX, edgeOffsetY, edgeRadius, edgeRotation, edgeShape, edgeXHalfWidth, edgeYHalfWidth]);
+      },
+    }),
+    [
+      edgeOffsetX,
+      edgeOffsetY,
+      edgeRadius,
+      edgeRotation,
+      edgeShape,
+      edgeXHalfWidth,
+      edgeYHalfWidth,
+    ],
+  );
 
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Edge Aperture</h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        Edge Aperture
+      </h3>
       <div>
         <Label htmlFor="edge-aperture-shape">Aperture Shape</Label>
         <Select
@@ -935,21 +1093,27 @@ export function ApertureModal({
       title="Aperture"
       titleId="aperture-modal-title"
       size="lg"
-      footer={(
+      footer={
         <div className="flex items-center gap-3">
           {readOnly ? (
             <div className="flex w-full justify-end">
-              <Button variant="secondary" onClick={onClose}>Close</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Close
+              </Button>
             </div>
           ) : (
             <>
               <span className="flex-1" />
-              <Button variant="secondary" onClick={onClose}>Cancel</Button>
-              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleConfirm}>
+                Confirm
+              </Button>
             </>
           )}
         </div>
-      )}
+      }
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <ClearApertureSection

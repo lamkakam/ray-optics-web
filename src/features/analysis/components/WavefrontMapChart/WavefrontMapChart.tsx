@@ -1,6 +1,11 @@
 "use client";
 
-import { BitmapLayer, COORDINATE_SYSTEM, DeckGL, OrthographicView } from "deck.gl";
+import {
+  BitmapLayer,
+  COORDINATE_SYSTEM,
+  DeckGL,
+  OrthographicView,
+} from "deck.gl";
 import { useMemo, useState } from "react";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
@@ -56,34 +61,56 @@ export function WavefrontMapChart({
   );
   const layout = getCartesianPlotLayout(size);
   const extentKey = `${preparedData.axisExtent}:${layout.plotSide}`;
-  const initialViewState = useMemo<OrthographicViewState>(() => ({
-    target: [0, 0, 0],
-    zoom: getInitialOrthographicZoom(layout.plotSide, preparedData.axisExtent),
-  }), [layout.plotSide, preparedData.axisExtent]);
-  const [viewStateOverride, setViewStateOverride] = useState<ViewStateOverride | undefined>(undefined);
-  const viewState = viewStateOverride?.extentKey === extentKey
-    ? viewStateOverride.viewState
-    : initialViewState;
-  const axisDomains = useMemo(() => getVisibleAxisDomains(layout.plotSide, viewState), [layout.plotSide, viewState]);
-  const xAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.x), [axisDomains.x]);
-  const yAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.y), [axisDomains.y]);
+  const initialViewState = useMemo<OrthographicViewState>(
+    () => ({
+      target: [0, 0, 0],
+      zoom: getInitialOrthographicZoom(
+        layout.plotSide,
+        preparedData.axisExtent,
+      ),
+    }),
+    [layout.plotSide, preparedData.axisExtent],
+  );
+  const [viewStateOverride, setViewStateOverride] = useState<
+    ViewStateOverride | undefined
+  >(undefined);
+  const viewState =
+    viewStateOverride?.extentKey === extentKey
+      ? viewStateOverride.viewState
+      : initialViewState;
+  const axisDomains = useMemo(
+    () => getVisibleAxisDomains(layout.plotSide, viewState),
+    [layout.plotSide, viewState],
+  );
+  const xAxisTicks = useMemo(
+    () => buildCartesianTicks(axisDomains.x),
+    [axisDomains.x],
+  );
+  const yAxisTicks = useMemo(
+    () => buildCartesianTicks(axisDomains.y),
+    [axisDomains.y],
+  );
   const bitmapImage = useMemo(
-    () => new ImageData(
-      preparedData.image.data,
-      preparedData.image.width,
-      preparedData.image.height,
-    ),
+    () =>
+      new ImageData(
+        preparedData.image.data,
+        preparedData.image.width,
+        preparedData.image.height,
+      ),
     [preparedData.image],
   );
-  const layers = useMemo(() => [
-    new BitmapLayer({
-      id: "wavefront-map-bitmap",
-      image: bitmapImage,
-      bounds: preparedData.bounds,
-      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-      pickable: false,
-    }),
-  ], [bitmapImage, preparedData.bounds]);
+  const layers = useMemo(
+    () => [
+      new BitmapLayer({
+        id: "wavefront-map-bitmap",
+        image: bitmapImage,
+        bounds: preparedData.bounds,
+        coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+        pickable: false,
+      }),
+    ],
+    [bitmapImage, preparedData.bounds],
+  );
 
   return (
     <div ref={containerRef} className="h-full w-full min-h-0">
@@ -105,10 +132,19 @@ export function WavefrontMapChart({
             }}
           >
             <DeckGL
-              views={[new OrthographicView({ id: DECK_VIEW_ID, flipY: false, controller: true })]}
+              views={[
+                new OrthographicView({
+                  id: DECK_VIEW_ID,
+                  flipY: false,
+                  controller: true,
+                }),
+              ]}
               viewState={{ [DECK_VIEW_ID]: viewState }}
               onViewStateChange={({ viewState: nextViewState }) => {
-                const nextZoom = typeof nextViewState.zoom === "number" ? nextViewState.zoom : viewState.zoom;
+                const nextZoom =
+                  typeof nextViewState.zoom === "number"
+                    ? nextViewState.zoom
+                    : viewState.zoom;
                 setViewStateOverride({
                   extentKey,
                   viewState: {
@@ -129,8 +165,12 @@ export function WavefrontMapChart({
           layout={layout}
           xAxisTicks={xAxisTicks}
           yAxisTicks={yAxisTicks}
-          xAxisLabel={wavefrontMapData.unitX ? `x (${wavefrontMapData.unitX})` : "x"}
-          yAxisLabel={wavefrontMapData.unitY ? `y (${wavefrontMapData.unitY})` : "y"}
+          xAxisLabel={
+            wavefrontMapData.unitX ? `x (${wavefrontMapData.unitX})` : "x"
+          }
+          yAxisLabel={
+            wavefrontMapData.unitY ? `y (${wavefrontMapData.unitY})` : "y"
+          }
           colorBarId="wavefront-map-color-bar"
           palette={ANALYSIS_HEATMAP_COLOR_PALETTE}
           colorBarTopLabel={formatPlotValue(preparedData.maxValue)}

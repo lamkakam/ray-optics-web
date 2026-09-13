@@ -44,13 +44,16 @@ export function useDebouncedCallback<Args extends readonly unknown[]>(
     timeoutIdRef.current = undefined;
   }, []);
 
-  const run = useCallback((...args: Args) => {
-    cancel();
-    timeoutIdRef.current = window.setTimeout(() => {
-      timeoutIdRef.current = undefined;
-      callbackRef.current(...args);
-    }, delayMs);
-  }, [cancel, delayMs]);
+  const run = useCallback(
+    (...args: Args) => {
+      cancel();
+      timeoutIdRef.current = window.setTimeout(() => {
+        timeoutIdRef.current = undefined;
+        callbackRef.current(...args);
+      }, delayMs);
+    },
+    [cancel, delayMs],
+  );
 
   useEffect(() => cancel, [cancel]);
 

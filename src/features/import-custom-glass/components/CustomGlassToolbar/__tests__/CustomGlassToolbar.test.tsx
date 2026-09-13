@@ -4,7 +4,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CustomGlassToolbar } from "@/features/import-custom-glass/components/CustomGlassToolbar/CustomGlassToolbar";
 
-function renderToolbar(selectedCount = 0, overrides: Partial<ComponentProps<typeof CustomGlassToolbar>> = {}) {
+function renderToolbar(
+  selectedCount = 0,
+  overrides: Partial<ComponentProps<typeof CustomGlassToolbar>> = {},
+) {
   const props: ComponentProps<typeof CustomGlassToolbar> = {
     jsonFileInputRef: createRef<HTMLInputElement>(),
     csvFileInputRef: createRef<HTMLInputElement>(),
@@ -42,16 +45,19 @@ describe("CustomGlassToolbar", () => {
     expect(callbacks.onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it.each([0, 2])("disables Edit unless exactly one row is selected (%s)", async (selectedCount) => {
-    const user = userEvent.setup();
-    const onEdit = jest.fn();
-    renderToolbar(selectedCount, { onEdit });
+  it.each([0, 2])(
+    "disables Edit unless exactly one row is selected (%s)",
+    async (selectedCount) => {
+      const user = userEvent.setup();
+      const onEdit = jest.fn();
+      renderToolbar(selectedCount, { onEdit });
 
-    const editButton = screen.getByRole("button", { name: "Edit Glass" });
-    expect(editButton).toBeDisabled();
-    await user.click(editButton);
-    expect(onEdit).not.toHaveBeenCalled();
-  });
+      const editButton = screen.getByRole("button", { name: "Edit Glass" });
+      expect(editButton).toBeDisabled();
+      await user.click(editButton);
+      expect(onEdit).not.toHaveBeenCalled();
+    },
+  );
 
   it("disables Delete for an empty selection and enables it for a non-empty selection", () => {
     const { unmount } = renderToolbar(0);
@@ -64,13 +70,19 @@ describe("CustomGlassToolbar", () => {
 
   it("routes visible import commands to their hidden input elements", async () => {
     const user = userEvent.setup();
-    const inputClick = jest.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => undefined);
+    const inputClick = jest
+      .spyOn(HTMLInputElement.prototype, "click")
+      .mockImplementation(() => undefined);
 
     try {
       renderToolbar();
 
-      await user.click(screen.getByRole("button", { name: "Import from JSON" }));
-      await user.click(screen.getByRole("button", { name: "Import from CSV Files" }));
+      await user.click(
+        screen.getByRole("button", { name: "Import from JSON" }),
+      );
+      await user.click(
+        screen.getByRole("button", { name: "Import from CSV Files" }),
+      );
 
       expect(inputClick).toHaveBeenCalledTimes(2);
     } finally {
@@ -85,15 +97,25 @@ describe("CustomGlassToolbar", () => {
       csvFileInputRef: nullRef,
     });
 
-    expect(() => fireEvent.click(screen.getByRole("button", { name: "Import from JSON" }))).not.toThrow();
-    expect(() => fireEvent.click(screen.getByRole("button", { name: "Import from CSV Files" }))).not.toThrow();
+    expect(() =>
+      fireEvent.click(screen.getByRole("button", { name: "Import from JSON" })),
+    ).not.toThrow();
+    expect(() =>
+      fireEvent.click(
+        screen.getByRole("button", { name: "Import from CSV Files" }),
+      ),
+    ).not.toThrow();
   });
 
   it("ignores a JSON change event with no selected file", () => {
     const onJsonFileSelected = jest.fn();
     renderToolbar(0, { onJsonFileSelected });
 
-    expect(() => fireEvent.change(screen.getByLabelText("Import custom glass JSON file"), { target: { files: undefined } })).not.toThrow();
+    expect(() =>
+      fireEvent.change(screen.getByLabelText("Import custom glass JSON file"), {
+        target: { files: undefined },
+      }),
+    ).not.toThrow();
     expect(onJsonFileSelected).not.toHaveBeenCalled();
   });
 
@@ -102,7 +124,9 @@ describe("CustomGlassToolbar", () => {
     const onJsonFileSelected = jest.fn();
     renderToolbar(0, { onJsonFileSelected });
     const input = screen.getByLabelText("Import custom glass JSON file");
-    const file = new File(["{}"], "custom-glass.json", { type: "application/json" });
+    const file = new File(["{}"], "custom-glass.json", {
+      type: "application/json",
+    });
 
     await user.upload(input, file);
     await user.upload(input, file);

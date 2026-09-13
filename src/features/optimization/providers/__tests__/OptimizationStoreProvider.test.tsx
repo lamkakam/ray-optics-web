@@ -23,7 +23,9 @@ describe("OptimizationStoreProvider", () => {
   });
 
   it("useOptimizationStore throws outside provider", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     expect(() => renderHook(() => useOptimizationStore())).toThrow(
       "`useOptimizationStore` must be used within `OptimizationStoreProvider`",
     );

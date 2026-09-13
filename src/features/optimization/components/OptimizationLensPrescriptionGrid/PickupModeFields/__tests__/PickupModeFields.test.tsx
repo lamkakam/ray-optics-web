@@ -55,7 +55,10 @@ describe("PickupModeFields", () => {
     render(<PickupFieldsHarness />);
 
     await user.clear(screen.getByRole("textbox", { name: "Source surface" }));
-    await user.type(screen.getByRole("textbox", { name: "Source surface" }), "4");
+    await user.type(
+      screen.getByRole("textbox", { name: "Source surface" }),
+      "4",
+    );
     await user.clear(screen.getByRole("textbox", { name: "scale" }));
     await user.type(screen.getByRole("textbox", { name: "scale" }), "2");
     await user.clear(screen.getByRole("textbox", { name: "offset" }));
@@ -79,7 +82,10 @@ describe("PickupModeFields", () => {
         idPrefix="asphere"
         sourceSurfaceAriaLabel="Source surface"
         sourceSurfaceValue="2"
-        sourceSurfaceOptions={[{ value: "1", label: "1" }, { value: "2", label: "2" }]}
+        sourceSurfaceOptions={[
+          { value: "1", label: "1" },
+          { value: "2", label: "2" },
+        ]}
         onSourceSurfaceChange={onSourceSurfaceChange}
         scaleAriaLabel="scale"
         scaleValue="1"
@@ -92,14 +98,23 @@ describe("PickupModeFields", () => {
           label: "Source coefficient",
           ariaLabel: "Source coefficient",
           value: "0",
-          options: [{ value: "0", label: "a_2" }, { value: "1", label: "a_4" }],
+          options: [
+            { value: "0", label: "a_2" },
+            { value: "1", label: "a_4" },
+          ],
           onChange: onExtraChange,
         }}
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Source surface" }), "1");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Source coefficient" }), "1");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Source surface" }),
+      "1",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Source coefficient" }),
+      "1",
+    );
 
     expect(onSourceSurfaceChange).toHaveBeenCalledWith("1");
     expect(onExtraChange).toHaveBeenCalledWith("1");

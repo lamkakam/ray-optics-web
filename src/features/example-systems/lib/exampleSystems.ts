@@ -288,7 +288,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -312,7 +312,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: -2.663858,
-      }
+      },
     },
     {
       label: "Default",
@@ -328,7 +328,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: -2.663858,
-      }
+      },
     },
     {
       label: "Default",
@@ -360,7 +360,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -376,7 +376,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -386,7 +386,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
       manufacturer: "",
       semiDiameter: 39.242722,
     },
-  ]
+  ],
 } as const;
 
 // from https://www.telescope-optics.net/miscellaneous_optics.htm
@@ -453,7 +453,7 @@ const tiltedHoughton: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -469,7 +469,7 @@ const tiltedHoughton: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 1.5,
-      }
+      },
     },
     {
       label: "Default",
@@ -485,7 +485,7 @@ const tiltedHoughton: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -505,7 +505,6 @@ const tiltedHoughton: OpticalModel = {
     },
   ],
 } as const;
-
 
 // from https://www.telescope-optics.net/ATM_telescopes.htm
 const quadSchiefspiegler: OpticalModel = {
@@ -565,7 +564,7 @@ const quadSchiefspiegler: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -581,7 +580,7 @@ const quadSchiefspiegler: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -599,7 +598,7 @@ const quadSchiefspiegler: OpticalModel = {
         offsetY: 0,
       },
     },
-  ]
+  ],
 } as const;
 
 // from https://www.telescope-optics.net/ATM_telescopes.htm
@@ -635,8 +634,8 @@ const clydeBoneJrMersenne: OpticalModel = {
       semiDiameter: 381,
       aspherical: {
         kind: "Conic",
-        conicConstant: -1
-      }
+        conicConstant: -1,
+      },
     },
     {
       label: "Default",
@@ -648,7 +647,7 @@ const clydeBoneJrMersenne: OpticalModel = {
       aspherical: {
         kind: "Conic",
         conicConstant: -1,
-      }
+      },
     },
     {
       label: "Default",
@@ -664,7 +663,7 @@ const clydeBoneJrMersenne: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -680,7 +679,7 @@ const clydeBoneJrMersenne: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -745,10 +744,9 @@ const clydeBoneJrMersenne: OpticalModel = {
       medium: "air",
       manufacturer: "",
       semiDiameter: 40,
-    }
+    },
   ],
 } as const;
-
 
 // Design from https://telescope-optics.net/schmidt_camera_aberrations.htm
 const schmidtCamera: OpticalModel = {
@@ -781,11 +779,13 @@ const schmidtCamera: OpticalModel = {
       thickness: 640,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 100.086210,
+      semiDiameter: 100.08621,
       aspherical: {
         kind: "EvenAspherical",
         conicConstant: 0,
-        polynomialCoefficients: [0, 1.795e-9, 6.6e-15, 2.5e-20, 0, 0, 0, 0, 0, 0],
+        polynomialCoefficients: [
+          0, 1.795e-9, 6.6e-15, 2.5e-20, 0, 0, 0, 0, 0, 0,
+        ],
       },
     },
     {
@@ -798,7 +798,6 @@ const schmidtCamera: OpticalModel = {
     },
   ],
 } as const;
-
 
 // Example #57 at https://www.telescope-optics.net/commercial_telescopes.htm
 const orthoAPO: OpticalModel = {
@@ -849,7 +848,7 @@ const orthoAPO: OpticalModel = {
       thickness: 1,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 62.501830,
+      semiDiameter: 62.50183,
     },
     {
       label: "Default",
@@ -899,7 +898,9 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
       aspherical: {
         kind: "EvenAspherical",
         conicConstant: 0,
-        polynomialCoefficients: [0, 2.696e-10, -2.41e-14, -3.237e-18, 0, 0, 0, 0, 0, 0],
+        polynomialCoefficients: [
+          0, 2.696e-10, -2.41e-14, -3.237e-18, 0, 0, 0, 0, 0, 0,
+        ],
       },
     },
     {
@@ -934,17 +935,51 @@ const fraunhoferAchromat: OpticalModel = {
   setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
-    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, Math.SQRT1_2, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.5,
+      fields: [0, Math.SQRT1_2, 1],
+      isRelative: true,
+    },
     wavelengths: commonWavelengthConfig,
   },
 
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
-    { label: "Stop", curvatureRadius: 0.6 * 120 * 23.6, thickness: 0.011 * 120 * 23.6, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -0.36 * 120 * 23.6, thickness: 0.001, medium: "air", manufacturer: "", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -0.363 * 120 * 23.6, thickness: 0.007 * 120 * 23.6, medium: "N-F2", manufacturer: "Schott", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -1.51 * 120 * 23.6, thickness: 2813.82, medium: "air", manufacturer: "", semiDiameter: 60 },
+    {
+      label: "Stop",
+      curvatureRadius: 0.6 * 120 * 23.6,
+      thickness: 0.011 * 120 * 23.6,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -0.36 * 120 * 23.6,
+      thickness: 0.001,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -0.363 * 120 * 23.6,
+      thickness: 0.007 * 120 * 23.6,
+      medium: "N-F2",
+      manufacturer: "Schott",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -1.51 * 120 * 23.6,
+      thickness: 2813.82,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 60,
+    },
   ],
 } as const;
 
@@ -953,9 +988,15 @@ const fraunhoferAchromatFast: OpticalModel = {
   setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
-    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, Math.SQRT1_2, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.5,
+      fields: [0, Math.SQRT1_2, 1],
+      isRelative: true,
+    },
     wavelengths: {
-    weights: [
+      weights: [
         [486.133, 0.18],
         [546.073, 0.98],
         [656.273, 0.075],
@@ -966,29 +1007,90 @@ const fraunhoferAchromatFast: OpticalModel = {
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
-    { label: "Stop", curvatureRadius: 0.6 * 120 * 7.5, thickness: 0.011 * 120 * 7.5, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -0.36 * 120 * 7.5, thickness: 0.001, medium: "air", manufacturer: "", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -0.363 * 120 * 7.5, thickness: 0.007 * 120 * 7.5, medium: "N-F2", manufacturer: "Schott", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -1.51 * 120 * 7.5, thickness: 894.22, medium: "air", manufacturer: "", semiDiameter: 60 },
+    {
+      label: "Stop",
+      curvatureRadius: 0.6 * 120 * 7.5,
+      thickness: 0.011 * 120 * 7.5,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -0.36 * 120 * 7.5,
+      thickness: 0.001,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -0.363 * 120 * 7.5,
+      thickness: 0.007 * 120 * 7.5,
+      medium: "N-F2",
+      manufacturer: "Schott",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -1.51 * 120 * 7.5,
+      thickness: 894.22,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 60,
+    },
   ],
 } as const;
-
 
 // Example #19 at https://www.telescope-optics.net/commercial_telescopes.htm
 const edDoublet: OpticalModel = {
   setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
-    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, Math.SQRT1_2, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.5,
+      fields: [0, Math.SQRT1_2, 1],
+      isRelative: true,
+    },
     wavelengths: commonWavelengthConfig,
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -340 },
   surfaces: [
-    { label: "Stop", curvatureRadius: 499, thickness: 16, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -200, thickness: 0.7, medium: "air", manufacturer: "", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -203.7, thickness: 8, medium: "N-ZK7", manufacturer: "Schott", semiDiameter: 60 },
-    { label: "Default", curvatureRadius: -955, thickness: 3.9 + 883.840824, medium: "air", manufacturer: "", semiDiameter: 60 },
+    {
+      label: "Stop",
+      curvatureRadius: 499,
+      thickness: 16,
+      medium: "S-FPL53",
+      manufacturer: "Ohara",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -200,
+      thickness: 0.7,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -203.7,
+      thickness: 8,
+      medium: "N-ZK7",
+      manufacturer: "Schott",
+      semiDiameter: 60,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -955,
+      thickness: 3.9 + 883.840824,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 60,
+    },
   ],
 };
 
@@ -997,20 +1099,82 @@ const petzvalAPO: OpticalModel = {
   setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 140 },
-    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, Math.SQRT1_2, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.5,
+      fields: [0, Math.SQRT1_2, 1],
+      isRelative: true,
+    },
     wavelengths: commonWavelengthConfig,
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
-    { label: "Stop", curvatureRadius: 481, thickness: 9, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 70 },
-    { label: "Default", curvatureRadius: 230.3, thickness: 6.2, medium: "air", manufacturer: "", semiDiameter: 69.656085 },
-    { label: "Default", curvatureRadius: 230.3, thickness: 13, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 70.268998 },
-    { label: "Default", curvatureRadius: 2169, thickness: 660, medium: "air", manufacturer: "", semiDiameter: 69.949825 },
-    { label: "Default", curvatureRadius: 980, thickness: 11, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 55.980378 },
-    { label: "Default", curvatureRadius: -230.3, thickness: 3.2, medium: "air", manufacturer: "", semiDiameter: 55.626726 },
-    { label: "Default", curvatureRadius: -230.3, thickness: 7, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 55.138617 },
-    { label: "Default", curvatureRadius: -828, thickness: 603.304561, medium: "air", manufacturer: "", semiDiameter: 55.007989 },
+    {
+      label: "Stop",
+      curvatureRadius: 481,
+      thickness: 9,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 70,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 230.3,
+      thickness: 6.2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 69.656085,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 230.3,
+      thickness: 13,
+      medium: "S-FPL53",
+      manufacturer: "Ohara",
+      semiDiameter: 70.268998,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 2169,
+      thickness: 660,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 69.949825,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 980,
+      thickness: 11,
+      medium: "S-FPL53",
+      manufacturer: "Ohara",
+      semiDiameter: 55.980378,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -230.3,
+      thickness: 3.2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 55.626726,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -230.3,
+      thickness: 7,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 55.138617,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -828,
+      thickness: 603.304561,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 55.007989,
+    },
   ],
 } as const;
 
@@ -1022,16 +1186,28 @@ const petzvalAPORearLensesRemoved: OpticalModel = {
   image: petzvalAPO.image,
   surfaces: [
     ...petzvalAPO.surfaces.slice(0, 3),
-    { label: "Default", curvatureRadius: 2169, thickness: 1807.12, medium: "air", manufacturer: "", semiDiameter: 69.949825 },
+    {
+      label: "Default",
+      curvatureRadius: 2169,
+      thickness: 1807.12,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 69.949825,
+    },
   ],
 } as const;
-
 
 const tripletAPOWithSingletMeniscusLens: OpticalModel = {
   setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 86 },
-    field: { space: "image", type: "height", maxField: 21.6, fields: [0, 0.3, 0.5, Math.SQRT1_2, 0.85, 1], isRelative: true },
+    field: {
+      space: "image",
+      type: "height",
+      maxField: 21.6,
+      fields: [0, 0.3, 0.5, Math.SQRT1_2, 0.85, 1],
+      isRelative: true,
+    },
     wavelengths: commonWavelengthConfig,
   },
 
@@ -1107,7 +1283,6 @@ const tripletAPOWithSingletMeniscusLens: OpticalModel = {
   ],
 } as const;
 
-
 // modified eyepiece design by Imaizumi M. US#5,557,464 (1996)
 // this modified config is from https://telescope-optics.net/eyepiece_raytrace.htm
 const modifiedImaizumiEyepieceReversed: OpticalModel = {
@@ -1121,7 +1296,13 @@ const modifiedImaizumiEyepieceReversed: OpticalModel = {
 
     // this is the half-AFoV of the eyepiece
     // because it's reversed tracing, the space is "object" not "image".
-    field: { space: "object", type: "angle", maxField: 40, fields: [0, 0.5, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 40,
+      fields: [0, 0.5, 1],
+      isRelative: true,
+    },
     wavelengths: {
       weights: [
         [486.133, 0.18],
@@ -1136,21 +1317,104 @@ const modifiedImaizumiEyepieceReversed: OpticalModel = {
   image: { curvatureRadius: 0 },
 
   surfaces: [
-    { label: "Stop", curvatureRadius: 0, thickness: 7.76, medium: "Air", manufacturer: "", semiDiameter: 0.5 }, // semi-diameter is half of the epd
-    { label: "Default", curvatureRadius: -24.8, thickness: 1.5, medium: "N-SF14", manufacturer: "Schott", semiDiameter: 6.7304 },
-    { label: "Default", curvatureRadius: 70.4, thickness: 7.6, medium: "N-SK14", manufacturer: "Schott", semiDiameter: 8.3700 },
-    { label: "Default", curvatureRadius: -14.95, thickness: 0.23, medium: "air", manufacturer: "", semiDiameter: 10.328 },
-    { label: "Default", curvatureRadius: 48.6, thickness: 5.3, medium: "N-LAF34", manufacturer: "Schott", semiDiameter: 13.563 },
-    { label: "Default", curvatureRadius: -30.1, thickness: 0.23, medium: "air", manufacturer: "", semiDiameter: 13.578 },
-    { label: "Default", curvatureRadius: 17.5, thickness: 10.8, medium: "N-SK14", manufacturer: "Schott", semiDiameter: 11.986 },
-    { label: "Default", curvatureRadius: -20.98, thickness: 1.6, medium: "N-SF14", manufacturer: "Schott", semiDiameter: 10.582 },
-    { label: "Default", curvatureRadius: 21.5, thickness: 21.68, medium: "air", manufacturer: "", semiDiameter: 8.6427 },
-    { label: "Default", curvatureRadius: -11.09, thickness: 1.22, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 7.0088 },
-    { label: "Default", curvatureRadius: -68.3, thickness: 2.3, medium: "N-SF6", manufacturer: "Schott", semiDiameter: 7.7057 },
-    { label: "Default", curvatureRadius: -24.6, thickness: -18.14, medium: "air", manufacturer: "", semiDiameter: 7.9817 },
+    {
+      label: "Stop",
+      curvatureRadius: 0,
+      thickness: 7.76,
+      medium: "Air",
+      manufacturer: "",
+      semiDiameter: 0.5,
+    }, // semi-diameter is half of the epd
+    {
+      label: "Default",
+      curvatureRadius: -24.8,
+      thickness: 1.5,
+      medium: "N-SF14",
+      manufacturer: "Schott",
+      semiDiameter: 6.7304,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 70.4,
+      thickness: 7.6,
+      medium: "N-SK14",
+      manufacturer: "Schott",
+      semiDiameter: 8.37,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -14.95,
+      thickness: 0.23,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 10.328,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 48.6,
+      thickness: 5.3,
+      medium: "N-LAF34",
+      manufacturer: "Schott",
+      semiDiameter: 13.563,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -30.1,
+      thickness: 0.23,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 13.578,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 17.5,
+      thickness: 10.8,
+      medium: "N-SK14",
+      manufacturer: "Schott",
+      semiDiameter: 11.986,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -20.98,
+      thickness: 1.6,
+      medium: "N-SF14",
+      manufacturer: "Schott",
+      semiDiameter: 10.582,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 21.5,
+      thickness: 21.68,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 8.6427,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -11.09,
+      thickness: 1.22,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 7.0088,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -68.3,
+      thickness: 2.3,
+      medium: "N-SF6",
+      manufacturer: "Schott",
+      semiDiameter: 7.7057,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -24.6,
+      thickness: -18.14,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 7.9817,
+    },
   ],
 } as const;
-
 
 const fishEyeLens: OpticalModel = {
   setAutoAperture: "autoAperture",
@@ -1158,15 +1422,15 @@ const fishEyeLens: OpticalModel = {
     pupil: {
       space: "object",
       type: "epd",
-      value: 0.25
+      value: 0.25,
     },
     field: {
       space: "object",
       type: "angle",
       maxField: 90,
       fields: [0, Math.SQRT1_2, 1],
-      "isRelative": true,
-      "isWideAngle": true,
+      isRelative: true,
+      isWideAngle: true,
     },
     wavelengths: {
       weights: [
@@ -1174,7 +1438,7 @@ const fishEyeLens: OpticalModel = {
         [546.073, 2],
         [656.273, 1],
       ],
-      "referenceIndex": 1
+      referenceIndex: 1,
     },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
@@ -1324,7 +1588,7 @@ const fishEyeLens: OpticalModel = {
       manufacturer: "",
       semiDiameter: 0.6,
     },
-  ]
+  ],
 };
 
 const cellphoneLensExample: OpticalModel = {
@@ -1350,7 +1614,7 @@ const cellphoneLensExample: OpticalModel = {
         [656.273, 1],
       ],
       referenceIndex: 1,
-    }
+    },
   },
   object: { distance: 10000000000, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
@@ -1373,7 +1637,10 @@ const cellphoneLensExample: OpticalModel = {
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: 1.153,
-        polynomialCoefficients: [0, 0, -1.895e-2, 2.426e-2, -5.123e-2, 8.371e-4, 7.850e-3, 4.091e-3, -7.732e-3, -4.265e-3],
+        polynomialCoefficients: [
+          0, 0, -1.895e-2, 2.426e-2, -5.123e-2, 8.371e-4, 7.85e-3, 4.091e-3,
+          -7.732e-3, -4.265e-3,
+        ],
       },
     },
     {
@@ -1386,7 +1653,10 @@ const cellphoneLensExample: OpticalModel = {
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: 39.18,
-        polynomialCoefficients: [0, 0, -4.966e-3, -1.434e-2, -6.139e-3, -9.284e-5, 6.438e-3, -5.72e-3, -2.385e-2, 1.108e-2],
+        polynomialCoefficients: [
+          0, 0, -4.966e-3, -1.434e-2, -6.139e-3, -9.284e-5, 6.438e-3, -5.72e-3,
+          -2.385e-2, 1.108e-2,
+        ],
       },
     },
     {
@@ -1399,7 +1669,10 @@ const cellphoneLensExample: OpticalModel = {
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: 1.105,
-        polynomialCoefficients: [0, 0, -4.388e-2, -2.555e-2, 5.16e-2, -4.307e-2, -2.831e-2, 3.162e-2, 4.630e-2, -4.877e-2],
+        polynomialCoefficients: [
+          0, 0, -4.388e-2, -2.555e-2, 5.16e-2, -4.307e-2, -2.831e-2, 3.162e-2,
+          4.63e-2, -4.877e-2,
+        ],
       },
     },
     {
@@ -1408,11 +1681,14 @@ const cellphoneLensExample: OpticalModel = {
       thickness: 0.1,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 1.5270,
+      semiDiameter: 1.527,
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: 2.382,
-        polynomialCoefficients: [0, 0, -1.131e-1, -7.863e-2, 1.094e-1, 6.228e-3, -2.216e-2, -5.89e-3, 4.123e-3, 1.041e-3],
+        polynomialCoefficients: [
+          0, 0, -1.131e-1, -7.863e-2, 1.094e-1, 6.228e-3, -2.216e-2, -5.89e-3,
+          4.123e-3, 1.041e-3,
+        ],
       },
     },
     {
@@ -1425,7 +1701,10 @@ const cellphoneLensExample: OpticalModel = {
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: -222.1,
-        polynomialCoefficients: [0, 0, -7.876e-2, 7.02e-2, 1.575e-3, -9.958e-3, -7.322e-3, 6.914e-4, 2.54e-3, -7.65e-4],
+        polynomialCoefficients: [
+          0, 0, -7.876e-2, 7.02e-2, 1.575e-3, -9.958e-3, -7.322e-3, 6.914e-4,
+          2.54e-3, -7.65e-4,
+        ],
       },
     },
     {
@@ -1438,7 +1717,10 @@ const cellphoneLensExample: OpticalModel = {
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: 0.9331 - 1,
-        polynomialCoefficients: [0, 0, 9.694e-3, -2.516e-3, -3.606e-3, -2.497e-4, -6.84e-4, -1.414e-4, 2.932e-4, -7.284e-5],
+        polynomialCoefficients: [
+          0, 0, 9.694e-3, -2.516e-3, -3.606e-3, -2.497e-4, -6.84e-4, -1.414e-4,
+          2.932e-4, -7.284e-5,
+        ],
       },
     },
     {
@@ -1451,7 +1733,10 @@ const cellphoneLensExample: OpticalModel = {
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: -8.617,
-        polynomialCoefficients: [0, 0, 7.429e-2, -6.933e-2, -5.811e-3, 2.396e-3, 2.100e-3, -3.119e-4, -5.552e-5, 7.969e-6],
+        polynomialCoefficients: [
+          0, 0, 7.429e-2, -6.933e-2, -5.811e-3, 2.396e-3, 2.1e-3, -3.119e-4,
+          -5.552e-5, 7.969e-6,
+        ],
       },
     },
     {
@@ -1464,7 +1749,10 @@ const cellphoneLensExample: OpticalModel = {
       aspherical: {
         kind: "RadialPolynomial",
         conicConstant: -3.707,
-        polynomialCoefficients: [0, 0, 1.767e-3, -4.652e-2, 1.625e-2, -3.522e-3, -7.106e-4, 3.825e-4, 6.271e-5, -2.631e-5],
+        polynomialCoefficients: [
+          0, 0, 1.767e-3, -4.652e-2, 1.625e-2, -3.522e-3, -7.106e-4, 3.825e-4,
+          6.271e-5, -2.631e-5,
+        ],
       },
     },
     {
@@ -1473,7 +1761,7 @@ const cellphoneLensExample: OpticalModel = {
       thickness: 0.4,
       medium: "1.516",
       manufacturer: "64.1",
-      semiDiameter: 3.2480,
+      semiDiameter: 3.248,
     },
     {
       label: "Default",
@@ -1482,8 +1770,8 @@ const cellphoneLensExample: OpticalModel = {
       medium: "air",
       manufacturer: "",
       semiDiameter: 3.3477,
-    }
-  ]
+    },
+  ],
 };
 
 const transmissiveDiffractionGrating: OpticalModel = {
@@ -1509,7 +1797,7 @@ const transmissiveDiffractionGrating: OpticalModel = {
         [800, 0.5],
       ],
       referenceIndex: 1,
-    }
+    },
   },
   object: { distance: 39, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
@@ -1552,7 +1840,7 @@ const transmissiveDiffractionGrating: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -1607,7 +1895,7 @@ const transmissiveDiffractionGrating: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
+      },
     },
     {
       label: "Default",
@@ -1632,8 +1920,8 @@ const transmissiveDiffractionGrating: OpticalModel = {
       medium: "air",
       manufacturer: "",
       semiDiameter: 12.7,
-    }
-  ]
+    },
+  ],
 };
 
 const reflectiveDiffractionGrating: OpticalModel = {
@@ -1659,7 +1947,7 @@ const reflectiveDiffractionGrating: OpticalModel = {
         [656.273, 0.5],
       ],
       referenceIndex: 1,
-    }
+    },
   },
   object: {
     distance: 34.8,
@@ -1723,9 +2011,9 @@ const reflectiveDiffractionGrating: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
-    }
-  ]
+      },
+    },
+  ],
 };
 
 // High NA immersion microscope objective design originally by R. Wartmann (US9645380B2 exemplary 1)
@@ -1757,7 +2045,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
         [365.015, 1],
       ],
       referenceIndex: 0,
-    }
+    },
   },
   object: {
     distance: 0.17,
@@ -1892,7 +2180,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 1,
       medium: "TAC8",
       manufacturer: "Hoya",
-      semiDiameter: 6.000,
+      semiDiameter: 6.0,
     },
     {
       label: "Default",
@@ -1946,7 +2234,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 1,
       medium: "N-KZFS2",
       manufacturer: "Schott",
-      semiDiameter: 7.160,
+      semiDiameter: 7.16,
     },
     {
       label: "Default",
@@ -2009,7 +2297,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 60,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 25.30,
+      semiDiameter: 25.3,
     },
     {
       label: "Default",
@@ -2028,8 +2316,8 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       medium: "air",
       manufacturer: "",
       semiDiameter: 23.28,
-    }
-  ]
+    },
+  ],
 };
 
 const superachromaticAirMicroscopeObjective: OpticalModel = {
@@ -2195,33 +2483,39 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
   ],
 };
 
-
-
 /** Canonical bundled example optical models keyed by display name. */
 export const ExampleSystemList = {
   "Sasian Triplet": SasianTriplet,
   "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
   "Herschel's 40-foot Reflector": herschelReflector,
-  "Mike I. Jones's Improved Herschel Reflector": mikeJonesImprovedHerschelReflector,
+  "Mike I. Jones's Improved Herschel Reflector":
+    mikeJonesImprovedHerschelReflector,
   "Tilted Houghton-Herschel 150mm f/8": tiltedHoughton,
-  "Terry Platt's 318mm f/21 Buchroeder \"Quad-Schiefspiegler\"": quadSchiefspiegler,
+  'Terry Platt\'s 318mm f/21 Buchroeder "Quad-Schiefspiegler"':
+    quadSchiefspiegler,
   "Clyde Bone Jr. 30-inch f/5 Mersenne": clydeBoneJrMersenne,
   "Schmidt Camera 200mm f/5": schmidtCamera,
   "Ortho-APO 130mm f/7.7": orthoAPO,
-  "Fluorite Doublet APO 130mm f/8 w/ Wide Air Gap & Aspherized Surface": fluoriteDoubletAPOWithAspherizedSurface,
+  "Fluorite Doublet APO 130mm f/8 w/ Wide Air Gap & Aspherized Surface":
+    fluoriteDoubletAPOWithAspherizedSurface,
   "Fraunhofer Achromat 120mm f/23.6 (CA ratio = 5)": fraunhoferAchromat,
   "Fraunhofer Achromat 120mm f/7.5 (CA ratio = 1.59)": fraunhoferAchromatFast,
   "APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5": edDoublet,
   "APO Petzval 140mm f/7": petzvalAPO,
-  "APO Petzval 140mm f/7 (but with rear lenses removed)": petzvalAPORearLensesRemoved,
-  "Flatfield Quadruplet APO 86mm f/7 (Triplet with Singlet Meniscus Lens)": tripletAPOWithSingletMeniscusLens,
-  "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
+  "APO Petzval 140mm f/7 (but with rear lenses removed)":
+    petzvalAPORearLensesRemoved,
+  "Flatfield Quadruplet APO 86mm f/7 (Triplet with Singlet Meniscus Lens)":
+    tripletAPOWithSingletMeniscusLens,
+  "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)":
+    modifiedImaizumiEyepieceReversed,
   "Fisheye Lens Example": fishEyeLens,
   "Cell Phone Camera Lens Example US#7,535,658": cellphoneLensExample,
   "Diffraction Grating (Transmissive) Example": transmissiveDiffractionGrating,
   "Diffraction Grating (Reflective) Example": reflectiveDiffractionGrating,
-  "Superachromatic High NA Immersion Microscope Objective with Tube Lens US#9,645,380 Example 1 (2013)": superachromaticHighNAImmersionMicroscopeObjective,
-  "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)": superachromaticAirMicroscopeObjective,
+  "Superachromatic High NA Immersion Microscope Objective with Tube Lens US#9,645,380 Example 1 (2013)":
+    superachromaticHighNAImmersionMicroscopeObjective,
+  "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)":
+    superachromaticAirMicroscopeObjective,
 } as const satisfies { [key: string]: OpticalModel };
 
 /** Canonical bundled example-system name. */

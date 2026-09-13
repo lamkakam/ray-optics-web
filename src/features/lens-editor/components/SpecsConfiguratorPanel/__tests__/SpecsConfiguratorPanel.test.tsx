@@ -53,14 +53,30 @@ describe("SpecsConfiguratorPanel", () => {
     });
 
     it("selects correct dropdown option for Entrance Pupil Diameter", () => {
-      render(<SpecsConfiguratorPanel {...defaultProps} pupilSpace="object" pupilType="epd" />);
-      const dropdown = screen.getByLabelText("System aperture type") as HTMLSelectElement;
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          pupilSpace="object"
+          pupilType="epd"
+        />,
+      );
+      const dropdown = screen.getByLabelText(
+        "System aperture type",
+      ) as HTMLSelectElement;
       expect(dropdown.value).toBe("object:epd");
     });
 
     it("selects correct dropdown option for Image Space F/#", () => {
-      render(<SpecsConfiguratorPanel {...defaultProps} pupilSpace="image" pupilType="f/#" />);
-      const dropdown = screen.getByLabelText("System aperture type") as HTMLSelectElement;
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          pupilSpace="image"
+          pupilType="f/#"
+        />,
+      );
+      const dropdown = screen.getByLabelText(
+        "System aperture type",
+      ) as HTMLSelectElement;
       expect(dropdown.value).toBe("image:f/#");
       expect(dropdown.selectedOptions[0]).toHaveTextContent(
         "Image Space Geometric F/#",
@@ -68,8 +84,16 @@ describe("SpecsConfiguratorPanel", () => {
     });
 
     it("selects correct dropdown option for Object Space NA", () => {
-      render(<SpecsConfiguratorPanel {...defaultProps} pupilSpace="object" pupilType="NA" />);
-      const dropdown = screen.getByLabelText("System aperture type") as HTMLSelectElement;
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          pupilSpace="object"
+          pupilType="NA"
+        />,
+      );
+      const dropdown = screen.getByLabelText(
+        "System aperture type",
+      ) as HTMLSelectElement;
       expect(dropdown.value).toBe("object:NA");
     });
   });
@@ -77,7 +101,12 @@ describe("SpecsConfiguratorPanel", () => {
   describe("interactions", () => {
     it("calls onApertureChange with correct value when dropdown changes to Image Space F/#", async () => {
       const onApertureChange = jest.fn();
-      render(<SpecsConfiguratorPanel {...defaultProps} onApertureChange={onApertureChange} />);
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          onApertureChange={onApertureChange}
+        />,
+      );
       const dropdown = screen.getByLabelText("System aperture type");
 
       await userEvent.selectOptions(dropdown, "image:f/#");
@@ -89,7 +118,12 @@ describe("SpecsConfiguratorPanel", () => {
 
     it("calls onApertureChange with correct value when dropdown changes to Object Space NA", async () => {
       const onApertureChange = jest.fn();
-      render(<SpecsConfiguratorPanel {...defaultProps} onApertureChange={onApertureChange} />);
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          onApertureChange={onApertureChange}
+        />,
+      );
       const dropdown = screen.getByLabelText("System aperture type");
 
       await userEvent.selectOptions(dropdown, "object:NA");
@@ -101,7 +135,12 @@ describe("SpecsConfiguratorPanel", () => {
 
     it("calls onApertureChange with pupilValue on textbox blur", async () => {
       const onApertureChange = jest.fn();
-      render(<SpecsConfiguratorPanel {...defaultProps} onApertureChange={onApertureChange} />);
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          onApertureChange={onApertureChange}
+        />,
+      );
       const input = screen.getByLabelText("Aperture value");
 
       await userEvent.clear(input);
@@ -112,14 +151,19 @@ describe("SpecsConfiguratorPanel", () => {
 
     it("does not call onApertureChange for non-numeric textbox input", async () => {
       const onApertureChange = jest.fn();
-      render(<SpecsConfiguratorPanel {...defaultProps} onApertureChange={onApertureChange} />);
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          onApertureChange={onApertureChange}
+        />,
+      );
       const input = screen.getByLabelText("Aperture value");
 
       await userEvent.clear(input);
       await userEvent.type(input, "abc");
       await userEvent.tab();
       expect(onApertureChange).not.toHaveBeenCalledWith(
-        expect.objectContaining({ pupilValue: expect.anything() })
+        expect.objectContaining({ pupilValue: expect.anything() }),
       );
     });
 
@@ -136,7 +180,7 @@ describe("SpecsConfiguratorPanel", () => {
 
     it("resets the draft when the committed pupil value changes", async () => {
       const { rerender } = render(
-        <SpecsConfiguratorPanel {...defaultProps} pupilValue={25} />
+        <SpecsConfiguratorPanel {...defaultProps} pupilValue={25} />,
       );
       const input = screen.getByLabelText("Aperture value");
 
@@ -151,7 +195,12 @@ describe("SpecsConfiguratorPanel", () => {
 
     it("calls onOpenFieldModal when field button is clicked", async () => {
       const onOpenFieldModal = jest.fn();
-      render(<SpecsConfiguratorPanel {...defaultProps} onOpenFieldModal={onOpenFieldModal} />);
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          onOpenFieldModal={onOpenFieldModal}
+        />,
+      );
       const btn = screen.getByRole("button", { name: /field/i });
 
       await userEvent.click(btn);
@@ -160,7 +209,12 @@ describe("SpecsConfiguratorPanel", () => {
 
     it("calls onOpenWavelengthModal when wavelength button is clicked", async () => {
       const onOpenWavelengthModal = jest.fn();
-      render(<SpecsConfiguratorPanel {...defaultProps} onOpenWavelengthModal={onOpenWavelengthModal} />);
+      render(
+        <SpecsConfiguratorPanel
+          {...defaultProps}
+          onOpenWavelengthModal={onOpenWavelengthModal}
+        />,
+      );
       const btn = screen.getByRole("button", { name: /wavelength/i });
 
       await userEvent.click(btn);

@@ -11,7 +11,9 @@ interface TableProps {
   readonly columnAlignments?: readonly TableColumnAlignment[];
 }
 
-function getAlignmentClass(alignment: TableColumnAlignment | undefined): string {
+function getAlignmentClass(
+  alignment: TableColumnAlignment | undefined,
+): string {
   return alignment === "right" ? "text-right" : "text-left";
 }
 

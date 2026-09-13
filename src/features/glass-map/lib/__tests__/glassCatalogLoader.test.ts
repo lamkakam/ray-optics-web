@@ -12,18 +12,12 @@ const schottGlass = {
   partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
   dispersionCoeffKind: "Sellmeier3T" as const,
   dispersionCoeffs: [
-    1.03961212,
-    0.231792344,
-    1.01046945,
-    0.00600069867,
-    0.0200179144,
+    1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
     103.560653,
   ],
 };
 
-function makeProxy(
-  getAllGlassCatalogsData: jest.Mock,
-): PyodideWorkerAPI {
+function makeProxy(getAllGlassCatalogsData: jest.Mock): PyodideWorkerAPI {
   return { getAllGlassCatalogsData } as unknown as PyodideWorkerAPI;
 }
 

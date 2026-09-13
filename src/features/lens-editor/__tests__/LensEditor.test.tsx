@@ -4,14 +4,33 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type {
+  DiffractionMtfData,
+  DiffractionPsfData,
+  WavefrontMapData,
+} from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
-import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
+import {
+  createAnalysisPlotSlice,
+  type AnalysisPlotState,
+} from "@/features/analysis/stores/analysisPlotStore";
+import {
+  createLensLayoutImageSlice,
+  type LensLayoutImageState,
+} from "@/features/analysis/stores/lensLayoutImageStore";
+import {
+  createAnalysisDataSlice,
+  type AnalysisDataState,
+} from "@/features/analysis/stores/analysisDataStore";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
@@ -45,7 +64,13 @@ const testImportModel: OpticalModel = {
   surfaces: [],
   specs: {
     pupil: { space: "object", type: "epd", value: 77 },
-    field: { space: "object", type: "angle", maxField: 20, fields: [0, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      fields: [0, 1],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
   },
 };
@@ -65,7 +90,10 @@ const testImportModelWithDiffractionGrating: OpticalModel = {
   ],
 };
 
-const photonsToPhotosDataDir = path.join(process.cwd(), "src/__tests__/data/photons-to-photos");
+const photonsToPhotosDataDir = path.join(
+  process.cwd(),
+  "src/__tests__/data/photons-to-photos",
+);
 
 function readPhotonsFixture(name: string): string {
   return readFileSync(path.join(photonsToPhotosDataDir, name), "utf8");
@@ -79,8 +107,14 @@ jest.mock("@/features/lens-editor/components/BottomDrawerContainer", () => ({
     draggable: boolean;
     onUpdateSystem: () => Promise<void>;
   }) => (
-    <div data-testid="bottom-drawer-container" data-draggable={String(draggable)}>
-      <button data-testid="update-system-btn" onClick={() => void onUpdateSystem()}>
+    <div
+      data-testid="bottom-drawer-container"
+      data-draggable={String(draggable)}
+    >
+      <button
+        data-testid="update-system-btn"
+        onClick={() => void onUpdateSystem()}
+      >
         Mock Update System
       </button>
     </div>
@@ -174,7 +208,13 @@ const mockSeidelData: SeidelData = {
   surfaceBySurface: {
     aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
     surfaceLabels: ["S1", "sum"],
-    data: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+    data: [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ],
   },
   transverse: { TSA: 0, TCO: 0, TAS: 0, SAS: 0, PTB: 0, DST: 0 },
   wavefront: { W040: 0, W131: 0, W222: 0, W220: 0, W311: 0 },
@@ -228,12 +268,26 @@ const mockDiffractionMtfData: DiffractionMtfData = {
 };
 
 function makeStores() {
-  const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
+  const specsStore = createStore<SpecsConfiguratorState>(
+    createSpecsConfiguratorSlice,
+  );
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
-  const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
-  const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);
-  const analysisDataStore = createStore<AnalysisDataState>(createAnalysisDataSlice);
-  return { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
+  const analysisPlotStore = createStore<AnalysisPlotState>(
+    createAnalysisPlotSlice,
+  );
+  const lensLayoutImageStore = createStore<LensLayoutImageState>(
+    createLensLayoutImageSlice,
+  );
+  const analysisDataStore = createStore<AnalysisDataState>(
+    createAnalysisDataSlice,
+  );
+  return {
+    specsStore,
+    lensStore,
+    analysisPlotStore,
+    lensLayoutImageStore,
+    analysisDataStore,
+  };
 }
 
 function makeProxy(): PyodideWorkerAPI {
@@ -294,18 +348,31 @@ function renderLensEditor(overrides?: {
   glassCatalogContextValue?: GlassCatalogContextValue;
 }) {
   // Lazy import to allow mock override before render
-  const { LensEditor } = require("@/features/lens-editor/LensEditor") as typeof import("@/features/lens-editor/LensEditor");
-  const { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore } = makeStores();
-  const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
+  const { LensEditor } =
+    require("@/features/lens-editor/LensEditor") as typeof import("@/features/lens-editor/LensEditor");
+  const {
+    specsStore,
+    lensStore,
+    analysisPlotStore,
+    lensLayoutImageStore,
+    analysisDataStore,
+  } = makeStores();
+  const proxy =
+    overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
-  const glassCatalogContextValue: GlassCatalogContextValue = overrides?.glassCatalogContextValue ?? {
-    catalogs: undefined,
-    lookupMaps: { manufacturerMap: new Map(), mediumMap: new Map(), customMediumMap: new Map() },
-    error: undefined,
-    isLoaded: false,
-    isLoading: false,
-    preload: jest.fn(),
-  };
+  const glassCatalogContextValue: GlassCatalogContextValue =
+    overrides?.glassCatalogContextValue ?? {
+      catalogs: undefined,
+      lookupMaps: {
+        manufacturerMap: new Map(),
+        mediumMap: new Map(),
+        customMediumMap: new Map(),
+      },
+      error: undefined,
+      isLoaded: false,
+      isLoading: false,
+      preload: jest.fn(),
+    };
   const renderResult = render(
     <SpecsConfiguratorStoreContext.Provider value={specsStore}>
       <LensEditorStoreContext.Provider value={lensStore}>
@@ -323,15 +390,29 @@ function renderLensEditor(overrides?: {
           </AnalysisDataStoreContext>
         </AnalysisPlotStoreContext.Provider>
       </LensEditorStoreContext.Provider>
-    </SpecsConfiguratorStoreContext.Provider>
+    </SpecsConfiguratorStoreContext.Provider>,
   );
-  return { ...renderResult, proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
+  return {
+    ...renderResult,
+    proxy,
+    onError,
+    specsStore,
+    lensStore,
+    analysisPlotStore,
+    lensLayoutImageStore,
+    analysisDataStore,
+  };
 }
 
 function expectButtonsInOrder(buttonNames: string[]) {
-  const buttons = buttonNames.map((name) => screen.getByRole("button", { name }));
+  const buttons = buttonNames.map((name) =>
+    screen.getByRole("button", { name }),
+  );
   buttons.reduce((previous, current) => {
-    expect(previous.compareDocumentPosition(current) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      previous.compareDocumentPosition(current) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     return current;
   });
 }
@@ -339,15 +420,25 @@ function expectButtonsInOrder(buttonNames: string[]) {
 beforeEach(() => {
   _resetAnalysisCache();
   jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
-  jest.mocked(useTheme).mockReturnValue({ theme: "light", setTheme: jest.fn() });
+  jest
+    .mocked(useTheme)
+    .mockReturnValue({ theme: "light", setTheme: jest.fn() });
 });
 
 describe("LensEditor", () => {
   it("registers WebMCP tools while mounted and aborts every registration on cleanup", () => {
-    const registrations: Array<{ tool: WebMCP.ModelContextTool; options?: WebMCP.ModelContextRegisterToolOptions }> = [];
-    const registerTool = jest.fn(async (tool: WebMCP.ModelContextTool, options?: WebMCP.ModelContextRegisterToolOptions) => {
-      registrations.push({ tool, options });
-    });
+    const registrations: Array<{
+      tool: WebMCP.ModelContextTool;
+      options?: WebMCP.ModelContextRegisterToolOptions;
+    }> = [];
+    const registerTool = jest.fn(
+      async (
+        tool: WebMCP.ModelContextTool,
+        options?: WebMCP.ModelContextRegisterToolOptions,
+      ) => {
+        registrations.push({ tool, options });
+      },
+    );
     Object.defineProperty(document, "modelContext", {
       configurable: true,
       value: { registerTool },
@@ -366,14 +457,21 @@ describe("LensEditor", () => {
 
     unmount();
     expect(signals.every((signal) => signal?.aborted === true)).toBe(true);
-    Object.defineProperty(document, "modelContext", { configurable: true, value: undefined });
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: undefined,
+    });
   });
 
   it("LG smoke: renders LensLayoutPanel, AnalysisPlotContainer, BottomDrawerContainer without the old example dropdown", () => {
     renderLensEditor();
-    expect(screen.queryByRole("combobox", { name: "Example system" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "Example system" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId("lens-layout-panel-mock")).toBeInTheDocument();
-    expect(screen.getByTestId("analysis-plot-container-mock")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("analysis-plot-container-mock"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("bottom-drawer-container")).toBeInTheDocument();
   });
 
@@ -394,7 +492,9 @@ describe("LensEditor", () => {
   it("disables Update System while Pyodide is not ready", () => {
     renderLensEditor({ isReady: false });
 
-    expect(screen.getByRole("button", { name: "Update System" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Update System" }),
+    ).toBeDisabled();
   });
 
   it("does not call workers when Update System is clicked without a proxy", async () => {
@@ -410,50 +510,81 @@ describe("LensEditor", () => {
     let resolveLayout: ((value: string) => void) | undefined;
     const proxy = makeProxy();
     (proxy.plotLensLayout as jest.Mock).mockImplementation(
-      () => new Promise<string>((resolve) => { resolveLayout = resolve; }),
+      () =>
+        new Promise<string>((resolve) => {
+          resolveLayout = resolve;
+        }),
     );
-    const { lensLayoutImageStore, analysisPlotStore } = renderLensEditor({ proxy });
+    const { lensLayoutImageStore, analysisPlotStore } = renderLensEditor({
+      proxy,
+    });
 
     await userEvent.setup().click(screen.getByTestId("update-system-btn"));
-    expect(screen.getByRole("button", { name: "Update System" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Update System" }),
+    ).toBeDisabled();
     expect(lensLayoutImageStore.getState().layoutLoading).toBe(true);
     expect(analysisPlotStore.getState().plotLoading).toBe(true);
 
     act(() => resolveLayout?.("layout-resolved"));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Update System" })).toBeEnabled());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Update System" }),
+      ).toBeEnabled(),
+    );
     expect(lensLayoutImageStore.getState().layoutLoading).toBe(false);
     expect(analysisPlotStore.getState().plotLoading).toBe(false);
   });
 
   it("Update System passes isDark=true to plotLensLayout when the theme is dark", async () => {
-    jest.mocked(useTheme).mockReturnValue({ theme: "dark", setTheme: jest.fn() });
+    jest
+      .mocked(useTheme)
+      .mockReturnValue({ theme: "dark", setTheme: jest.fn() });
     const { proxy } = renderLensEditor();
 
     const user = userEvent.setup();
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy?.plotLensLayout).toHaveBeenCalledWith(expect.anything(), true);
+      expect(proxy?.plotLensLayout).toHaveBeenCalledWith(
+        expect.anything(),
+        true,
+      );
     });
   });
 
   it("fetches and commits physical computed semi-diameters only in auto mode", async () => {
     const { proxy, lensStore } = renderLensEditor();
     act(() => {
-      lensStore.getState().setRows(surfacesToGridRows({
-        ...testImportModel,
-        surfaces: [{ label: "Default", curvatureRadius: 50, thickness: 5, medium: "air", manufacturer: "", semiDiameter: 10 }],
-      }));
+      lensStore.getState().setRows(
+        surfacesToGridRows({
+          ...testImportModel,
+          surfaces: [
+            {
+              label: "Default",
+              curvatureRadius: 50,
+              thickness: 5,
+              medium: "air",
+              manufacturer: "",
+              semiDiameter: 10,
+            },
+          ],
+        }),
+      );
       lensStore.getState().setAutoAperture(true);
     });
 
     await userEvent.setup().click(screen.getByTestId("update-system-btn"));
 
-    await waitFor(() => expect(lensStore.getState().autoSemiDiameters).toEqual(
-      { [lensStore.getState().rows[1].id]: 11.5 },
-    ));
+    await waitFor(() =>
+      expect(lensStore.getState().autoSemiDiameters).toEqual({
+        [lensStore.getState().rows[1].id]: 11.5,
+      }),
+    );
     expect(proxy?.getSurfaceSemiDiameters).toHaveBeenCalledTimes(1);
-    expect((lensStore.getState().rows[1] as { semiDiameter: number }).semiDiameter).toBe(10);
+    expect(
+      (lensStore.getState().rows[1] as { semiDiameter: number }).semiDiameter,
+    ).toBe(10);
   });
 
   it("clears an old computed cache after a successful manual update", async () => {
@@ -462,13 +593,17 @@ describe("LensEditor", () => {
 
     await userEvent.setup().click(screen.getByTestId("update-system-btn"));
 
-    await waitFor(() => expect(lensStore.getState().autoSemiDiameters).toEqual({}));
+    await waitFor(() =>
+      expect(lensStore.getState().autoSemiDiameters).toEqual({}),
+    );
     expect(proxy?.getSurfaceSemiDiameters).not.toHaveBeenCalled();
   });
 
   it("preserves the old computed cache when an auto update fails", async () => {
     const error = new Error("sd failed");
-    const consoleLog = jest.spyOn(console, "log").mockImplementation(() => undefined);
+    const consoleLog = jest
+      .spyOn(console, "log")
+      .mockImplementation(() => undefined);
     const proxy = makeProxy();
     (proxy.getSurfaceSemiDiameters as jest.Mock).mockRejectedValue(error);
     const { lensStore, onError } = renderLensEditor({ proxy });
@@ -488,7 +623,9 @@ describe("LensEditor", () => {
   it("Update System passes isDark=false and preserves diffraction grating data in the submitted model when the theme is light", async () => {
     const { proxy, lensStore } = renderLensEditor();
     act(() => {
-      lensStore.getState().setRows(surfacesToGridRows(testImportModelWithDiffractionGrating));
+      lensStore
+        .getState()
+        .setRows(surfacesToGridRows(testImportModelWithDiffractionGrating));
     });
 
     const user = userEvent.setup();
@@ -499,7 +636,9 @@ describe("LensEditor", () => {
         expect.objectContaining({
           surfaces: expect.arrayContaining([
             expect.objectContaining({
-              diffractiveElement: { diffractionGrating: { lpmm: 1200, order: 1 } },
+              diffractiveElement: {
+                diffractionGrating: { lpmm: 1200, order: 1 },
+              },
             }),
           ]),
         }),
@@ -520,7 +659,9 @@ describe("LensEditor", () => {
     await waitFor(() => {
       expect(proxy?.getWavefrontData).toHaveBeenCalled();
     });
-    expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
+    expect(analysisPlotStore.getState().wavefrontMapData).toEqual(
+      mockWavefrontMapData,
+    );
   });
 
   it("Update System uses getDiffractionPSFData instead of requesting a diffraction PNG", async () => {
@@ -535,7 +676,9 @@ describe("LensEditor", () => {
     await waitFor(() => {
       expect(proxy?.getDiffractionPSFData).toHaveBeenCalled();
     });
-    expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
+    expect(analysisPlotStore.getState().diffractionPsfData).toEqual(
+      mockDiffractionPsfData,
+    );
   });
 
   it("Update System commits diffraction MTF data for the selected plot", async () => {
@@ -548,9 +691,16 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy?.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
+      expect(proxy?.getDiffractionMTFData).toHaveBeenCalledWith(
+        expect.anything(),
+        0,
+        0,
+        "centroid",
+      );
     });
-    expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
+    expect(analysisPlotStore.getState().diffractionMtfData).toEqual(
+      mockDiffractionMtfData,
+    );
   });
 
   it("shows an error modal and skips worker calls when Update System has a missing glass", async () => {
@@ -571,25 +721,29 @@ describe("LensEditor", () => {
       },
     });
     act(() => {
-      lensStore.getState().setRows(surfacesToGridRows({
-        ...testImportModel,
-        surfaces: [
-          {
-            label: "Default",
-            curvatureRadius: 50,
-            thickness: 5,
-            medium: "N-BK7",
-            manufacturer: "Schott",
-            semiDiameter: 10,
-          },
-        ],
-      }));
+      lensStore.getState().setRows(
+        surfacesToGridRows({
+          ...testImportModel,
+          surfaces: [
+            {
+              label: "Default",
+              curvatureRadius: 50,
+              thickness: 5,
+              medium: "N-BK7",
+              manufacturer: "Schott",
+              semiDiameter: 10,
+            },
+          ],
+        }),
+      );
     });
 
     const user = userEvent.setup();
     await user.click(screen.getByTestId("update-system-btn"));
 
-    expect(await screen.findByRole("dialog", { name: "Error" })).toHaveTextContent("Schott: N-BK7");
+    expect(
+      await screen.findByRole("dialog", { name: "Error" }),
+    ).toHaveTextContent("Schott: N-BK7");
     expect(proxy.getFirstOrderData).not.toHaveBeenCalled();
     expect(proxy.plotLensLayout).not.toHaveBeenCalled();
     expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
@@ -597,7 +751,9 @@ describe("LensEditor", () => {
 
   it("submit error path calls onError", async () => {
     const error = new Error("compute failed");
-    const consoleLog = jest.spyOn(console, "log").mockImplementation(() => undefined);
+    const consoleLog = jest
+      .spyOn(console, "log")
+      .mockImplementation(() => undefined);
     const errorProxy = makeProxy();
     (errorProxy.plotLensLayout as jest.Mock).mockRejectedValue(error);
     const { onError } = renderLensEditor({ proxy: errorProxy });
@@ -611,13 +767,15 @@ describe("LensEditor", () => {
   it("Seidel button absent before submit", () => {
     renderLensEditor();
     expect(
-      screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })
+      screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" }),
     ).not.toBeInTheDocument();
   });
 
   it("Paraxial Data button is absent before first-order data is computed", () => {
     renderLensEditor();
-    expect(screen.queryByRole("button", { name: "Paraxial Data" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Paraxial Data" }),
+    ).not.toBeInTheDocument();
   });
 
   it("Paraxial Data button appears after first-order data is computed and opens its modal", async () => {
@@ -626,7 +784,9 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     const button = await screen.findByRole("button", { name: "Paraxial Data" });
-    expect(screen.getByRole("tooltip", { name: "View paraxial first-order data" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tooltip", { name: "View paraxial first-order data" }),
+    ).toBeInTheDocument();
     await user.click(button);
     expect(screen.getByTestId("paraxial-data-modal")).toBeInTheDocument();
   });
@@ -637,8 +797,8 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })
-      ).toBeInTheDocument()
+        screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }),
+      ).toBeInTheDocument(),
     );
   });
 
@@ -648,10 +808,12 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })
-      ).toBeInTheDocument()
+        screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }),
+      ).toBeInTheDocument(),
     );
-    await user.click(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }));
+    await user.click(
+      screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }),
+    );
     expect(screen.getByTestId("seidel-modal")).toBeInTheDocument();
   });
 
@@ -660,7 +822,9 @@ describe("LensEditor", () => {
     const user = userEvent.setup();
     await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Zernike Terms" })).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: "Zernike Terms" }),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByRole("button", { name: "Zernike Terms" }));
     expect(screen.getByTestId("zernike-modal")).toBeInTheDocument();
@@ -675,11 +839,23 @@ describe("LensEditor", () => {
   it("LG: initial render shows config toolbar before analysis controls exist", () => {
     const { container } = renderLensEditor();
     const firstSection = container.firstElementChild;
-    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Update System" }));
-    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Load Config" }));
-    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Import a file from Photons to Photos" }));
-    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Download Config" }));
-    expect(firstSection).not.toContainElement(screen.getByTestId("lens-layout-panel-mock"));
+    expect(firstSection).toContainElement(
+      screen.getByRole("button", { name: "Update System" }),
+    );
+    expect(firstSection).toContainElement(
+      screen.getByRole("button", { name: "Load Config" }),
+    );
+    expect(firstSection).toContainElement(
+      screen.getByRole("button", {
+        name: "Import a file from Photons to Photos",
+      }),
+    );
+    expect(firstSection).toContainElement(
+      screen.getByRole("button", { name: "Download Config" }),
+    );
+    expect(firstSection).not.toContainElement(
+      screen.getByTestId("lens-layout-panel-mock"),
+    );
   });
 
   it("SM: initial render shows config toolbar before analysis controls exist", () => {
@@ -687,11 +863,23 @@ describe("LensEditor", () => {
     renderLensEditor();
     const scrollContainer = screen.getByTestId("sm-scroll-container");
     const controlsSection = scrollContainer.firstElementChild;
-    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Update System" }));
-    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Load Config" }));
-    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Import a file from Photons to Photos" }));
-    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Download Config" }));
-    expect(controlsSection).not.toContainElement(screen.getByTestId("lens-layout-container"));
+    expect(controlsSection).toContainElement(
+      screen.getByRole("button", { name: "Update System" }),
+    );
+    expect(controlsSection).toContainElement(
+      screen.getByRole("button", { name: "Load Config" }),
+    );
+    expect(controlsSection).toContainElement(
+      screen.getByRole("button", {
+        name: "Import a file from Photons to Photos",
+      }),
+    );
+    expect(controlsSection).toContainElement(
+      screen.getByRole("button", { name: "Download Config" }),
+    );
+    expect(controlsSection).not.toContainElement(
+      screen.getByTestId("lens-layout-container"),
+    );
   });
 
   it("LG: controls render after successful submit with buttons and first-order chips", async () => {
@@ -704,7 +892,9 @@ describe("LensEditor", () => {
       expect(firstSection).toContainElement(
         screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }),
       );
-      expect(firstSection).toContainElement(screen.getByRole("button", { name: "Zernike Terms" }));
+      expect(firstSection).toContainElement(
+        screen.getByRole("button", { name: "Zernike Terms" }),
+      );
       expect(screen.getByTestId("first-order-chips-mock")).toBeInTheDocument();
       expectButtonsInOrder([
         "Update System",
@@ -730,8 +920,12 @@ describe("LensEditor", () => {
       expect(controlsSection).toContainElement(
         screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }),
       );
-      expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Zernike Terms" }));
-      expect(controlsSection).toContainElement(screen.getByTestId("first-order-chips-mock"));
+      expect(controlsSection).toContainElement(
+        screen.getByRole("button", { name: "Zernike Terms" }),
+      );
+      expect(controlsSection).toContainElement(
+        screen.getByTestId("first-order-chips-mock"),
+      );
       expectButtonsInOrder([
         "Update System",
         "Load Config",
@@ -747,8 +941,12 @@ describe("LensEditor", () => {
   it("shows confirmation modal when valid JSON file is selected", async () => {
     renderLensEditor();
 
-    const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([JSON.stringify(testImportModel)], "lens.json", {
+      type: "application/json",
+    });
+    const fileInput = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file, { applyAccept: false });
 
     const dialog = await screen.findByRole("dialog");
@@ -759,67 +957,143 @@ describe("LensEditor", () => {
   it("canonicalizes catalog and Custom media before JSON confirmation and import", async () => {
     const lookupMaps = {
       manufacturerMap: new Map([["schott", "Schott" as const]]),
-      mediumMap: new Map([["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }]]),
-      customMediumMap: new Map([["user glass", { medium: "User Glass", manufacturer: "Custom" }]]),
+      mediumMap: new Map([
+        ["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }],
+      ]),
+      customMediumMap: new Map([
+        ["user glass", { medium: "User Glass", manufacturer: "Custom" }],
+      ]),
     };
     const { lensStore } = renderLensEditor({
       glassCatalogContextValue: {
-        catalogs: {}, lookupMaps, error: undefined, isLoaded: true, isLoading: false, preload: jest.fn(),
+        catalogs: {},
+        lookupMaps,
+        error: undefined,
+        isLoaded: true,
+        isLoading: false,
+        preload: jest.fn(),
       },
     });
     const imported = {
       ...testImportModel,
       surfaces: [
-        { label: "Default", curvatureRadius: 10, thickness: 2, medium: "n-bk7", manufacturer: "SCHOTT", semiDiameter: 3 },
-        { label: "Default", curvatureRadius: -10, thickness: 2, medium: "USER GLASS", manufacturer: "wrong", semiDiameter: 3 },
+        {
+          label: "Default",
+          curvatureRadius: 10,
+          thickness: 2,
+          medium: "n-bk7",
+          manufacturer: "SCHOTT",
+          semiDiameter: 3,
+        },
+        {
+          label: "Default",
+          curvatureRadius: -10,
+          thickness: 2,
+          medium: "USER GLASS",
+          manufacturer: "wrong",
+          semiDiameter: 3,
+        },
       ],
     };
 
-    const fileInput = document.querySelector('input[accept=".json"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, new File([JSON.stringify(imported)], "lens.json", { type: "application/json" }));
+    const fileInput = document.querySelector(
+      'input[accept=".json"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File([JSON.stringify(imported)], "lens.json", {
+        type: "application/json",
+      }),
+    );
     await userEvent.click(await screen.findByRole("button", { name: "Load" }));
 
-    expect(lensStore.getState().rows).toEqual(expect.arrayContaining([
-      expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" }),
-      expect.objectContaining({ medium: "User Glass", manufacturer: "Custom" }),
-    ]));
+    expect(lensStore.getState().rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" }),
+        expect.objectContaining({
+          medium: "User Glass",
+          manufacturer: "Custom",
+        }),
+      ]),
+    );
   });
 
   it("rejects all unique unknown JSON media before confirmation or store mutation", async () => {
     const { lensStore } = renderLensEditor();
     const before = lensStore.getState().rows;
-    const unknownSurface = { label: "Default" as const, curvatureRadius: 10, thickness: 2, medium: "Mystery", manufacturer: "Acme", semiDiameter: 3 };
-    const imported = { ...testImportModel, surfaces: [unknownSurface, { ...unknownSurface }] };
+    const unknownSurface = {
+      label: "Default" as const,
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "Mystery",
+      manufacturer: "Acme",
+      semiDiameter: 3,
+    };
+    const imported = {
+      ...testImportModel,
+      surfaces: [unknownSurface, { ...unknownSurface }],
+    };
 
-    const fileInput = document.querySelector('input[accept=".json"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, new File([JSON.stringify(imported)], "lens.json", { type: "application/json" }));
+    const fileInput = document.querySelector(
+      'input[accept=".json"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File([JSON.stringify(imported)], "lens.json", {
+        type: "application/json",
+      }),
+    );
 
-    expect(await screen.findByText(/Unknown glass in prescription: Acme: Mystery\./)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Load" })).not.toBeInTheDocument();
+    expect(
+      await screen.findByText(/Unknown glass in prescription: Acme: Mystery\./),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Load" }),
+    ).not.toBeInTheDocument();
     expect(lensStore.getState().rows).toEqual(before);
   });
 
   it("rejects JSON import while catalogs are unavailable", async () => {
     const { lensStore } = renderLensEditor({
       glassCatalogContextValue: {
-        catalogs: undefined, lookupMaps: undefined, error: undefined, isLoaded: false, isLoading: true, preload: jest.fn(),
+        catalogs: undefined,
+        lookupMaps: undefined,
+        error: undefined,
+        isLoaded: false,
+        isLoading: true,
+        preload: jest.fn(),
       },
     });
     const before = lensStore.getState().rows;
-    const fileInput = document.querySelector('input[accept=".json"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" }));
+    const fileInput = document.querySelector(
+      'input[accept=".json"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File([JSON.stringify(testImportModel)], "lens.json", {
+        type: "application/json",
+      }),
+    );
 
-    expect(await screen.findByText(/glass catalogs are unavailable/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/glass catalogs are unavailable/i),
+    ).toBeInTheDocument();
     expect(lensStore.getState().rows).toEqual(before);
   });
 
   it("does not import if user cancels the import confirmation", async () => {
     const { lensStore } = renderLensEditor();
-    const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
+    const file = new File([JSON.stringify(testImportModel)], "lens.json", {
+      type: "application/json",
+    });
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file, { applyAccept: false });
-    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Cancel" }),
+    );
 
     expect(lensStore.getState().autoAperture).toBe(false);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -827,9 +1101,13 @@ describe("LensEditor", () => {
 
   it("imports JSON after user confirms import", async () => {
     const { lensStore } = renderLensEditor();
-    const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
+    const file = new File([JSON.stringify(testImportModel)], "lens.json", {
+      type: "application/json",
+    });
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file);
     await userEvent.click(await screen.findByRole("button", { name: "Load" }));
 
@@ -841,11 +1119,15 @@ describe("LensEditor", () => {
     renderLensEditor();
     const file = new File(["not txt"], "lens.csv", { type: "text/csv" });
 
-    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[accept=".txt"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file, { applyAccept: false });
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Photons to Photos import requires a .txt file.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Photons to Photos import requires a .txt file."),
+    ).toBeInTheDocument();
   });
 
   it("imports a prime Photons to Photos txt file after confirmation", async () => {
@@ -856,7 +1138,9 @@ describe("LensEditor", () => {
       { type: "text/plain" },
     );
 
-    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[accept=".txt"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file);
     await userEvent.click(await screen.findByRole("button", { name: "Load" }));
 
@@ -865,7 +1149,11 @@ describe("LensEditor", () => {
     expect(lensStore.getState().autoAperture).toBe(false);
     expect(lensStore.getState().rows).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: "surface", label: "Stop", thickness: 4.16 }),
+        expect.objectContaining({
+          kind: "surface",
+          label: "Stop",
+          thickness: 4.16,
+        }),
       ]),
     );
   });
@@ -878,23 +1166,39 @@ describe("LensEditor", () => {
       { type: "text/plain" },
     );
 
-    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[accept=".txt"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file);
 
-    const focalDialog = await screen.findByRole("dialog", { name: "Select Focal Length" });
-    expect(within(focalDialog).getByRole("radio", { name: "9.193 mm" })).toBeChecked();
+    const focalDialog = await screen.findByRole("dialog", {
+      name: "Select Focal Length",
+    });
+    expect(
+      within(focalDialog).getByRole("radio", { name: "9.193 mm" }),
+    ).toBeChecked();
     await userEvent.click(screen.getByTestId("modal-backdrop"));
-    expect(screen.getByRole("dialog", { name: "Select Focal Length" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Select Focal Length" }),
+    ).toBeInTheDocument();
 
-    await userEvent.click(within(focalDialog).getByRole("radio", { name: "24.376 mm" }));
-    await userEvent.click(within(focalDialog).getByRole("button", { name: "Confirm" }));
+    await userEvent.click(
+      within(focalDialog).getByRole("radio", { name: "24.376 mm" }),
+    );
+    await userEvent.click(
+      within(focalDialog).getByRole("button", { name: "Confirm" }),
+    );
     await userEvent.click(await screen.findByRole("button", { name: "Load" }));
 
     expect(specsStore.getState().maxField).toBe(16.779);
     expect(specsStore.getState().isWideAngle).toBe(false);
     expect(lensStore.getState().rows).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: "surface", curvatureRadius: 149.486, thickness: 18.225 }),
+        expect.objectContaining({
+          kind: "surface",
+          curvatureRadius: 149.486,
+          thickness: 18.225,
+        }),
       ]),
     );
   });
@@ -907,9 +1211,13 @@ describe("LensEditor", () => {
       { type: "text/plain" },
     );
 
-    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[accept=".txt"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file);
-    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Cancel" }),
+    );
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(lensStore.getState().rows).toHaveLength(2);
@@ -917,37 +1225,51 @@ describe("LensEditor", () => {
 
   it("shows an error dialog when Photons to Photos parsing fails", async () => {
     renderLensEditor();
-    const file = new File(["[descriptive data]\ntitle\tBad"], "bad.txt", { type: "text/plain" });
+    const file = new File(["[descriptive data]\ntitle\tBad"], "bad.txt", {
+      type: "text/plain",
+    });
 
-    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[accept=".txt"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file);
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText(/Photons to Photos import failed:/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Photons to Photos import failed:/),
+    ).toBeInTheDocument();
   });
 
   it("shows error dialog when invalid JSON file is selected", async () => {
     renderLensEditor();
-    const file = new File(['{"invalid": true}'], "bad.json", { type: "application/json" });
+    const file = new File(['{"invalid": true}'], "bad.json", {
+      type: "application/json",
+    });
 
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
     await userEvent.upload(fileInput, file);
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("The JSON file is invalid. Schema validation failed.")).toBeInTheDocument();
+    expect(
+      screen.getByText("The JSON file is invalid. Schema validation failed."),
+    ).toBeInTheDocument();
   });
 
   it("Download Config button has a tooltip with correct text", () => {
     renderLensEditor();
     const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Download current config as JSON")).toBe(true);
+    expect(
+      tooltips.some((t) => t.textContent === "Download current config as JSON"),
+    ).toBe(true);
   });
 
   it("LG: BottomDrawerContainer receives draggable={true}", () => {
     renderLensEditor();
     expect(screen.getByTestId("bottom-drawer-container")).toHaveAttribute(
       "data-draggable",
-      "true"
+      "true",
     );
   });
 
@@ -956,26 +1278,30 @@ describe("LensEditor", () => {
     renderLensEditor();
     expect(screen.getByTestId("bottom-drawer-container")).toHaveAttribute(
       "data-draggable",
-      "false"
+      "false",
     );
   });
 
   it("SM: first-order chips not rendered when firstOrderData is undefined", () => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
     renderLensEditor();
-    expect(screen.queryByTestId("first-order-chips-mock")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("first-order-chips-mock"),
+    ).not.toBeInTheDocument();
   });
 
   it("LG: first-order chips not rendered when firstOrderData is undefined", () => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
     renderLensEditor();
-    expect(screen.queryByTestId("first-order-chips-mock")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("first-order-chips-mock"),
+    ).not.toBeInTheDocument();
   });
 
   it("Zernike button absent before any commit", () => {
     renderLensEditor();
     expect(
-      screen.queryByRole("button", { name: "Zernike Terms" })
+      screen.queryByRole("button", { name: "Zernike Terms" }),
     ).not.toBeInTheDocument();
   });
 
@@ -985,10 +1311,12 @@ describe("LensEditor", () => {
       lensStore.getState().setCommittedOpticalModel(testImportModel);
     });
     // Zernike button should appear — it only requires a committed model
-    expect(screen.getByRole("button", { name: "Zernike Terms" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Zernike Terms" }),
+    ).toBeInTheDocument();
     // Seidel button must NOT appear — it legitimately depends on seidelData
     expect(
-      screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })
+      screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" }),
     ).not.toBeInTheDocument();
   });
 
@@ -996,9 +1324,14 @@ describe("LensEditor", () => {
     const { analysisDataStore } = renderLensEditor();
     act(() => analysisDataStore.getState().setFirstOrderData({ efl: 100 }));
 
-    expect(screen.getByRole("button", { name: "Paraxial Data" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Zernike Terms" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Paraxial Data" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Zernike Terms" }),
+    ).not.toBeInTheDocument();
   });
-
 });

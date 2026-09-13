@@ -28,9 +28,10 @@ class MockDeckConstructible {
 
   constructor(props: unknown) {
     this.props = props;
-    this.id = typeof props === "object" && props !== null && "id" in props
-      ? String(props.id)
-      : undefined;
+    this.id =
+      typeof props === "object" && props !== null && "id" in props
+        ? String(props.id)
+        : undefined;
   }
 }
 

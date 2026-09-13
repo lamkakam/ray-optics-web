@@ -94,7 +94,9 @@ export function RadioInput<T extends string>({
 }: RadioInputProps<T>) {
   return (
     <fieldset className="mb-3">
-      <legend className={`block text-sm font-medium mb-1 ${cx.label.color.textColor}`}>
+      <legend
+        className={`block text-sm font-medium mb-1 ${cx.label.color.textColor}`}
+      >
         {label}
       </legend>
       <div className={OPTION_GRID_CLASSES[layout][columns]}>

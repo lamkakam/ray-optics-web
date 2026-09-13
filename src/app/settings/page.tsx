@@ -32,9 +32,14 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6">
-      <Header level={2} className="mb-4">Settings</Header>
+      <Header level={2} className="mb-4">
+        Settings
+      </Header>
       <div className="mb-6">
-        <label htmlFor="settings-theme-select" className="block text-sm font-medium mb-2">
+        <label
+          htmlFor="settings-theme-select"
+          className="block text-sm font-medium mb-2"
+        >
           Theme
         </label>
         <Select

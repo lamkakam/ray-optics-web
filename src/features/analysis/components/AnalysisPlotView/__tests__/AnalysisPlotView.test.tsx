@@ -8,137 +8,180 @@ jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn(),
 }));
 
-const mockDiffractionPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="diffraction-psf-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockDiffractionPsfChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="diffraction-psf-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockDiffractionMtfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="diffraction-mtf-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockDiffractionMtfChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="diffraction-mtf-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockWavefrontMapChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="wavefront-map-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockWavefrontMapChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="wavefront-map-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockStrehlVsWavelengthChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="strehl-vs-wavelength-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockStrehlVsWavelengthChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="strehl-vs-wavelength-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockGeoPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="geo-psf-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockGeoPsfChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="geo-psf-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockSpotDiagramChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="spot-diagram-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockSpotDiagramChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="spot-diagram-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockFieldCurveChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="field-curve-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockFieldCurveChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="field-curve-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockAstigmatismChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="astigmatism-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockAstigmatismChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="astigmatism-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockLongitudinalSphericalAberrationChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="longitudinal-spherical-aberration-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockLongitudinalSphericalAberrationChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="longitudinal-spherical-aberration-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockOpdFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="opd-fan-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockOpdFanChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="opd-fan-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockRayFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="ray-fan-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockRayFanChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="ray-fan-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
-const mockSurfaceBySurface3rdOrderChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
-  <div
-    data-testid="surface-by-surface-3rd-order-chart"
-    data-auto-height={autoHeight ? "true" : "false"}
-  />
-));
+const mockSurfaceBySurface3rdOrderChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="surface-by-surface-3rd-order-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
 
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
-  DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
+  DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) =>
+    mockDiffractionPsfChart(props),
 }));
 
 jest.mock("@/features/analysis/components/DiffractionMtfChart", () => ({
-  DiffractionMtfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionMtfChart(props),
+  DiffractionMtfChart: (props: { readonly autoHeight?: boolean }) =>
+    mockDiffractionMtfChart(props),
 }));
 
 jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
-  WavefrontMapChart: (props: { readonly autoHeight?: boolean }) => mockWavefrontMapChart(props),
+  WavefrontMapChart: (props: { readonly autoHeight?: boolean }) =>
+    mockWavefrontMapChart(props),
 }));
 
 jest.mock("@/features/analysis/components/StrehlVsWavelengthChart", () => ({
-  StrehlVsWavelengthChart: (props: { readonly autoHeight?: boolean }) => mockStrehlVsWavelengthChart(props),
+  StrehlVsWavelengthChart: (props: { readonly autoHeight?: boolean }) =>
+    mockStrehlVsWavelengthChart(props),
 }));
 
 jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
-  GeoPsfChart: (props: { readonly autoHeight?: boolean }) => mockGeoPsfChart(props),
+  GeoPsfChart: (props: { readonly autoHeight?: boolean }) =>
+    mockGeoPsfChart(props),
 }));
 
 jest.mock("@/features/analysis/components/SpotDiagramChart", () => ({
-  SpotDiagramChart: (props: { readonly autoHeight?: boolean }) => mockSpotDiagramChart(props),
+  SpotDiagramChart: (props: { readonly autoHeight?: boolean }) =>
+    mockSpotDiagramChart(props),
 }));
 
 jest.mock("@/features/analysis/components/FieldCurveChart", () => ({
-  FieldCurveChart: (props: { readonly autoHeight?: boolean }) => mockFieldCurveChart(props),
+  FieldCurveChart: (props: { readonly autoHeight?: boolean }) =>
+    mockFieldCurveChart(props),
 }));
 
 jest.mock("@/features/analysis/components/AstigmatismChart", () => ({
-  AstigmatismChart: (props: { readonly autoHeight?: boolean }) => mockAstigmatismChart(props),
+  AstigmatismChart: (props: { readonly autoHeight?: boolean }) =>
+    mockAstigmatismChart(props),
 }));
 
-jest.mock("@/features/analysis/components/LongitudinalSphericalAberrationChart", () => ({
-  LongitudinalSphericalAberrationChart: (props: { readonly autoHeight?: boolean }) => mockLongitudinalSphericalAberrationChart(props),
-}));
+jest.mock(
+  "@/features/analysis/components/LongitudinalSphericalAberrationChart",
+  () => ({
+    LongitudinalSphericalAberrationChart: (props: {
+      readonly autoHeight?: boolean;
+    }) => mockLongitudinalSphericalAberrationChart(props),
+  }),
+);
 
 jest.mock("@/features/analysis/components/OpdFanChart", () => ({
-  OpdFanChart: (props: { readonly autoHeight?: boolean }) => mockOpdFanChart(props),
+  OpdFanChart: (props: { readonly autoHeight?: boolean }) =>
+    mockOpdFanChart(props),
 }));
 
 jest.mock("@/features/analysis/components/RayFanChart", () => ({
-  RayFanChart: (props: { readonly autoHeight?: boolean }) => mockRayFanChart(props),
+  RayFanChart: (props: { readonly autoHeight?: boolean }) =>
+    mockRayFanChart(props),
 }));
 
-jest.mock("@/features/analysis/components/SurfaceBySurface3rdOrderChart", () => ({
-  SurfaceBySurface3rdOrderChart: (props: { readonly autoHeight?: boolean }) => mockSurfaceBySurface3rdOrderChart(props),
-}));
+jest.mock(
+  "@/features/analysis/components/SurfaceBySurface3rdOrderChart",
+  () => ({
+    SurfaceBySurface3rdOrderChart: (props: { readonly autoHeight?: boolean }) =>
+      mockSurfaceBySurface3rdOrderChart(props),
+  }),
+);
 
 describe("AnalysisPlotView", () => {
   const fieldOptions = [
@@ -194,14 +237,20 @@ describe("AnalysisPlotView", () => {
     render(<AnalysisPlotView {...defaultProps} />);
     const select = screen.getByLabelText("Plot type");
     expect(select).toBeInTheDocument();
-    const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
+    const optionLabels = Array.from(select.querySelectorAll("option")).map(
+      (option) => option.textContent,
+    );
     expect(screen.getByText("Ray Fan")).toBeInTheDocument();
     expect(screen.getByText("OPD Fan")).toBeInTheDocument();
     expect(screen.getByText("Spot Diagram")).toBeInTheDocument();
     expect(screen.getByText("Field Curvature")).toBeInTheDocument();
     expect(screen.getByText("Astigmatism Curve")).toBeInTheDocument();
-    expect(screen.getByText("Longitudinal Spherical Aberration")).toBeInTheDocument();
-    expect(screen.getByText("Surface by Surface 3rd Order Aberr.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Longitudinal Spherical Aberration"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Surface by Surface 3rd Order Aberr."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Strehl vs Wavelength")).toBeInTheDocument();
     expect(screen.getByText("Wavefront Map")).toBeInTheDocument();
     expect(screen.getByText("Geometric PSF")).toBeInTheDocument();
@@ -233,8 +282,12 @@ describe("AnalysisPlotView", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
-        selectedPlotType={"surfaceBySurface3rdOrder" as Parameters<typeof AnalysisPlotView>[0]["selectedPlotType"]}
-      />
+        selectedPlotType={
+          "surfaceBySurface3rdOrder" as Parameters<
+            typeof AnalysisPlotView
+          >[0]["selectedPlotType"]
+        }
+      />,
     );
     expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
   });
@@ -244,7 +297,7 @@ describe("AnalysisPlotView", () => {
       <AnalysisPlotView
         {...defaultProps}
         selectedPlotType="longitudinalSphericalAberration"
-      />
+      />,
     );
 
     expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
@@ -254,7 +307,9 @@ describe("AnalysisPlotView", () => {
 
   it("calls onFieldChange when field is changed", async () => {
     const onFieldChange = jest.fn();
-    render(<AnalysisPlotView {...defaultProps} onFieldChange={onFieldChange} />);
+    render(
+      <AnalysisPlotView {...defaultProps} onFieldChange={onFieldChange} />,
+    );
     const select = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(select, "2");
     expect(onFieldChange).toHaveBeenCalledWith(2);
@@ -262,7 +317,12 @@ describe("AnalysisPlotView", () => {
 
   it("calls onPlotTypeChange when plot type is changed", async () => {
     const onPlotTypeChange = jest.fn();
-    render(<AnalysisPlotView {...defaultProps} onPlotTypeChange={onPlotTypeChange} />);
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        onPlotTypeChange={onPlotTypeChange}
+      />,
+    );
     const select = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(select, "opdFan");
     expect(onPlotTypeChange).toHaveBeenCalledWith("opdFan");
@@ -274,14 +334,18 @@ describe("AnalysisPlotView", () => {
         {...defaultProps}
         selectedPlotType="surfaceBySurface3rdOrder"
         surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
-      />
+      />,
     );
 
-    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
-    expect(mockSurfaceBySurface3rdOrderChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-      surfaceBySurface3rdOrderData,
-    }));
+    expect(
+      screen.getByTestId("surface-by-surface-3rd-order-chart"),
+    ).toBeInTheDocument();
+    expect(mockSurfaceBySurface3rdOrderChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+        surfaceBySurface3rdOrderData,
+      }),
+    );
   });
 
   it("renders a ray fan chart when data is provided", () => {
@@ -305,14 +369,16 @@ describe("AnalysisPlotView", () => {
             unitY: "mm",
           },
         ]}
-      />
+      />,
     );
 
     expect(screen.getByTestId("ray-fan-chart")).toBeInTheDocument();
-    expect(mockRayFanChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-      wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
-    }));
+    expect(mockRayFanChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+        wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
+      }),
+    );
   });
 
   it("renders a diffraction PSF chart when data is provided", () => {
@@ -334,12 +400,14 @@ describe("AnalysisPlotView", () => {
           unitY: "mm",
           unitZ: "",
         }}
-      />
+      />,
     );
     expect(screen.getByTestId("diffraction-psf-chart")).toBeInTheDocument();
-    expect(mockDiffractionPsfChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-    }));
+    expect(mockDiffractionPsfChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+      }),
+    );
   });
 
   it("renders a diffraction MTF chart when data is provided", () => {
@@ -362,14 +430,15 @@ describe("AnalysisPlotView", () => {
           naTangential: 0.012,
           naSagittal: 0.011,
         }}
-      />
+      />,
     );
     expect(screen.getByTestId("diffraction-mtf-chart")).toBeInTheDocument();
-    expect(mockDiffractionMtfChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-    }));
+    expect(mockDiffractionMtfChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+      }),
+    );
   });
-
 
   it("renders a wavefront map chart when data is provided", () => {
     render(
@@ -390,13 +459,15 @@ describe("AnalysisPlotView", () => {
           unitY: "",
           unitZ: "waves",
         }}
-      />
+      />,
     );
 
     expect(screen.getByTestId("wavefront-map-chart")).toBeInTheDocument();
-    expect(mockWavefrontMapChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-    }));
+    expect(mockWavefrontMapChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+      }),
+    );
   });
 
   it("renders a strehl vs wavelength chart when data is provided", () => {
@@ -411,13 +482,17 @@ describe("AnalysisPlotView", () => {
           unitX: "nm",
           unitY: "",
         }}
-      />
+      />,
     );
 
-    expect(screen.getByTestId("strehl-vs-wavelength-chart")).toBeInTheDocument();
-    expect(mockStrehlVsWavelengthChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-    }));
+    expect(
+      screen.getByTestId("strehl-vs-wavelength-chart"),
+    ).toBeInTheDocument();
+    expect(mockStrehlVsWavelengthChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+      }),
+    );
   });
 
   it("renders a geometric PSF chart when data is provided", () => {
@@ -433,13 +508,15 @@ describe("AnalysisPlotView", () => {
           unitX: "mm",
           unitY: "mm",
         }}
-      />
+      />,
     );
 
     expect(screen.getByTestId("geo-psf-chart")).toBeInTheDocument();
-    expect(mockGeoPsfChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-    }));
+    expect(mockGeoPsfChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+      }),
+    );
   });
 
   it("renders a spot diagram chart when data is provided", () => {
@@ -457,7 +534,7 @@ describe("AnalysisPlotView", () => {
             unitY: "mm",
           },
         ]}
-      />
+      />,
     );
 
     expect(screen.getByTestId("spot-diagram-chart")).toBeInTheDocument();
@@ -476,13 +553,15 @@ describe("AnalysisPlotView", () => {
           unitX: "mm",
           unitY: "deg",
         }}
-      />
+      />,
     );
 
     expect(screen.getByTestId("field-curve-chart")).toBeInTheDocument();
-    expect(mockFieldCurveChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-    }));
+    expect(mockFieldCurveChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+      }),
+    );
   });
 
   it("renders an astigmatism curve chart when data is provided", () => {
@@ -497,16 +576,18 @@ describe("AnalysisPlotView", () => {
           unitX: "mm",
           unitY: "deg",
         }}
-      />
+      />,
     );
 
     expect(screen.getByTestId("astigmatism-chart")).toBeInTheDocument();
-    expect(mockAstigmatismChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-      astigmatismCurveData: expect.objectContaining({
-        Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
+    expect(mockAstigmatismChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+        astigmatismCurveData: expect.objectContaining({
+          Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
+        }),
       }),
-    }));
+    );
     expect(mockFieldCurveChart).not.toHaveBeenCalled();
   });
 
@@ -523,14 +604,18 @@ describe("AnalysisPlotView", () => {
             unitY: "",
           },
         ]}
-      />
+      />,
     );
 
-    expect(screen.getByTestId("longitudinal-spherical-aberration-chart")).toBeInTheDocument();
-    expect(mockLongitudinalSphericalAberrationChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-      wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
-    }));
+    expect(
+      screen.getByTestId("longitudinal-spherical-aberration-chart"),
+    ).toBeInTheDocument();
+    expect(mockLongitudinalSphericalAberrationChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+        wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
+      }),
+    );
   });
 
   it("renders an opd fan chart when data is provided", () => {
@@ -554,14 +639,16 @@ describe("AnalysisPlotView", () => {
             unitY: "waves",
           },
         ]}
-      />
+      />,
     );
 
     expect(screen.getByTestId("opd-fan-chart")).toBeInTheDocument();
-    expect(mockOpdFanChart).toHaveBeenCalledWith(expect.objectContaining({
-      autoHeight: undefined,
-      wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
-    }));
+    expect(mockOpdFanChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+        wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
+      }),
+    );
   });
 
   it("shows loading text when loading is true", () => {
@@ -576,9 +663,15 @@ describe("AnalysisPlotView", () => {
 
   describe("autoHeight mode", () => {
     it("uses the autoHeight container classes without rendering an image fallback", () => {
-      const { container } = render(<AnalysisPlotView {...defaultProps} autoHeight />);
+      const { container } = render(
+        <AnalysisPlotView {...defaultProps} autoHeight />,
+      );
       expect(container.querySelector("img")).toBeNull();
-      expect(screen.getByText("No plot available").parentElement).toHaveClass("flex", "items-center", "justify-center");
+      expect(screen.getByText("No plot available").parentElement).toHaveClass(
+        "flex",
+        "items-center",
+        "justify-center",
+      );
     });
 
     it("forwards autoHeight to the surface-by-surface chart", () => {
@@ -588,10 +681,12 @@ describe("AnalysisPlotView", () => {
           selectedPlotType="surfaceBySurface3rdOrder"
           surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
           autoHeight
-        />
+        />,
       );
 
-      expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toHaveAttribute("data-auto-height", "true");
+      expect(
+        screen.getByTestId("surface-by-surface-3rd-order-chart"),
+      ).toHaveAttribute("data-auto-height", "true");
     });
   });
 
@@ -602,12 +697,19 @@ describe("AnalysisPlotView", () => {
     });
 
     it("does not render wavelength selector for strehlVsWavelength", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="strehlVsWavelength" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="strehlVsWavelength"
+        />,
+      );
       expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
     });
 
     it("renders wavelength selector when selectedPlotType is wavefrontMap", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
+      render(
+        <AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />,
+      );
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
     });
 
@@ -631,30 +733,47 @@ describe("AnalysisPlotView", () => {
             unitY: "mm",
             unitZ: "",
           }}
-        />
+        />,
       );
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
     });
 
     it("renders wavelength selector when selectedPlotType is diffractionMTF", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionMTF" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="diffractionMTF"
+        />,
+      );
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
     });
 
     it("renders wavelength selector and no field selector for fieldCurvature", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="fieldCurvature" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="fieldCurvature"
+        />,
+      );
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
       expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
     });
 
     it("renders wavelength selector and no field selector for astigmatismCurve", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="astigmatismCurve" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="astigmatismCurve"
+        />,
+      );
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
       expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
     });
 
     it("renders wavelength options correctly", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
+      render(
+        <AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />,
+      );
       expect(screen.getByText("486.1nm")).toBeInTheDocument();
       expect(screen.getByText("587.6nm")).toBeInTheDocument();
       expect(screen.getByText("656.3nm")).toBeInTheDocument();
@@ -667,7 +786,7 @@ describe("AnalysisPlotView", () => {
           {...defaultProps}
           selectedPlotType="wavefrontMap"
           onWavelengthChange={onWavelengthChange}
-        />
+        />,
       );
       const select = screen.getByLabelText("Wavelength");
       await userEvent.selectOptions(select, "2");
@@ -677,12 +796,19 @@ describe("AnalysisPlotView", () => {
 
   describe("new wavelength-dependent plot types", () => {
     it("field selector is enabled for wavefrontMap", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
+      render(
+        <AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />,
+      );
       expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
 
     it("field selector is enabled for strehlVsWavelength", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="strehlVsWavelength" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="strehlVsWavelength"
+        />,
+      );
       expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
 
@@ -692,12 +818,22 @@ describe("AnalysisPlotView", () => {
     });
 
     it("field selector is enabled for diffractionPSF", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionPSF" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="diffractionPSF"
+        />,
+      );
       expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
 
     it("field selector is enabled for diffractionMTF", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionMTF" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="diffractionMTF"
+        />,
+      );
       expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
   });

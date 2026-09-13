@@ -13,12 +13,20 @@ const STREHL_GRID_BOTTOM = 56;
 const STREHL_GRID_LEFT = 64;
 const STREHL_GRID_RIGHT = 28;
 
-function toLineData(strehlVsWavelengthData: StrehlVsWavelengthData): number[][] {
-  const pointCount = Math.min(strehlVsWavelengthData.x.length, strehlVsWavelengthData.y.length);
+function toLineData(
+  strehlVsWavelengthData: StrehlVsWavelengthData,
+): number[][] {
+  const pointCount = Math.min(
+    strehlVsWavelengthData.x.length,
+    strehlVsWavelengthData.y.length,
+  );
   const lineData: number[][] = [];
 
   for (let index = 0; index < pointCount; index += 1) {
-    lineData.push([strehlVsWavelengthData.x[index], strehlVsWavelengthData.y[index]]);
+    lineData.push([
+      strehlVsWavelengthData.x[index],
+      strehlVsWavelengthData.y[index],
+    ]);
   }
 
   return lineData;
@@ -36,7 +44,8 @@ export function buildStrehlVsWavelengthOption(
   textColor: string,
 ) {
   const xAxisMin = strehlVsWavelengthData.x[0];
-  const xAxisMax = strehlVsWavelengthData.x[strehlVsWavelengthData.x.length - 1];
+  const xAxisMax =
+    strehlVsWavelengthData.x[strehlVsWavelengthData.x.length - 1];
 
   return {
     animation: false,
@@ -58,7 +67,9 @@ export function buildStrehlVsWavelengthOption(
       type: "value",
       min: xAxisMin,
       max: xAxisMax,
-      name: strehlVsWavelengthData.unitX ? `Wavelength (${strehlVsWavelengthData.unitX})` : "Wavelength",
+      name: strehlVsWavelengthData.unitX
+        ? `Wavelength (${strehlVsWavelengthData.unitX})`
+        : "Wavelength",
       nameLocation: "middle",
       nameGap: 34,
       nameTextStyle: {

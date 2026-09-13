@@ -8,7 +8,9 @@ jest.mock("next/link", () => {
     href,
     children,
     ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    readonly href: string;
+  }) {
     return (
       <a href={href} {...props}>
         {children}
@@ -21,7 +23,9 @@ describe("InlineLink", () => {
   it("renders a link with the provided href", () => {
     render(<InlineLink href="/glass-map">View in glass map</InlineLink>);
 
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute("href", "/glass-map");
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toHaveAttribute("href", "/glass-map");
   });
 
   it("forwards aria-label", () => {
@@ -31,7 +35,9 @@ describe("InlineLink", () => {
       </InlineLink>,
     );
 
-    expect(screen.getByRole("link", { name: "Back to lens editor" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Back to lens editor" }),
+    ).toBeInTheDocument();
   });
 
   it("forwards a typed click handler", async () => {
@@ -42,7 +48,9 @@ describe("InlineLink", () => {
       </InlineLink>,
     );
 
-    await userEvent.click(screen.getByRole("link", { name: "Use selected glass" }));
+    await userEvent.click(
+      screen.getByRole("link", { name: "Use selected glass" }),
+    );
 
     expect(onClick).toHaveBeenCalledTimes(1);
   });

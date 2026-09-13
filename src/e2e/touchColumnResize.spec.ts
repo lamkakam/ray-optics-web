@@ -12,7 +12,9 @@
 import { test, expect } from "@playwright/test";
 import { waitForPyodide } from "./utils";
 
-test("allows native viewport panning and resizes a column with a touchscreen drag", async ({ browser }) => {
+test("allows native viewport panning and resizes a column with a touchscreen drag", async ({
+  browser,
+}) => {
   const context = await browser.newContext({
     hasTouch: true,
     viewport: { width: 1024, height: 768 },
@@ -39,11 +41,15 @@ test("allows native viewport panning and resizes a column with a touchscreen dra
     const header = grid
       .locator(".ag-header-cell-text")
       .getByText("Surface", { exact: true })
-      .locator("xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' ag-header-cell ')]");
+      .locator(
+        "xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' ag-header-cell ')]",
+      );
     const resizeHandle = header.locator(".ag-header-cell-resize");
     await expect(resizeHandle).toBeVisible();
 
-    const initialWidth = await header.evaluate((element) => element.getBoundingClientRect().width);
+    const initialWidth = await header.evaluate(
+      (element) => element.getBoundingClientRect().width,
+    );
     const box = await resizeHandle.boundingBox();
     expect(box).not.toBeNull();
 
@@ -57,7 +63,12 @@ test("allows native viewport panning and resizes a column with a touchscreen dra
       cancelable: true,
     };
 
-    await resizeHandle.dispatchEvent("pointerdown", { ...pointer, clientX: startX, clientY: startY, buttons: 1 });
+    await resizeHandle.dispatchEvent("pointerdown", {
+      ...pointer,
+      clientX: startX,
+      clientY: startY,
+      buttons: 1,
+    });
     await page.locator("body").dispatchEvent("pointermove", {
       ...pointer,
       clientX: startX + 60,
@@ -71,9 +82,11 @@ test("allows native viewport panning and resizes a column with a touchscreen dra
       buttons: 0,
     });
 
-    await expect.poll(() => header.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(
-      initialWidth + 40,
-    );
+    await expect
+      .poll(() =>
+        header.evaluate((element) => element.getBoundingClientRect().width),
+      )
+      .toBeGreaterThan(initialWidth + 40);
   } finally {
     await context.close();
   }

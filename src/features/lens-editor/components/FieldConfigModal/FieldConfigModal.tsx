@@ -12,7 +12,10 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-import type { FieldSpace, FieldType } from "@/features/lens-editor/stores/specsConfiguratorStore";
+import type {
+  FieldSpace,
+  FieldType,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
 
 interface FieldRow {
   readonly id: string;
@@ -84,10 +87,7 @@ const MAX_ROWS = 10;
  *
  * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while field settings and the field grid scroll.
  */
-export function FieldConfigModal({
-  isOpen,
-  ...props
-}: FieldConfigModalProps) {
+export function FieldConfigModal({ isOpen, ...props }: FieldConfigModalProps) {
   if (!isOpen) {
     return null;
   }
@@ -113,7 +113,9 @@ function FieldConfigModalContent({
   /** String draft of the maximum absolute field. */
   const [maxFieldStr, setMaxFieldStr] = useState(() => String(initialMaxField));
   /** Editable relative-field rows with stable grid ids. */
-  const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
+  const [rows, setRows] = useState<FieldRow[]>(() =>
+    fieldsToRows(initialRelativeFields),
+  );
   /** Draft wide-angle ray-aiming setting. */
   const [isWideAngle, setIsWideAngle] = useState(() => initialIsWideAngle);
   const fieldTypeOptions =
@@ -157,9 +159,7 @@ function FieldConfigModalContent({
   }, []);
 
   const updateRowValue = useCallback((id: string, value: number) => {
-    setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, value } : r))
-    );
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, value } : r)));
   }, []);
 
   const handleApply = () => {
@@ -221,12 +221,16 @@ function FieldConfigModalContent({
       title="Half-Field"
       titleId="field-modal-title"
       size="lg"
-      footer={(
+      footer={
         <div className="flex items-center justify-end gap-3">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleApply}>Apply</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleApply}>
+            Apply
+          </Button>
         </div>
-      )}
+      }
     >
       <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 items-end">
         <div>
@@ -273,7 +277,11 @@ function FieldConfigModalContent({
               theme={gridTheme}
               rowData={rows}
               columnDefs={columnDefs}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+              defaultColDef={{
+                sortable: false,
+                filter: false,
+                suppressMovable: true,
+              }}
               domLayout="normal"
               getRowId={(params) => params.data.id}
             />

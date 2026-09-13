@@ -107,11 +107,15 @@ export function FocusingContainer({
       const rows = lensStore.getState().rows;
       const lastSurface = [...rows].reverse().find((r) => r.kind === "surface");
       if (lastSurface && lastSurface.kind === "surface") {
-        lensStore.getState().updateRow(lastSurface.id, {
-          thickness: lastSurface.thickness + result.delta_thi,
-        }, {
-          optimizationSyncPolicy: "preserveOptimizationModes",
-        });
+        lensStore.getState().updateRow(
+          lastSurface.id,
+          {
+            thickness: lastSurface.thickness + result.delta_thi,
+          },
+          {
+            optimizationSyncPolicy: "preserveOptimizationModes",
+          },
+        );
       }
 
       await onUpdateSystem();

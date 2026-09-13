@@ -49,13 +49,17 @@ export function Tabs({
   onTabChange,
 }: TabsProps) {
   /** Uncontrolled active tab, initialized from the first available tab. */
-  const [internalActiveTabId, setInternalActiveTabId] = useState(tabs[0]?.id ?? "");
+  const [internalActiveTabId, setInternalActiveTabId] = useState(
+    tabs[0]?.id ?? "",
+  );
   const resolvedActiveTabId = tabs.some((tab) => tab.id === activeTabId)
     ? activeTabId
     : undefined;
-  const activeTab = resolvedActiveTabId ?? (
-    tabs.some((tab) => tab.id === internalActiveTabId) ? internalActiveTabId : tabs[0]?.id ?? ""
-  );
+  const activeTab =
+    resolvedActiveTabId ??
+    (tabs.some((tab) => tab.id === internalActiveTabId)
+      ? internalActiveTabId
+      : (tabs[0]?.id ?? ""));
 
   const handleTabClick = (tabId: string) => {
     if (resolvedActiveTabId === undefined) {
@@ -67,7 +71,10 @@ export function Tabs({
   return (
     <>
       <div className="flex shrink-0 items-center gap-1 border-b border-gray-200 px-3 dark:border-gray-700">
-        <div role="tablist" className="flex flex-1 gap-1 overflow-x-auto min-w-0">
+        <div
+          role="tablist"
+          className="flex flex-1 gap-1 overflow-x-auto min-w-0"
+        >
           {tabs.map((tab) => (
             <button
               type="button"
@@ -79,7 +86,10 @@ export function Tabs({
                 "rounded-t-lg px-3 py-1.5 text-sm font-medium transition whitespace-nowrap shrink-0",
                 activeTab === tab.id
                   ? [cx.tab.color.activeBgColor, cx.tab.color.activeTextColor]
-                  : [cx.tab.color.inactiveTextColor, cx.tab.color.inactiveHoverTextColor],
+                  : [
+                      cx.tab.color.inactiveTextColor,
+                      cx.tab.color.inactiveHoverTextColor,
+                    ],
               )}
               onClick={() => handleTabClick(tab.id)}
             >

@@ -1,5 +1,8 @@
 /** Optimization algorithm selections and runtime capability results. */
-import type { LeastSquaresMethod, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
+import type {
+  LeastSquaresMethod,
+  OptimizerKind,
+} from "@/features/optimization/types/optimizationWorkerTypes";
 
 /** Bounds, glass, and residual-dimension capabilities used by optimization validation and UI rendering. */
 export interface OptimizationMethodCapabilities {

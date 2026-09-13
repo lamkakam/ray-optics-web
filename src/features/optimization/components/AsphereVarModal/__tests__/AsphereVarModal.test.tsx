@@ -1,7 +1,10 @@
 import type React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { AsphereOptimizationState, AsphereMode } from "@/features/optimization/stores/optimizationStore";
+import type {
+  AsphereOptimizationState,
+  AsphereMode,
+} from "@/features/optimization/stores/optimizationStore";
 import { AsphereVarModal } from "../AsphereVarModal";
 import type { OpticalModel, Surface } from "@/shared/lib/types/opticalModel";
 
@@ -72,7 +75,9 @@ function makeModelWithSurfaceAspheres(
   };
 }
 
-function makeState(overrides: Partial<AsphereOptimizationState>): AsphereOptimizationState {
+function makeState(
+  overrides: Partial<AsphereOptimizationState>,
+): AsphereOptimizationState {
   return {
     surfaceIndex: 1,
     type: undefined,
@@ -128,10 +133,17 @@ describe("AsphereVarModal", () => {
   });
 
   it("does not render term rows until an asphere type is selected", () => {
-    render(<AsphereVarModal {...defaultProps} asphereState={makeState({ type: undefined })} />);
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: undefined })}
+      />,
+    );
 
     expect(screen.queryByText("Conic Constant")).not.toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Asphere type" })).toHaveValue("");
+    expect(screen.getByRole("combobox", { name: "Asphere type" })).toHaveValue(
+      "",
+    );
   });
 
   it("renders type dropdown enabled for unlocked surface", () => {
@@ -232,9 +244,15 @@ describe("AsphereVarModal", () => {
     const selects = screen.getAllByRole("combobox");
     await user.selectOptions(selects[2], "pickup");
 
-    expect(screen.getByRole("combobox", { name: "a_2 mode" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "a_2 source coefficient" })).toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "a_2 source coefficient index" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "a_2 mode" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "a_2 source coefficient" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "a_2 source coefficient index" }),
+    ).not.toBeInTheDocument();
   });
 
   it("selecting variable mode for conic shows Min and Max inputs", async () => {
@@ -266,14 +284,22 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Conic Constant mode" }), {
-      target: { value: "variable" },
-    });
-    await userEvent.setup().click(screen.getByRole("button", { name: "Confirm" }));
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Conic Constant mode" }),
+      {
+        target: { value: "variable" },
+      },
+    );
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      conic: { mode: "variable", min: "-2.5", max: "3.5" },
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        conic: { mode: "variable", min: "-2.5", max: "3.5" },
+      }),
+    );
   });
 
   it("hides asphere variable bounds for lm", async () => {
@@ -289,8 +315,12 @@ describe("AsphereVarModal", () => {
     const selects = screen.getAllByRole("combobox");
     await user.selectOptions(selects[1], "variable");
 
-    expect(screen.queryByRole("textbox", { name: /min/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: /max/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: /min/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: /max/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows toroid guidance and zero-crossing validation only for trf", async () => {
@@ -312,8 +342,14 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    expect(screen.getByText("R = 0 means a flat surface (infinite radius).")).toBeInTheDocument();
-    expect(screen.getByText("Toroid sweep R variable bounds must stay on one side of 0.")).toBeInTheDocument();
+    expect(
+      screen.getByText("R = 0 means a flat surface (infinite radius)."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Toroid sweep R variable bounds must stay on one side of 0.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 
     rerender(
@@ -326,8 +362,14 @@ describe("AsphereVarModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(screen.queryByText("R = 0 means a flat surface (infinite radius).")).not.toBeInTheDocument();
-    expect(screen.queryByText("Toroid sweep R variable bounds must stay on one side of 0.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("R = 0 means a flat surface (infinite radius)."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Toroid sweep R variable bounds must stay on one side of 0.",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("renders asphere variable bounds from canUseBounds alone", async () => {
@@ -341,19 +383,30 @@ describe("AsphereVarModal", () => {
     );
 
     await user.selectOptions(screen.getAllByRole("combobox")[1], "variable");
-    expect(screen.getByRole("textbox", { name: "Conic Constant Min." })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Conic Constant Max." })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant Max." }),
+    ).toBeInTheDocument();
 
     rerender(
       <AsphereVarModal
         {...defaultProps}
-        asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "-1", max: "1" } })}
+        asphereState={makeState({
+          type: "Conic",
+          conic: { mode: "variable", min: "-1", max: "1" },
+        })}
         canUseBounds={false}
       />,
     );
 
-    expect(screen.queryByRole("textbox", { name: "Conic Constant Min." })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Conic Constant Max." })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Conic Constant Min." }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Conic Constant Max." }),
+    ).not.toBeInTheDocument();
   });
 
   it("selecting pickup mode for conic shows source surface dropdown, scale, offset but no source coefficient", async () => {
@@ -367,12 +420,22 @@ describe("AsphereVarModal", () => {
     // selects[0] = type selector, selects[1] = conic constant mode
     const selects = screen.getAllByRole("combobox");
     await user.selectOptions(selects[1], "pickup");
-    expect(screen.getByRole("combobox", { name: "Source surface" })).toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: /source surface/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Source surface" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: /source surface/i }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /scale/i })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /offset/i })).toBeInTheDocument();
-    expect(screen.queryByRole("combobox", { name: /source coefficient/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: /source coefficient index/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: /offset/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: /source coefficient/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: /source coefficient index/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("omits the target surface from source surface pickup options", () => {
@@ -383,13 +446,24 @@ describe("AsphereVarModal", () => {
         asphereState={makeState({
           surfaceIndex: 2,
           type: "Conic",
-          conic: { mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" },
+          conic: {
+            mode: "pickup",
+            sourceSurfaceIndex: "1",
+            scale: "1",
+            offset: "0",
+          },
         })}
       />,
     );
 
-    const sourceSurface = screen.getByRole("combobox", { name: "Source surface" });
-    expect(Array.from(sourceSurface.querySelectorAll("option")).map((option) => option.textContent)).toEqual(["1", "3"]);
+    const sourceSurface = screen.getByRole("combobox", {
+      name: "Source surface",
+    });
+    expect(
+      Array.from(sourceSurface.querySelectorAll("option")).map(
+        (option) => option.textContent,
+      ),
+    ).toEqual(["1", "3"]);
   });
 
   it("defaults newly selected pickup mode to the first available source surface", async () => {
@@ -408,14 +482,17 @@ describe("AsphereVarModal", () => {
     await user.selectOptions(screen.getAllByRole("combobox")[1], "pickup");
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      conic: expect.objectContaining({
-        mode: "pickup",
-        sourceSurfaceIndex: "2",
-        scale: "1",
-        offset: "0",
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        conic: expect.objectContaining({
+          mode: "pickup",
+          sourceSurfaceIndex: "2",
+          scale: "1",
+          offset: "0",
+        }),
       }),
-    }));
+    );
   });
 
   it("uses an empty source surface when the target has no pickup source", async () => {
@@ -423,15 +500,23 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         {...defaultProps}
-        optimizationModel={{ ...defaultOptimizationModel, surfaces: [{ ...defaultSurface }] }}
+        optimizationModel={{
+          ...defaultOptimizationModel,
+          surfaces: [{ ...defaultSurface }],
+        }}
         surfaceIndex={1}
         asphereState={makeState({ surfaceIndex: 1, type: "Conic" })}
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Conic Constant mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Conic Constant mode" }),
+      "pickup",
+    );
 
-    expect(screen.getByRole("combobox", { name: "Source surface" })).toHaveLength(0);
+    expect(
+      screen.getByRole("combobox", { name: "Source surface" }),
+    ).toHaveLength(0);
   });
 
   it("selecting pickup mode for a coefficient row shows source coefficient select", async () => {
@@ -446,8 +531,12 @@ describe("AsphereVarModal", () => {
     const selects = screen.getAllByRole("combobox");
     // selects[0] = type, selects[1] = conic mode, selects[2] = a_2 mode
     await user.selectOptions(selects[2], "pickup");
-    expect(screen.getByRole("combobox", { name: "a_2 source coefficient" })).toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: /source coefficient index/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "a_2 source coefficient" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: /source coefficient index/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("defaults a new coefficient pickup to coefficient slot zero", async () => {
@@ -461,16 +550,28 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    fireEvent.change(screen.getByRole("combobox", { name: "a_2 mode" }), { target: { value: "pickup" } });
-    expect(screen.getByRole("combobox", { name: "a_2 source coefficient" })).toHaveValue("0");
-    fireEvent.change(screen.getByRole("combobox", { name: "a_2 mode" }), { target: { value: "pickup" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "a_2 mode" }), {
+      target: { value: "pickup" },
+    });
+    expect(
+      screen.getByRole("combobox", { name: "a_2 source coefficient" }),
+    ).toHaveValue("0");
+    fireEvent.change(screen.getByRole("combobox", { name: "a_2 mode" }), {
+      target: { value: "pickup" },
+    });
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      coefficients: expect.arrayContaining([
-        expect.objectContaining({ mode: "pickup", sourceTermKey: "coefficient:0" }),
-      ]),
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        coefficients: expect.arrayContaining([
+          expect.objectContaining({
+            mode: "pickup",
+            sourceTermKey: "coefficient:0",
+          }),
+        ]),
+      }),
+    );
   });
 
   it("preserves existing pickup fields when pickup mode is selected again", async () => {
@@ -482,7 +583,13 @@ describe("AsphereVarModal", () => {
         asphereState={makeState({
           type: "EvenAspherical",
           coefficients: [
-            { mode: "pickup", sourceSurfaceIndex: "3", scale: "2.5", offset: "-1.25", sourceTermKey: "coefficient:0" },
+            {
+              mode: "pickup",
+              sourceSurfaceIndex: "3",
+              scale: "2.5",
+              offset: "-1.25",
+              sourceTermKey: "coefficient:0",
+            },
             ...Array.from({ length: 9 }, () => constantMode),
           ],
         })}
@@ -495,17 +602,20 @@ describe("AsphereVarModal", () => {
     });
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      coefficients: expect.arrayContaining([
-        expect.objectContaining({
-          mode: "pickup",
-          sourceSurfaceIndex: "3",
-          scale: "2.5",
-          offset: "-1.25",
-          sourceTermKey: "coefficient:0",
-        }),
-      ]),
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        coefficients: expect.arrayContaining([
+          expect.objectContaining({
+            mode: "pickup",
+            sourceSurfaceIndex: "3",
+            scale: "2.5",
+            offset: "-1.25",
+            sourceTermKey: "coefficient:0",
+          }),
+        ]),
+      }),
+    );
   });
 
   it("preserves an existing coefficient source slot when pickup is selected again", async () => {
@@ -517,7 +627,13 @@ describe("AsphereVarModal", () => {
         asphereState={makeState({
           type: "EvenAspherical",
           coefficients: [
-            { mode: "pickup", sourceSurfaceIndex: "3", scale: "2.5", offset: "-1.25", sourceTermKey: "coefficient:9" },
+            {
+              mode: "pickup",
+              sourceSurfaceIndex: "3",
+              scale: "2.5",
+              offset: "-1.25",
+              sourceTermKey: "coefficient:9",
+            },
             ...Array.from({ length: 9 }, () => constantMode),
           ],
         })}
@@ -525,14 +641,20 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "a_2 mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "a_2 mode" }),
+      "pickup",
+    );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      coefficients: expect.arrayContaining([
-        expect.objectContaining({ sourceTermKey: "coefficient:9" }),
-      ]),
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        coefficients: expect.arrayContaining([
+          expect.objectContaining({ sourceTermKey: "coefficient:9" }),
+        ]),
+      }),
+    );
   });
 
   it("defaults a missing coefficient source term to slot zero", async () => {
@@ -544,7 +666,12 @@ describe("AsphereVarModal", () => {
         asphereState={makeState({
           type: "EvenAspherical",
           coefficients: [
-            { mode: "pickup", sourceSurfaceIndex: "2", scale: "1", offset: "0" },
+            {
+              mode: "pickup",
+              sourceSurfaceIndex: "2",
+              scale: "1",
+              offset: "0",
+            },
             ...Array.from({ length: 9 }, () => constantMode),
           ],
         })}
@@ -552,15 +679,22 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    expect(screen.getByRole("combobox", { name: "a_2 source coefficient" })).toHaveValue("0");
-    fireEvent.change(screen.getByRole("combobox", { name: "a_2 mode" }), { target: { value: "pickup" } });
+    expect(
+      screen.getByRole("combobox", { name: "a_2 source coefficient" }),
+    ).toHaveValue("0");
+    fireEvent.change(screen.getByRole("combobox", { name: "a_2 mode" }), {
+      target: { value: "pickup" },
+    });
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      coefficients: expect.arrayContaining([
-        expect.objectContaining({ sourceTermKey: "coefficient:0" }),
-      ]),
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        coefficients: expect.arrayContaining([
+          expect.objectContaining({ sourceTermKey: "coefficient:0" }),
+        ]),
+      }),
+    );
   });
 
   it("shows and saves edited asphere pickup scale and offset values", async () => {
@@ -571,21 +705,44 @@ describe("AsphereVarModal", () => {
         {...defaultProps}
         asphereState={makeState({
           type: "Conic",
-          conic: { mode: "pickup", sourceSurfaceIndex: "2", scale: "1", offset: "0" },
+          conic: {
+            mode: "pickup",
+            sourceSurfaceIndex: "2",
+            scale: "1",
+            offset: "0",
+          },
         })}
         onSave={onSave}
       />,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant scale" }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant scale" }), "2.5");
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant offset" }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant offset" }), "-1");
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant scale" }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant scale" }),
+      "2.5",
+    );
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant offset" }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant offset" }),
+      "-1",
+    );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      conic: { mode: "pickup", sourceSurfaceIndex: "2", scale: "2.5", offset: "-1" },
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        conic: {
+          mode: "pickup",
+          sourceSurfaceIndex: "2",
+          scale: "2.5",
+          offset: "-1",
+        },
+      }),
+    );
   });
 
   it("resets an edited pickup draft when the committed pickup changes", async () => {
@@ -595,26 +752,47 @@ describe("AsphereVarModal", () => {
         {...defaultProps}
         asphereState={makeState({
           type: "Conic",
-          conic: { mode: "pickup", sourceSurfaceIndex: "2", scale: "1", offset: "0" },
+          conic: {
+            mode: "pickup",
+            sourceSurfaceIndex: "2",
+            scale: "1",
+            offset: "0",
+          },
         })}
       />,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant scale" }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant scale" }), "2.5");
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant scale" }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant scale" }),
+      "2.5",
+    );
     rerender(
       <AsphereVarModal
         {...defaultProps}
         asphereState={makeState({
           type: "Conic",
-          conic: { mode: "pickup", sourceSurfaceIndex: "3", scale: "4", offset: "-2" },
+          conic: {
+            mode: "pickup",
+            sourceSurfaceIndex: "3",
+            scale: "4",
+            offset: "-2",
+          },
         })}
       />,
     );
 
-    expect(screen.getByRole("combobox", { name: "Source surface" })).toHaveValue("3");
-    expect(screen.getByRole("textbox", { name: "Conic Constant scale" })).toHaveValue("4");
-    expect(screen.getByRole("textbox", { name: "Conic Constant offset" })).toHaveValue("-2");
+    expect(
+      screen.getByRole("combobox", { name: "Source surface" }),
+    ).toHaveValue("3");
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant scale" }),
+    ).toHaveValue("4");
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant offset" }),
+    ).toHaveValue("-2");
   });
 
   it("edits multiple term rows without mixing their mode state", async () => {
@@ -628,21 +806,43 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Conic Constant mode" }), "variable");
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Min." }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant Min." }), "-1");
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Max." }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant Max." }), "1");
-    await user.selectOptions(screen.getByRole("combobox", { name: "a_2 mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Conic Constant mode" }),
+      "variable",
+    );
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+      "-1",
+    );
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant Max." }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant Max." }),
+      "1",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "a_2 mode" }),
+      "pickup",
+    );
     expect(screen.getByText("Source coefficient")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      conic: { mode: "variable", min: "-1", max: "1" },
-      coefficients: expect.arrayContaining([
-        expect.objectContaining({ mode: "pickup", sourceTermKey: "coefficient:0" }),
-      ]),
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        conic: { mode: "variable", min: "-1", max: "1" },
+        coefficients: expect.arrayContaining([
+          expect.objectContaining({
+            mode: "pickup",
+            sourceTermKey: "coefficient:0",
+          }),
+        ]),
+      }),
+    );
   });
 
   it("uses the selected source coefficient slot when an existing pickup is rendered", () => {
@@ -652,14 +852,22 @@ describe("AsphereVarModal", () => {
         asphereState={makeState({
           type: "EvenAspherical",
           coefficients: [
-            { mode: "pickup", sourceSurfaceIndex: "2", sourceTermKey: "coefficient:9", scale: "1", offset: "0" },
+            {
+              mode: "pickup",
+              sourceSurfaceIndex: "2",
+              sourceTermKey: "coefficient:9",
+              scale: "1",
+              offset: "0",
+            },
             ...Array.from({ length: 9 }, () => constantMode),
           ],
         })}
       />,
     );
 
-    expect(screen.getByRole("combobox", { name: "a_2 source coefficient" })).toHaveValue("9");
+    expect(
+      screen.getByRole("combobox", { name: "a_2 source coefficient" }),
+    ).toHaveValue("9");
   });
 
   it("uses radial source coefficient labels and saves selected zero-based coefficient slot", async () => {
@@ -671,7 +879,11 @@ describe("AsphereVarModal", () => {
         {...defaultProps}
         optimizationModel={makeModelWithSurfaceAspheres([
           undefined,
-          { kind: "RadialPolynomial", conicConstant: 0, polynomialCoefficients: [] },
+          {
+            kind: "RadialPolynomial",
+            conicConstant: 0,
+            polynomialCoefficients: [],
+          },
           undefined,
         ])}
         asphereState={makeState({ type: "EvenAspherical" })}
@@ -679,10 +891,19 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "a_2 mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "a_2 mode" }),
+      "pickup",
+    );
 
-    const sourceCoefficient = screen.getByRole("combobox", { name: "a_2 source coefficient" });
-    expect(Array.from(sourceCoefficient.querySelectorAll("option")).map((option) => option.textContent)).toEqual([
+    const sourceCoefficient = screen.getByRole("combobox", {
+      name: "a_2 source coefficient",
+    });
+    expect(
+      Array.from(sourceCoefficient.querySelectorAll("option")).map(
+        (option) => option.textContent,
+      ),
+    ).toEqual([
       "a_1",
       "a_2",
       "a_3",
@@ -698,14 +919,17 @@ describe("AsphereVarModal", () => {
     await user.selectOptions(sourceCoefficient, "9");
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      coefficients: expect.arrayContaining([
-        expect.objectContaining({
-          mode: "pickup",
-          sourceTermKey: "coefficient:9",
-        }),
-      ]),
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        coefficients: expect.arrayContaining([
+          expect.objectContaining({
+            mode: "pickup",
+            sourceTermKey: "coefficient:9",
+          }),
+        ]),
+      }),
+    );
   });
 
   it("uses even source coefficient labels for non-radial aspheric and spherical source surfaces", async () => {
@@ -716,17 +940,30 @@ describe("AsphereVarModal", () => {
         {...defaultProps}
         optimizationModel={makeModelWithSurfaceAspheres([
           undefined,
-          { kind: "EvenAspherical", conicConstant: 0, polynomialCoefficients: [] },
+          {
+            kind: "EvenAspherical",
+            conicConstant: 0,
+            polynomialCoefficients: [],
+          },
           undefined,
         ])}
         asphereState={makeState({ type: "EvenAspherical" })}
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "a_2 mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "a_2 mode" }),
+      "pickup",
+    );
 
-    const sourceCoefficient = screen.getByRole("combobox", { name: "a_2 source coefficient" });
-    expect(Array.from(sourceCoefficient.querySelectorAll("option")).map((option) => option.textContent)).toEqual([
+    const sourceCoefficient = screen.getByRole("combobox", {
+      name: "a_2 source coefficient",
+    });
+    expect(
+      Array.from(sourceCoefficient.querySelectorAll("option")).map(
+        (option) => option.textContent,
+      ),
+    ).toEqual([
       "a_2",
       "a_4",
       "a_6",
@@ -739,8 +976,15 @@ describe("AsphereVarModal", () => {
       "a_20",
     ]);
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Source surface" }), "3");
-    expect(Array.from(sourceCoefficient.querySelectorAll("option")).map((option) => option.textContent)).toEqual([
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Source surface" }),
+      "3",
+    );
+    expect(
+      Array.from(sourceCoefficient.querySelectorAll("option")).map(
+        (option) => option.textContent,
+      ),
+    ).toEqual([
       "a_2",
       "a_4",
       "a_6",
@@ -762,20 +1006,34 @@ describe("AsphereVarModal", () => {
         {...defaultProps}
         optimizationModel={makeModelWithSurfaceAspheres([
           undefined,
-          { kind: "RadialPolynomial", conicConstant: 0, polynomialCoefficients: [] },
+          {
+            kind: "RadialPolynomial",
+            conicConstant: 0,
+            polynomialCoefficients: [],
+          },
           undefined,
         ])}
         asphereState={makeState({ type: "EvenAspherical" })}
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "a_2 mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "a_2 mode" }),
+      "pickup",
+    );
     expect(screen.getByRole("option", { name: "a_1" })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "a_20" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "a_20" }),
+    ).not.toBeInTheDocument();
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Source surface" }), "3");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Source surface" }),
+      "3",
+    );
 
-    expect(screen.queryByRole("option", { name: "a_1" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "a_1" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("option", { name: "a_20" })).toBeInTheDocument();
   });
 
@@ -787,14 +1045,22 @@ describe("AsphereVarModal", () => {
         asphereState={makeState({
           type: "EvenAspherical",
           coefficients: [
-            { mode: "pickup", sourceSurfaceIndex: "99", sourceTermKey: "coefficient:0", scale: "1", offset: "0" },
+            {
+              mode: "pickup",
+              sourceSurfaceIndex: "99",
+              sourceTermKey: "coefficient:0",
+              scale: "1",
+              offset: "0",
+            },
             ...Array.from({ length: 9 }, () => constantMode),
           ],
         })}
       />,
     );
 
-    const sourceCoefficient = screen.getByRole("combobox", { name: "a_2 source coefficient" });
+    const sourceCoefficient = screen.getByRole("combobox", {
+      name: "a_2 source coefficient",
+    });
     await user.selectOptions(sourceCoefficient, "9");
     expect(screen.getByRole("option", { name: "a_20" })).toBeInTheDocument();
   });
@@ -811,8 +1077,13 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Min." }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant Min." }), "-5");
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+      "-5",
+    );
     rerender(
       <AsphereVarModal
         {...defaultProps}
@@ -823,8 +1094,12 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "Conic Constant Min." })).toHaveValue("-10");
-    expect(screen.getByRole("textbox", { name: "Conic Constant Max." })).toHaveValue("2");
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+    ).toHaveValue("-10");
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant Max." }),
+    ).toHaveValue("2");
   });
 
   it("renders Cancel and Confirm actions", () => {
@@ -859,7 +1134,10 @@ describe("AsphereVarModal", () => {
     );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onSave).toHaveBeenCalledTimes(1);
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({ surfaceIndex: 1 }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ surfaceIndex: 1 }),
+    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -895,14 +1173,22 @@ describe("AsphereVarModal", () => {
         isOpen
         optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
-        asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "0", max: "10" } })}
+        asphereState={makeState({
+          type: "Conic",
+          conic: { mode: "variable", min: "0", max: "10" },
+        })}
         onSave={onSave}
         onClose={onClose}
       />,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Min." }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant Min." }), "1");
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+      "1",
+    );
     fireEvent.click(screen.getByTestId("modal-backdrop"));
 
     expect(onSave).not.toHaveBeenCalled();
@@ -922,15 +1208,23 @@ describe("AsphereVarModal", () => {
           isOpen
           optimizationModel={defaultOptimizationModel}
           surfaceIndex={1}
-          asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "0", max: "10" } })}
+          asphereState={makeState({
+            type: "Conic",
+            conic: { mode: "variable", min: "0", max: "10" },
+          })}
           onSave={onSave}
           onClose={onClose}
         />
       </div>,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Min." }));
-    await user.type(screen.getByRole("textbox", { name: "Conic Constant Min." }), "1");
+    await user.clear(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+      "1",
+    );
     await user.keyboard("{Escape}");
 
     expect(onSave).not.toHaveBeenCalled();
@@ -957,7 +1251,11 @@ describe("AsphereVarModal", () => {
     await user.clear(maxInput);
     await user.type(maxInput, "5");
 
-    expect(screen.getByText("Conic Constant variable bounds must have Min. less than Max.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Conic Constant variable bounds must have Min. less than Max.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
   });
 
@@ -979,9 +1277,19 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    expect(screen.getByText("R = 0 means a flat surface (infinite radius).")).toBeInTheDocument();
-    expect(screen.getByText("Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.")).toBeInTheDocument();
-    expect(screen.getByText("Toroid sweep R variable bounds must stay on one side of 0.")).toBeInTheDocument();
+    expect(
+      screen.getByText("R = 0 means a flat surface (infinite radius)."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Toroid sweep R variable bounds must stay on one side of 0.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
@@ -1008,17 +1316,29 @@ describe("AsphereVarModal", () => {
       />,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: "Toroid sweep R Max." }));
-    await user.type(screen.getByRole("textbox", { name: "Toroid sweep R Max." }), "-10");
+    await user.clear(
+      screen.getByRole("textbox", { name: "Toroid sweep R Max." }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Toroid sweep R Max." }),
+      "-10",
+    );
 
-    expect(screen.queryByText("Toroid sweep R variable bounds must stay on one side of 0.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Toroid sweep R variable bounds must stay on one side of 0.",
+      ),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      toricSweep: { mode: "variable", min: "-10000", max: "-10" },
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        toricSweep: { mode: "variable", min: "-10000", max: "-10" },
+      }),
+    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -1027,7 +1347,10 @@ describe("AsphereVarModal", () => {
     const onSave = jest.fn();
     const coefficients = Array.from(
       { length: 10 },
-      (_, i): AsphereMode => i === 0 ? { mode: "variable", min: "-1", max: "1" } : { mode: "constant" },
+      (_, i): AsphereMode =>
+        i === 0
+          ? { mode: "variable", min: "-1", max: "1" }
+          : { mode: "constant" },
     );
     render(
       <AsphereVarModal
@@ -1043,15 +1366,20 @@ describe("AsphereVarModal", () => {
     const typeSelect = screen.getByRole("combobox", { name: "Asphere type" });
     await user.selectOptions(typeSelect, "Conic");
     // Only Conic Constant remains, no Min/Max inputs
-    expect(screen.queryByRole("textbox", { name: /min/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: /min/i }),
+    ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
-      type: "Conic",
-      conic: { mode: "constant" },
-      toricSweep: { mode: "constant" },
-      coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" })),
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        type: "Conic",
+        conic: { mode: "constant" },
+        toricSweep: { mode: "constant" },
+        coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" })),
+      }),
+    );
   });
 
   it("uses zero bounds for a new variable mode and restores constant mode when selected", async () => {
@@ -1067,32 +1395,54 @@ describe("AsphereVarModal", () => {
 
     const conicMode = screen.getAllByRole("combobox")[1];
     await user.selectOptions(conicMode, "variable");
-    expect(screen.getByRole("textbox", { name: "Conic Constant Min." })).toHaveValue("0");
-    expect(screen.getByRole("textbox", { name: "Conic Constant Max." })).toHaveValue("0");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Conic Constant mode" }), "constant");
-    expect(screen.queryByRole("textbox", { name: "Conic Constant Min." })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant Min." }),
+    ).toHaveValue("0");
+    expect(
+      screen.getByRole("textbox", { name: "Conic Constant Max." }),
+    ).toHaveValue("0");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Conic Constant mode" }),
+      "constant",
+    );
+    expect(
+      screen.queryByRole("textbox", { name: "Conic Constant Min." }),
+    ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({ conic: { mode: "constant" } }));
+    expect(onSave).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ conic: { mode: "constant" } }),
+    );
   });
 
   it("shows toroid guidance only for a bounded toroid variable", () => {
     const { rerender } = render(
       <AsphereVarModal
         {...defaultProps}
-        asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "-1", max: "1" } })}
+        asphereState={makeState({
+          type: "Conic",
+          conic: { mode: "variable", min: "-1", max: "1" },
+        })}
         canUseBounds
       />,
     );
-    expect(screen.queryByText("R = 0 means a flat surface (infinite radius).")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("R = 0 means a flat surface (infinite radius)."),
+    ).not.toBeInTheDocument();
 
     rerender(
       <AsphereVarModal
         {...defaultProps}
-        asphereState={makeState({ type: "XToroid", toricSweep: { mode: "variable", min: "-2", max: "-1" } })}
+        asphereState={makeState({
+          type: "XToroid",
+          toricSweep: { mode: "variable", min: "-2", max: "-1" },
+        })}
         canUseBounds
       />,
     );
-    expect(screen.getByText("R = 0 means a flat surface (infinite radius).")).toBeInTheDocument();
+    expect(
+      screen.getByText("R = 0 means a flat surface (infinite radius)."),
+    ).toBeInTheDocument();
   });
 });

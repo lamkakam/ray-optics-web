@@ -12,7 +12,9 @@ jest.mock("next/link", () => {
     href,
     children,
     ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    readonly href: string;
+  }) {
     return (
       <a href={href} {...props}>
         {children}
@@ -83,7 +85,10 @@ describe("MediumSelectorModal", () => {
           abbeNumberE: 54.1,
           partialDispersions: { P_Fd: 0.41, P_fe: 0.4, P_gF: 0.535 },
           dispersionCoeffKind: "Sellmeier3T",
-          dispersionCoeffs: [1.23795755, 0.0466468888, 2.46700556, 0.00863080926, 0.0469074501, 264.146296],
+          dispersionCoeffs: [
+            1.23795755, 0.0466468888, 2.46700556, 0.00863080926, 0.0469074501,
+            264.146296,
+          ],
         },
       },
     },
@@ -101,12 +106,14 @@ describe("MediumSelectorModal", () => {
     return render(
       <GlassCatalogContext.Provider value={value}>
         {ui}
-      </GlassCatalogContext.Provider>
+      </GlassCatalogContext.Provider>,
     );
   }
 
   it("does not render when isOpen is false", () => {
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} isOpen={false} />);
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} isOpen={false} />,
+    );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -123,7 +130,9 @@ describe("MediumSelectorModal", () => {
 
   it("does not call onClose when clicking the backdrop overlay", async () => {
     const onClose = jest.fn();
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} onClose={onClose} />,
+    );
     const backdrop = screen.getByTestId("modal-backdrop");
 
     await userEvent.click(backdrop);
@@ -137,7 +146,9 @@ describe("MediumSelectorModal", () => {
     expect(screen.getByLabelText("Catalog")).toBeDisabled();
     expect(screen.getByLabelText("Glass")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
   });
 
   it("has a Catalog dropdown with Special and provider catalogs", () => {
@@ -146,9 +157,9 @@ describe("MediumSelectorModal", () => {
     expect(select).toBeInTheDocument();
     expect(screen.getByLabelText("Use model glass")).not.toBeChecked();
 
-    const options = Array.from(
-      (select as HTMLSelectElement).options
-    ).map((o) => o.value);
+    const options = Array.from((select as HTMLSelectElement).options).map(
+      (o) => o.value,
+    );
     expect(options).toContain("Special");
     expect(options).toContain("Schott");
     expect(options).toContain("Ohara");
@@ -161,7 +172,7 @@ describe("MediumSelectorModal", () => {
         {...defaultProps}
         initialManufacturer=""
         initialMedium="air"
-      />
+      />,
     );
 
     expect(screen.getByLabelText("Glass")).toBeInTheDocument();
@@ -192,8 +203,12 @@ describe("MediumSelectorModal", () => {
 
     const glassSelect = screen.getByLabelText("Glass");
     expect(glassSelect.tagName).toBe("INPUT");
-    const list = document.getElementById(glassSelect.getAttribute("list") ?? "");
-    const options = Array.from(list?.querySelectorAll("option") ?? []).map((o) => o.value);
+    const list = document.getElementById(
+      glassSelect.getAttribute("list") ?? "",
+    );
+    const options = Array.from(list?.querySelectorAll("option") ?? []).map(
+      (o) => o.value,
+    );
     expect(options).toContain("N-BK7");
     expect(options).toContain("N-SF6");
   });
@@ -205,7 +220,9 @@ describe("MediumSelectorModal", () => {
     await userEvent.clear(screen.getByLabelText("Glass"));
     await userEvent.type(screen.getByLabelText("Glass"), "N-BK7");
 
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Schott&glass=N-BK7",
     );
@@ -221,13 +238,18 @@ describe("MediumSelectorModal", () => {
 
     expect(screen.getByLabelText("Glass")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
-    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View in glass map" }),
+    ).not.toBeInTheDocument();
   });
 
   it("clears Glass and notifies the parent when changing from Special to a catalog", async () => {
     const onSelectionChange = jest.fn();
     renderWithCatalogs(
-      <MediumSelectorModal {...defaultProps} onSelectionChange={onSelectionChange} />,
+      <MediumSelectorModal
+        {...defaultProps}
+        onSelectionChange={onSelectionChange}
+      />,
     );
 
     await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
@@ -235,7 +257,9 @@ describe("MediumSelectorModal", () => {
     expect(screen.getByLabelText("Glass")).toHaveValue("");
     expect(onSelectionChange).toHaveBeenLastCalledWith("", "Schott");
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
-    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View in glass map" }),
+    ).not.toBeInTheDocument();
   });
 
   it("clears Glass and notifies the parent when changing between catalogs", async () => {
@@ -254,7 +278,9 @@ describe("MediumSelectorModal", () => {
     expect(screen.getByLabelText("Glass")).toHaveValue("");
     expect(onSelectionChange).toHaveBeenLastCalledWith("", "Ohara");
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
-    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View in glass map" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders a glass map link for a provider-backed Special glass", async () => {
@@ -262,7 +288,9 @@ describe("MediumSelectorModal", () => {
 
     await userEvent.selectOptions(screen.getByLabelText("Glass"), "CaF2");
 
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Special&glass=CaF2",
     );
@@ -270,11 +298,15 @@ describe("MediumSelectorModal", () => {
 
   it("confirms D263TECO as a provider-backed Special glass", async () => {
     const onConfirm = jest.fn();
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />,
+    );
 
     await userEvent.selectOptions(screen.getByLabelText("Glass"), "D263TECO");
 
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Special&glass=D263TECO",
     );
@@ -286,7 +318,9 @@ describe("MediumSelectorModal", () => {
   it("does not render the glass map link for air", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
-    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View in glass map" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not render the glass map link for REFL", async () => {
@@ -294,7 +328,9 @@ describe("MediumSelectorModal", () => {
 
     await userEvent.selectOptions(screen.getByLabelText("Glass"), "REFL");
 
-    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View in glass map" }),
+    ).not.toBeInTheDocument();
   });
 
   it("hides the glass map link when Use model glass is checked", async () => {
@@ -302,20 +338,21 @@ describe("MediumSelectorModal", () => {
 
     await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
     await userEvent.type(screen.getByLabelText("Glass"), "N-BK7");
-    expect(screen.getByRole("link", { name: "View in glass map" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
 
-    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View in glass map" }),
+    ).not.toBeInTheDocument();
   });
 
   it("calls onConfirm with selected medium and manufacturer", async () => {
     const onConfirm = jest.fn();
     renderWithCatalogs(
-      <MediumSelectorModal
-        {...defaultProps}
-        onConfirm={onConfirm}
-      />
+      <MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />,
     );
 
     await userEvent.selectOptions(screen.getByLabelText("Glass"), "REFL");
@@ -343,7 +380,9 @@ describe("MediumSelectorModal", () => {
 
     expect(glass).toHaveValue("N-SF6");
     expect(onSelectionChange).toHaveBeenLastCalledWith("N-SF6", "Schott");
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "View in glass map" }),
+    ).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
     );
@@ -368,7 +407,9 @@ describe("MediumSelectorModal", () => {
 
     expect(glass).toHaveValue("N-B");
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
-    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View in glass map" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -380,7 +421,9 @@ describe("MediumSelectorModal", () => {
     expect(screen.queryByLabelText("Catalog")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Glass")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Single refractive index")).not.toBeChecked();
-    expect(screen.getByLabelText("Refractive index at d-line")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Refractive index at d-line"),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Abbe Number")).toBeInTheDocument();
   });
 
@@ -412,7 +455,9 @@ describe("MediumSelectorModal", () => {
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
 
-    expect(screen.queryByLabelText("Refractive index at d-line")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Refractive index at d-line"),
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Catalog")).toHaveValue("Special");
     expect(screen.getByLabelText("Glass")).toHaveValue("air");
@@ -435,10 +480,15 @@ describe("MediumSelectorModal", () => {
 
   it("calls onConfirm with refractive index and Abbe number in model-glass mode", async () => {
     const onConfirm = jest.fn();
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />,
+    );
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
-    await userEvent.type(screen.getByLabelText("Refractive index at d-line"), "1.5168");
+    await userEvent.type(
+      screen.getByLabelText("Refractive index at d-line"),
+      "1.5168",
+    );
     await userEvent.type(screen.getByLabelText("Abbe Number"), "64.17");
     await userEvent.click(screen.getByText("Confirm"));
 
@@ -549,7 +599,9 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
-    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+    const refractiveIndexInput = screen.getByLabelText(
+      "Refractive index at d-line",
+    );
 
     await userEvent.clear(refractiveIndexInput);
     await userEvent.type(refractiveIndexInput, "abc");
@@ -562,7 +614,9 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
-    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+    const refractiveIndexInput = screen.getByLabelText(
+      "Refractive index at d-line",
+    );
 
     await userEvent.clear(refractiveIndexInput);
     await userEvent.type(refractiveIndexInput, "-2");
@@ -575,7 +629,9 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
-    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+    const refractiveIndexInput = screen.getByLabelText(
+      "Refractive index at d-line",
+    );
 
     await userEvent.clear(refractiveIndexInput);
     await userEvent.type(refractiveIndexInput, "0");
@@ -585,15 +641,12 @@ describe("MediumSelectorModal", () => {
   });
 
   it("disables catalog controls and reports loading status before catalog preload completes", () => {
-    renderWithCatalogs(
-      <MediumSelectorModal {...defaultProps} />,
-      {
-        ...defaultCatalogContextValue,
-        catalogs: undefined,
-        isLoaded: false,
-        isLoading: true,
-      },
-    );
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />, {
+      ...defaultCatalogContextValue,
+      catalogs: undefined,
+      isLoaded: false,
+      isLoading: true,
+    });
 
     expect(screen.getByText("Loading glass catalog data…")).toBeInTheDocument();
     expect(screen.getByLabelText("Catalog")).toBeDisabled();
@@ -601,14 +654,11 @@ describe("MediumSelectorModal", () => {
   });
 
   it("disables catalog controls and reports a catalog load error", () => {
-    renderWithCatalogs(
-      <MediumSelectorModal {...defaultProps} />,
-      {
-        ...defaultCatalogContextValue,
-        error: "Catalog failed",
-        isLoaded: true,
-      },
-    );
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />, {
+      ...defaultCatalogContextValue,
+      error: "Catalog failed",
+      isLoaded: true,
+    });
 
     expect(screen.getByText("Catalog failed")).toBeInTheDocument();
     expect(screen.getByLabelText("Catalog")).toBeDisabled();
@@ -619,7 +669,9 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
-    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+    const refractiveIndexInput = screen.getByLabelText(
+      "Refractive index at d-line",
+    );
 
     await userEvent.clear(refractiveIndexInput);
     await userEvent.type(refractiveIndexInput, "1.5168");
@@ -668,10 +720,15 @@ describe("MediumSelectorModal", () => {
 
   it("calls onConfirm with empty manufacturer in single-index mode", async () => {
     const onConfirm = jest.fn();
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />,
+    );
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
-    await userEvent.type(screen.getByLabelText("Refractive index at d-line"), "1.458");
+    await userEvent.type(
+      screen.getByLabelText("Refractive index at d-line"),
+      "1.458",
+    );
     await userEvent.type(screen.getByLabelText("Abbe Number"), "67.8");
     await userEvent.click(screen.getByLabelText("Single refractive index"));
     await userEvent.click(screen.getByText("Confirm"));
@@ -685,11 +742,13 @@ describe("MediumSelectorModal", () => {
         {...defaultProps}
         initialMedium="1.62"
         initialManufacturer="36.3"
-      />
+      />,
     );
 
     expect(screen.getByLabelText("Use model glass")).toBeChecked();
-    expect(screen.getByLabelText("Refractive index at d-line")).toHaveValue("1.62");
+    expect(screen.getByLabelText("Refractive index at d-line")).toHaveValue(
+      "1.62",
+    );
     expect(screen.getByLabelText("Abbe Number")).toHaveValue("36.3");
     expect(screen.getByLabelText("Single refractive index")).not.toBeChecked();
   });
@@ -700,18 +759,22 @@ describe("MediumSelectorModal", () => {
         {...defaultProps}
         initialMedium="1.62"
         initialManufacturer=""
-      />
+      />,
     );
 
     expect(screen.getByLabelText("Use model glass")).toBeChecked();
     expect(screen.getByLabelText("Single refractive index")).toBeChecked();
-    expect(screen.getByLabelText("Refractive index at d-line")).toHaveValue("1.62");
+    expect(screen.getByLabelText("Refractive index at d-line")).toHaveValue(
+      "1.62",
+    );
     expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
   });
 
   it("calls onClose when Cancel is clicked", async () => {
     const onClose = jest.fn();
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} onClose={onClose} />,
+    );
 
     await userEvent.click(screen.getByText("Cancel"));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -719,7 +782,9 @@ describe("MediumSelectorModal", () => {
 
   it("does not call onClose when Escape is pressed", async () => {
     const onClose = jest.fn();
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} onClose={onClose} />,
+    );
 
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(0);

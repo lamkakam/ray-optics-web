@@ -2,23 +2,39 @@ import { buildDiffractionMtfOption } from "@/features/analysis/components/Diffra
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { DiffractionMtfData } from "@/features/analysis/types/plotData";
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  LineChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    LineChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  LegendComponent: {},
-  TooltipComponent: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: {},
+    LegendComponent: {},
+    TooltipComponent: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 describe("diffractionMtfChartOption", () => {
   const diffractionMtfData: DiffractionMtfData = {
@@ -38,9 +54,19 @@ describe("diffractionMtfChartOption", () => {
   };
 
   it("builds four line series with measured solid curves and ideal dashed curves", () => {
-    const option = buildDiffractionMtfOption(diffractionMtfData, 480, 320, globalTokens.echarts.text.light);
+    const option = buildDiffractionMtfOption(
+      diffractionMtfData,
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
 
-    expect(option.legend.data).toEqual(["Tangential", "Sagittal", "IdealTangential", "IdealSagittal"]);
+    expect(option.legend.data).toEqual([
+      "Tangential",
+      "Sagittal",
+      "IdealTangential",
+      "IdealSagittal",
+    ]);
     expect(option.xAxis.name).toBe("Spatial Frequency (cycles/mm)");
     expect(option.yAxis.name).toBe("MTF");
     expect(option.yAxis.min).toBe(0);
@@ -48,12 +74,18 @@ describe("diffractionMtfChartOption", () => {
     expect(option.xAxis.axisLabel.formatter(5e-5)).toBe("5e-5");
     expect(option.yAxis.axisLabel.formatter(0.125)).toBe("0.13");
     expect(option.series).toHaveLength(4);
-    expect(option.series[0]).toEqual(expect.objectContaining({
-      name: "Tangential",
-      type: "line",
-      data: [[0, 1], [10, 0.7], [20, 0.2]],
-      showSymbol: false,
-    }));
+    expect(option.series[0]).toEqual(
+      expect.objectContaining({
+        name: "Tangential",
+        type: "line",
+        data: [
+          [0, 1],
+          [10, 0.7],
+          [20, 0.2],
+        ],
+        showSymbol: false,
+      }),
+    );
     expect(option.series[0].lineStyle.type).toBe("solid");
     expect(option.series[1].lineStyle.type).toBe("solid");
     expect(option.series[2].lineStyle.type).toBe("dashed");
@@ -86,7 +118,10 @@ describe("diffractionMtfChartOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.series[0].data).toEqual([[0, 1], [10, 0.7]]);
+    expect(option.series[0].data).toEqual([
+      [0, 1],
+      [10, 0.7],
+    ]);
     expect(option.xAxis.max).toBe(40);
   });
 });

@@ -50,30 +50,39 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 export default function AboutPage() {
   return (
     <div className="p-6 overflow-y-auto">
-      <Header level={2} className="mb-4">About</Header>
+      <Header level={2} className="mb-4">
+        About
+      </Header>
       <div className="space-y-4">
         <Paragraph>
-          Ray Optics Web is a browser-based graphical interface for optical system design and analysis.
-          It uses RayOptics, a Python library for geometrical and image-forming optics, running entirely
-          in your browser via Pyodide (Python compiled to WebAssembly).
+          Ray Optics Web is a browser-based graphical interface for optical
+          system design and analysis. It uses RayOptics, a Python library for
+          geometrical and image-forming optics, running entirely in your browser
+          via Pyodide (Python compiled to WebAssembly).
         </Paragraph>
         <Paragraph>
-          No data is sent to any server - all computation happens locally in your browser.
+          No data is sent to any server - all computation happens locally in
+          your browser.
         </Paragraph>
         <section>
-          <Header level={3} className="mb-2">License</Header>
+          <Header level={3} className="mb-2">
+            License
+          </Header>
           <pre className="overflow-x-auto rounded bg-gray-100 p-4 text-sm dark:bg-gray-800">
             <code>{LICENSE_TEXT}</code>
           </pre>
         </section>
         <section>
-          <Header level={3} className="mb-2">Third-Party License</Header>
+          <Header level={3} className="mb-2">
+            Third-Party License
+          </Header>
           <div className="flex flex-col gap-2">
             <ExternalLink
               href="https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-LICENSES.md"
               aria-label="View List of Third-Party TypeScript and JavaScript Packages Licenses"
             >
-              View List of Third-Party TypeScript and JavaScript Packages Licenses
+              View List of Third-Party TypeScript and JavaScript Packages
+              Licenses
             </ExternalLink>
             <ExternalLink
               href="https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-PYTHON-LICENSES.md"

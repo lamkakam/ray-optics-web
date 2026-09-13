@@ -2,8 +2,14 @@
 
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
-import { getRadiusLabel, getRadiusValue } from "@/features/optimization/lib/optimizationViewModels";
+import type {
+  RadiusMode,
+  RadiusModeDraft,
+} from "@/features/optimization/stores/optimizationStore";
+import {
+  getRadiusLabel,
+  getRadiusValue,
+} from "@/features/optimization/lib/optimizationViewModels";
 import { ModeSelectField } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields";
 import {
@@ -67,7 +73,12 @@ export function RadiusModeModal({
   onSetMode,
   onClose,
 }: RadiusModeModalProps) {
-  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
+  if (
+    !isOpen ||
+    optimizationModel === undefined ||
+    surfaceIndex === undefined ||
+    selectedMode === undefined
+  ) {
     return <Modal isOpen={false} title="Radius Variable / Pickup" />;
   }
 
@@ -101,26 +112,33 @@ function RadiusModeModalEditor({
   onSetMode,
   onClose,
 }: RadiusModeModalEditorProps) {
-  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() => toRadiusModeDraft(selectedMode));
+  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() =>
+    toRadiusModeDraft(selectedMode),
+  );
   const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 
   const radiusValue = getRadiusValue(optimizationModel, surfaceIndex);
   const sourceSurfaceOptions = React.useMemo(
-    () => getRadiusPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
+    () =>
+      getRadiusPickupSourceSurfaceOptions(
+        optimizationModel.surfaces.length,
+        surfaceIndex,
+      ),
     [optimizationModel.surfaces.length, surfaceIndex],
   );
-  const variableBoundsErrorText = canUseBounds && draftMode.mode === "variable"
-    ? validateVariableBounds("Radius", draftMode.min, draftMode.max, [
-      minLessThanMaxRule,
-      curvatureRadiusNoZeroStraddleRule,
-    ])
-    : undefined;
+  const variableBoundsErrorText =
+    canUseBounds && draftMode.mode === "variable"
+      ? validateVariableBounds("Radius", draftMode.min, draftMode.max, [
+          minLessThanMaxRule,
+          curvatureRadiusNoZeroStraddleRule,
+        ])
+      : undefined;
 
   return (
     <Modal
       isOpen
       title="Radius Variable / Pickup"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose}>
             Cancel
@@ -136,11 +154,12 @@ function RadiusModeModalEditor({
             Confirm
           </Button>
         </div>
-      )}
+      }
     >
       <div className="space-y-4">
         <Paragraph>
-          {getRadiusLabel(surfaceIndex, optimizationModel)} radius: {radiusValue}
+          {getRadiusLabel(surfaceIndex, optimizationModel)} radius:{" "}
+          {radiusValue}
         </Paragraph>
         <ModeSelectField
           id="radius-mode"
@@ -169,17 +188,23 @@ function RadiusModeModalEditor({
             minValue={draftMode.min}
             maxAriaLabel="Max."
             maxValue={draftMode.max}
-            onMinChange={(value) => setDraftMode({
-              mode: "variable",
-              min: value,
-              max: draftMode.max,
-            })}
-            onMaxChange={(value) => setDraftMode({
-              mode: "variable",
-              min: draftMode.min,
-              max: value,
-            })}
-            guidanceText={canUseBounds ? CURVATURE_RADIUS_GUIDANCE_TEXT : undefined}
+            onMinChange={(value) =>
+              setDraftMode({
+                mode: "variable",
+                min: value,
+                max: draftMode.max,
+              })
+            }
+            onMaxChange={(value) =>
+              setDraftMode({
+                mode: "variable",
+                min: draftMode.min,
+                max: value,
+              })
+            }
+            guidanceText={
+              canUseBounds ? CURVATURE_RADIUS_GUIDANCE_TEXT : undefined
+            }
             errorText={variableBoundsErrorText}
           />
         ) : null}
@@ -191,28 +216,34 @@ function RadiusModeModalEditor({
             sourceSurfaceAriaLabel="Source surface"
             sourceSurfaceValue={draftMode.sourceSurfaceIndex}
             sourceSurfaceOptions={sourceSurfaceOptions}
-            onSourceSurfaceChange={(value) => setDraftMode({
-              mode: "pickup",
-              sourceSurfaceIndex: value,
-              scale: draftMode.scale,
-              offset: draftMode.offset,
-            })}
+            onSourceSurfaceChange={(value) =>
+              setDraftMode({
+                mode: "pickup",
+                sourceSurfaceIndex: value,
+                scale: draftMode.scale,
+                offset: draftMode.offset,
+              })
+            }
             scaleAriaLabel="scale"
             scaleValue={draftMode.scale}
-            onScaleChange={(value) => setDraftMode({
-              mode: "pickup",
-              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-              scale: value,
-              offset: draftMode.offset,
-            })}
+            onScaleChange={(value) =>
+              setDraftMode({
+                mode: "pickup",
+                sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+                scale: value,
+                offset: draftMode.offset,
+              })
+            }
             offsetAriaLabel="offset"
             offsetValue={draftMode.offset}
-            onOffsetChange={(value) => setDraftMode({
-              mode: "pickup",
-              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-              scale: draftMode.scale,
-              offset: value,
-            })}
+            onOffsetChange={(value) =>
+              setDraftMode({
+                mode: "pickup",
+                sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+                scale: draftMode.scale,
+                offset: value,
+              })
+            }
           />
         ) : null}
       </div>

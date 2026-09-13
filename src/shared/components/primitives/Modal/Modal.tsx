@@ -46,14 +46,32 @@ interface ModalProps {
  * - Children render inside `data-testid="modal-body"`, which owns horizontal and vertical scrolling via `overflow-auto`.
  * - When `footer` is provided, it renders in `data-testid="modal-footer"` below the body with a top border and is not part of the scrollable body.
  */
-export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, footer, children }: ModalProps) {
+export function Modal({
+  isOpen,
+  title,
+  titleId,
+  size = "md",
+  onBackdropClick,
+  footer,
+  children,
+}: ModalProps) {
   const generatedId = useId();
   const resolvedTitleId = titleId ?? generatedId;
 
   if (!isOpen) return null;
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropBlur);
-  const panel = clsx(cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow);
+  const backdrop = clsx(
+    cx.modal.color.backdropBgColor,
+    cx.modal.style.backdropBlur,
+  );
+  const panel = clsx(
+    cx.modal.size.panelWidth,
+    cx.modal.style.panelBorderRadius,
+    cx.modal.color.panelBorderColor,
+    cx.modal.color.panelBgColor,
+    cx.modal.size.panelPadding,
+    cx.modal.style.panelShadow,
+  );
   const titleBorderClass = clsx("border-b", cx.modal.color.titleBorderColor);
 
   return (
@@ -61,19 +79,39 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, fo
       className="fixed inset-0 z-50 flex items-center justify-center"
       onKeyDown={(e) => e.stopPropagation()}
     >
-      <div data-testid="modal-backdrop" className={`absolute inset-0 touch-none ${backdrop}`} onClick={onBackdropClick} />
+      <div
+        data-testid="modal-backdrop"
+        className={`absolute inset-0 touch-none ${backdrop}`}
+        onClick={onBackdropClick}
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={resolvedTitleId}
         className={`relative z-10 flex max-h-[90dvh] flex-col overflow-hidden border animate-modal-enter ${panel} ${sizeClasses[size]} mx-4 sm:mx-0`}
       >
-        <Header level={2} id={resolvedTitleId} className={clsx(titleBorderClass, cx.modal.size.titlePadding, cx.modal.size.titleMargin)}>{title}</Header>
+        <Header
+          level={2}
+          id={resolvedTitleId}
+          className={clsx(
+            titleBorderClass,
+            cx.modal.size.titlePadding,
+            cx.modal.size.titleMargin,
+          )}
+        >
+          {title}
+        </Header>
         <div data-testid="modal-body" className="min-h-0 flex-1 overflow-auto">
           {children}
         </div>
         {footer === undefined ? undefined : (
-          <div data-testid="modal-footer" className={clsx("mt-4 border-t pt-4", cx.modal.color.titleBorderColor)}>
+          <div
+            data-testid="modal-footer"
+            className={clsx(
+              "mt-4 border-t pt-4",
+              cx.modal.color.titleBorderColor,
+            )}
+          >
             {footer}
           </div>
         )}

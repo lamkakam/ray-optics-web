@@ -6,7 +6,9 @@ const MAXIMUM_DECIMAL_PLOT_VALUE = 1e3;
 const PLOT_VALUE_SIGNIFICANT_FIGURES = 2;
 
 function formatScientificPlotValue(value: number): string {
-  return value.toExponential(PLOT_VALUE_SIGNIFICANT_FIGURES - 1).replace(".0e", "e");
+  return value
+    .toExponential(PLOT_VALUE_SIGNIFICANT_FIGURES - 1)
+    .replace(".0e", "e");
 }
 
 /**
@@ -23,7 +25,11 @@ function formatScientificPlotValue(value: number): string {
  * notation. Other values use two significant figures without trailing zeroes.
  */
 export function formatPlotValue(value: number): string {
-  if (!Number.isFinite(value) || value === 0 || Math.abs(value) < MINIMUM_NON_ZERO_PLOT_VALUE) {
+  if (
+    !Number.isFinite(value) ||
+    value === 0 ||
+    Math.abs(value) < MINIMUM_NON_ZERO_PLOT_VALUE
+  ) {
     return "0";
   }
 

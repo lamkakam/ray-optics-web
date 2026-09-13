@@ -4,47 +4,66 @@ describe("isNextStaticAsset", () => {
   const origin = "https://example.com";
 
   it("recognizes same-origin Next static assets with or without a base path", () => {
-    expect(isNextStaticAsset("https://example.com/_next/static/chunks/app.js", origin)).toBe(true);
+    expect(
+      isNextStaticAsset(
+        "https://example.com/_next/static/chunks/app.js",
+        origin,
+      ),
+    ).toBe(true);
     expect(
       isNextStaticAsset(
         "https://example.com/ray-optics-web/_next/static/css/app.css",
         origin,
-        "/ray-optics-web"
-      )
+        "/ray-optics-web",
+      ),
     ).toBe(true);
   });
 
   it("does not treat an unrelated same-origin path as a static asset when a base path is configured", () => {
     expect(
-      isNextStaticAsset("https://example.com/ray-optics-web/app.js", origin, "/ray-optics-web"),
+      isNextStaticAsset(
+        "https://example.com/ray-optics-web/app.js",
+        origin,
+        "/ray-optics-web",
+      ),
     ).toBe(false);
   });
 
   it("normalizes all leading and trailing base-path slashes without removing internal slashes", () => {
-    expect(isNextStaticAsset(
-      "https://example.com/ray-optics-web/_next/static/chunks/app.js",
-      origin,
-      "///ray-optics-web///",
-    )).toBe(true);
-    expect(isNextStaticAsset(
-      "https://example.com/ray//optics/_next/static/chunks/app.js",
-      origin,
-      "/ray//optics/",
-    )).toBe(true);
+    expect(
+      isNextStaticAsset(
+        "https://example.com/ray-optics-web/_next/static/chunks/app.js",
+        origin,
+        "///ray-optics-web///",
+      ),
+    ).toBe(true);
+    expect(
+      isNextStaticAsset(
+        "https://example.com/ray//optics/_next/static/chunks/app.js",
+        origin,
+        "/ray//optics/",
+      ),
+    ).toBe(true);
   });
 
   it("rejects cross-origin URLs and lookalike paths", () => {
     expect(
-      isNextStaticAsset("https://other.example/_next/static/chunks/app.js", origin)
+      isNextStaticAsset(
+        "https://other.example/_next/static/chunks/app.js",
+        origin,
+      ),
     ).toBe(false);
     expect(
-      isNextStaticAsset("https://example.com/_next/static-lookalike/app.js", origin)
+      isNextStaticAsset(
+        "https://example.com/_next/static-lookalike/app.js",
+        origin,
+      ),
     ).toBe(false);
     expect(
       isNextStaticAsset(
         "https://example.com/api/_next/static/chunks/app.js?redirect=1",
-        origin
-      )
+        origin,
+      ),
     ).toBe(false);
   });
 });
@@ -52,36 +71,36 @@ describe("isNextStaticAsset", () => {
 describe("shouldCache", () => {
   it("returns true for representative Pyodide 314.0.0 CDN assets", () => {
     expect(
-      shouldCache("https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide.asm.wasm")
+      shouldCache(
+        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide.asm.wasm",
+      ),
     ).toBe(true);
     expect(
       shouldCache(
-        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/python_stdlib.zip"
-      )
+        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/python_stdlib.zip",
+      ),
     ).toBe(true);
     expect(
       shouldCache(
-        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide-lock.json"
-      )
+        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide-lock.json",
+      ),
     ).toBe(true);
     expect(
       shouldCache(
-        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/numpy-2.4.2-cp314-cp314-pyodide_2026_0_wasm32.whl"
-      )
+        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/numpy-2.4.2-cp314-cp314-pyodide_2026_0_wasm32.whl",
+      ),
     ).toBe(true);
   });
 
   it("returns true for PyPI metadata API URLs", () => {
-    expect(
-      shouldCache("https://pypi.org/pypi/rayoptics/json")
-    ).toBe(true);
+    expect(shouldCache("https://pypi.org/pypi/rayoptics/json")).toBe(true);
   });
 
   it("returns true for PyPI wheel URLs", () => {
     expect(
       shouldCache(
-        "https://files.pythonhosted.org/packages/ab/cd/rayoptics-0.9.5-py3-none-any.whl"
-      )
+        "https://files.pythonhosted.org/packages/ab/cd/rayoptics-0.9.5-py3-none-any.whl",
+      ),
     ).toBe(true);
   });
 
@@ -93,31 +112,38 @@ describe("shouldCache", () => {
 
   it("returns false for unrelated jsdelivr URLs", () => {
     expect(
-      shouldCache("https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js")
+      shouldCache("https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"),
     ).toBe(false);
   });
 
   it("returns true for same-origin .whl files", () => {
     const origin = "https://example.com";
     expect(
-      shouldCache("https://example.com/rayoptics_web_utils-0.1.0-py3-none-any.whl", origin)
+      shouldCache(
+        "https://example.com/rayoptics_web_utils-0.1.0-py3-none-any.whl",
+        origin,
+      ),
     ).toBe(true);
     expect(
-      shouldCache("https://example.com/ray-optics-web/rayoptics_web_utils-0.1.0-py3-none-any.whl", origin)
+      shouldCache(
+        "https://example.com/ray-optics-web/rayoptics_web_utils-0.1.0-py3-none-any.whl",
+        origin,
+      ),
     ).toBe(true);
   });
 
   it("returns false for cross-origin .whl files", () => {
     const origin = "https://example.com";
     expect(
-      shouldCache("https://other.com/rayoptics_web_utils-0.1.0-py3-none-any.whl", origin)
+      shouldCache(
+        "https://other.com/rayoptics_web_utils-0.1.0-py3-none-any.whl",
+        origin,
+      ),
     ).toBe(false);
   });
 
   it("returns false for same-origin non-.whl files", () => {
     const origin = "https://example.com";
-    expect(
-      shouldCache("https://example.com/app.js", origin)
-    ).toBe(false);
+    expect(shouldCache("https://example.com/app.js", origin)).toBe(false);
   });
 });

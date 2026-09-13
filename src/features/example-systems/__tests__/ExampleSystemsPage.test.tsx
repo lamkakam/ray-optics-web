@@ -1,16 +1,36 @@
-
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { DiffractionMtfData } from "@/features/analysis/types/plotData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
-import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
+import {
+  createAnalysisPlotSlice,
+  type AnalysisPlotState,
+} from "@/features/analysis/stores/analysisPlotStore";
+import {
+  createAnalysisDataSlice,
+  type AnalysisDataState,
+} from "@/features/analysis/stores/analysisDataStore";
+import {
+  createLensLayoutImageSlice,
+  type LensLayoutImageState,
+} from "@/features/analysis/stores/lensLayoutImageStore";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -46,7 +66,13 @@ const mockSeidelData: SeidelData = {
   surfaceBySurface: {
     aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
     surfaceLabels: ["S1", "sum"],
-    data: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+    data: [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ],
   },
   transverse: { TSA: 0, TCO: 0, TAS: 0, SAS: 0, PTB: 0, DST: 0 },
   wavefront: { W040: 0, W131: 0, W222: 0, W220: 0, W311: 0 },
@@ -88,10 +114,37 @@ function makeProxy(): PyodideWorkerAPI {
     getRayFanData: jest.fn().mockResolvedValue([]),
     getOpdFanData: jest.fn().mockResolvedValue([]),
     getSpotDiagramData: jest.fn().mockResolvedValue([]),
-    getWavefrontData: jest.fn().mockResolvedValue({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" }),
-    getStrehlVsWavelengthData: jest.fn().mockResolvedValue({ fieldIdx: 0, x: [], y: [], unitX: "nm", unitY: "" }),
-    getGeoPSFData: jest.fn().mockResolvedValue({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], unitX: "", unitY: "" }),
-    getDiffractionPSFData: jest.fn().mockResolvedValue({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" }),
+    getWavefrontData: jest.fn().mockResolvedValue({
+      fieldIdx: 0,
+      wvlIdx: 0,
+      x: [],
+      y: [],
+      z: [],
+      unitX: "",
+      unitY: "",
+      unitZ: "",
+    }),
+    getStrehlVsWavelengthData: jest
+      .fn()
+      .mockResolvedValue({ fieldIdx: 0, x: [], y: [], unitX: "nm", unitY: "" }),
+    getGeoPSFData: jest.fn().mockResolvedValue({
+      fieldIdx: 0,
+      wvlIdx: 0,
+      x: [],
+      y: [],
+      unitX: "",
+      unitY: "",
+    }),
+    getDiffractionPSFData: jest.fn().mockResolvedValue({
+      fieldIdx: 0,
+      wvlIdx: 0,
+      x: [],
+      y: [],
+      z: [],
+      unitX: "",
+      unitY: "",
+      unitZ: "",
+    }),
     getDiffractionMTFData: jest.fn().mockResolvedValue(mockDiffractionMtfData),
     get3rdOrderSeidelData: jest.fn().mockResolvedValue(mockSeidelData),
     getZernikeCoefficients: jest.fn(),
@@ -109,11 +162,21 @@ function renderPage(overrides?: {
   readonly screenSize?: ScreenSize;
 }) {
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
-  const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
-  const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
-  const analysisDataStore = createStore<AnalysisDataState>(createAnalysisDataSlice);
-  const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);
-  const proxy = Object.hasOwn(overrides ?? {}, "proxy") ? overrides?.proxy : makeProxy();
+  const specsStore = createStore<SpecsConfiguratorState>(
+    createSpecsConfiguratorSlice,
+  );
+  const analysisPlotStore = createStore<AnalysisPlotState>(
+    createAnalysisPlotSlice,
+  );
+  const analysisDataStore = createStore<AnalysisDataState>(
+    createAnalysisDataSlice,
+  );
+  const lensLayoutImageStore = createStore<LensLayoutImageState>(
+    createLensLayoutImageSlice,
+  );
+  const proxy = Object.hasOwn(overrides ?? {}, "proxy")
+    ? overrides?.proxy
+    : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
   mockScreenBreakpoint = overrides?.screenSize ?? "screenLG";
 
@@ -131,7 +194,15 @@ function renderPage(overrides?: {
     </SpecsConfiguratorStoreContext.Provider>,
   );
 
-  return { proxy, onError, lensStore, specsStore, analysisPlotStore, analysisDataStore, lensLayoutImageStore };
+  return {
+    proxy,
+    onError,
+    lensStore,
+    specsStore,
+    analysisPlotStore,
+    analysisDataStore,
+    lensLayoutImageStore,
+  };
 }
 
 describe("ExampleSystemsPage", () => {
@@ -148,7 +219,9 @@ describe("ExampleSystemsPage", () => {
     expect(exampleSystemsData).not.toHaveProperty("ExampleSystems");
     Object.keys(ExampleSystemList).forEach((name, index) => {
       expect(screen.getByRole("button", { name })).toBeInTheDocument();
-      expect(screen.queryByText(`${index + 1}: ${name}`)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(`${index + 1}: ${name}`),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -156,17 +229,26 @@ describe("ExampleSystemsPage", () => {
     renderPage();
     const user = userEvent.setup();
 
-    expect(screen.getByText("Select an example system to review its source and apply it to the Lens Editor.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Select an example system to review its source and apply it to the Lens Editor.",
+      ),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
 
-    expect(screen.queryByText("Select an example system to review its source and apply it to the Lens Editor.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Select an example system to review its source and apply it to the Lens Editor.",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("materializes the air microscope implicit stop for reciprocal reversal", () => {
-    const airObjective = ExampleSystemList[
-      "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)"
-    ];
+    const airObjective =
+      ExampleSystemList[
+        "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)"
+      ];
 
     expect(airObjective.surfaces[0].label).toBe("Stop");
   });
@@ -174,29 +256,41 @@ describe("ExampleSystemsPage", () => {
   it.each([
     "Diffraction Grating (Transmissive) Example",
     "Diffraction Grating (Reflective) Example",
-  ] as const)("stores %s with the nested diffractive-element contract", (name) => {
-    const gratingSurface = ExampleSystemList[name].surfaces.find(
-      (surface) => surface.diffractiveElement?.diffractionGrating !== undefined,
-    );
+  ] as const)(
+    "stores %s with the nested diffractive-element contract",
+    (name) => {
+      const gratingSurface = ExampleSystemList[name].surfaces.find(
+        (surface) =>
+          surface.diffractiveElement?.diffractionGrating !== undefined,
+      );
 
-    expect(gratingSurface?.diffractiveElement?.diffractionGrating).toEqual({
-      lpmm: 600,
-      order: 1,
-    });
-    expect(gratingSurface).not.toHaveProperty("diffractionGrating");
-  });
+      expect(gratingSurface?.diffractiveElement?.diffractionGrating).toEqual({
+        lpmm: 600,
+        order: 1,
+      });
+      expect(gratingSurface).not.toHaveProperty("diffractionGrating");
+    },
+  );
 
   it("keeps only one selected item", async () => {
     renderPage();
     const user = userEvent.setup();
 
-    expect(screen.getByRole("button", { name: "Sasian Triplet" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sasian Triplet" }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
-    await user.click(screen.getByRole("button", { name: "Schmidt Camera 200mm f/5" }));
+    await user.click(
+      screen.getByRole("button", { name: "Schmidt Camera 200mm f/5" }),
+    );
 
-    expect(screen.getByRole("button", { name: "Sasian Triplet" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Schmidt Camera 200mm f/5" })).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByRole("button", { name: "Sasian Triplet" }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect(
+      screen.getByRole("button", { name: "Schmidt Camera 200mm f/5" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("clicking an example selects it and leaves focus on that example button", async () => {
@@ -214,7 +308,9 @@ describe("ExampleSystemsPage", () => {
     renderPage();
     const user = userEvent.setup();
     const first = screen.getByRole("button", { name: "Sasian Triplet" });
-    const second = screen.getByRole("button", { name: "Newtonian Reflector with Optical Window" });
+    const second = screen.getByRole("button", {
+      name: "Newtonian Reflector with Optical Window",
+    });
 
     await user.click(first);
     await user.tab();
@@ -228,7 +324,9 @@ describe("ExampleSystemsPage", () => {
     renderPage();
     const user = userEvent.setup();
     const first = screen.getByRole("button", { name: "Sasian Triplet" });
-    const second = screen.getByRole("button", { name: "Newtonian Reflector with Optical Window" });
+    const second = screen.getByRole("button", {
+      name: "Newtonian Reflector with Optical Window",
+    });
 
     await user.click(first);
     fireEvent.keyDown(first, { key: "ArrowDown" });
@@ -246,7 +344,9 @@ describe("ExampleSystemsPage", () => {
     await user.click(example);
     await user.keyboard("{Enter}");
 
-    expect(screen.getByRole("dialog", { name: "Load Example System" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Load Example System" }),
+    ).toBeInTheDocument();
   });
 
   it("does not open the overwrite confirmation from Enter before any example is chosen", async () => {
@@ -255,7 +355,9 @@ describe("ExampleSystemsPage", () => {
 
     fireEvent.keyDown(menu, { key: "Enter" });
 
-    expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Load Example System" }),
+    ).not.toBeInTheDocument();
   });
 
   it("opens and closes the overwrite confirmation from Apply", async () => {
@@ -266,9 +368,13 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
-    expect(screen.getByRole("dialog", { name: "Load Example System" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Load Example System" }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Load Example System" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders source links as safe new-tab external links", async () => {
@@ -298,7 +404,9 @@ describe("ExampleSystemsPage", () => {
     const apply = screen.getByRole("button", { name: "Apply" });
 
     expect(layout).toHaveClass("grid");
-    expect(layout).toHaveClass("grid-cols-[minmax(0,calc(50vw-1.5rem))_minmax(0,calc(50vw-1.5rem))]");
+    expect(layout).toHaveClass(
+      "grid-cols-[minmax(0,calc(50vw-1.5rem))_minmax(0,calc(50vw-1.5rem))]",
+    );
     expect(menu).toHaveClass("w-[calc(50vw-1.5rem)]");
     expect(menu).toHaveClass("h-[calc(100dvh-8rem)]");
     expect(menu).toHaveClass("!max-h-[calc(100dvh-8rem)]");
@@ -358,19 +466,35 @@ describe("ExampleSystemsPage", () => {
   it("confirming starts applying the model and routes to the Lens Editor before worker data resolves", async () => {
     const firstOrderDeferred = createDeferred<{ efl: number }>();
     const proxy = makeProxy();
-    (proxy.getFirstOrderData as jest.Mock).mockReturnValue(firstOrderDeferred.promise);
-    const { lensStore, specsStore, analysisPlotStore, analysisDataStore, lensLayoutImageStore } = renderPage({ proxy });
+    (proxy.getFirstOrderData as jest.Mock).mockReturnValue(
+      firstOrderDeferred.promise,
+    );
+    const {
+      lensStore,
+      specsStore,
+      analysisPlotStore,
+      analysisDataStore,
+      lensLayoutImageStore,
+    } = renderPage({ proxy });
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
-    fireEvent.keyDown(screen.getByLabelText("Example systems"), { key: "Enter" });
-    expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByLabelText("Example systems"), {
+      key: "Enter",
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Load Example System" }),
+    ).not.toBeInTheDocument();
 
     expect(mockPush).toHaveBeenCalledWith("/");
-    expect(proxy.getFirstOrderData).toHaveBeenCalledWith(expect.objectContaining<Partial<OpticalModel>>({ setAutoAperture: "autoAperture" }));
+    expect(proxy.getFirstOrderData).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<OpticalModel>>({
+        setAutoAperture: "autoAperture",
+      }),
+    );
     expect(proxy.plotLensLayout).toHaveBeenCalledWith(expect.anything(), false);
     expect(proxy.get3rdOrderSeidelData).toHaveBeenCalled();
     expect(lensStore.getState().autoAperture).toBe(true);
@@ -385,8 +509,12 @@ describe("ExampleSystemsPage", () => {
       firstOrderDeferred.resolve({ efl: 100 });
     });
 
-    await waitFor(() => expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Apply" })).not.toBeDisabled());
+    await waitFor(() =>
+      expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Apply" })).not.toBeDisabled(),
+    );
     expect(specsStore.getState().committedSpecs.pupil.value).toBe(12.5);
     expect(lensLayoutImageStore.getState().layoutLoading).toBe(false);
     expect(analysisPlotStore.getState().plotLoading).toBe(false);
@@ -395,7 +523,9 @@ describe("ExampleSystemsPage", () => {
   it("confirming applies and commits diffraction MTF data after immediate routing", async () => {
     const diffractionMtfDeferred = createDeferred<DiffractionMtfData>();
     const proxy = makeProxy();
-    (proxy.getDiffractionMTFData as jest.Mock).mockReturnValue(diffractionMtfDeferred.promise);
+    (proxy.getDiffractionMTFData as jest.Mock).mockReturnValue(
+      diffractionMtfDeferred.promise,
+    );
     const { analysisPlotStore } = renderPage({ proxy });
     analysisPlotStore.getState().setSelectedPlotType("diffractionMTF");
     const user = userEvent.setup();
@@ -405,14 +535,23 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Load" }));
 
     expect(mockPush).toHaveBeenCalledWith("/");
-    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
+      expect.anything(),
+      0,
+      0,
+      "centroid",
+    );
     expect(analysisPlotStore.getState().diffractionMtfData).toBeUndefined();
 
     await act(async () => {
       diffractionMtfDeferred.resolve(mockDiffractionMtfData);
     });
 
-    await waitFor(() => expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData));
+    await waitFor(() =>
+      expect(analysisPlotStore.getState().diffractionMtfData).toEqual(
+        mockDiffractionMtfData,
+      ),
+    );
   });
 
   it("passes the dark theme to lens-layout rendering", async () => {
@@ -427,7 +566,12 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
-    await waitFor(() => expect(proxy.plotLensLayout).toHaveBeenCalledWith(expect.anything(), true));
+    await waitFor(() =>
+      expect(proxy.plotLensLayout).toHaveBeenCalledWith(
+        expect.anything(),
+        true,
+      ),
+    );
   });
 
   it("commits first-order data after background example loading finishes", async () => {
@@ -441,7 +585,9 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
-    await waitFor(() => expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }));
+    await waitFor(() =>
+      expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }),
+    );
     expect(mockPush).toHaveBeenCalledWith("/");
     expect(proxy.getFirstOrderData).toHaveBeenCalled();
   });
@@ -450,7 +596,11 @@ describe("ExampleSystemsPage", () => {
     const { lensStore } = renderPage();
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("button", { name: "Diffraction Grating (Transmissive) Example" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Diffraction Grating (Transmissive) Example",
+      }),
+    );
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
@@ -471,14 +621,18 @@ describe("ExampleSystemsPage", () => {
 
     expect(mockPush).toHaveBeenCalledWith("/");
     expect(onError).not.toHaveBeenCalled();
-    expect(lensStore.getState().rows.filter((row) => row.kind === "surface")).toHaveLength(0);
+    expect(
+      lensStore.getState().rows.filter((row) => row.kind === "surface"),
+    ).toHaveLength(0);
     expect(lensLayoutImageStore.getState().layoutLoading).toBe(false);
     expect(analysisPlotStore.getState().plotLoading).toBe(false);
   });
 
   it("shows the app error modal hook after routing when background apply fails", async () => {
     const error = new Error("failed");
-    const consoleLog = jest.spyOn(console, "log").mockImplementation(() => undefined);
+    const consoleLog = jest
+      .spyOn(console, "log")
+      .mockImplementation(() => undefined);
     const layoutDeferred = createDeferred<string>();
     const proxy = makeProxy();
     (proxy.plotLensLayout as jest.Mock).mockReturnValue(layoutDeferred.promise);
@@ -498,7 +652,10 @@ describe("ExampleSystemsPage", () => {
     });
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
-    expect(consoleLog).toHaveBeenCalledWith("Apply example system failed:", error);
+    expect(consoleLog).toHaveBeenCalledWith(
+      "Apply example system failed:",
+      error,
+    );
     consoleLog.mockRestore();
   });
 });

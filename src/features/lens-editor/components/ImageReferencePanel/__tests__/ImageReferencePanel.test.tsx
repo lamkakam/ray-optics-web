@@ -6,7 +6,10 @@ const mockSetImagePoint = jest.fn();
 let mockImagePoint = "chief_ray";
 
 jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
-  useImagePoint: () => ({ imagePoint: mockImagePoint, setImagePoint: mockSetImagePoint }),
+  useImagePoint: () => ({
+    imagePoint: mockImagePoint,
+    setImagePoint: mockSetImagePoint,
+  }),
 }));
 
 describe("ImageReferencePanel", () => {
@@ -20,8 +23,12 @@ describe("ImageReferencePanel", () => {
 
     const select = screen.getByLabelText("Image point") as HTMLSelectElement;
     expect(select).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Chief ray" })).toHaveValue("chief_ray");
-    expect(screen.getByRole("option", { name: "Centroid" })).toHaveValue("centroid");
+    expect(screen.getByRole("option", { name: "Chief ray" })).toHaveValue(
+      "chief_ray",
+    );
+    expect(screen.getByRole("option", { name: "Centroid" })).toHaveValue(
+      "centroid",
+    );
   });
 
   it("defaults from the app-wide image point value", () => {
@@ -35,7 +42,10 @@ describe("ImageReferencePanel", () => {
   it("updates the app-wide image point on change", async () => {
     render(<ImageReferencePanel />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Image point"), "centroid");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Image point"),
+      "centroid",
+    );
 
     expect(mockSetImagePoint).toHaveBeenCalledWith("centroid");
   });

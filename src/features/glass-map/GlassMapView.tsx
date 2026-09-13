@@ -8,7 +8,10 @@ import {
   GlassDetailPanel,
   GlassMapCatalogSelector,
 } from "./components";
-import type { GlassMapRouteIntent, GlassMapStore } from "./stores/glassMapStore";
+import type {
+  GlassMapRouteIntent,
+  GlassMapStore,
+} from "./stores/glassMapStore";
 import { useGlassMapStore } from "./providers/GlassMapStoreProvider";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -34,7 +37,7 @@ interface GlassMapViewProps {
 function axisLabels(
   plotType: GlassMapStore["plotType"],
   abbeNumCenterLine: GlassMapStore["abbeNumCenterLine"],
-  partialDispersionType: GlassMapStore["partialDispersionType"]
+  partialDispersionType: GlassMapStore["partialDispersionType"],
 ): { xLabel: string; yLabel: string } {
   const xLabel = abbeNumCenterLine === "d" ? "Vd" : "Ve";
   if (plotType === "refractiveIndex") {
@@ -91,7 +94,12 @@ function axisLabels(
  * - `GlassMapControls` — filter/selector controls (uses MathJax from parent context)
  * - `GlassDetailPanel` — selected glass details (uses MathJax from parent context)
  */
-export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }: GlassMapViewProps) {
+export function GlassMapView({
+  proxy,
+  isReady,
+  routeIntent,
+  onUseSelectedGlass,
+}: GlassMapViewProps) {
   const store = useGlassMapStore();
   const plotType = useStore(store, (s) => s.plotType);
   const abbeNumCenterLine = useStore(store, (s) => s.abbeNumCenterLine);
@@ -128,11 +136,19 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
 
   let routeSelectedGlass: SelectedGlass | undefined;
   if (routeIntent !== undefined) {
-    routeSelectedGlass = resolveCatalogGlass(catalogsData, lookupMaps, routeIntent.catalog, routeIntent.glass);
+    routeSelectedGlass = resolveCatalogGlass(
+      catalogsData,
+      lookupMaps,
+      routeIntent.catalog,
+      routeIntent.glass,
+    );
   }
 
-  const routeIntentActive = !routeIntentDismissed && routeSelectedGlass !== undefined;
-  const effectiveSelectedGlass = routeIntentActive ? routeSelectedGlass : selectedGlass;
+  const routeIntentActive =
+    !routeIntentDismissed && routeSelectedGlass !== undefined;
+  const effectiveSelectedGlass = routeIntentActive
+    ? routeSelectedGlass
+    : selectedGlass;
   const effectiveEnabledCatalogs =
     !routeIntentActive || routeSelectedGlass === undefined
       ? enabledCatalogs
@@ -146,10 +162,14 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     effectiveEnabledCatalogs,
     plotType,
     abbeNumCenterLine,
-    partialDispersionType
+    partialDispersionType,
   );
 
-  const { xLabel, yLabel } = axisLabels(plotType, abbeNumCenterLine, partialDispersionType);
+  const { xLabel, yLabel } = axisLabels(
+    plotType,
+    abbeNumCenterLine,
+    partialDispersionType,
+  );
 
   const handlePointClick = (glass: SelectedGlass) => {
     setRouteIntentDismissed(true);
@@ -177,18 +197,23 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
             <InlineLink href="/" aria-label="Back to lens editor">
               Back to lens editor
             </InlineLink>
-            {effectiveSelectedGlass !== undefined && onUseSelectedGlass !== undefined && (
-              <InlineLink
-                href="/"
-                aria-label="Use selected glass"
-                onClick={() => onUseSelectedGlass(effectiveSelectedGlass)}
-              >
-                Use selected glass
-              </InlineLink>
-            )}
+            {effectiveSelectedGlass !== undefined &&
+              onUseSelectedGlass !== undefined && (
+                <InlineLink
+                  href="/"
+                  aria-label="Use selected glass"
+                  onClick={() => onUseSelectedGlass(effectiveSelectedGlass)}
+                >
+                  Use selected glass
+                </InlineLink>
+              )}
           </div>
         )}
-        <GlassMapCatalogSelector catalogsData={catalogsData} lookupMaps={lookupMaps} onSelect={handlePointClick} />
+        <GlassMapCatalogSelector
+          catalogsData={catalogsData}
+          lookupMaps={lookupMaps}
+          onSelect={handlePointClick}
+        />
         <GlassMapControls
           plotType={plotType}
           abbeNumCenterLine={abbeNumCenterLine}

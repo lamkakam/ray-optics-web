@@ -45,7 +45,9 @@ export function OptimizationStoreProvider({
 export function useOptimizationStore(): StoreApi<OptimizationState> {
   const store = useContext(OptimizationStoreContext);
   if (store === undefined) {
-    throw new Error("`useOptimizationStore` must be used within `OptimizationStoreProvider`");
+    throw new Error(
+      "`useOptimizationStore` must be used within `OptimizationStoreProvider`",
+    );
   }
   return store;
 }
