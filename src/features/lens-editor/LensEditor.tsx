@@ -14,21 +14,8 @@ import {
   NUM_FRINGE_TERMS,
 } from "@/features/lens-editor/lib/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import {
-  surfacesToGridRows,
-  gridRowsToSurfaces,
-} from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import {
-  formatMissingGlassMessage,
-  getMissingPrescriptionGlasses,
-} from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
-import {
-  commitAnalysisPlotResult,
-  loadAnalysisPlot,
-  loadFirstOrderData,
-  loadSeidelData,
-  loadZernikeData,
-} from "@/features/analysis/lib/plotFunctions";
+import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { loadZernikeData } from "@/features/analysis/lib/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -50,8 +37,12 @@ import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
-import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
-import { useLensPrescriptionWebMCP } from "@/features/lens-editor/hooks/useLensPrescriptionWebMCP";
+import {
+  buildDraftOpticalModel,
+  computeOpticalSystem,
+  isMissingPrescriptionGlassError,
+} from "@/features/lens-editor/lib/opticalSystemComputation";
+import { useLensEditorWebMCP } from "@/features/lens-editor/hooks/useLensEditorWebMCP";
 
 /** Worker readiness and error-handling dependencies for the page-level editor. */
 export interface LensEditorProps {
@@ -94,13 +85,13 @@ export interface LensEditorProps {
  * - `onError` delegates compute failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
  * - Missing prescription glasses are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
  * - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
- * - `handleSubmit` uses the app-lifetime cached loaders from `features/analysis/lib/plotFunctions.ts`, so submit-time first-order, Seidel, and plot updates use the same model/aim-point identity and worker-path rules as `AnalysisPlotContainer.tsx`.
+ * - `handleSubmit` delegates to the throwing `computeOpticalSystem` core, so submit-time first-order, Seidel, plot, layout, selection, specs, model, and auto-aperture updates use one complete commit pipeline shared with WebMCP.
  * - `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because it derives from the same complete cached Seidel payload committed separately.
  * - Zernike modal requests cache the complete payload by model instance, aim point, field, wavelength, ordering, term count, and pupil space. The final physical surface's image-gap thickness determines whether Exit is available using RayOptics' `abs(thickness) > 1e8` infinite-conjugate rule.
  * - `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractiveElement.diffractionGrating`
  * - Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
- * - `useLensPrescriptionWebMCP(lensStore, lookupMaps)` supplies the five prescription descriptors and the current catalog snapshot to the shared `useWebMCP` lifecycle abstraction. Descriptor executions observe newly loaded or updated Custom glass maps through its latest-descriptor ref; unsupported browsers are skipped and each registration is aborted on cleanup.
+ * - `useLensEditorWebMCP(...)` supplies all eleven imperative descriptors: the five prescription tools, four System Specs tools, recomputation, and focusing. Descriptor executions observe newly loaded catalogs and current worker/theme/store snapshots through the latest-descriptor ref; unsupported browsers are skipped and each registration is aborted on cleanup.
  */
 export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
@@ -114,7 +105,17 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const analysisDataStore = useAnalysisDataStore();
   const lensLayoutImageStore = useLensLayoutImageStore();
 
-  useLensPrescriptionWebMCP(lensStore, lookupMaps);
+  useLensEditorWebMCP({
+    lensStore,
+    specsStore,
+    analysisPlotStore,
+    analysisDataStore,
+    lensLayoutImageStore,
+    lookupMaps,
+    proxy,
+    isDark: theme === "dark",
+    imagePoint,
+  });
 
   const selectedFieldIndex = useStore(
     analysisPlotStore,
@@ -184,84 +185,32 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const handleSubmit = useCallback(async () => {
     if (!proxy) return;
 
-    const autoAperture = lensStore.getState().autoAperture;
-    const setAutoAperture = autoAperture
-      ? ("autoAperture" as const)
-      : ("manualAperture" as const);
-    const specs = specsStore.getState().toOpticalSpecs();
-    const submittedRows = lensStore.getState().rows;
-    const surfacesData = gridRowsToSurfaces(submittedRows);
-    const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
-    const missingGlassMessage = formatMissingGlassMessage(
-      getMissingPrescriptionGlasses(model, lookupMaps),
-    );
-    if (missingGlassMessage !== undefined) {
-      setValidationErrorMessage(missingGlassMessage);
-      return;
-    }
-    const isDark = theme === "dark";
-
     setComputing(true);
     lensLayoutImageStore.getState().setLayoutLoading(true);
     analysisPlotStore.getState().setPlotLoading(true);
 
     try {
-      const clampedFieldIndex = specsStore
-        .getState()
-        .clampFieldIndex(selectedFieldIndex, specs);
-      const clampedWavelengthIndex = specsStore
-        .getState()
-        .clampWavelengthIndex(selectedWavelengthIndex, specs);
-      analysisPlotStore
-        .getState()
-        .setSelectedFieldIndex(clampedFieldIndex, specs.field.fields.length);
-      analysisPlotStore
-        .getState()
-        .setSelectedWavelengthIndex(
-          clampedWavelengthIndex,
-          specs.wavelengths.weights.length,
-        );
-
-      const [fod, layout, plotResult, seidel, sequentialSemiDiameters] =
-        await Promise.all([
-          loadFirstOrderData({ proxy, model, imagePoint }),
-          proxy.plotLensLayout(model, isDark),
-          loadAnalysisPlot({
-            plotType: selectedPlotType,
-            proxy,
-            model,
-            fieldIndex: clampedFieldIndex,
-            wavelengthIndex: clampedWavelengthIndex,
-            imagePoint,
-          }),
-          loadSeidelData({ proxy, model, imagePoint }),
-          autoAperture
-            ? proxy.getSurfaceSemiDiameters(model)
-            : Promise.resolve(undefined),
-        ]);
-
-      const autoSemiDiameters =
-        sequentialSemiDiameters === undefined
-          ? undefined
-          : mapPhysicalSurfaceSemiDiameters(
-              submittedRows,
-              sequentialSemiDiameters,
-            );
-
-      analysisDataStore.getState().setFirstOrderData(fod);
-      lensLayoutImageStore.getState().setLayoutImage(layout);
-      commitAnalysisPlotResult(plotResult, analysisPlotStore);
-      analysisDataStore.getState().setSeidelData(seidel);
-      specsStore.getState().setCommittedSpecs(specs);
-      lensStore.getState().setCommittedOpticalModel(model);
-      if (autoSemiDiameters === undefined) {
-        lensStore.getState().clearAutoSemiDiameters();
+      await computeOpticalSystem({
+        proxy,
+        lensStore,
+        specsStore,
+        analysisPlotStore,
+        analysisDataStore,
+        lensLayoutImageStore,
+        lookupMaps,
+        selectedFieldIndex,
+        selectedWavelengthIndex,
+        selectedPlotType,
+        isDark: theme === "dark",
+        imagePoint,
+      });
+    } catch (err: unknown) {
+      if (isMissingPrescriptionGlassError(err)) {
+        setValidationErrorMessage(err.message);
       } else {
-        lensStore.getState().setAutoSemiDiameters(autoSemiDiameters);
+        console.log("Update System failed:", err);
+        onError();
       }
-    } catch (err) {
-      console.log("Update System failed:", err);
-      onError();
     } finally {
       setComputing(false);
       lensLayoutImageStore.getState().setLayoutLoading(false);
@@ -285,13 +234,7 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
 
   /** Builds the current optical-model snapshot from the provider-backed stores. */
   const getOpticalModel = useCallback((): OpticalModel => {
-    const autoAperture = lensStore.getState().autoAperture;
-    const setAutoAperture = autoAperture
-      ? ("autoAperture" as const)
-      : ("manualAperture" as const);
-    const specs = specsStore.getState().toOpticalSpecs();
-    const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
-    return { setAutoAperture, specs, ...surfaces };
+    return buildDraftOpticalModel(lensStore, specsStore).model;
   }, [specsStore, lensStore]);
 
   /** Loads a validated imported optical model into both editor stores. */

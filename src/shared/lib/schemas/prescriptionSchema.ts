@@ -1,9 +1,11 @@
 /**
  * Strict reusable schemas for the external lens-prescription contract. These are
  * shared by file import and WebMCP boundaries and compiled once per validator.
+ * Optical-spec collection limits and wavelength-reference validation live here
+ * so JSON imports, parsed TXT models, and imperative tools share one contract.
  */
 import Ajv from "ajv";
-import type { Surfaces } from "@/shared/lib/types/opticalModel";
+import type { OpticalSpecs, Surfaces } from "@/shared/lib/types/opticalModel";
 
 /** Creates the project AJV instance with finite-number and cross-field support. */
 export function createPrescriptionAjv(): Ajv {
@@ -12,6 +14,24 @@ export function createPrescriptionAjv(): Ajv {
     keyword: "finiteNumber",
     type: "number",
     validate: (_schema: boolean, data: number) => Number.isFinite(data),
+  });
+  ajv.addKeyword({
+    keyword: "referenceIndexInRange",
+    type: "object",
+    schemaType: "boolean",
+    validate: (
+      _schema: boolean,
+      data: { readonly weights?: unknown; readonly referenceIndex?: unknown },
+    ) => {
+      const referenceIndex = data.referenceIndex;
+      return (
+        Array.isArray(data.weights) &&
+        typeof referenceIndex === "number" &&
+        Number.isInteger(referenceIndex) &&
+        referenceIndex >= 0 &&
+        referenceIndex < data.weights.length
+      );
+    },
   });
   return ajv;
 }
@@ -26,6 +46,147 @@ export const positiveFiniteNumberSchema = {
   ...finiteNumberSchema,
   exclusiveMinimum: 0,
 } as const;
+
+const objectFieldProperties = {
+  space: { type: "string", const: "object" },
+  type: { type: "string", enum: ["angle", "height"] },
+  maxField: finiteNumberSchema,
+  fields: {
+    type: "array",
+    minItems: 1,
+    maxItems: 10,
+    items: finiteNumberSchema,
+  },
+  isRelative: { type: "boolean" },
+  isWideAngle: { type: "boolean" },
+} as const;
+
+const imageFieldProperties = {
+  space: { type: "string", const: "image" },
+  type: { type: "string", const: "height" },
+  maxField: finiteNumberSchema,
+  fields: {
+    type: "array",
+    minItems: 1,
+    maxItems: 10,
+    items: finiteNumberSchema,
+  },
+  isRelative: { type: "boolean" },
+  isWideAngle: { type: "boolean" },
+} as const;
+
+/** Strict Object EPD/NA or Image F/# pupil specification. */
+export const pupilSpecSchema = {
+  type: "object",
+  oneOf: [
+    {
+      type: "object",
+      required: ["space", "type", "value"],
+      additionalProperties: false,
+      properties: {
+        space: { type: "string", const: "object" },
+        type: { type: "string", enum: ["epd", "NA"] },
+        value: finiteNumberSchema,
+      },
+    },
+    {
+      type: "object",
+      required: ["space", "type", "value"],
+      additionalProperties: false,
+      properties: {
+        space: { type: "string", const: "image" },
+        type: { type: "string", const: "f/#" },
+        value: finiteNumberSchema,
+      },
+    },
+  ],
+} as const;
+
+/** Imported field specification; absolute and relative samples remain compatible. */
+export const fieldSpecSchema = {
+  type: "object",
+  oneOf: [
+    {
+      type: "object",
+      required: ["space", "type", "maxField", "fields", "isRelative"],
+      additionalProperties: false,
+      properties: objectFieldProperties,
+    },
+    {
+      type: "object",
+      required: ["space", "type", "maxField", "fields", "isRelative"],
+      additionalProperties: false,
+      properties: imageFieldProperties,
+    },
+  ],
+} as const;
+
+/** WebMCP half-field specification restricted to relative samples. */
+export const relativeFieldSpecSchema = {
+  type: "object",
+  oneOf: [
+    {
+      type: "object",
+      required: ["space", "type", "maxField", "fields", "isRelative"],
+      additionalProperties: false,
+      properties: {
+        ...objectFieldProperties,
+        isRelative: { type: "boolean", const: true },
+      },
+    },
+    {
+      type: "object",
+      required: ["space", "type", "maxField", "fields", "isRelative"],
+      additionalProperties: false,
+      properties: {
+        ...imageFieldProperties,
+        isRelative: { type: "boolean", const: true },
+      },
+    },
+  ],
+} as const;
+
+const wavelengthWeightsSchema = {
+  type: "array",
+  minItems: 1,
+  maxItems: 7,
+  items: {
+    type: "array",
+    items: finiteNumberSchema,
+    minItems: 2,
+    maxItems: 2,
+  },
+} as const;
+
+/** Strict wavelength/weight collection with an in-range zero-based reference. */
+export const wavelengthsSpecSchema = {
+  type: "object",
+  required: ["weights", "referenceIndex"],
+  additionalProperties: false,
+  referenceIndexInRange: true,
+  properties: {
+    weights: wavelengthWeightsSchema,
+    referenceIndex: { type: "integer", minimum: 0 },
+  },
+} as const;
+
+/** Reusable OpticalSpecs schema; imported fields may be absolute. */
+export const opticalSpecsSchema = {
+  type: "object",
+  required: ["pupil", "field", "wavelengths"],
+  additionalProperties: false,
+  properties: {
+    pupil: pupilSpecSchema,
+    field: fieldSpecSchema,
+    wavelengths: wavelengthsSpecSchema,
+  },
+} as const;
+
+/** Backwards-readable aliases for callers that name specs by their model type. */
+export const fieldSchema = fieldSpecSchema;
+export const halfFieldSchema = relativeFieldSpecSchema;
+export const pupilSchema = pupilSpecSchema;
+export const wavelengthsSchema = wavelengthsSpecSchema;
 
 /** Strict schema for all supported decenter strategies and offsets. */
 export const decenterConfigSchema = {
@@ -287,3 +448,7 @@ export const lensPrescriptionSchema = {
 /** Compiled validator shared by external prescription consumers. */
 export const validateLensPrescription =
   createPrescriptionAjv().compile<Surfaces>(lensPrescriptionSchema);
+
+/** Compiled validator for reusable imported and imperative OpticalSpecs values. */
+export const validateOpticalSpecs =
+  createPrescriptionAjv().compile<OpticalSpecs>(opticalSpecsSchema);
