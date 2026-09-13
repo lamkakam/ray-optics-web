@@ -29,9 +29,7 @@ function surfaceRows(rows: GridRow[]): Extract<GridRow, { kind: "surface" }>[] {
   );
 }
 
-function editorRows(
-  rows: GridRow[],
-): Array<
+function editorRows(rows: GridRow[]): Array<
   | { readonly row: "OBJ"; readonly thickness: number; readonly medium: string }
   | {
       readonly row: string;
@@ -60,9 +58,7 @@ function editorRows(
   });
 }
 
-function canonicalEditorRows(
-  rows: GridRow[],
-): Array<
+function canonicalEditorRows(rows: GridRow[]): Array<
   | { readonly row: "OBJ"; readonly thickness: number; readonly medium: string }
   | {
       readonly row: string;

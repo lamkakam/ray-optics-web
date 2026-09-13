@@ -328,16 +328,14 @@ describe("OptimizationPage", () => {
       expect(optimizationStore.getState().optimizationModel).toBeDefined(),
     );
     act(() => {
-      optimizationStore
-        .getState()
-        .replaceOperands([
-          {
-            id: "operand-ready",
-            kind: "focal_length",
-            target: "100",
-            weight: "1",
-          },
-        ]);
+      optimizationStore.getState().replaceOperands([
+        {
+          id: "operand-ready",
+          kind: "focal_length",
+          target: "100",
+          weight: "1",
+        },
+      ]);
     });
 
     await waitFor(() =>
@@ -1525,16 +1523,14 @@ describe("OptimizationPage", () => {
           { catalog: "Schott", name: "BK7" },
         ],
       });
-      optimizationStore
-        .getState()
-        .replaceOperands([
-          {
-            id: "operand-glass",
-            kind: "focal_length",
-            target: "100",
-            weight: "1",
-          },
-        ]);
+      optimizationStore.getState().replaceOperands([
+        {
+          id: "operand-glass",
+          kind: "focal_length",
+          target: "100",
+          weight: "1",
+        },
+      ]);
     });
 
     await waitFor(() =>

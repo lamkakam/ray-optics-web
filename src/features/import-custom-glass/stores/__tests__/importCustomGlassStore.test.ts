@@ -63,11 +63,9 @@ describe("importCustomGlassStore", () => {
     const store = makeStore();
 
     store.getState().setSortState([{ colId: "ne", sort: "asc" }]);
-    store
-      .getState()
-      .setFilterModel({
-        ve: { filterType: "number", type: "lessThan", filter: 70 },
-      });
+    store.getState().setFilterModel({
+      ve: { filterType: "number", type: "lessThan", filter: 70 },
+    });
 
     store.getState().resetTableState();
 

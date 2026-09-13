@@ -216,13 +216,11 @@ describe("glassMapStore actions", () => {
       .setCatalogsData(
         completeAllCatalogsData({ Custom: { CUSTOM_A: custom } }),
       );
-    store
-      .getState()
-      .setSelectedGlass({
-        catalogName: "Custom",
-        glassName: "CUSTOM_A",
-        data: custom,
-      });
+    store.getState().setSelectedGlass({
+      catalogName: "Custom",
+      glassName: "CUSTOM_A",
+      data: custom,
+    });
 
     store.getState().deleteCustomGlasses(["CUSTOM_A"]);
 

@@ -398,11 +398,9 @@ export function LensPrescriptionContainer({
         }}
         onClose={() => store.getState().closeDiffractionGratingModal()}
         onRemove={() => {
-          store
-            .getState()
-            .updateRow(diffractionGratingModal.rowId, {
-              diffractiveElement: undefined,
-            });
+          store.getState().updateRow(diffractionGratingModal.rowId, {
+            diffractiveElement: undefined,
+          });
           store.getState().closeDiffractionGratingModal();
         }}
       />

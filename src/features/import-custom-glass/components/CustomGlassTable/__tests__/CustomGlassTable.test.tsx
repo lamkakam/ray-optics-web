@@ -210,11 +210,9 @@ describe("CustomGlassTable", () => {
       createImportCustomGlassSlice,
     );
     store.getState().setSortState([{ colId: "label", sort: "asc" }]);
-    store
-      .getState()
-      .setFilterModel({
-        nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
-      });
+    store.getState().setFilterModel({
+      nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+    });
     const { container } = renderTable(rows, new Set(), jest.fn(), store);
     const grid = container.querySelector("[data-testid='ag-grid-mock']");
     if (!(grid instanceof HTMLElement)) {

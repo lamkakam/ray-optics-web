@@ -215,12 +215,10 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       const before = store.getState();
 
-      store
-        .getState()
-        .updatePendingMediumSelection({
-          medium: "N-BK7",
-          manufacturer: "Schott",
-        });
+      store.getState().updatePendingMediumSelection({
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      });
 
       expect(store.getState().pendingMediumSelection).toBe(
         before.pendingMediumSelection,
@@ -234,12 +232,10 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       store.getState().setRows(makeTestRows());
 
-      store
-        .getState()
-        .updateRow("s1", {
-          id: "wrong-id",
-          kind: "object",
-        } as Partial<GridRow>);
+      store.getState().updateRow("s1", {
+        id: "wrong-id",
+        kind: "object",
+      } as Partial<GridRow>);
 
       expect(store.getState().rows.find((row) => row.id === "s1")).toEqual(
         expect.objectContaining({
@@ -574,12 +570,10 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       store.getState().openMediumModal("missing");
 
-      store
-        .getState()
-        .commitPendingMediumSelection({
-          medium: "N-BK7",
-          manufacturer: "Schott",
-        });
+      store.getState().commitPendingMediumSelection({
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      });
 
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
       expect(store.getState().pendingMediumSelection).toBeUndefined();
