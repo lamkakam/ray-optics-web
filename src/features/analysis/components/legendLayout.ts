@@ -11,10 +11,17 @@ export interface LegendWrapLayout {
 }
 
 function estimateLegendItemWidth(label: string): number {
-  return LEGEND_MARKER_AND_GAP_WIDTH + label.length * LEGEND_CHARACTER_WIDTH + LEGEND_ITEM_GAP;
+  return (
+    LEGEND_MARKER_AND_GAP_WIDTH +
+    label.length * LEGEND_CHARACTER_WIDTH +
+    LEGEND_ITEM_GAP
+  );
 }
 
-function estimateLegendRowCount(labels: readonly string[], availableWidth: number): number {
+function estimateLegendRowCount(
+  labels: readonly string[],
+  availableWidth: number,
+): number {
   if (labels.length === 0 || availableWidth <= 0) {
     return 1;
   }
@@ -36,7 +43,10 @@ function estimateLegendRowCount(labels: readonly string[], availableWidth: numbe
 }
 
 function estimateLegendRowWidth(labels: readonly string[]): number {
-  return labels.reduce((totalWidth, label) => totalWidth + estimateLegendItemWidth(label), 0);
+  return labels.reduce(
+    (totalWidth, label) => totalWidth + estimateLegendItemWidth(label),
+    0,
+  );
 }
 
 /**

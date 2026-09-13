@@ -31,8 +31,14 @@ type CreateAnalysisChartComponentConfig<
   readonly ariaLabel: string;
   readonly debounceMs: number;
   readonly useRuntimeContext?: () => RuntimeContext;
-  readonly getBuilderArgs: (props: Props, runtimeContext: RuntimeContext) => BuilderArgs;
-  readonly getChartHeight: (input: ChartSizingInput, runtimeContext: RuntimeContext) => number;
+  readonly getBuilderArgs: (
+    props: Props,
+    runtimeContext: RuntimeContext,
+  ) => BuilderArgs;
+  readonly getChartHeight: (
+    input: ChartSizingInput,
+    runtimeContext: RuntimeContext,
+  ) => number;
   readonly buildOption: (
     builderArgs: BuilderArgs,
     chartWidth: number,
@@ -42,7 +48,9 @@ type CreateAnalysisChartComponentConfig<
   readonly isDimensionValid?: (input: ChartDimensionValidationInput) => boolean;
 };
 
-const DEFAULT_DIMENSION_VALIDATION = ({ width }: ChartDimensionValidationInput) => width > 0;
+const DEFAULT_DIMENSION_VALIDATION = ({
+  width,
+}: ChartDimensionValidationInput) => width > 0;
 
 /**
  * Provides a higher-order factory that returns typed analysis chart function components with a shared Apache ECharts lifecycle. The factory centralizes responsive parent measurement, injected sizing policy evaluation, theme-aware text color selection, debounced chart updates, and ECharts disposal.
@@ -80,31 +88,45 @@ export function createAnalysisChartComponent<
     const { theme } = useTheme();
     const runtimeContext = useRuntimeContext?.() as RuntimeContext;
     const chartContainerRef = useRef<HTMLDivElement | null>(null);
-    const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
-    const [chartDimensions, setChartDimensions] = useState<ChartDimensions | undefined>(undefined);
-    const chartTextColor = theme === "dark"
-      ? globalTokens.echarts.text.dark
-      : globalTokens.echarts.text.light;
-    const builderArgs = useMemo(() => getBuilderArgs(props, runtimeContext), [props, runtimeContext]);
+    const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(
+      undefined,
+    );
+    const [chartDimensions, setChartDimensions] = useState<
+      ChartDimensions | undefined
+    >(undefined);
+    const chartTextColor =
+      theme === "dark"
+        ? globalTokens.echarts.text.dark
+        : globalTokens.echarts.text.light;
+    const builderArgs = useMemo(
+      () => getBuilderArgs(props, runtimeContext),
+      [props, runtimeContext],
+    );
     const chartOption = useMemo(
-      () => chartDimensions === undefined
-        ? undefined
-        : buildOption(builderArgs, chartDimensions.width, chartDimensions.height, chartTextColor),
+      () =>
+        chartDimensions === undefined
+          ? undefined
+          : buildOption(
+              builderArgs,
+              chartDimensions.width,
+              chartDimensions.height,
+              chartTextColor,
+            ),
       [builderArgs, chartDimensions, chartTextColor],
     );
-    const {
-      run: runDebouncedChartUpdate,
-      cancel: cancelDebouncedChartUpdate,
-    } = useDebouncedCallback((
-      container: HTMLDivElement,
-      nextChartOption: EChartsCoreOption,
-    ) => {
-      if (!chartRef.current) {
-        chartRef.current = echarts.init(container, undefined, { renderer: "canvas" });
-      }
-      chartRef.current.setOption(nextChartOption, true);
-      chartRef.current.resize();
-    }, debounceMs);
+    const { run: runDebouncedChartUpdate, cancel: cancelDebouncedChartUpdate } =
+      useDebouncedCallback(
+        (container: HTMLDivElement, nextChartOption: EChartsCoreOption) => {
+          if (!chartRef.current) {
+            chartRef.current = echarts.init(container, undefined, {
+              renderer: "canvas",
+            });
+          }
+          chartRef.current.setOption(nextChartOption, true);
+          chartRef.current.resize();
+        },
+        debounceMs,
+      );
 
     useEffect(() => {
       const container = chartContainerRef.current;
@@ -113,11 +135,14 @@ export function createAnalysisChartComponent<
 
       const updateChartDimensions = () => {
         const nextWidth = parent.clientWidth;
-        const nextHeight = getChartHeight({
-          parentWidth: nextWidth,
-          parentHeight: parent.clientHeight,
-          autoHeight: props.autoHeight,
-        }, runtimeContext);
+        const nextHeight = getChartHeight(
+          {
+            parentWidth: nextWidth,
+            parentHeight: parent.clientHeight,
+            autoHeight: props.autoHeight,
+          },
+          runtimeContext,
+        );
 
         if (isDimensionValid({ width: nextWidth, height: nextHeight })) {
           setChartDimensions({
@@ -184,9 +209,14 @@ export function createAnalysisChartComponent<
         data-testid={testId}
         aria-label={ariaLabel}
         className="max-w-full shrink-0 overflow-hidden"
-        style={chartDimensions === undefined
-          ? undefined
-          : { width: `${chartDimensions.width}px`, height: `${chartDimensions.height}px` }}
+        style={
+          chartDimensions === undefined
+            ? undefined
+            : {
+                width: `${chartDimensions.width}px`,
+                height: `${chartDimensions.height}px`,
+              }
+        }
       />
     );
   }

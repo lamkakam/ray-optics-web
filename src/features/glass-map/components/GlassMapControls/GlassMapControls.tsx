@@ -3,7 +3,12 @@
 import { MathJax } from "better-react-mathjax";
 import { CATALOG_COLOR_MAP } from "@/features/glass-map/lib/glassMap";
 import { CATALOG_NAMES } from "@/features/glass-map/types/glassMap";
-import type { AbbeNumCenterLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/features/glass-map/types/glassMap";
+import type {
+  AbbeNumCenterLine,
+  CatalogName,
+  GlassMapPlotType,
+  PartialDispersionType,
+} from "@/features/glass-map/types/glassMap";
 import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import type { RadioOption } from "@/shared/components/primitives/RadioInput";
@@ -37,10 +42,24 @@ const ABBE_LINE_OPTIONS: ReadonlyArray<RadioOption<AbbeNumCenterLine>> = [
   { value: "e", label: "e", labelNode: <MathJax inline>{`\\(e\\)`}</MathJax> },
 ];
 
-const PARTIAL_DISPERSION_OPTIONS: ReadonlyArray<RadioOption<PartialDispersionType>> = [
-  { value: "P_Fd", label: "P_F,d", labelNode: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax> },
-  { value: "P_fe", label: "P_F,e", labelNode: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax> },
-  { value: "P_gF", label: "P_g,F", labelNode: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax> },
+const PARTIAL_DISPERSION_OPTIONS: ReadonlyArray<
+  RadioOption<PartialDispersionType>
+> = [
+  {
+    value: "P_Fd",
+    label: "P_F,d",
+    labelNode: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax>,
+  },
+  {
+    value: "P_fe",
+    label: "P_F,e",
+    labelNode: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax>,
+  },
+  {
+    value: "P_gF",
+    label: "P_g,F",
+    labelNode: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax>,
+  },
 ];
 
 /**
@@ -110,7 +129,7 @@ export function GlassMapControls({
               id={`catalog-${name}`}
               ariaLabel={name}
               checked={enabledCatalogs[name]}
-              label={(
+              label={
                 <div className="flex flex-1 items-center gap-2 text-left text-sm leading-5">
                   <span
                     data-testid={`catalog-dot-${name}`}
@@ -119,7 +138,7 @@ export function GlassMapControls({
                   />
                   <span>{name}</span>
                 </div>
-              )}
+              }
               onChange={() => onToggleCatalog(name)}
             />
           ))}

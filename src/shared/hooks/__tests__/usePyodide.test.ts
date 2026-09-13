@@ -23,7 +23,11 @@ jest.mock("comlink", () => ({
   wrap: jest.fn(() => mockProxy),
 }));
 
-import { usePyodide, _resetSingleton, withAnalysisCacheInvalidation } from "@/shared/hooks/usePyodide";
+import {
+  usePyodide,
+  _resetSingleton,
+  withAnalysisCacheInvalidation,
+} from "@/shared/hooks/usePyodide";
 import { getCachedAnalysis } from "@/features/analysis/lib/analysisCache";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
@@ -42,7 +46,10 @@ describe("usePyodide", () => {
     const { result } = renderHook(() => usePyodide());
     expect(result.current.isReady).toBe(false);
     expect(result.current.error).toBeUndefined();
-    expect(result.current.initProgress).toEqual({ value: 0, status: "Starting worker" });
+    expect(result.current.initProgress).toEqual({
+      value: 0,
+      status: "Starting worker",
+    });
     await act(async () => {}); // flush setIsReady(true) microtask
   });
 
@@ -121,7 +128,8 @@ describe("usePyodide", () => {
   });
 
   it("initializes only once when React replays effects in StrictMode", async () => {
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(StrictMode, null, children);
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(StrictMode, null, children);
     const { result } = renderHook(() => usePyodide(), { wrapper });
 
     await waitFor(() => {
@@ -132,9 +140,11 @@ describe("usePyodide", () => {
 
   it("forwards worker progress callback into hook state", async () => {
     let onProgress: ((progress: InitProgress) => void) | undefined;
-    mockInit.mockImplementationOnce(async (callback?: (progress: InitProgress) => void) => {
-      onProgress = callback;
-    });
+    mockInit.mockImplementationOnce(
+      async (callback?: (progress: InitProgress) => void) => {
+        onProgress = callback;
+      },
+    );
 
     const { result } = renderHook(() => usePyodide());
 
@@ -159,7 +169,9 @@ describe("usePyodide", () => {
   it("clears cached analyses before and after successful or rejected custom-glass mutations", async () => {
     const raw = {
       addUserDefinedGlasses: jest.fn().mockResolvedValue({}),
-      updateUserDefinedGlasses: jest.fn().mockRejectedValue(new Error("partial mutation")),
+      updateUserDefinedGlasses: jest
+        .fn()
+        .mockRejectedValue(new Error("partial mutation")),
       deleteUserDefinedGlasses: jest.fn().mockResolvedValue(undefined),
     } as unknown as import("@/shared/hooks/usePyodide").PyodideWorkerAPI;
     const proxy = withAnalysisCacheInvalidation(raw);
@@ -169,7 +181,9 @@ describe("usePyodide", () => {
     await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
     await proxy.addUserDefinedGlasses([]);
     await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
-    await expect(proxy.updateUserDefinedGlasses([])).rejects.toThrow("partial mutation");
+    await expect(proxy.updateUserDefinedGlasses([])).rejects.toThrow(
+      "partial mutation",
+    );
     await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
     await proxy.deleteUserDefinedGlasses([]);
     await getCachedAnalysis(model, "chief_ray", "firstOrder", load);

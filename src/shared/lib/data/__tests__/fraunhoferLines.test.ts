@@ -17,7 +17,7 @@ describe("FRAUNHOFER_LINES", () => {
   it("is sorted from longest to shortest wavelength", () => {
     for (let i = 1; i < FRAUNHOFER_LINES.length; i++) {
       expect(FRAUNHOFER_LINES[i - 1].wavelength).toBeGreaterThan(
-        FRAUNHOFER_LINES[i].wavelength
+        FRAUNHOFER_LINES[i].wavelength,
       );
     }
   });
@@ -52,6 +52,8 @@ describe("lookupWavelength", () => {
   });
 
   it("throws for an unknown symbol instead of returning an absent wavelength", () => {
-    expect(() => lookupWavelength("unknown" as never)).toThrow("Unknown Fraunhofer symbol: unknown");
+    expect(() => lookupWavelength("unknown" as never)).toThrow(
+      "Unknown Fraunhofer symbol: unknown",
+    );
   });
 });

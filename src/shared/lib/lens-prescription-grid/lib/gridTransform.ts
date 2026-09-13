@@ -1,6 +1,10 @@
 /** Bidirectional conversion between sequential surface data and flat editor grid rows. */
 import type { Surfaces, Surface } from "@/shared/lib/types/opticalModel";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import {
+  OBJECT_ROW_ID,
+  IMAGE_ROW_ID,
+  type GridRow,
+} from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 let nextId = 0;
 
@@ -29,18 +33,26 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     medium: s.medium,
     manufacturer: s.manufacturer,
     semiDiameter: s.semiDiameter,
-    ...(s.clear_aperture !== undefined ? { clear_aperture: s.clear_aperture } : {}),
-    ...(s.edge_aperture !== undefined ? { edge_aperture: s.edge_aperture } : {}),
+    ...(s.clear_aperture !== undefined
+      ? { clear_aperture: s.clear_aperture }
+      : {}),
+    ...(s.edge_aperture !== undefined
+      ? { edge_aperture: s.edge_aperture }
+      : {}),
     ...(s.aspherical !== undefined ? { aspherical: s.aspherical } : {}),
     ...(s.decenter !== undefined ? { decenter: s.decenter } : {}),
-    ...(s.diffractiveElement !== undefined ? { diffractiveElement: s.diffractiveElement } : {}),
+    ...(s.diffractiveElement !== undefined
+      ? { diffractiveElement: s.diffractiveElement }
+      : {}),
   }));
 
   const imageRow: GridRow = {
     id: IMAGE_ROW_ID,
     kind: "image",
     curvatureRadius: surfaces.image.curvatureRadius,
-    ...(surfaces.image.decenter !== undefined ? { decenter: surfaces.image.decenter } : {}),
+    ...(surfaces.image.decenter !== undefined
+      ? { decenter: surfaces.image.decenter }
+      : {}),
   };
 
   return [objectRow, ...surfaceRows, imageRow];
@@ -53,9 +65,15 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
  * Defined comments and diffractive-element wrappers are retained; omitted values remain omitted.
  */
 export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
-  const objectRow = rows.find((r): r is GridRow & { kind: "object" } => r.kind === "object");
-  const imageRow = rows.find((r): r is GridRow & { kind: "image" } => r.kind === "image");
-  const surfaceRows = rows.filter((r): r is GridRow & { kind: "surface" } => r.kind === "surface");
+  const objectRow = rows.find(
+    (r): r is GridRow & { kind: "object" } => r.kind === "object",
+  );
+  const imageRow = rows.find(
+    (r): r is GridRow & { kind: "image" } => r.kind === "image",
+  );
+  const surfaceRows = rows.filter(
+    (r): r is GridRow & { kind: "surface" } => r.kind === "surface",
+  );
 
   const surfaces: Surface[] = surfaceRows.map((r) => {
     const surface: Surface = {
@@ -95,7 +113,9 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
     },
     image: {
       curvatureRadius: imageRow?.curvatureRadius ?? 0,
-      ...(imageRow?.decenter !== undefined ? { decenter: imageRow.decenter } : {}),
+      ...(imageRow?.decenter !== undefined
+        ? { decenter: imageRow.decenter }
+        : {}),
     },
     surfaces,
   };

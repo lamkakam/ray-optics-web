@@ -1,6 +1,11 @@
 "use client";
 
-import { BitmapLayer, COORDINATE_SYSTEM, DeckGL, OrthographicView } from "deck.gl";
+import {
+  BitmapLayer,
+  COORDINATE_SYSTEM,
+  DeckGL,
+  OrthographicView,
+} from "deck.gl";
 import { useMemo, useState } from "react";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import {
@@ -60,39 +65,61 @@ export function DiffractionPsfChart({
   );
   const layout = getCartesianPlotLayout(size);
   const extentKey = `${preparedData.axisExtent}:${layout.plotSide}`;
-  const initialViewState = useMemo<OrthographicViewState>(() => ({
-    target: [0, 0, 0],
-    zoom: getInitialOrthographicZoom(layout.plotSide, preparedData.axisExtent),
-  }), [layout.plotSide, preparedData.axisExtent]);
-  const [viewStateOverride, setViewStateOverride] = useState<ViewStateOverride | undefined>(undefined);
-  const viewState = viewStateOverride?.extentKey === extentKey
-    ? viewStateOverride.viewState
-    : initialViewState;
-  const axisDomains = useMemo(() => getVisibleAxisDomains(layout.plotSide, viewState), [layout.plotSide, viewState]);
-  const xAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.x), [axisDomains.x]);
-  const yAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.y), [axisDomains.y]);
+  const initialViewState = useMemo<OrthographicViewState>(
+    () => ({
+      target: [0, 0, 0],
+      zoom: getInitialOrthographicZoom(
+        layout.plotSide,
+        preparedData.axisExtent,
+      ),
+    }),
+    [layout.plotSide, preparedData.axisExtent],
+  );
+  const [viewStateOverride, setViewStateOverride] = useState<
+    ViewStateOverride | undefined
+  >(undefined);
+  const viewState =
+    viewStateOverride?.extentKey === extentKey
+      ? viewStateOverride.viewState
+      : initialViewState;
+  const axisDomains = useMemo(
+    () => getVisibleAxisDomains(layout.plotSide, viewState),
+    [layout.plotSide, viewState],
+  );
+  const xAxisTicks = useMemo(
+    () => buildCartesianTicks(axisDomains.x),
+    [axisDomains.x],
+  );
+  const yAxisTicks = useMemo(
+    () => buildCartesianTicks(axisDomains.y),
+    [axisDomains.y],
+  );
   const bitmapImage = useMemo(
-    () => new ImageData(
-      preparedData.image.data,
-      preparedData.image.width,
-      preparedData.image.height,
-    ),
+    () =>
+      new ImageData(
+        preparedData.image.data,
+        preparedData.image.width,
+        preparedData.image.height,
+      ),
     [preparedData.image],
   );
 
-  const layers = useMemo(() => [
-    new BitmapLayer({
-      id: "diffraction-psf-bitmap",
-      image: bitmapImage,
-      bounds: preparedData.bounds,
-      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-      pickable: false,
-      textureParameters: {
-        minFilter: "nearest",
-        magFilter: "nearest",
-      },
-    }),
-  ], [bitmapImage, preparedData.bounds]);
+  const layers = useMemo(
+    () => [
+      new BitmapLayer({
+        id: "diffraction-psf-bitmap",
+        image: bitmapImage,
+        bounds: preparedData.bounds,
+        coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+        pickable: false,
+        textureParameters: {
+          minFilter: "nearest",
+          magFilter: "nearest",
+        },
+      }),
+    ],
+    [bitmapImage, preparedData.bounds],
+  );
 
   return (
     <div ref={containerRef} className="h-full w-full min-h-0">
@@ -114,10 +141,19 @@ export function DiffractionPsfChart({
             }}
           >
             <DeckGL
-              views={[new OrthographicView({ id: DECK_VIEW_ID, flipY: false, controller: true })]}
+              views={[
+                new OrthographicView({
+                  id: DECK_VIEW_ID,
+                  flipY: false,
+                  controller: true,
+                }),
+              ]}
               viewState={{ [DECK_VIEW_ID]: viewState }}
               onViewStateChange={({ viewState: nextViewState }) => {
-                const nextZoom = typeof nextViewState.zoom === "number" ? nextViewState.zoom : viewState.zoom;
+                const nextZoom =
+                  typeof nextViewState.zoom === "number"
+                    ? nextViewState.zoom
+                    : viewState.zoom;
                 setViewStateOverride({
                   extentKey,
                   viewState: {
@@ -138,12 +174,20 @@ export function DiffractionPsfChart({
           layout={layout}
           xAxisTicks={xAxisTicks}
           yAxisTicks={yAxisTicks}
-          xAxisLabel={diffractionPsfData.unitX ? `x (${diffractionPsfData.unitX})` : "x"}
-          yAxisLabel={diffractionPsfData.unitY ? `y (${diffractionPsfData.unitY})` : "y"}
+          xAxisLabel={
+            diffractionPsfData.unitX ? `x (${diffractionPsfData.unitX})` : "x"
+          }
+          yAxisLabel={
+            diffractionPsfData.unitY ? `y (${diffractionPsfData.unitY})` : "y"
+          }
           colorBarId="diffraction-psf-color-bar"
           palette={ANALYSIS_HEATMAP_COLOR_PALETTE}
-          colorBarTopLabel={formatDiffractionPsfFluxLabel(preparedData.maxLogFlux)}
-          colorBarBottomLabel={formatDiffractionPsfFluxLabel(Math.min(DIFFRACTION_PSF_LOG_FLOOR, preparedData.minLogFlux))}
+          colorBarTopLabel={formatDiffractionPsfFluxLabel(
+            preparedData.maxLogFlux,
+          )}
+          colorBarBottomLabel={formatDiffractionPsfFluxLabel(
+            Math.min(DIFFRACTION_PSF_LOG_FLOOR, preparedData.minLogFlux),
+          )}
           colorBarTitle="Normalized flux/bin"
         />
       </div>

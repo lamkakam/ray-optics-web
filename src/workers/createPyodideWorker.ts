@@ -24,8 +24,7 @@
  * @returns A new module worker backed by `workers/pyodide.worker.ts`.
  */
 export function createPyodideWorker(): Worker {
-  return new Worker(
-    new URL("./pyodide.worker.ts", import.meta.url),
-    { type: "module" },
-  );
+  return new Worker(new URL("./pyodide.worker.ts", import.meta.url), {
+    type: "module",
+  });
 }

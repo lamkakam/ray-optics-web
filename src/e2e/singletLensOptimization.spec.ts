@@ -49,7 +49,7 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
     page.getByRole("button", { name: "Load Config", exact: true }).click(),
   ]);
   await fileChooser.setFiles(
-    path.join(__dirname, "jsons", "singlet-lens-optimization-test.json")
+    path.join(__dirname, "jsons", "singlet-lens-optimization-test.json"),
   );
   const loadDialog = page.getByRole("dialog");
   await loadDialog.getByRole("button", { name: "Load" }).click();
@@ -62,13 +62,17 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
   await page.getByLabel("Method").selectOption("lm");
 
   await page.getByRole("tab", { name: "Lens Prescription" }).click();
-  await page.getByRole("button", { name: "Asphere mode for surface 2" }).click();
+  await page
+    .getByRole("button", { name: "Asphere mode for surface 2" })
+    .click();
   const asphereDialog = page.getByRole("dialog", {
     name: "Asphere Variable / Pickup",
   });
   await asphereDialog.getByLabel("Asphere type").selectOption("EvenAspherical");
   for (const coefficient of ["a_4", "a_6", "a_8", "a_10"]) {
-    await asphereDialog.getByLabel(`${coefficient} mode`).selectOption("variable");
+    await asphereDialog
+      .getByLabel(`${coefficient} mode`)
+      .selectOption("variable");
   }
   await asphereDialog.getByRole("button", { name: "Confirm" }).click();
   await expect(asphereDialog).toBeHidden();
@@ -85,7 +89,9 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
   await weightCell.locator("input").press("Enter");
 
   await page.getByRole("button", { name: "Optimize" }).click();
-  const progressDialog = page.getByRole("dialog", { name: "Optimization Progress" });
+  const progressDialog = page.getByRole("dialog", {
+    name: "Optimization Progress",
+  });
   await progressDialog.getByRole("button", { name: "OK" }).waitFor({
     state: "visible",
     timeout: 120_000,
@@ -131,7 +137,7 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
       const value = await editorAsphereDialog.getByLabel(label).inputValue();
       expect(Number.isFinite(Number(value))).toBe(true);
       return Number(value);
-    })
+    }),
   );
   expect(coefficientValues.some((value) => value !== 0)).toBe(true);
 });

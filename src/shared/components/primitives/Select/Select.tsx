@@ -8,7 +8,8 @@ export type SelectOption = {
   readonly label: string;
 };
 
-interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children"> {
+interface SelectProps
+  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children"> {
   /** Items to render as `<option>` elements */
   readonly options: ReadonlyArray<SelectOption>;
   /** Disabled first option shown when no value is selected */
@@ -56,11 +57,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 
     return (
       <div className={clsx("relative w-full", className)}>
-        <select
-          ref={ref}
-          className={selectClassName}
-          {...rest}
-        >
+        <select ref={ref} className={selectClassName} {...rest}>
           {placeholder !== undefined && (
             <option value="" disabled>
               {placeholder}
@@ -80,9 +77,15 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           fill="none"
           aria-hidden="true"
         >
-          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M4 6l4 4 4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </div>
     );
-  }
+  },
 );

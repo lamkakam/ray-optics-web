@@ -38,7 +38,7 @@ export function UnappliedOptimizationResultModal({
     <Modal
       isOpen={isOpen}
       title="Unapplied Optimization Result"
-      footer={(
+      footer={
         <div className="flex flex-wrap justify-end gap-3">
           <Button variant="secondary" onClick={onStay}>
             Stay
@@ -50,10 +50,11 @@ export function UnappliedOptimizationResultModal({
             Apply to Editor
           </Button>
         </div>
-      )}
+      }
     >
       <Paragraph className="mb-6">
-        The optimized optical model has not been applied to the Editor and may be lost if you leave Optimization.
+        The optimized optical model has not been applied to the Editor and may
+        be lost if you leave Optimization.
       </Paragraph>
     </Modal>
   );

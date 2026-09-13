@@ -49,8 +49,18 @@ export function OptimizationInspectionModals({
       <MediumSelectorModal
         key={mediumModalRow?.id ?? "medium-closed"}
         isOpen={mediumModalRow !== undefined}
-        initialMedium={mediumModalRow?.kind === "surface" || mediumModalRow?.kind === "object" ? mediumModalRow.medium : "air"}
-        initialManufacturer={mediumModalRow?.kind === "surface" || mediumModalRow?.kind === "object" ? mediumModalRow.manufacturer : ""}
+        initialMedium={
+          mediumModalRow?.kind === "surface" ||
+          mediumModalRow?.kind === "object"
+            ? mediumModalRow.medium
+            : "air"
+        }
+        initialManufacturer={
+          mediumModalRow?.kind === "surface" ||
+          mediumModalRow?.kind === "object"
+            ? mediumModalRow.manufacturer
+            : ""
+        }
         allowReflective={mediumModalRow?.kind !== "object"}
         readOnly
         onConfirm={() => undefined}
@@ -61,15 +71,27 @@ export function OptimizationInspectionModals({
         key={asphericalModalRow?.id ?? "aspherical-closed"}
         isOpen={asphericalModalRow?.kind === "surface"}
         readOnly
-        initialConicConstant={asphericalModalRow?.kind === "surface" ? (asphericalModalRow.aspherical?.conicConstant ?? 0) : 0}
-        initialType={asphericalModalRow?.kind === "surface" ? (asphericalModalRow.aspherical?.kind ?? "Conic") : "Conic"}
+        initialConicConstant={
+          asphericalModalRow?.kind === "surface"
+            ? (asphericalModalRow.aspherical?.conicConstant ?? 0)
+            : 0
+        }
+        initialType={
+          asphericalModalRow?.kind === "surface"
+            ? (asphericalModalRow.aspherical?.kind ?? "Conic")
+            : "Conic"
+        }
         initialCoefficients={
-          asphericalModalRow?.kind === "surface" && asphericalModalRow.aspherical !== undefined && "polynomialCoefficients" in asphericalModalRow.aspherical
+          asphericalModalRow?.kind === "surface" &&
+          asphericalModalRow.aspherical !== undefined &&
+          "polynomialCoefficients" in asphericalModalRow.aspherical
             ? asphericalModalRow.aspherical.polynomialCoefficients
             : []
         }
         initialToricSweepRadiusOfCurvature={
-          asphericalModalRow?.kind === "surface" && asphericalModalRow.aspherical !== undefined && "toricSweepRadiusOfCurvature" in asphericalModalRow.aspherical
+          asphericalModalRow?.kind === "surface" &&
+          asphericalModalRow.aspherical !== undefined &&
+          "toricSweepRadiusOfCurvature" in asphericalModalRow.aspherical
             ? asphericalModalRow.aspherical.toricSweepRadiusOfCurvature
             : 0
         }
@@ -82,9 +104,21 @@ export function OptimizationInspectionModals({
         key={apertureModalRow?.id ?? "aperture-closed"}
         isOpen={apertureModalRow?.kind === "surface"}
         readOnly
-        semiDiameter={apertureModalRow?.kind === "surface" ? apertureModalRow.semiDiameter : 1}
-        initialClearAperture={apertureModalRow?.kind === "surface" ? apertureModalRow.clear_aperture : undefined}
-        initialEdgeAperture={apertureModalRow?.kind === "surface" ? apertureModalRow.edge_aperture : undefined}
+        semiDiameter={
+          apertureModalRow?.kind === "surface"
+            ? apertureModalRow.semiDiameter
+            : 1
+        }
+        initialClearAperture={
+          apertureModalRow?.kind === "surface"
+            ? apertureModalRow.clear_aperture
+            : undefined
+        }
+        initialEdgeAperture={
+          apertureModalRow?.kind === "surface"
+            ? apertureModalRow.edge_aperture
+            : undefined
+        }
         onConfirm={() => undefined}
         onClose={onCloseApertureModal}
       />
@@ -93,7 +127,11 @@ export function OptimizationInspectionModals({
         key={decenterModalRow?.id ?? "decenter-closed"}
         isOpen={decenterModalRow !== undefined}
         readOnly
-        initialDecenter={decenterModalRow?.kind !== "object" ? decenterModalRow?.decenter : undefined}
+        initialDecenter={
+          decenterModalRow?.kind !== "object"
+            ? decenterModalRow?.decenter
+            : undefined
+        }
         onConfirm={() => undefined}
         onClose={onCloseDecenterModal}
         onRemove={() => undefined}

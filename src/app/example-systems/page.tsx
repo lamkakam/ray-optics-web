@@ -14,10 +14,5 @@ import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPag
 export default function ExampleSystemsRoute() {
   const { proxy, openErrorModal } = useAppShell();
 
-  return (
-    <ExampleSystemsPage
-      proxy={proxy}
-      onError={openErrorModal}
-    />
-  );
+  return <ExampleSystemsPage proxy={proxy} onError={openErrorModal} />;
 }

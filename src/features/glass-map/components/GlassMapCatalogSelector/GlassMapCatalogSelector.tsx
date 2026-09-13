@@ -1,9 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { getEligibleGlassNames, resolveCatalogGlass } from "@/features/glass-map/lib/glassMap";
+import {
+  getEligibleGlassNames,
+  resolveCatalogGlass,
+} from "@/features/glass-map/lib/glassMap";
 import { CATALOG_NAMES } from "@/features/glass-map/types/glassMap";
-import type { CatalogName, CompleteGlassCatalogsData, GlassLookupMaps, SelectedGlass } from "@/features/glass-map/types/glassMap";
+import type {
+  CatalogName,
+  CompleteGlassCatalogsData,
+  GlassLookupMaps,
+  SelectedGlass,
+} from "@/features/glass-map/types/glassMap";
 import { Button } from "@/shared/components/primitives/Button";
 import { Datalist } from "@/shared/components/primitives/Datalist";
 import { Select } from "@/shared/components/primitives/Select";
@@ -32,13 +40,23 @@ interface GlassMapCatalogSelectorProps {
  * - Exact trimmed, case-insensitive input matches are canonicalized through the lookup maps to stored spelling. Blank, partial, aliased, and unmatched inputs keep Select disabled.
  * - Does not read or change catalog plot-filter state.
  */
-export function GlassMapCatalogSelector({ catalogsData, lookupMaps, onSelect }: GlassMapCatalogSelectorProps) {
+export function GlassMapCatalogSelector({
+  catalogsData,
+  lookupMaps,
+  onSelect,
+}: GlassMapCatalogSelectorProps) {
   const [catalogName, setCatalogName] = useState<CatalogName>(
-    CATALOG_NAMES.find((name) => getEligibleGlassNames(catalogsData, name).length > 0)
-      ?? CATALOG_NAMES[0],
+    CATALOG_NAMES.find(
+      (name) => getEligibleGlassNames(catalogsData, name).length > 0,
+    ) ?? CATALOG_NAMES[0],
   );
   const [glassValue, setGlassValue] = useState("");
-  const resolvedGlass = resolveCatalogGlass(catalogsData, lookupMaps, catalogName, glassValue);
+  const resolvedGlass = resolveCatalogGlass(
+    catalogsData,
+    lookupMaps,
+    catalogName,
+    glassValue,
+  );
   const glassNames = getEligibleGlassNames(catalogsData, catalogName);
 
   return (
@@ -63,7 +81,12 @@ export function GlassMapCatalogSelector({ catalogsData, lookupMaps, onSelect }: 
           options={glassNames.map((name) => ({ value: name, label: name }))}
           onChange={(event) => {
             const value = event.target.value;
-            const match = resolveCatalogGlass(catalogsData, lookupMaps, catalogName, value);
+            const match = resolveCatalogGlass(
+              catalogsData,
+              lookupMaps,
+              catalogName,
+              value,
+            );
             setGlassValue(match?.glassName ?? value);
           }}
         />

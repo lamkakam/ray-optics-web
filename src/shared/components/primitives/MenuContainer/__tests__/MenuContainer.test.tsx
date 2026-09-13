@@ -78,8 +78,12 @@ describe("MenuContainer", () => {
   it("starts at the first or last enabled button when focus is outside the items", () => {
     render(
       <MenuContainer aria-label="Examples">
-        <li><button type="button">First</button></li>
-        <li><button type="button">Last</button></li>
+        <li>
+          <button type="button">First</button>
+        </li>
+        <li>
+          <button type="button">Last</button>
+        </li>
       </MenuContainer>,
     );
     const menu = screen.getByRole("list", { name: "Examples" });
@@ -94,8 +98,12 @@ describe("MenuContainer", () => {
   it("wraps from the last button to the first on ArrowDown", () => {
     render(
       <MenuContainer aria-label="Examples">
-        <li><button type="button">First</button></li>
-        <li><button type="button">Last</button></li>
+        <li>
+          <button type="button">First</button>
+        </li>
+        <li>
+          <button type="button">Last</button>
+        </li>
       </MenuContainer>,
     );
     const first = screen.getByRole("button", { name: "First" });
@@ -147,9 +155,15 @@ describe("MenuContainer", () => {
   it("uses the adjacent item in both directions when focus is in the middle", () => {
     render(
       <MenuContainer aria-label="Examples">
-        <li><button type="button">First</button></li>
-        <li><button type="button">Middle</button></li>
-        <li><button type="button">Last</button></li>
+        <li>
+          <button type="button">First</button>
+        </li>
+        <li>
+          <button type="button">Middle</button>
+        </li>
+        <li>
+          <button type="button">Last</button>
+        </li>
       </MenuContainer>,
     );
     const first = screen.getByRole("button", { name: "First" });

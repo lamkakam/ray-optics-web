@@ -36,7 +36,19 @@ import { expose, releaseProxy } from "comlink";
 import { loadPyodide, version } from "pyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
-import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type {
+  AstigmatismCurveData,
+  DiffractionMtfData,
+  DiffractionPsfData,
+  FieldCurveData,
+  GeoPsfData,
+  LongitudinalSphericalAberrationData,
+  OpdFanData,
+  RayFanData,
+  SpotDiagramData,
+  StrehlVsWavelengthData,
+  WavefrontMapData,
+} from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type {
   GlassOptimizationConfig,
@@ -45,7 +57,11 @@ import type {
   OptimizationProgressEntry,
   OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
-import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
+import type {
+  ZernikeData,
+  ZernikeOrdering,
+  ZernikePupilSpace,
+} from "@/features/lens-editor/types/zernikeData";
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import type {
@@ -83,7 +99,10 @@ type LifecycleSafePyodideRuntime = {
   readonly ffi: {
     readonly PyProxy: { [Symbol.hasInstance](value: unknown): boolean };
   };
-  runPython(code: string, options?: { readonly globals?: DestroyablePyProxy }): unknown;
+  runPython(
+    code: string,
+    options?: { readonly globals?: DestroyablePyProxy },
+  ): unknown;
   runPythonAsync(
     code: string,
     options?: { readonly globals?: DestroyablePyProxy },
@@ -160,9 +179,13 @@ function createComputationExecutor(
   runtime: LifecycleSafePyodideRuntime,
 ): (code: string) => Promise<unknown> {
   return async (code: string): Promise<unknown> => {
-    const scopedGlobals = runtime.runPython("dict(globals())") as DestroyablePyProxy;
+    const scopedGlobals = runtime.runPython(
+      "dict(globals())",
+    ) as DestroyablePyProxy;
     try {
-      const result = await runtime.runPythonAsync(code, { globals: scopedGlobals });
+      const result = await runtime.runPythonAsync(code, {
+        globals: scopedGlobals,
+      });
       return rejectUnexpectedPyProxy(runtime, result, "computation");
     } finally {
       try {
@@ -346,7 +369,9 @@ function normalizeFanAxis(axis: RawFanAxisData): {
   };
 }
 
-function normalizeFanData<TFanData extends RayFanData | OpdFanData>(rawData: RawFanSeriesData[]): TFanData {
+function normalizeFanData<TFanData extends RayFanData | OpdFanData>(
+  rawData: RawFanSeriesData[],
+): TFanData {
   return rawData.map((entry) => ({
     ...entry,
     Sagittal: normalizeFanAxis(entry.Sagittal),
@@ -354,12 +379,19 @@ function normalizeFanData<TFanData extends RayFanData | OpdFanData>(rawData: Raw
   })) as TFanData;
 }
 
-
 // ─── Injectable variants for testing ─────────────────────────────────────────
 
 /** Runs `get_first_order_data` for an injected Python executor and parses the JSON result. */
-export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>> {
-  const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_first_order_data(${opm}))`))) as string;
+export async function _getFirstOrderData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+): Promise<Record<string, number>> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_first_order_data(${opm}))`,
+    ),
+  )) as string;
   return JSON.parse(json);
 }
 
@@ -368,10 +400,12 @@ export async function _getSurfaceSemiDiameters(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
 ): Promise<number[]> {
-  const json = (await runPython(buildScript(
-    opticalModel,
-    (opm) => `json.dumps(get_surface_semi_diameters(${opm}))`,
-  ))) as string;
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_surface_semi_diameters(${opm}))`,
+    ),
+  )) as string;
   return JSON.parse(json) as number[];
 }
 
@@ -387,7 +421,8 @@ export async function _plotLensLayout(
   return (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `plot_lens_layout(${opm}, show_ray_fan_vs_wvls=${showRayFanVsWvls ? "True" : "False"}, is_dark=${isDark ? "True" : "False"})`,
+      (opm) =>
+        `plot_lens_layout(${opm}, show_ray_fan_vs_wvls=${showRayFanVsWvls ? "True" : "False"}, is_dark=${isDark ? "True" : "False"})`,
     ),
   )) as string;
 }
@@ -400,7 +435,11 @@ export async function _getRayFanData(
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<RayFanData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`,
+    ),
   )) as string;
   return normalizeFanData<RayFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
@@ -413,7 +452,11 @@ export async function _getOpdFanData(
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<OpdFanData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`,
+    ),
   )) as string;
   return normalizeFanData<OpdFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
@@ -426,7 +469,11 @@ export async function _getSpotDiagramData(
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<SpotDiagramData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(get_spot_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(get_spot_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`,
+    ),
   )) as string;
   return JSON.parse(json) as SpotDiagramData;
 }
@@ -438,7 +485,11 @@ export async function _getFieldCurvatureData(
   wavelengthIndex: number,
 ): Promise<FieldCurveData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(get_field_curvature_data(${opm}, ${wavelengthIndex}))`),
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(get_field_curvature_data(${opm}, ${wavelengthIndex}))`,
+    ),
   )) as string;
   return JSON.parse(json) as FieldCurveData;
 }
@@ -450,7 +501,11 @@ export async function _getAstigmatismCurveData(
   wavelengthIndex: number,
 ): Promise<AstigmatismCurveData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(get_astigmatism_curve_data(${opm}, ${wavelengthIndex}))`),
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(get_astigmatism_curve_data(${opm}, ${wavelengthIndex}))`,
+    ),
   )) as string;
   return JSON.parse(json) as AstigmatismCurveData;
 }
@@ -467,8 +522,16 @@ export async function _getLSAData(
 }
 
 /** Loads and parses third-order Seidel data with injected execution. */
-export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData> {
-  const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_3rd_order_seidel_data(${opm}))`))) as string;
+export async function _get3rdOrderSeidelData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+): Promise<SeidelData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_3rd_order_seidel_data(${opm}))`,
+    ),
+  )) as string;
   return JSON.parse(json) as SeidelData;
 }
 
@@ -484,7 +547,8 @@ export async function _getWavefrontData(
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_wavefront_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, image_point='${imagePoint}'))`,
+      (opm) =>
+        `json.dumps(get_wavefront_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, image_point='${imagePoint}'))`,
     ),
   )) as string;
   const parsed = JSON.parse(json) as {
@@ -521,7 +585,8 @@ export async function _getStrehlVsWavelengthData(
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fieldIndex}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}, image_point='${imagePoint}'))`,
+      (opm) =>
+        `json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fieldIndex}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}, image_point='${imagePoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as StrehlVsWavelengthData;
@@ -538,7 +603,8 @@ export async function _getGeoPSFData(
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_geo_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}))`,
+      (opm) =>
+        `json.dumps(get_geo_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}))`,
     ),
   )) as string;
   return JSON.parse(json) as GeoPsfData;
@@ -563,7 +629,8 @@ export async function _getDiffractionPSFData(
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_diffraction_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}, image_point='${imagePoint}'))`,
+      (opm) =>
+        `json.dumps(get_diffraction_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}, image_point='${imagePoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as DiffractionPsfData;
@@ -588,7 +655,8 @@ export async function _getDiffractionMTFData(
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_diffraction_mtf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}, image_point='${imagePoint}'))`,
+      (opm) =>
+        `json.dumps(get_diffraction_mtf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}, image_point='${imagePoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as DiffractionMtfData;
@@ -612,16 +680,18 @@ export async function _getZernikeCoefficients(
   ordering: ZernikeOrdering = "noll",
   pupilSpace: ZernikePupilSpace = "entrance",
 ): Promise<ZernikeData> {
-  const zernikeTermsJson = JSON.stringify(zernikeTermsForOrdering(ordering, numTerms));
+  const zernikeTermsJson = JSON.stringify(
+    zernikeTermsForOrdering(ordering, numTerms),
+  );
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\nzernike_terms=json.loads(${JSON.stringify(zernikeTermsJson)})\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, zernike_terms=zernike_terms, image_point='${imagePoint}', pupil_space='${pupilSpace}'))`,
-    )
+      (opm) =>
+        `from rayoptics_web_utils.zernike import get_zernike_coefficients\nzernike_terms=json.loads(${JSON.stringify(zernikeTermsJson)})\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, zernike_terms=zernike_terms, image_point='${imagePoint}', pupil_space='${pupilSpace}'))`,
+    ),
   )) as string;
   return JSON.parse(json) as ZernikeData;
 }
-
 
 /** Focuses with an injected executor by minimizing monochromatic RMS spot radius. */
 export async function _focusByMonoRmsSpot(
@@ -630,7 +700,11 @@ export async function _focusByMonoRmsSpot(
   fieldIndex: number,
 ): Promise<FocusingResult> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(focus_by_mono_rms_spot(${opm}, field_indices=[${fieldIndex}]))`)
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(focus_by_mono_rms_spot(${opm}, field_indices=[${fieldIndex}]))`,
+    ),
   )) as string;
   return JSON.parse(json) as FocusingResult;
 }
@@ -642,7 +716,11 @@ export async function _focusByMonoStrehl(
   fieldIndex: number,
 ): Promise<FocusingResult> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(focus_by_mono_strehl(${opm}, field_indices=[${fieldIndex}]))`)
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(focus_by_mono_strehl(${opm}, field_indices=[${fieldIndex}]))`,
+    ),
   )) as string;
   return JSON.parse(json) as FocusingResult;
 }
@@ -654,7 +732,11 @@ export async function _focusByPolyRmsSpot(
   fieldIndex: number,
 ): Promise<FocusingResult> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(focus_by_poly_rms_spot(${opm}, field_indices=[${fieldIndex}]))`)
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(focus_by_poly_rms_spot(${opm}, field_indices=[${fieldIndex}]))`,
+    ),
   )) as string;
   return JSON.parse(json) as FocusingResult;
 }
@@ -666,16 +748,22 @@ export async function _focusByPolyStrehl(
   fieldIndex: number,
 ): Promise<FocusingResult> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(focus_by_poly_strehl(${opm}, field_indices=[${fieldIndex}]))`)
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(focus_by_poly_strehl(${opm}, field_indices=[${fieldIndex}]))`,
+    ),
   )) as string;
   return JSON.parse(json) as FocusingResult;
 }
 
 /** Loads and parses all built-in glass catalogs with injected execution. */
 export async function _getAllGlassCatalogsData(
-  runPython: (code: string) => Promise<unknown>
+  runPython: (code: string) => Promise<unknown>,
 ): Promise<CompleteGlassCatalogsData> {
-  const json = (await runPython(`json.dumps(get_all_glass_catalogs_data())`)) as string;
+  const json = (await runPython(
+    `json.dumps(get_all_glass_catalogs_data())`,
+  )) as string;
   return JSON.parse(json) as CompleteGlassCatalogsData;
 }
 
@@ -767,7 +855,8 @@ export async function _evaluateOptimizationProblem(
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(evaluate_optimization_problem(${opm}, json.loads(${JSON.stringify(configJson)}), image_point='${imagePoint}'))`,
+      (opm) =>
+        `json.dumps(evaluate_optimization_problem(${opm}, json.loads(${JSON.stringify(configJson)}), image_point='${imagePoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as OptimizationReport;
@@ -789,7 +878,9 @@ export async function _optimizeOpm(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
   imagePoint: ImagePoint = "chief_ray",
-  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  onProgress?: (
+    progress: ReadonlyArray<OptimizationProgressEntry>,
+  ) => void | Promise<void>,
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport> {
@@ -818,7 +909,9 @@ export async function _optimizeGlasses(
   opticalModel: OpticalModel,
   config: GlassOptimizationConfig,
   imagePoint: ImagePoint = "chief_ray",
-  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  onProgress?: (
+    progress: ReadonlyArray<OptimizationProgressEntry>,
+  ) => void | Promise<void>,
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<GlassOptimizationReport> {
@@ -840,13 +933,17 @@ export async function _optimizeGlasses(
  * converts ordinary Python exceptions to the matching complete failure report.
  * Executor rejection and JSON parsing errors still reject after guaranteed cleanup.
  */
-async function runOptimization<TReport extends OptimizationReport | GlassOptimizationReport>(
+async function runOptimization<
+  TReport extends OptimizationReport | GlassOptimizationReport,
+>(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   config: OptimizationConfig | GlassOptimizationConfig,
   pythonFunction: "optimize_opm" | "optimize_glasses",
   imagePoint: ImagePoint,
-  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  onProgress?: (
+    progress: ReadonlyArray<OptimizationProgressEntry>,
+  ) => void | Promise<void>,
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<TReport> {
@@ -861,23 +958,27 @@ async function runOptimization<TReport extends OptimizationReport | GlassOptimiz
     void progressCallback(progress);
   };
 
-  const canBindProgressCallback = progressCallback !== undefined
-    && pyodide !== null
-    && typeof pyodide.globals?.set === "function"
-    && typeof pyodide.globals?.delete === "function";
+  const canBindProgressCallback =
+    progressCallback !== undefined &&
+    pyodide !== null &&
+    typeof pyodide.globals?.set === "function" &&
+    typeof pyodide.globals?.delete === "function";
 
-  const canBindInterruptBuffer = runId !== undefined
-    && interruptBuffer !== undefined
-    && pyodide !== null
-    && typeof pyodide.setInterruptBuffer === "function";
+  const canBindInterruptBuffer =
+    runId !== undefined &&
+    interruptBuffer !== undefined &&
+    pyodide !== null &&
+    typeof pyodide.setInterruptBuffer === "function";
   let progressBindingStarted = false;
   let interruptBindingStarted = false;
-  const failureReportBuilder = pythonFunction === "optimize_glasses"
-    ? "_build_glass_optimization_failure_report"
-    : "_build_optimization_failure_report";
-  const candidateMaterialsArgument = pythonFunction === "optimize_glasses"
-    ? ", candidate_materials={'Special': {'CaF2': caf2, 'Fused Silica': fused_silica, 'Water': water, 'D263TECO': d263teco}, 'Custom': user_defined_materials}"
-    : "";
+  const failureReportBuilder =
+    pythonFunction === "optimize_glasses"
+      ? "_build_glass_optimization_failure_report"
+      : "_build_optimization_failure_report";
+  const candidateMaterialsArgument =
+    pythonFunction === "optimize_glasses"
+      ? ", candidate_materials={'Special': {'CaF2': caf2, 'Fused Silica': fused_silica, 'Water': water, 'D263TECO': d263teco}, 'Custom': user_defined_materials}"
+      : "";
   try {
     if (canBindProgressCallback) {
       progressBindingStarted = true;
@@ -896,10 +997,14 @@ async function runOptimization<TReport extends OptimizationReport | GlassOptimiz
       buildScript(
         opticalModel,
         (opm) => `
-${canBindProgressCallback ? `
+${
+  canBindProgressCallback
+    ? `
 def _report_optimization_progress(progress):
     _optimization_progress_callback(json.dumps(progress))
-` : ""}
+`
+    : ""
+}
 _optimization_config = {}
 try:
     _optimization_config = json.loads(${JSON.stringify(configJson)})
@@ -938,8 +1043,13 @@ json.dumps(_optimization_report)
 }
 
 /** Signals the active interrupt view only when the requested run id still matches. */
-export async function _requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }> {
-  if (runId !== activeOptimizationRunId || activeOptimizationInterruptView === undefined) {
+export async function _requestOptimizationStop(
+  runId: string,
+): Promise<{ readonly signaled: boolean }> {
+  if (
+    runId !== activeOptimizationRunId ||
+    activeOptimizationInterruptView === undefined
+  ) {
     return { signaled: false };
   }
 
@@ -947,21 +1057,27 @@ export async function _requestOptimizationStop(runId: string): Promise<{ readonl
   return { signaled: true };
 }
 
-
 // ─── Public API (exposed via Comlink) ─────────────────────────────────────────
 
 /** Returns first-order optical data, including EFL and f-number. */
-export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>> {
+export async function getFirstOrderData(
+  opticalModel: OpticalModel,
+): Promise<Record<string, number>> {
   return await _getFirstOrderData(requirePyodide(), opticalModel);
 }
 
 /** Builds and updates the model, then returns ordered surface semi-diameters. */
-export async function getSurfaceSemiDiameters(opticalModel: OpticalModel): Promise<number[]> {
+export async function getSurfaceSemiDiameters(
+  opticalModel: OpticalModel,
+): Promise<number[]> {
   return await _getSurfaceSemiDiameters(requirePyodide(), opticalModel);
 }
 
 /** Returns a base64 lens-layout PNG with theme and diffraction overlays applied. */
-export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string> {
+export async function plotLensLayout(
+  opticalModel: OpticalModel,
+  isDark: boolean,
+): Promise<string> {
   return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
 }
 
@@ -971,7 +1087,12 @@ export async function getRayFanData(
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<RayFanData> {
-  return await _getRayFanData(requirePyodide(), opticalModel, fieldIndex, imagePoint);
+  return await _getRayFanData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    imagePoint,
+  );
 }
 
 /** Returns all-wavelength OPD-fan series with blocked samples represented as gaps. */
@@ -980,7 +1101,12 @@ export async function getOpdFanData(
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<OpdFanData> {
-  return await _getOpdFanData(requirePyodide(), opticalModel, fieldIndex, imagePoint);
+  return await _getOpdFanData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    imagePoint,
+  );
 }
 
 /** Returns per-wavelength spot-diagram point clouds. */
@@ -989,21 +1115,42 @@ export async function getSpotDiagramData(
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<SpotDiagramData> {
-  return await _getSpotDiagramData(requirePyodide(), opticalModel, fieldIndex, imagePoint);
+  return await _getSpotDiagramData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    imagePoint,
+  );
 }
 
 /** Returns sagittal and tangential field-curvature data for one wavelength. */
-export async function getFieldCurvatureData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData> {
-  return await _getFieldCurvatureData(requirePyodide(), opticalModel, wavelengthIndex);
+export async function getFieldCurvatureData(
+  opticalModel: OpticalModel,
+  wavelengthIndex: number,
+): Promise<FieldCurveData> {
+  return await _getFieldCurvatureData(
+    requirePyodide(),
+    opticalModel,
+    wavelengthIndex,
+  );
 }
 
 /** Returns the astigmatic-separation curve for one wavelength. */
-export async function getAstigmatismCurveData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<AstigmatismCurveData> {
-  return await _getAstigmatismCurveData(requirePyodide(), opticalModel, wavelengthIndex);
+export async function getAstigmatismCurveData(
+  opticalModel: OpticalModel,
+  wavelengthIndex: number,
+): Promise<AstigmatismCurveData> {
+  return await _getAstigmatismCurveData(
+    requirePyodide(),
+    opticalModel,
+    wavelengthIndex,
+  );
 }
 
 /** Returns longitudinal spherical aberration series for all wavelengths. */
-export async function getLSAData(opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData> {
+export async function getLSAData(
+  opticalModel: OpticalModel,
+): Promise<LongitudinalSphericalAberrationData> {
   return await _getLSAData(requirePyodide(), opticalModel);
 }
 
@@ -1015,7 +1162,14 @@ export async function getWavefrontData(
   imagePoint: ImagePoint = "chief_ray",
   numRays: number = 128,
 ): Promise<WavefrontMapData> {
-  return await _getWavefrontData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, imagePoint, numRays);
+  return await _getWavefrontData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    wavelengthIndex,
+    imagePoint,
+    numRays,
+  );
 }
 
 /** Returns sampled Strehl values across wavelength for one field, using 100 wavelength samples and 21 rays by default. */
@@ -1026,7 +1180,14 @@ export async function getStrehlVsWavelengthData(
   wavelengthSamples: number = 100,
   numRays: number = 21,
 ): Promise<StrehlVsWavelengthData> {
-  return await _getStrehlVsWavelengthData(requirePyodide(), opticalModel, fieldIndex, imagePoint, wavelengthSamples, numRays);
+  return await _getStrehlVsWavelengthData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    imagePoint,
+    wavelengthSamples,
+    numRays,
+  );
 }
 
 /** Returns geometric-PSF points for one field and wavelength. */
@@ -1036,7 +1197,13 @@ export async function getGeoPSFData(
   wavelengthIndex: number,
   numRays: number = 128,
 ): Promise<GeoPsfData> {
-  return await _getGeoPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
+  return await _getGeoPSFData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    wavelengthIndex,
+    numRays,
+  );
 }
 
 /** Returns the cropped central diffraction-PSF grid, using 128 rays and a 1024-pixel maximum dimension by default. */
@@ -1048,7 +1215,15 @@ export async function getDiffractionPSFData(
   numRays: number = 128,
   maxDims: number = 1024,
 ): Promise<DiffractionPsfData> {
-  return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, imagePoint, numRays, maxDims);
+  return await _getDiffractionPSFData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    wavelengthIndex,
+    imagePoint,
+    numRays,
+    maxDims,
+  );
 }
 
 /** Returns diffraction-MTF sagittal and tangential series, using 128 rays and a 1024-pixel maximum dimension by default. */
@@ -1060,12 +1235,21 @@ export async function getDiffractionMTFData(
   numRays: number = 128,
   maxDims: number = 256,
 ): Promise<DiffractionMtfData> {
-  return await _getDiffractionMTFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, imagePoint, numRays, maxDims);
+  return await _getDiffractionMTFData(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    wavelengthIndex,
+    imagePoint,
+    numRays,
+    maxDims,
+  );
 }
 
-
 /** Returns third-order Seidel aberration data for the model. */
-export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData> {
+export async function get3rdOrderSeidelData(
+  opticalModel: OpticalModel,
+): Promise<SeidelData> {
   return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
 }
 
@@ -1079,26 +1263,47 @@ export async function getZernikeCoefficients(
   ordering?: ZernikeOrdering,
   pupilSpace?: ZernikePupilSpace,
 ): Promise<ZernikeData> {
-  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, imagePoint, numTerms, ordering, pupilSpace);
+  return await _getZernikeCoefficients(
+    requirePyodide(),
+    opticalModel,
+    fieldIndex,
+    wvlIndex,
+    imagePoint,
+    numTerms,
+    ordering,
+    pupilSpace,
+  );
 }
 
 /** Focuses by minimizing monochromatic RMS spot radius. */
-export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+export async function focusByMonoRmsSpot(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
   return await _focusByMonoRmsSpot(requirePyodide(), opticalModel, fieldIndex);
 }
 
 /** Focuses by maximizing monochromatic Strehl ratio. */
-export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+export async function focusByMonoStrehl(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
   return await _focusByMonoStrehl(requirePyodide(), opticalModel, fieldIndex);
 }
 
 /** Focuses by minimizing polychromatic RMS spot radius. */
-export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+export async function focusByPolyRmsSpot(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
   return await _focusByPolyRmsSpot(requirePyodide(), opticalModel, fieldIndex);
 }
 
 /** Focuses by maximizing polychromatic Strehl ratio. */
-export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+export async function focusByPolyStrehl(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
   return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
 }
 
@@ -1108,34 +1313,46 @@ export async function getAllGlassCatalogsData(): Promise<AllGlassCatalogsData> {
 }
 
 /** Adds prevalidated user-defined materials and returns their serialized data. */
-export async function addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
+export async function addUserDefinedGlasses(
+  materials: readonly UserDefinedGlassInput[],
+): Promise<UserDefinedMaterialsData> {
   return await _addUserDefinedGlasses(requirePyodide(), materials);
 }
 
 /** Deletes user-defined materials after verifying that every name exists. */
-export async function deleteUserDefinedGlasses(names: readonly string[]): Promise<void> {
+export async function deleteUserDefinedGlasses(
+  names: readonly string[],
+): Promise<void> {
   await _deleteUserDefinedGlasses(requirePyodide(), names);
 }
 
 /** Replaces existing user-defined materials and returns their serialized data. */
-export async function updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
+export async function updateUserDefinedGlasses(
+  materials: readonly UserDefinedGlassInput[],
+): Promise<UserDefinedMaterialsData> {
   return await _updateUserDefinedGlasses(requirePyodide(), materials);
 }
 
 /** Returns serialized data for named user-defined materials. */
-export async function getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData> {
+export async function getUserDefinedGlasses(
+  names: readonly string[],
+): Promise<UserDefinedMaterialsData> {
   return await _getUserDefinedGlasses(requirePyodide(), names);
 }
 
 /** Reports whether Pyodide and the browser support shared-buffer interruption. */
 export async function canInterruptOptimization(): Promise<boolean> {
-  return pyodide !== null
-    && typeof pyodide.setInterruptBuffer === "function"
-    && typeof SharedArrayBuffer !== "undefined";
+  return (
+    pyodide !== null &&
+    typeof pyodide.setInterruptBuffer === "function" &&
+    typeof SharedArrayBuffer !== "undefined"
+  );
 }
 
 /** Signals only the matching active optimization run. */
-export async function requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }> {
+export async function requestOptimizationStop(
+  runId: string,
+): Promise<{ readonly signaled: boolean }> {
   return await _requestOptimizationStop(runId);
 }
 
@@ -1145,7 +1362,12 @@ export async function evaluateOptimizationProblem(
   config: OptimizationConfig,
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<OptimizationReport> {
-  return await _evaluateOptimizationProblem(requirePyodide(), opticalModel, config, imagePoint);
+  return await _evaluateOptimizationProblem(
+    requirePyodide(),
+    opticalModel,
+    config,
+    imagePoint,
+  );
 }
 
 /** Runs optimization with optional streamed progress and per-run interruption. */
@@ -1153,11 +1375,21 @@ export async function optimizeOpm(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
   imagePoint: ImagePoint = "chief_ray",
-  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  onProgress?: (
+    progress: ReadonlyArray<OptimizationProgressEntry>,
+  ) => void | Promise<void>,
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport> {
-  return await _optimizeOpm(requirePyodide(), opticalModel, config, imagePoint, onProgress, runId, interruptBuffer);
+  return await _optimizeOpm(
+    requirePyodide(),
+    opticalModel,
+    config,
+    imagePoint,
+    onProgress,
+    runId,
+    interruptBuffer,
+  );
 }
 
 /** Runs mixed glass/continuous optimization with optional progress and interruption. */
@@ -1165,11 +1397,21 @@ export async function optimizeGlasses(
   opticalModel: OpticalModel,
   config: GlassOptimizationConfig,
   imagePoint: ImagePoint = "chief_ray",
-  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  onProgress?: (
+    progress: ReadonlyArray<OptimizationProgressEntry>,
+  ) => void | Promise<void>,
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<GlassOptimizationReport> {
-  return await _optimizeGlasses(requirePyodide(), opticalModel, config, imagePoint, onProgress, runId, interruptBuffer);
+  return await _optimizeGlasses(
+    requirePyodide(),
+    opticalModel,
+    config,
+    imagePoint,
+    onProgress,
+    runId,
+    interruptBuffer,
+  );
 }
 
 expose({

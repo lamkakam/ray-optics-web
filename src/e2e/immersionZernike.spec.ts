@@ -8,21 +8,32 @@
 import { expect, test } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
 
-test("recovers from immersion objective Zernike folds at both off-axis fields", async ({ pyodidePage: page }) => {
+test("recovers from immersion objective Zernike folds at both off-axis fields", async ({
+  pyodidePage: page,
+}) => {
   test.setTimeout(360_000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await dismissAnyOpenDialog(page);
   await page.goto("/example-systems");
-  await page.getByRole("button", {
-    name: "Superachromatic High NA Immersion Microscope Objective with Tube Lens US#9,645,380 Example 1 (2013)",
-    exact: true,
-  }).click();
+  await page
+    .getByRole("button", {
+      name: "Superachromatic High NA Immersion Microscope Objective with Tube Lens US#9,645,380 Example 1 (2013)",
+      exact: true,
+    })
+    .click();
   await page.getByRole("button", { name: "Apply", exact: true }).click();
-  await page.getByRole("dialog", { name: "Load Example System" }).getByRole("button", { name: "Load", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Load Example System" })
+    .getByRole("button", { name: "Load", exact: true })
+    .click();
   await page.waitForURL("**/");
-  await expect(page.getByText(/^(?:Loading lens layout|Updating)\.\.\.$/)).toBeHidden({ timeout: 120_000 });
-  await page.getByRole("button", { name: "Zernike Terms", exact: true }).click();
+  await expect(
+    page.getByText(/^(?:Loading lens layout|Updating)\.\.\.$/),
+  ).toBeHidden({ timeout: 120_000 });
+  await page
+    .getByRole("button", { name: "Zernike Terms", exact: true })
+    .click();
   const dialog = page.getByRole("dialog", { name: "Zernike Terms" });
   await expect(dialog.getByRole("table")).toBeVisible({ timeout: 120_000 });
   await expect(dialog.getByLabel("Wavelength")).toHaveValue("0");

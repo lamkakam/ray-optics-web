@@ -42,7 +42,9 @@ describe("BottomDrawer", () => {
     const onHeightCommit = jest.fn();
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>Specs</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>Specs</div> },
+        ]}
         initialHeight={300}
         onHeightCommit={onHeightCommit}
       />,
@@ -61,23 +63,43 @@ describe("BottomDrawer", () => {
     render(
       <BottomDrawer
         tabs={[
-          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
-          { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+          {
+            id: "specs",
+            label: "System Specs",
+            content: <div>Specs content</div>,
+          },
+          {
+            id: "prescription",
+            label: "Prescription",
+            content: <div>Prescription content</div>,
+          },
         ]}
-      />
+      />,
     );
-    expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Prescription" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "System Specs" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "Prescription" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the first tab content by default", () => {
     render(
       <BottomDrawer
         tabs={[
-          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
-          { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+          {
+            id: "specs",
+            label: "System Specs",
+            content: <div>Specs content</div>,
+          },
+          {
+            id: "prescription",
+            label: "Prescription",
+            content: <div>Prescription content</div>,
+          },
         ]}
-      />
+      />,
     );
     expect(screen.getByText("Specs content")).toBeInTheDocument();
   });
@@ -86,10 +108,18 @@ describe("BottomDrawer", () => {
     render(
       <BottomDrawer
         tabs={[
-          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
-          { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+          {
+            id: "specs",
+            label: "System Specs",
+            content: <div>Specs content</div>,
+          },
+          {
+            id: "prescription",
+            label: "Prescription",
+            content: <div>Prescription content</div>,
+          },
         ]}
-      />
+      />,
     );
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     expect(screen.getByText("Prescription content")).toBeInTheDocument();
@@ -99,11 +129,19 @@ describe("BottomDrawer", () => {
     render(
       <BottomDrawer
         tabs={[
-          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
-          { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+          {
+            id: "specs",
+            label: "System Specs",
+            content: <div>Specs content</div>,
+          },
+          {
+            id: "prescription",
+            label: "Prescription",
+            content: <div>Prescription content</div>,
+          },
         ]}
         activeTabId="prescription"
-      />
+      />,
     );
 
     expect(screen.getByText("Prescription content")).toBeInTheDocument();
@@ -115,12 +153,20 @@ describe("BottomDrawer", () => {
     render(
       <BottomDrawer
         tabs={[
-          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
-          { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+          {
+            id: "specs",
+            label: "System Specs",
+            content: <div>Specs content</div>,
+          },
+          {
+            id: "prescription",
+            label: "Prescription",
+            content: <div>Prescription content</div>,
+          },
         ]}
         activeTabId="specs"
         onTabChange={onTabChange}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
@@ -133,11 +179,17 @@ describe("BottomDrawer", () => {
     render(
       <BottomDrawer
         tabs={[
-          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
+          {
+            id: "specs",
+            label: "System Specs",
+            content: <div>Specs content</div>,
+          },
         ]}
-      />
+      />,
     );
-    expect(screen.getByRole("separator", { name: "Resize drawer" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    ).toBeInTheDocument();
   });
 
   it("renders a collapse/expand toggle button", () => {
@@ -146,9 +198,11 @@ describe("BottomDrawer", () => {
         tabs={[
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
-      />
+      />,
     );
-    expect(screen.getByRole("button", { name: "Toggle drawer" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Toggle drawer" }),
+    ).toBeInTheDocument();
   });
 
   it("initializes to the default open height", async () => {
@@ -157,10 +211,12 @@ describe("BottomDrawer", () => {
         tabs={[
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
-      />
+      />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
 
     await waitFor(() => {
       expect(drawer).toHaveStyle({ height: "400px" });
@@ -173,10 +229,12 @@ describe("BottomDrawer", () => {
         tabs={[
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
-      />
+      />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
 
     await waitFor(() => {
       expect(drawer).toHaveStyle({ height: "400px" });
@@ -191,10 +249,12 @@ describe("BottomDrawer", () => {
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
         initialHeight={512}
-      />
+      />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
 
     await waitFor(() => {
       expect(drawer).toHaveStyle({ height: "512px" });
@@ -208,10 +268,12 @@ describe("BottomDrawer", () => {
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
         initialHeight={48}
-      />
+      />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
 
     expect(drawer).toHaveStyle({ height: "48px" });
     expect(screen.queryByText("content")).not.toBeInTheDocument();
@@ -220,28 +282,39 @@ describe("BottomDrawer", () => {
   it.each([
     [58, true],
     [59, false],
-  ] as const)("uses the inclusive collapsed threshold at %d pixels", (initialHeight, collapsed) => {
-    render(
-      <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
-        initialHeight={initialHeight}
-      />,
-    );
+  ] as const)(
+    "uses the inclusive collapsed threshold at %d pixels",
+    (initialHeight, collapsed) => {
+      render(
+        <BottomDrawer
+          tabs={[
+            { id: "specs", label: "System Specs", content: <div>content</div> },
+          ]}
+          initialHeight={initialHeight}
+        />,
+      );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
-    expect(drawer).toHaveStyle({ height: `${collapsed ? 48 : initialHeight}px` });
-    if (collapsed) {
-      expect(screen.queryByText("content")).not.toBeInTheDocument();
-    } else {
-      expect(screen.getByText("content")).toBeInTheDocument();
-    }
-  });
+      const drawer = getDrawerRoot(
+        screen.getByRole("separator", { name: "Resize drawer" }),
+      );
+      expect(drawer).toHaveStyle({
+        height: `${collapsed ? 48 : initialHeight}px`,
+      });
+      if (collapsed) {
+        expect(screen.queryByText("content")).not.toBeInTheDocument();
+      } else {
+        expect(screen.getByText("content")).toBeInTheDocument();
+      }
+    },
+  );
 
   it("ignores pointer movement and release before a drag starts", () => {
     const onHeightCommit = jest.fn();
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightCommit={onHeightCommit}
       />,
@@ -259,7 +332,9 @@ describe("BottomDrawer", () => {
   it("caps pointer resizing at 85 percent of the viewport", () => {
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
       />,
     );
@@ -279,7 +354,7 @@ describe("BottomDrawer", () => {
         tabs={[
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
-      />
+      />,
     );
 
     const handle = screen.getByRole("separator", { name: "Resize drawer" });
@@ -315,7 +390,7 @@ describe("BottomDrawer", () => {
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
         onHeightCommit={onHeightCommit}
-      />
+      />,
     );
 
     const handle = screen.getByRole("separator", { name: "Resize drawer" });
@@ -345,7 +420,9 @@ describe("BottomDrawer", () => {
   it("captures the pointer on the resize handle", () => {
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
       />,
     );
@@ -366,7 +443,7 @@ describe("BottomDrawer", () => {
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
         onHeightChange={onHeightChange}
-      />
+      />,
     );
 
     const handle = screen.getByRole("separator", { name: "Resize drawer" });
@@ -398,7 +475,9 @@ describe("BottomDrawer", () => {
     const onHeightCommit = jest.fn();
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightCommit={onHeightCommit}
       />,
@@ -414,7 +493,9 @@ describe("BottomDrawer", () => {
   it("ignores unrelated keyboard input and tolerates omitted callbacks", () => {
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
       />,
     );
@@ -430,7 +511,7 @@ describe("BottomDrawer", () => {
         tabs={[
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
-      />
+      />,
     );
 
     const handle = screen.getByRole("separator", { name: "Resize drawer" });
@@ -467,10 +548,12 @@ describe("BottomDrawer", () => {
         tabs={[
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
-      />
+      />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
     const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
 
     await waitFor(() => {
@@ -495,10 +578,12 @@ describe("BottomDrawer", () => {
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
         onHeightCommit={onHeightCommit}
-      />
+      />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
     const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
 
     await waitFor(() => {
@@ -524,10 +609,12 @@ describe("BottomDrawer", () => {
           { id: "specs", label: "System Specs", content: <div>content</div> },
         ]}
         onHeightChange={onHeightChange}
-      />
+      />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
     const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
 
     await waitFor(() => {
@@ -546,7 +633,9 @@ describe("BottomDrawer", () => {
     const user = userEvent.setup();
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
       />,
     );
@@ -562,7 +651,9 @@ describe("BottomDrawer", () => {
     const cancelAnimationFrame = jest.spyOn(window, "cancelAnimationFrame");
     const { unmount } = render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
       />,
     );
 
@@ -575,15 +666,21 @@ describe("BottomDrawer", () => {
   it("reruns initialization when initialHeight changes", async () => {
     const { rerender } = render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={512}
       />,
     );
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
 
     rerender(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
       />,
     );
 
@@ -593,18 +690,24 @@ describe("BottomDrawer", () => {
   });
 
   it("does not replace a provided initial height during effect initialization", async () => {
-    const requestAnimationFrame = jest.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-      callback(0);
-      return 0;
-    });
+    const requestAnimationFrame = jest
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback) => {
+        callback(0);
+        return 0;
+      });
 
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={512}
       />,
     );
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const drawer = getDrawerRoot(
+      screen.getByRole("separator", { name: "Resize drawer" }),
+    );
 
     await waitFor(() => {
       expect(drawer).toHaveStyle({ height: "512px" });
@@ -617,14 +720,17 @@ describe("BottomDrawer", () => {
     setupWindowHeight(1200);
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
       />,
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("separator", { name: "Resize drawer" }))
-        .toHaveAttribute("aria-valuemax", "1020");
+      expect(
+        screen.getByRole("separator", { name: "Resize drawer" }),
+      ).toHaveAttribute("aria-valuemax", "1020");
     });
   });
 
@@ -632,14 +738,17 @@ describe("BottomDrawer", () => {
     setupWindowHeight(800);
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
       />,
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("separator", { name: "Resize drawer" }))
-        .toHaveAttribute("aria-valuemax", "680");
+      expect(
+        screen.getByRole("separator", { name: "Resize drawer" }),
+      ).toHaveAttribute("aria-valuemax", "680");
     });
   });
 
@@ -647,7 +756,9 @@ describe("BottomDrawer", () => {
     const onHeightChange = jest.fn();
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightChange={onHeightChange}
       />,
@@ -669,7 +780,9 @@ describe("BottomDrawer", () => {
     const secondCallback = jest.fn();
     const { rerender } = render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightChange={firstCallback}
       />,
@@ -680,7 +793,9 @@ describe("BottomDrawer", () => {
 
     rerender(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightChange={secondCallback}
       />,
@@ -696,7 +811,9 @@ describe("BottomDrawer", () => {
     const secondCallback = jest.fn();
     const { rerender } = render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightCommit={firstCallback}
       />,
@@ -708,7 +825,9 @@ describe("BottomDrawer", () => {
 
     rerender(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightCommit={secondCallback}
       />,
@@ -726,7 +845,9 @@ describe("BottomDrawer", () => {
     const secondCommit = jest.fn();
     const { rerender } = render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightChange={firstChange}
         onHeightCommit={firstCommit}
@@ -736,7 +857,9 @@ describe("BottomDrawer", () => {
 
     rerender(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
         onHeightChange={secondChange}
         onHeightCommit={secondCommit}
@@ -754,7 +877,9 @@ describe("BottomDrawer", () => {
     const user = userEvent.setup();
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={300}
       />,
     );
@@ -770,7 +895,9 @@ describe("BottomDrawer", () => {
     const user = userEvent.setup();
     render(
       <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
         initialHeight={48}
       />,
     );
@@ -786,17 +913,25 @@ describe("BottomDrawer", () => {
 describe("BottomDrawer with draggable=false", () => {
   const tabs = [
     { id: "specs", label: "System Specs", content: <div>Specs content</div> },
-    { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+    {
+      id: "prescription",
+      label: "Prescription",
+      content: <div>Prescription content</div>,
+    },
   ];
 
   it("does not render a drag handle", () => {
     render(<BottomDrawer tabs={tabs} draggable={false} />);
-    expect(screen.queryByRole("separator", { name: "Resize drawer" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("separator", { name: "Resize drawer" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not render a collapse/expand toggle button", () => {
     render(<BottomDrawer tabs={tabs} draggable={false} />);
-    expect(screen.queryByRole("button", { name: "Toggle drawer" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Toggle drawer" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the first tab content without needing to expand", () => {
@@ -811,7 +946,9 @@ describe("BottomDrawer with draggable=false", () => {
   });
 
   it("respects controlled tab selection in non-draggable mode", () => {
-    render(<BottomDrawer tabs={tabs} draggable={false} activeTabId="prescription" />);
+    render(
+      <BottomDrawer tabs={tabs} draggable={false} activeTabId="prescription" />,
+    );
     expect(screen.getByText("Prescription content")).toBeInTheDocument();
   });
 });

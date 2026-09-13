@@ -33,14 +33,17 @@ export function ErrorModal({ isOpen, onClose, message }: ErrorModalProps) {
       isOpen={isOpen}
       title="Error"
       size="md"
-      footer={(
+      footer={
         <div className="flex justify-end">
-          <Button variant="primary" onClick={onClose}>OK</Button>
+          <Button variant="primary" onClick={onClose}>
+            OK
+          </Button>
         </div>
-      )}
+      }
     >
       <Paragraph className="mb-6">
-        {message ?? "The input parameters are invalid. Please check your specifications and prescription."}
+        {message ??
+          "The input parameters are invalid. Please check your specifications and prescription."}
       </Paragraph>
     </Modal>
   );

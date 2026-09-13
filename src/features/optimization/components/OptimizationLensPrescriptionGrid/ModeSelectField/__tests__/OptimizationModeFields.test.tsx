@@ -20,7 +20,10 @@ describe("OptimizationModeFields", () => {
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Shared mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Shared mode" }),
+      "pickup",
+    );
 
     expect(onChange).toHaveBeenCalledWith("pickup");
   });
@@ -39,10 +42,7 @@ describe("OptimizationModeFields", () => {
         maxValue=""
         onMinChange={onMinChange}
         onMaxChange={onMaxChange}
-        guidanceText={[
-          "First helper line.",
-          "Second helper line.",
-        ]}
+        guidanceText={["First helper line.", "Second helper line."]}
         errorText="Bounds are invalid."
       />,
     );
@@ -93,14 +93,27 @@ describe("OptimizationModeFields", () => {
       />,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: "Shared source surface index" }));
-    await user.type(screen.getByRole("textbox", { name: "Shared source surface index" }), "3");
+    await user.clear(
+      screen.getByRole("textbox", { name: "Shared source surface index" }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Shared source surface index" }),
+      "3",
+    );
     await user.clear(screen.getByRole("textbox", { name: "Shared scale" }));
     await user.type(screen.getByRole("textbox", { name: "Shared scale" }), "5");
     await user.clear(screen.getByRole("textbox", { name: "Shared offset" }));
-    await user.type(screen.getByRole("textbox", { name: "Shared offset" }), "8");
-    await user.clear(screen.getByRole("textbox", { name: "Shared source coefficient index" }));
-    await user.type(screen.getByRole("textbox", { name: "Shared source coefficient index" }), "6");
+    await user.type(
+      screen.getByRole("textbox", { name: "Shared offset" }),
+      "8",
+    );
+    await user.clear(
+      screen.getByRole("textbox", { name: "Shared source coefficient index" }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Shared source coefficient index" }),
+      "6",
+    );
 
     expect(onSourceSurfaceChange).toHaveBeenLastCalledWith("3");
     expect(onScaleChange).toHaveBeenLastCalledWith("5");
@@ -124,7 +137,9 @@ describe("OptimizationModeFields", () => {
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "Shared source surface index" })).toHaveValue("2");
+    expect(
+      screen.getByRole("textbox", { name: "Shared source surface index" }),
+    ).toHaveValue("2");
   });
 
   it("renders pickup source surface as a select when options are provided", async () => {
@@ -151,7 +166,10 @@ describe("OptimizationModeFields", () => {
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Source surface" }), "3");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Source surface" }),
+      "3",
+    );
 
     expect(onSourceSurfaceChange).toHaveBeenCalledWith("3");
   });
@@ -186,9 +204,14 @@ describe("OptimizationModeFields", () => {
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Shared source coefficient" }), "1");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Shared source coefficient" }),
+      "1",
+    );
 
-    expect(screen.queryByRole("textbox", { name: "Shared source coefficient" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Shared source coefficient" }),
+    ).not.toBeInTheDocument();
     expect(onExtraChange).toHaveBeenCalledWith("1");
   });
 });

@@ -8,7 +8,12 @@ import { execFileSync } from "node:child_process";
  * and exception tracebacks; initialized globals must remain usable.
  */
 it("reclaims request cycles and exception roots in real Pyodide", () => {
-  const output = execFileSync(process.execPath, ["--input-type=module", "-e", `
+  const output = execFileSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `
 import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
@@ -53,7 +58,10 @@ console.log(JSON.stringify({
   roots: JSON.parse(runtime.runPython('json.dumps([name for name in ("last_exc", "last_type", "last_value", "last_traceback") if hasattr(sys, name)])')),
   preserved: runtime.runPython('sentinel is not None'),
 }));
-  `], { cwd: process.cwd(), encoding: "utf8", timeout: 30_000 });
+  `,
+    ],
+    { cwd: process.cwd(), encoding: "utf8", timeout: 30_000 },
+  );
 
   expect(JSON.parse(output.trim())).toEqual({
     survivors: [0, 0, 0, 0, 0, 0],

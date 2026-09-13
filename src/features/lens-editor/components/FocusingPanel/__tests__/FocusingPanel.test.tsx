@@ -33,8 +33,12 @@ describe("FocusingPanel", () => {
 
   it("renders metric radio group with correct options", () => {
     render(<FocusingPanel {...defaultProps} />);
-    expect(screen.getByLabelText("Minimize RMS Spot Radius")).toBeInTheDocument();
-    expect(screen.getByLabelText("Minimize Wavefront Error")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Minimize RMS Spot Radius"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Minimize Wavefront Error"),
+    ).toBeInTheDocument();
   });
 
   it("renders shorter metric labels while preserving full accessible labels", () => {
@@ -42,10 +46,18 @@ describe("FocusingPanel", () => {
 
     expect(screen.getByText("RMS Spot Radius")).toBeInTheDocument();
     expect(screen.getByText("Wavefront Error")).toBeInTheDocument();
-    expect(screen.queryByText("Minimize RMS Spot Radius")).not.toBeInTheDocument();
-    expect(screen.queryByText("Minimize Wavefront Error")).not.toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Minimize RMS Spot Radius" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Minimize Wavefront Error" })).toBeInTheDocument();
+    expect(
+      screen.queryByText("Minimize RMS Spot Radius"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Minimize Wavefront Error"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "Minimize RMS Spot Radius" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "Minimize Wavefront Error" }),
+    ).toBeInTheDocument();
   });
 
   it("marks mono as checked when chromaticity=mono", () => {
@@ -95,7 +107,12 @@ describe("FocusingPanel", () => {
 
   it("calls onChromaticityChange when poly radio clicked", async () => {
     const onChromaticityChange = jest.fn();
-    render(<FocusingPanel {...defaultProps} onChromaticityChange={onChromaticityChange} />);
+    render(
+      <FocusingPanel
+        {...defaultProps}
+        onChromaticityChange={onChromaticityChange}
+      />,
+    );
     await userEvent.click(screen.getByLabelText("Polychromatic"));
     expect(onChromaticityChange).toHaveBeenCalledWith("poly");
   });
@@ -109,7 +126,12 @@ describe("FocusingPanel", () => {
 
   it("calls onFieldIndexChange when select changes", async () => {
     const onFieldIndexChange = jest.fn();
-    render(<FocusingPanel {...defaultProps} onFieldIndexChange={onFieldIndexChange} />);
+    render(
+      <FocusingPanel
+        {...defaultProps}
+        onFieldIndexChange={onFieldIndexChange}
+      />,
+    );
     await userEvent.selectOptions(screen.getByLabelText("Field"), "1");
     expect(onFieldIndexChange).toHaveBeenCalledWith(1);
   });

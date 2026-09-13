@@ -23,7 +23,9 @@ describe("diffractionPsfDeckData", () => {
   };
 
   it("uses 5e-4 as the normalized-flux log floor", () => {
-    expect(formatDiffractionPsfFluxLabel(DIFFRACTION_PSF_LOG_FLOOR)).toBe("5e-4");
+    expect(formatDiffractionPsfFluxLabel(DIFFRACTION_PSF_LOG_FLOOR)).toBe(
+      "5e-4",
+    );
   });
 
   it("peak-normalizes positive flux across physical bins", () => {
@@ -37,7 +39,10 @@ describe("diffractionPsfDeckData", () => {
       interpolateAnalysisHeatmapColor(1),
     );
     expect(Array.from(prepared.image.data.slice(4, 8))).toEqual(
-      interpolateAnalysisHeatmapColor((Math.log10(0.01) - DIFFRACTION_PSF_LOG_FLOOR) / -DIFFRACTION_PSF_LOG_FLOOR),
+      interpolateAnalysisHeatmapColor(
+        (Math.log10(0.01) - DIFFRACTION_PSF_LOG_FLOOR) /
+          -DIFFRACTION_PSF_LOG_FLOOR,
+      ),
     );
     expect(Array.from(prepared.image.data.slice(0, 4))).toEqual(
       interpolateAnalysisHeatmapColor(0),
@@ -52,10 +57,14 @@ describe("diffractionPsfDeckData", () => {
 
     expect(prepared.minLogFlux).toBe(DIFFRACTION_PSF_LOG_FLOOR);
     expect(prepared.maxLogFlux).toBe(DIFFRACTION_PSF_LOG_FLOOR);
-    for (let pixelOffset = 0; pixelOffset < prepared.image.data.length; pixelOffset += 4) {
-      expect(Array.from(prepared.image.data.slice(pixelOffset, pixelOffset + 4))).toEqual(
-        interpolateAnalysisHeatmapColor(0),
-      );
+    for (
+      let pixelOffset = 0;
+      pixelOffset < prepared.image.data.length;
+      pixelOffset += 4
+    ) {
+      expect(
+        Array.from(prepared.image.data.slice(pixelOffset, pixelOffset + 4)),
+      ).toEqual(interpolateAnalysisHeatmapColor(0));
     }
   });
 
@@ -64,22 +73,20 @@ describe("diffractionPsfDeckData", () => {
       ...diffractionPsfData,
       x: [0, 1, 2, 3, 4],
       y: [0],
-      z: [
-        [1],
-        [1e-4],
-        [0],
-        [],
-        [-1],
-      ],
+      z: [[1], [1e-4], [0], [], [-1]],
     });
 
     expect(Array.from(prepared.image.data.slice(0, 4))).toEqual(
       interpolateAnalysisHeatmapColor(1),
     );
-    for (let pixelOffset = 4; pixelOffset < prepared.image.data.length; pixelOffset += 4) {
-      expect(Array.from(prepared.image.data.slice(pixelOffset, pixelOffset + 4))).toEqual(
-        interpolateAnalysisHeatmapColor(0),
-      );
+    for (
+      let pixelOffset = 4;
+      pixelOffset < prepared.image.data.length;
+      pixelOffset += 4
+    ) {
+      expect(
+        Array.from(prepared.image.data.slice(pixelOffset, pixelOffset + 4)),
+      ).toEqual(interpolateAnalysisHeatmapColor(0));
     }
   });
 
@@ -88,10 +95,7 @@ describe("diffractionPsfDeckData", () => {
       ...diffractionPsfData,
       x: [0, 1],
       y: [0],
-      z: [
-        [1],
-        [1e-3],
-      ],
+      z: [[1], [1e-3]],
     });
 
     expect(prepared.minLogFlux).toBeCloseTo(-3);
@@ -131,9 +135,7 @@ describe("diffractionPsfDeckData", () => {
       ...diffractionPsfData,
       x: [0],
       y: [-1, 0, 1],
-      z: [
-        [1, 0.01, 0.0001],
-      ],
+      z: [[1, 0.01, 0.0001]],
     });
 
     expect(Array.from(prepared.image.data.slice(0, 4))).toEqual(
@@ -192,7 +194,9 @@ describe("diffractionPsfDeckData", () => {
 
     expect(prepared.image.width).toBe(2);
     expect(prepared.image.height).toBe(2);
-    expect(Array.from(prepared.image.data.slice(0, 4))).toEqual(interpolateAnalysisHeatmapColor(0));
+    expect(Array.from(prepared.image.data.slice(0, 4))).toEqual(
+      interpolateAnalysisHeatmapColor(0),
+    );
     expect(prepared.maxLogFlux).toBe(0);
   });
 });

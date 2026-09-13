@@ -80,7 +80,9 @@ describe("useDebouncedCallback", () => {
 
   it("cancels pending work on unmount", () => {
     const callback = jest.fn();
-    const { result, unmount } = renderHook(() => useDebouncedCallback(callback, 200));
+    const { result, unmount } = renderHook(() =>
+      useDebouncedCallback(callback, 200),
+    );
 
     act(() => {
       result.current.run("first");

@@ -28,7 +28,10 @@
  */
 import type { StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import {
+  OBJECT_ROW_ID,
+  IMAGE_ROW_ID,
+} from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -44,7 +47,9 @@ interface PendingMediumSelection {
   manufacturer: string;
 }
 
-export type LensEditorOptimizationSyncPolicy = "resetOptimizationModes" | "preserveOptimizationModes";
+export type LensEditorOptimizationSyncPolicy =
+  | "resetOptimizationModes"
+  | "preserveOptimizationModes";
 
 interface PrescriptionMutationOptions {
   readonly optimizationSyncPolicy?: LensEditorOptimizationSyncPolicy;
@@ -85,7 +90,11 @@ export interface LensEditorState {
   /** Replaces all rows, increments `prescriptionRevision`, and records the supplied sync policy or the reset policy by default. */
   setRows: (rows: GridRow[], options?: PrescriptionMutationOptions) => void;
   /** Merges a patch into an existing row while preserving its `id` and `kind`, then increments the revision and records the sync policy. Does nothing when `id` is absent. */
-  updateRow: (id: string, patch: Partial<GridRow>, options?: PrescriptionMutationOptions) => void;
+  updateRow: (
+    id: string,
+    patch: Partial<GridRow>,
+    options?: PrescriptionMutationOptions,
+  ) => void;
   /** Inserts a default surface after `id` and increments the revision. Does nothing for an unknown ID or the image row. */
   addRowAfter: (id: string) => void;
   /** Deletes a surface row, clears its selection, and increments the revision. Does nothing for missing, object, or image rows. */
@@ -105,9 +114,13 @@ export interface LensEditorState {
   /** Opens the medium picker for `rowId` and seeds its pending draft from a valid object or surface row. */
   openMediumModal: (rowId: string) => void;
   /** Updates the pending medium and manufacturer when a draft exists; otherwise does nothing. */
-  updatePendingMediumSelection: (patch: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
+  updatePendingMediumSelection: (
+    patch: Pick<PendingMediumSelection, "medium" | "manufacturer">,
+  ) => void;
   /** Commits the explicit selection or pending draft to its target row, then closes the modal and clears the draft. Does nothing when no selection is available. */
-  commitPendingMediumSelection: (selection?: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
+  commitPendingMediumSelection: (
+    selection?: Pick<PendingMediumSelection, "medium" | "manufacturer">,
+  ) => void;
   /** Closes the medium picker, resets its row ID, and discards the pending draft. */
   closeMediumModal: () => void;
   /** Opens the aspherical-coefficients modal for a row. */
@@ -130,7 +143,10 @@ export interface LensEditorState {
   setCommittedOpticalModel: (model: OpticalModel) => void;
 }
 
-function derivePendingMediumSelection(rows: GridRow[], rowId: string): PendingMediumSelection | undefined {
+function derivePendingMediumSelection(
+  rows: GridRow[],
+  rowId: string,
+): PendingMediumSelection | undefined {
   const row = rows.find((item) => item.id === rowId);
   if (row?.kind !== "surface" && row?.kind !== "object") {
     return undefined;
@@ -154,7 +170,10 @@ const DEFAULT_ROWS: GridRow[] = [
   { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
 ];
 
-export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) => ({
+export const createLensEditorSlice: StateCreator<LensEditorState> = (
+  set,
+  get,
+) => ({
   rows: DEFAULT_ROWS,
   prescriptionRevision: 0,
   optimizationSyncPolicy: "resetOptimizationModes",
@@ -176,7 +195,8 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
       return {
         rows,
         prescriptionRevision: state.prescriptionRevision + 1,
-        optimizationSyncPolicy: options?.optimizationSyncPolicy ?? "resetOptimizationModes",
+        optimizationSyncPolicy:
+          options?.optimizationSyncPolicy ?? "resetOptimizationModes",
       };
     }),
 
@@ -189,10 +209,13 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
       return {
         rows: state.rows.map((r) =>
-          r.id === id ? { ...r, ...patch, id: r.id, kind: r.kind } as GridRow : r
+          r.id === id
+            ? ({ ...r, ...patch, id: r.id, kind: r.kind } as GridRow)
+            : r,
         ),
         prescriptionRevision: state.prescriptionRevision + 1,
-        optimizationSyncPolicy: options?.optimizationSyncPolicy ?? "resetOptimizationModes",
+        optimizationSyncPolicy:
+          options?.optimizationSyncPolicy ?? "resetOptimizationModes",
       };
     }),
 
@@ -231,7 +254,8 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
     set((state) => ({
       rows: rows.filter((r) => r.id !== id),
-      selectedRowId: state.selectedRowId === id ? undefined : state.selectedRowId,
+      selectedRowId:
+        state.selectedRowId === id ? undefined : state.selectedRowId,
       prescriptionRevision: state.prescriptionRevision + 1,
       optimizationSyncPolicy: "resetOptimizationModes",
     }));
@@ -322,11 +346,9 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   closeAsphericalModal: () =>
     set({ asphericalModal: { open: false, rowId: "" } }),
 
-  openDecenterModal: (rowId) =>
-    set({ decenterModal: { open: true, rowId } }),
+  openDecenterModal: (rowId) => set({ decenterModal: { open: true, rowId } }),
 
-  closeDecenterModal: () =>
-    set({ decenterModal: { open: false, rowId: "" } }),
+  closeDecenterModal: () => set({ decenterModal: { open: false, rowId: "" } }),
 
   openDiffractionGratingModal: (rowId) =>
     set({ diffractionGratingModal: { open: true, rowId } }),
@@ -334,11 +356,9 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   closeDiffractionGratingModal: () =>
     set({ diffractionGratingModal: { open: false, rowId: "" } }),
 
-  openApertureModal: (rowId) =>
-    set({ apertureModal: { open: true, rowId } }),
+  openApertureModal: (rowId) => set({ apertureModal: { open: true, rowId } }),
 
-  closeApertureModal: () =>
-    set({ apertureModal: { open: false, rowId: "" } }),
+  closeApertureModal: () => set({ apertureModal: { open: false, rowId: "" } }),
 
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
 });

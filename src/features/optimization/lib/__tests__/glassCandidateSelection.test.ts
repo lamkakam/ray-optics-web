@@ -1,4 +1,7 @@
-import type { AllGlassCatalogsData, CatalogGlassData } from "@/features/glass-map/types/glassMap";
+import type {
+  AllGlassCatalogsData,
+  CatalogGlassData,
+} from "@/features/glass-map/types/glassMap";
 import {
   buildLiveGlassCandidateRows,
   getGlassCandidateIdentity,
@@ -46,11 +49,24 @@ const baseModel: OpticalModel = {
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
-    { label: "Default", curvatureRadius: 10, thickness: 1, medium: "BK7", manufacturer: "Schott", semiDiameter: 1 },
+    {
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 1,
+      medium: "BK7",
+      manufacturer: "Schott",
+      semiDiameter: 1,
+    },
   ],
   specs: {
     pupil: { space: "object", type: "epd", value: 1 },
-    field: { space: "object", type: "angle", maxField: 1, fields: [0], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 1,
+      fields: [0],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
   },
 };
@@ -63,11 +79,17 @@ describe("glass candidate selection helpers", () => {
   it("filters ineligible Special entries and retains all four supported special materials", () => {
     const rows = buildLiveGlassCandidateRows(catalogs);
 
-    expect(rows.filter((row) => row.catalog === "Special").map((row) => row.name)).toEqual([
-      "CaF2", "D263TECO", "Fused Silica", "Water",
-    ]);
+    expect(
+      rows.filter((row) => row.catalog === "Special").map((row) => row.name),
+    ).toEqual(["CaF2", "D263TECO", "Fused Silica", "Water"]);
     expect(rows.every((row) => row.available)).toBe(true);
-    expect(rows.find((row) => row.id === getGlassCandidateIdentity({ catalog: "Hoya", name: "BSC7" }))).toMatchObject({
+    expect(
+      rows.find(
+        (row) =>
+          row.id ===
+          getGlassCandidateIdentity({ catalog: "Hoya", name: "BSC7" }),
+      ),
+    ).toMatchObject({
       label: "Hoya BSC7",
       nd: 1.5,
       vd: 60,
@@ -80,12 +102,14 @@ describe("glass candidate selection helpers", () => {
   });
 
   it("sorts candidates by canonical catalog order and then name", () => {
-    expect(sortGlassCandidates([
-      { catalog: "Schott", name: "Z" },
-      { catalog: "Hoya", name: "Z" },
-      { catalog: "Hoya", name: "A" },
-      { catalog: "Custom", name: "A" },
-    ])).toEqual([
+    expect(
+      sortGlassCandidates([
+        { catalog: "Schott", name: "Z" },
+        { catalog: "Hoya", name: "Z" },
+        { catalog: "Hoya", name: "A" },
+        { catalog: "Custom", name: "A" },
+      ]),
+    ).toEqual([
       { catalog: "Hoya", name: "A" },
       { catalog: "Hoya", name: "Z" },
       { catalog: "Schott", name: "Z" },
@@ -101,10 +125,12 @@ describe("glass candidate selection helpers", () => {
     ]);
 
     expect(rows.filter((row) => row.id === "Hoya\u0000BSC7")).toHaveLength(1);
-    expect(rows.find((row) => row.id === "Schott\u0000REMOVED")).toEqual(expect.objectContaining({
-      label: "Schott REMOVED",
-      available: false,
-    }));
+    expect(rows.find((row) => row.id === "Schott\u0000REMOVED")).toEqual(
+      expect.objectContaining({
+        label: "Schott REMOVED",
+        available: false,
+      }),
+    );
   });
 
   it.each([
@@ -124,18 +150,29 @@ describe("glass candidate selection helpers", () => {
     [1, { medium: "Air", manufacturer: "Custom" }, undefined],
     [1, { medium: "ReFl", manufacturer: "" }, undefined],
     [2, { medium: "BK7", manufacturer: "Schott" }, undefined],
-  ] as const)("resolves incumbent catalog for surface index %s", (surfaceIndex, material, expected) => {
-    const model = surfaceIndex === 0
-      ? { ...baseModel, object: { ...baseModel.object, ...material } }
-      : { ...baseModel, surfaces: [{ ...baseModel.surfaces[0], ...material }] };
+  ] as const)(
+    "resolves incumbent catalog for surface index %s",
+    (surfaceIndex, material, expected) => {
+      const model =
+        surfaceIndex === 0
+          ? { ...baseModel, object: { ...baseModel.object, ...material } }
+          : {
+              ...baseModel,
+              surfaces: [{ ...baseModel.surfaces[0], ...material }],
+            };
 
-    expect(getIncumbentGlassCatalog(model, surfaceIndex, catalogs)).toBe(expected);
-  });
+      expect(getIncumbentGlassCatalog(model, surfaceIndex, catalogs)).toBe(
+        expected,
+      );
+    },
+  );
 
   it("does not use the Custom fallback when catalog data is unavailable", () => {
     const model = {
       ...baseModel,
-      surfaces: [{ ...baseModel.surfaces[0], medium: "CUSTOM_A", manufacturer: "" }],
+      surfaces: [
+        { ...baseModel.surfaces[0], medium: "CUSTOM_A", manufacturer: "" },
+      ],
     };
 
     expect(getIncumbentGlassCatalog(model, 1, undefined)).toBeUndefined();

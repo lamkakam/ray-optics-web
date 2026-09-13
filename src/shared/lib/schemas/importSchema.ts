@@ -26,7 +26,10 @@ const importedLensDataSchema = {
   required: ["setAutoAperture", "specs", "object", "image", "surfaces"],
   additionalProperties: false,
   properties: {
-    setAutoAperture: { type: "string", enum: ["autoAperture", "manualAperture"] },
+    setAutoAperture: {
+      type: "string",
+      enum: ["autoAperture", "manualAperture"],
+    },
     specs: {
       type: "object",
       required: ["pupil", "field", "wavelengths"],
@@ -152,10 +155,14 @@ const importedCustomGlassDataSchema = {
  * Validates uploaded lens JSON before it reaches Zustand or the worker.
  * Structural failures populate the validator's `.errors` property.
  */
-const validateImportedLensData = ajv.compile<OpticalModel>(importedLensDataSchema);
+const validateImportedLensData = ajv.compile<OpticalModel>(
+  importedLensDataSchema,
+);
 /**
  * Validates strict version-1.0 custom-glass imports and exposes AJV errors on failure.
  */
-const validateImportedCustomGlassData = ajv.compile(importedCustomGlassDataSchema);
+const validateImportedCustomGlassData = ajv.compile(
+  importedCustomGlassDataSchema,
+);
 
 export { validateImportedCustomGlassData, validateImportedLensData };

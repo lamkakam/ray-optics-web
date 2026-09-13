@@ -1,6 +1,12 @@
 "use client";
 import type React from "react";
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import type { Theme } from "@/shared/tokens/theme";
 
 interface ThemeContextValue {
@@ -35,7 +41,11 @@ function getInitialTheme(): Theme {
  * - `useTheme` throws if called outside a `ThemeProvider` tree.
  * - SSR-safe: `getInitialTheme` returns `"light"` when `window` is `undefined`.
  */
-export function ThemeProvider({ children }: { readonly children: React.ReactNode }) {
+export function ThemeProvider({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
   const [theme, _setTheme] = useState<Theme>(getInitialTheme);
 
   // Sync the `dark` class on <html> whenever theme changes.
@@ -53,20 +63,16 @@ export function ThemeProvider({ children }: { readonly children: React.ReactNode
     }
   }, [theme]);
 
-
   const setTheme = useCallback((newTheme: Theme) => {
     // runtime check
-    if (newTheme !== "dark" && newTheme !== "light") { return; }
-    _setTheme(_ => newTheme);
+    if (newTheme !== "dark" && newTheme !== "light") {
+      return;
+    }
+    _setTheme((_) => newTheme);
     localStorage.setItem(STORAGE_KEY, newTheme);
   }, []);
 
-
-  return (
-    <ThemeContext value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext>
-  );
+  return <ThemeContext value={{ theme, setTheme }}>{children}</ThemeContext>;
 }
 
 /** Returns the active theme context or throws outside the provider. */

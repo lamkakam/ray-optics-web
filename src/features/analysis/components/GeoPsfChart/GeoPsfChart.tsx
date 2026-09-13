@@ -1,6 +1,11 @@
 "use client";
 
-import { COORDINATE_SYSTEM, DeckGL, OrthographicView, ScatterplotLayer } from "deck.gl";
+import {
+  COORDINATE_SYSTEM,
+  DeckGL,
+  OrthographicView,
+  ScatterplotLayer,
+} from "deck.gl";
 import { useMemo, useState } from "react";
 import {
   CartesianSvgOverlay,
@@ -36,10 +41,7 @@ const DECK_VIEW_ID = "geo-psf-view";
  * - Renders theme-aware SVG x/y axes, ticks, and axis labels without a color bar.
  * - Keeps `data-testid="geo-psf-chart"` and `aria-label="Geometric PSF plot"`.
  */
-export function GeoPsfChart({
-  geoPsfData,
-  autoHeight,
-}: GeoPsfChartProps) {
+export function GeoPsfChart({ geoPsfData, autoHeight }: GeoPsfChartProps) {
   const [containerRef, size] = useMeasuredChartSize(autoHeight);
   const preparedData = useMemo(
     () => buildGeoPsfPoints(geoPsfData),
@@ -47,29 +49,50 @@ export function GeoPsfChart({
   );
   const layout = getCartesianPlotLayout(size);
   const extentKey = `${preparedData.axisExtent}:${layout.plotSide}`;
-  const initialViewState = useMemo<OrthographicViewState>(() => ({
-    target: [0, 0, 0],
-    zoom: getInitialOrthographicZoom(layout.plotSide, preparedData.axisExtent),
-  }), [layout.plotSide, preparedData.axisExtent]);
-  const [viewStateOverride, setViewStateOverride] = useState<ViewStateOverride | undefined>(undefined);
-  const viewState = viewStateOverride?.extentKey === extentKey
-    ? viewStateOverride.viewState
-    : initialViewState;
-  const axisDomains = useMemo(() => getVisibleAxisDomains(layout.plotSide, viewState), [layout.plotSide, viewState]);
-  const xAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.x), [axisDomains.x]);
-  const yAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.y), [axisDomains.y]);
-  const layers = useMemo(() => [
-    new ScatterplotLayer<GeoPsfPoint>({
-      id: "geo-psf-points",
-      data: preparedData.points,
-      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-      getPosition: (point) => [point.x, point.y],
-      getFillColor: [84, 112, 198, 166],
-      getRadius: 1,
-      radiusUnits: "pixels",
-      pickable: false,
+  const initialViewState = useMemo<OrthographicViewState>(
+    () => ({
+      target: [0, 0, 0],
+      zoom: getInitialOrthographicZoom(
+        layout.plotSide,
+        preparedData.axisExtent,
+      ),
     }),
-  ], [preparedData.points]);
+    [layout.plotSide, preparedData.axisExtent],
+  );
+  const [viewStateOverride, setViewStateOverride] = useState<
+    ViewStateOverride | undefined
+  >(undefined);
+  const viewState =
+    viewStateOverride?.extentKey === extentKey
+      ? viewStateOverride.viewState
+      : initialViewState;
+  const axisDomains = useMemo(
+    () => getVisibleAxisDomains(layout.plotSide, viewState),
+    [layout.plotSide, viewState],
+  );
+  const xAxisTicks = useMemo(
+    () => buildCartesianTicks(axisDomains.x),
+    [axisDomains.x],
+  );
+  const yAxisTicks = useMemo(
+    () => buildCartesianTicks(axisDomains.y),
+    [axisDomains.y],
+  );
+  const layers = useMemo(
+    () => [
+      new ScatterplotLayer<GeoPsfPoint>({
+        id: "geo-psf-points",
+        data: preparedData.points,
+        coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+        getPosition: (point) => [point.x, point.y],
+        getFillColor: [84, 112, 198, 166],
+        getRadius: 1,
+        radiusUnits: "pixels",
+        pickable: false,
+      }),
+    ],
+    [preparedData.points],
+  );
 
   return (
     <div ref={containerRef} className="h-full w-full min-h-0">
@@ -91,10 +114,19 @@ export function GeoPsfChart({
             }}
           >
             <DeckGL
-              views={[new OrthographicView({ id: DECK_VIEW_ID, flipY: false, controller: true })]}
+              views={[
+                new OrthographicView({
+                  id: DECK_VIEW_ID,
+                  flipY: false,
+                  controller: true,
+                }),
+              ]}
               viewState={{ [DECK_VIEW_ID]: viewState }}
               onViewStateChange={({ viewState: nextViewState }) => {
-                const nextZoom = typeof nextViewState.zoom === "number" ? nextViewState.zoom : viewState.zoom;
+                const nextZoom =
+                  typeof nextViewState.zoom === "number"
+                    ? nextViewState.zoom
+                    : viewState.zoom;
                 setViewStateOverride({
                   extentKey,
                   viewState: {

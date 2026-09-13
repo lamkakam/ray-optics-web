@@ -25,7 +25,11 @@ interface OpdFanChartProps {
  */
 export const OpdFanChart = createAnalysisChartComponent<
   OpdFanChartProps,
-  { readonly opdFanData: OpdFanData; readonly wavelengthLabels: readonly string[]; readonly isSmallScreen: boolean },
+  {
+    readonly opdFanData: OpdFanData;
+    readonly wavelengthLabels: readonly string[];
+    readonly isSmallScreen: boolean;
+  },
   boolean
 >({
   displayName: "OpdFanChart",
@@ -38,7 +42,10 @@ export const OpdFanChart = createAnalysisChartComponent<
     wavelengthLabels,
     isSmallScreen,
   }),
-  getChartHeight: ({ parentWidth, parentHeight, autoHeight }, isSmallScreen) => {
+  getChartHeight: (
+    { parentWidth, parentHeight, autoHeight },
+    isSmallScreen,
+  ) => {
     const widthBasedHeight = isSmallScreen
       ? Math.max(Math.round(parentWidth), 560)
       : Math.max(Math.round(parentWidth / 2), 320);
@@ -48,6 +55,18 @@ export const OpdFanChart = createAnalysisChartComponent<
       : Math.max(0, Math.min(parentHeight, widthBasedHeight));
   },
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
-  buildOption: ({ opdFanData, wavelengthLabels, isSmallScreen }, chartWidth, chartHeight, chartTextColor) =>
-    buildOpdFanChartOption(opdFanData, wavelengthLabels, chartWidth, chartHeight, chartTextColor, isSmallScreen),
+  buildOption: (
+    { opdFanData, wavelengthLabels, isSmallScreen },
+    chartWidth,
+    chartHeight,
+    chartTextColor,
+  ) =>
+    buildOpdFanChartOption(
+      opdFanData,
+      wavelengthLabels,
+      chartWidth,
+      chartHeight,
+      chartTextColor,
+      isSmallScreen,
+    ),
 });

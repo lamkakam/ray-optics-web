@@ -1,11 +1,21 @@
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
-import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
+import {
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
-echarts.use([BarChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([
+  BarChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 const SURFACE_BY_SURFACE_GRID_TOP = 72;
 const SURFACE_BY_SURFACE_GRID_BOTTOM = 56;
@@ -39,22 +49,27 @@ function formatTooltipValue(value: TooltipFormatterParam["value"]) {
 
     if (typeof lastValue === "string") {
       const parsedValue = Number(lastValue);
-      return Number.isNaN(parsedValue) ? lastValue : formatPlotValue(parsedValue);
+      return Number.isNaN(parsedValue)
+        ? lastValue
+        : formatPlotValue(parsedValue);
     }
   }
 
   return "";
 }
 
-function formatTooltip(params: TooltipFormatterParam | TooltipFormatterParam[]) {
+function formatTooltip(
+  params: TooltipFormatterParam | TooltipFormatterParam[],
+) {
   const tooltipParams = Array.isArray(params) ? params : [params];
   const [firstParam] = tooltipParams;
   const axisValueLabel = firstParam?.axisValueLabel ?? "";
 
   return [
     axisValueLabel,
-    ...tooltipParams.map((param) =>
-      `${param.marker ?? ""}${param.seriesName ?? ""}: ${formatTooltipValue(param.value)}`,
+    ...tooltipParams.map(
+      (param) =>
+        `${param.marker ?? ""}${param.seriesName ?? ""}: ${formatTooltipValue(param.value)}`,
     ),
   ].join("<br/>");
 }
@@ -108,8 +123,18 @@ export function buildSurfaceBySurface3rdOrderChartOption(
       bottom: SURFACE_BY_SURFACE_GRID_BOTTOM,
       left: SURFACE_BY_SURFACE_GRID_LEFT,
       right: SURFACE_BY_SURFACE_GRID_RIGHT,
-      width: Math.max(0, chartWidth - SURFACE_BY_SURFACE_GRID_LEFT - SURFACE_BY_SURFACE_GRID_RIGHT),
-      height: Math.max(0, chartHeight - SURFACE_BY_SURFACE_GRID_TOP - SURFACE_BY_SURFACE_GRID_BOTTOM),
+      width: Math.max(
+        0,
+        chartWidth -
+          SURFACE_BY_SURFACE_GRID_LEFT -
+          SURFACE_BY_SURFACE_GRID_RIGHT,
+      ),
+      height: Math.max(
+        0,
+        chartHeight -
+          SURFACE_BY_SURFACE_GRID_TOP -
+          SURFACE_BY_SURFACE_GRID_BOTTOM,
+      ),
       containLabel: true,
     },
     xAxis: {
@@ -138,14 +163,16 @@ export function buildSurfaceBySurface3rdOrderChartOption(
         formatter: (value: number) => formatPlotValue(value),
       },
     },
-    series: surfaceBySurface3rdOrderData.aberrTypes.map((aberrationType, rowIndex) => ({
-      type: "bar",
-      name: aberrationType,
-      barCategoryGap: SURFACE_BY_SURFACE_BAR_CATEGORY_GAP,
-      emphasis: {
-        focus: "series",
-      },
-      data: surfaceBySurface3rdOrderData.data[rowIndex] ?? [],
-    })),
+    series: surfaceBySurface3rdOrderData.aberrTypes.map(
+      (aberrationType, rowIndex) => ({
+        type: "bar",
+        name: aberrationType,
+        barCategoryGap: SURFACE_BY_SURFACE_BAR_CATEGORY_GAP,
+        emphasis: {
+          focus: "series",
+        },
+        data: surfaceBySurface3rdOrderData.data[rowIndex] ?? [],
+      }),
+    ),
   };
 }

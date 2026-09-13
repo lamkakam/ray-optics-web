@@ -21,7 +21,7 @@ export function shouldCache(url: string, origin?: string): boolean {
 export function isNextStaticAsset(
   url: string,
   origin: string,
-  basePath = ""
+  basePath = "",
 ): boolean {
   try {
     const parsedUrl = new URL(url);
@@ -30,7 +30,9 @@ export function isNextStaticAsset(
       ? `/${normalizedBasePath}/_next/static/`
       : "/_next/static/";
 
-    return parsedUrl.origin === origin && parsedUrl.pathname.startsWith(staticPath);
+    return (
+      parsedUrl.origin === origin && parsedUrl.pathname.startsWith(staticPath)
+    );
   } catch {
     return false;
   }

@@ -3,7 +3,10 @@
 
 import type React from "react";
 import { createContext, useContext } from "react";
-import type { AllGlassCatalogsData, GlassLookupMaps } from "@/features/glass-map/types/glassMap";
+import type {
+  AllGlassCatalogsData,
+  GlassLookupMaps,
+} from "@/features/glass-map/types/glassMap";
 import type { GlassCatalogsLoadResult } from "@/features/glass-map/lib/glassCatalogLoader";
 
 /** Catalog data, lookup maps, preload state, and shared preload action. */
@@ -23,7 +26,9 @@ export interface GlassCatalogContextValue {
 }
 
 /** Optional React context consumed by `useGlassCatalogs`. */
-export const GlassCatalogContext = createContext<GlassCatalogContextValue | undefined>(undefined);
+export const GlassCatalogContext = createContext<
+  GlassCatalogContextValue | undefined
+>(undefined);
 
 interface GlassCatalogProviderProps {
   readonly value: GlassCatalogContextValue;
@@ -31,7 +36,10 @@ interface GlassCatalogProviderProps {
 }
 
 /** Client-only React context for app-wide glass catalog data. The provider does not fetch data itself; `AppShell` injects successful catalog data from `GlassMapStore` plus AppShell-local preload status/error so lens editor and glass map consume a shared context. */
-export function GlassCatalogProvider({ value, children }: GlassCatalogProviderProps) {
+export function GlassCatalogProvider({
+  value,
+  children,
+}: GlassCatalogProviderProps) {
   return (
     <GlassCatalogContext.Provider value={value}>
       {children}
@@ -48,7 +56,9 @@ export function useGlassCatalogs(): GlassCatalogContextValue {
   const context = useContext(GlassCatalogContext);
 
   if (context === undefined) {
-    throw new Error("useGlassCatalogs must be used within a GlassCatalogProvider");
+    throw new Error(
+      "useGlassCatalogs must be used within a GlassCatalogProvider",
+    );
   }
 
   return context;

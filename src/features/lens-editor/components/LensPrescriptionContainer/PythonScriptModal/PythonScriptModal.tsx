@@ -38,13 +38,18 @@ interface CopyButtonProps {
  */
 function CopyButton({ script, label, idleLabel, variant }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
-  useEffect(() => () => {
-    if (timeoutRef.current !== undefined) {
-      clearTimeout(timeoutRef.current);
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (timeoutRef.current !== undefined) {
+        clearTimeout(timeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const handleCopy = () => {
     navigator.clipboard.writeText(script).then(() => {
@@ -109,19 +114,27 @@ export function PythonScriptModal({
       isOpen={isOpen}
       title="Python Script"
       size="4xl"
-      footer={(
+      footer={
         <div className="flex justify-end">
-          <Button variant="primary" onClick={onClose}>Ok</Button>
+          <Button variant="primary" onClick={onClose}>
+            Ok
+          </Button>
         </div>
-      )}
+      }
     >
       <div className="w-full">
         <p className="mb-3">
           Replace{" "}
-          <code className={clsx(cx.code.color.bgColor, "rounded px-1 py-0.5 font-mono")}>
+          <code
+            className={clsx(
+              cx.code.color.bgColor,
+              "rounded px-1 py-0.5 font-mono",
+            )}
+          >
             {"<PATH TO CUSTOM GLASS JSON FILE>"}
           </code>{" "}
-          with the real path to your custom glass JSON file before running the script.
+          with the real path to your custom glass JSON file before running the
+          script.
         </p>
         <div className="mb-3 flex justify-end pr-4">
           <CopyButton
@@ -133,7 +146,14 @@ export function PythonScriptModal({
         </div>
         <div className="flex w-full flex-col gap-4">
           <div className="relative w-full">
-            <pre className={clsx("w-max min-w-full whitespace-pre p-4 font-mono text-xs", cx.code.color.bgColor)}><code>{userDefinedMaterials}</code></pre>
+            <pre
+              className={clsx(
+                "w-max min-w-full whitespace-pre p-4 font-mono text-xs",
+                cx.code.color.bgColor,
+              )}
+            >
+              <code>{userDefinedMaterials}</code>
+            </pre>
             <div className="absolute right-4 top-4">
               <CopyButton
                 script={userDefinedMaterials}
@@ -144,7 +164,14 @@ export function PythonScriptModal({
             </div>
           </div>
           <div className="relative w-full">
-            <pre className={clsx("w-max min-w-full whitespace-pre p-4 font-mono text-xs", cx.code.color.bgColor)}><code>{remainingScript}</code></pre>
+            <pre
+              className={clsx(
+                "w-max min-w-full whitespace-pre p-4 font-mono text-xs",
+                cx.code.color.bgColor,
+              )}
+            >
+              <code>{remainingScript}</code>
+            </pre>
             <div className="absolute right-4 top-4">
               <CopyButton
                 script={remainingScript}

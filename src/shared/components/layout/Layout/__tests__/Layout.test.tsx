@@ -20,10 +20,16 @@ jest.mock("@/shared/components/layout/SideNav", () => ({
     isOpen: boolean;
     onClose: () => void;
     isLG: boolean;
-    onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
+    onNavigate?: (
+      href: string,
+      event: React.MouseEvent<HTMLAnchorElement>,
+    ) => boolean;
   }) =>
     isOpen ? (
-      <nav aria-label="Side navigation" data-screen={isLG ? "screenLG" : "screenSM"}>
+      <nav
+        aria-label="Side navigation"
+        data-screen={isLG ? "screenLG" : "screenSM"}
+      >
         <button>Inside navigation</button>
         <button onClick={onClose}>Close navigation</button>
         <a
@@ -58,7 +64,7 @@ describe("Layout", () => {
   it("renders hamburger button with aria-label='Open navigation'", () => {
     render(<Layout {...defaultProps} />);
     expect(
-      screen.getByRole("button", { name: "Open navigation" })
+      screen.getByRole("button", { name: "Open navigation" }),
     ).toBeInTheDocument();
   });
 
@@ -70,79 +76,105 @@ describe("Layout", () => {
   it("clicking hamburger opens side nav", async () => {
     render(<Layout {...defaultProps} />);
     expect(
-      screen.queryByRole("navigation", { name: "Side navigation" })
+      screen.queryByRole("navigation", { name: "Side navigation" }),
     ).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
     expect(
-      screen.getByRole("navigation", { name: "Side navigation" })
+      screen.getByRole("navigation", { name: "Side navigation" }),
     ).toBeInTheDocument();
   });
 
   it("clicking hamburger again closes side nav", async () => {
     render(<Layout {...defaultProps} />);
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
     expect(
-      screen.getByRole("navigation", { name: "Side navigation" })
+      screen.getByRole("navigation", { name: "Side navigation" }),
     ).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
     expect(
-      screen.queryByRole("navigation", { name: "Side navigation" })
+      screen.queryByRole("navigation", { name: "Side navigation" }),
     ).not.toBeInTheDocument();
   });
 
   it("forwards accepted and blocked navigation through the side nav", async () => {
     let navigationAttempts = 0;
-    const onNavigate = jest.fn((_href: string, event: React.MouseEvent<HTMLAnchorElement>) => {
-      navigationAttempts += 1;
-      expect(event.defaultPrevented).toBe(true);
-      return navigationAttempts > 1;
-    });
+    const onNavigate = jest.fn(
+      (_href: string, event: React.MouseEvent<HTMLAnchorElement>) => {
+        navigationAttempts += 1;
+        expect(event.defaultPrevented).toBe(true);
+        return navigationAttempts > 1;
+      },
+    );
     render(<Layout {...defaultProps} onNavigate={onNavigate} />);
     const hamburger = screen.getByRole("button", { name: "Open navigation" });
 
     await userEvent.click(hamburger);
     await userEvent.click(screen.getByRole("link", { name: "Settings" }));
     expect(onNavigate).toHaveBeenCalledWith("/settings", expect.any(Object));
-    expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "Side navigation" }),
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("link", { name: "Settings" }));
-    expect(screen.queryByRole("navigation", { name: "Side navigation" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Side navigation" }),
+    ).not.toBeInTheDocument();
   });
 
   it("closes side nav on pointer interaction with child content outside the nav", async () => {
     render(<Layout {...defaultProps} />);
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
 
     fireEvent.pointerDown(screen.getByText("child content"));
 
     expect(
-      screen.queryByRole("navigation", { name: "Side navigation" })
+      screen.queryByRole("navigation", { name: "Side navigation" }),
     ).not.toBeInTheDocument();
   });
 
   it("keeps side nav open on pointer interaction inside the nav", async () => {
     render(<Layout {...defaultProps} />);
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
 
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Inside navigation" }));
+    fireEvent.pointerDown(
+      screen.getByRole("button", { name: "Inside navigation" }),
+    );
 
     expect(
-      screen.getByRole("navigation", { name: "Side navigation" })
+      screen.getByRole("navigation", { name: "Side navigation" }),
     ).toBeInTheDocument();
   });
 
   it("ignores a captured pointer event whose target is not a DOM node", async () => {
     const addEventListener = jest.spyOn(document, "addEventListener");
     render(<Layout {...defaultProps} />);
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
 
     const listener = addEventListener.mock.calls.find(
       ([type, _handler, capture]) => type === "pointerdown" && capture === true,
     )?.[1];
     expect(listener).toBeDefined();
 
-    expect(() => (listener as (event: PointerEvent) => void)({ target: {} } as PointerEvent)).not.toThrow();
-    expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
+    expect(() =>
+      (listener as (event: PointerEvent) => void)({
+        target: {},
+      } as PointerEvent),
+    ).not.toThrow();
+    expect(
+      screen.getByRole("navigation", { name: "Side navigation" }),
+    ).toBeInTheDocument();
 
     addEventListener.mockRestore();
   });
@@ -151,12 +183,28 @@ describe("Layout", () => {
     const addEventListener = jest.spyOn(document, "addEventListener");
     const removeEventListener = jest.spyOn(document, "removeEventListener");
     render(<Layout {...defaultProps} />);
-    expect(addEventListener).not.toHaveBeenCalledWith("pointerdown", expect.any(Function), true);
+    expect(addEventListener).not.toHaveBeenCalledWith(
+      "pointerdown",
+      expect.any(Function),
+      true,
+    );
 
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    expect(addEventListener).toHaveBeenCalledWith("pointerdown", expect.any(Function), true);
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    expect(removeEventListener).toHaveBeenCalledWith("pointerdown", expect.any(Function), true);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
+    expect(addEventListener).toHaveBeenCalledWith(
+      "pointerdown",
+      expect.any(Function),
+      true,
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
+    expect(removeEventListener).toHaveBeenCalledWith(
+      "pointerdown",
+      expect.any(Function),
+      true,
+    );
 
     addEventListener.mockRestore();
     removeEventListener.mockRestore();
@@ -164,10 +212,14 @@ describe("Layout", () => {
 
   it("side nav closes when its close handler is triggered", async () => {
     render(<Layout {...defaultProps} />);
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    await userEvent.click(screen.getByRole("button", { name: "Close navigation" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open navigation" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Close navigation" }),
+    );
     expect(
-      screen.queryByRole("navigation", { name: "Side navigation" })
+      screen.queryByRole("navigation", { name: "Side navigation" }),
     ).not.toBeInTheDocument();
   });
 

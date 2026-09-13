@@ -21,7 +21,13 @@ const baseModel: OpticalModel = {
   ],
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20, fields: [0, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      fields: [0, 1],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
   },
 };

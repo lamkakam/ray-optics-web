@@ -36,7 +36,9 @@ interface MediumSelectorModalProps {
 }
 
 function isSpecialMedium(manufacturer: string): boolean {
-  return manufacturer === "" || manufacturer === "air" || manufacturer === "Special";
+  return (
+    manufacturer === "" || manufacturer === "air" || manufacturer === "Special"
+  );
 }
 
 function isNumericString(value: string): boolean {
@@ -129,7 +131,9 @@ export function MediumSelectorModal({
 }: MediumSelectorModalProps) {
   const initialUseModelGlass = isNumericString(initialMedium);
   const initialHasAbbeNumber = isNumericString(initialManufacturer);
-  const initialMfr = isSpecialMedium(initialManufacturer) ? "Special" : initialManufacturer;
+  const initialMfr = isSpecialMedium(initialManufacturer)
+    ? "Special"
+    : initialManufacturer;
   const { catalogs, error, isLoaded } = useGlassCatalogs();
   /** Draft catalog or manufacturer selection. */
   const [localManufacturer, setLocalManufacturer] = useState(initialMfr);
@@ -148,16 +152,24 @@ export function MediumSelectorModal({
     initialUseModelGlass ? initialMedium : "",
   );
   /** String draft of the model-glass Abbe number. */
-  const [abbeNumber, setAbbeNumber] = useState(initialHasAbbeNumber ? initialManufacturer : "");
+  const [abbeNumber, setAbbeNumber] = useState(
+    initialHasAbbeNumber ? initialManufacturer : "",
+  );
   const manufacturer = selectedManufacturer ?? localManufacturer;
   const medium = selectedMedium ?? localMedium;
-  const catalogLookup = catalogs as Record<string, Record<string, unknown>> | undefined;
-  const getCatalogGlassNames = (catalogName: string): string[] => Object.keys(catalogLookup?.[catalogName] ?? {});
+  const catalogLookup = catalogs as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  const getCatalogGlassNames = (catalogName: string): string[] =>
+    Object.keys(catalogLookup?.[catalogName] ?? {});
 
   const manufacturers = [
     "Special",
     ...Object.entries(catalogs ?? {})
-      .filter(([catalogName, glasses]) => catalogName !== "Special" && Object.keys(glasses).length > 0)
+      .filter(
+        ([catalogName, glasses]) =>
+          catalogName !== "Special" && Object.keys(glasses).length > 0,
+      )
       .map(([catalogName]) => catalogName),
   ];
   const specialMediaOptions = [
@@ -175,14 +187,17 @@ export function MediumSelectorModal({
   );
   const hasValidCatalogMedium = canonicalMedium !== undefined;
   const showAbbeNumber = useModelGlass && !singleRefractiveIndex;
-  const hasValidModelGlass = isFiniteNumberAtLeast(refractiveIndexAtDLine, 1)
-    && (singleRefractiveIndex || (
-      isFiniteNumberAtLeast(abbeNumber, 0) && Number(abbeNumber.trim()) > 0
-    ));
+  const hasValidModelGlass =
+    isFiniteNumberAtLeast(refractiveIndexAtDLine, 1) &&
+    (singleRefractiveIndex ||
+      (isFiniteNumberAtLeast(abbeNumber, 0) && Number(abbeNumber.trim()) > 0));
   const canConfirm = useModelGlass ? hasValidModelGlass : hasValidCatalogMedium;
   const canSelectCatalogGlass = error === undefined && isLoaded;
 
-  const updateCatalogSelection = (nextMedium: string, nextManufacturer: string) => {
+  const updateCatalogSelection = (
+    nextMedium: string,
+    nextManufacturer: string,
+  ) => {
     setGlassInput(nextMedium);
     setLocalMedium(nextMedium);
     setLocalManufacturer(nextManufacturer);
@@ -198,9 +213,9 @@ export function MediumSelectorModal({
 
   const glassMapHref = (() => {
     if (
-      useModelGlass
-      || canonicalMedium === undefined
-      || (isSpecial && builtInSpecialMaterial.has(canonicalMedium))
+      useModelGlass ||
+      canonicalMedium === undefined ||
+      (isSpecial && builtInSpecialMaterial.has(canonicalMedium))
     ) {
       return undefined;
     }
@@ -220,31 +235,41 @@ export function MediumSelectorModal({
       title="Select Medium"
       titleId="medium-modal-title"
       size="md"
-      footer={(
+      footer={
         <div className="flex items-center justify-end gap-3">
           {readOnly ? (
-            <Button variant="secondary" onClick={onClose}>Close</Button>
+            <Button variant="secondary" onClick={onClose}>
+              Close
+            </Button>
           ) : (
             <>
-              <Button variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
               <Button
                 variant="primary"
                 disabled={!canConfirm}
-                onClick={() => onConfirm(
-                  useModelGlass
-                    ? refractiveIndexAtDLine
-                    : canonicalMedium ?? medium,
-                  useModelGlass
-                    ? (singleRefractiveIndex ? "" : abbeNumber)
-                    : (isSpecial ? "" : manufacturer),
-                )}
+                onClick={() =>
+                  onConfirm(
+                    useModelGlass
+                      ? refractiveIndexAtDLine
+                      : (canonicalMedium ?? medium),
+                    useModelGlass
+                      ? singleRefractiveIndex
+                        ? ""
+                        : abbeNumber
+                      : isSpecial
+                        ? ""
+                        : manufacturer,
+                  )
+                }
               >
                 Confirm
               </Button>
             </>
           )}
         </div>
-      )}
+      }
     >
       {/* ── Form fields ── */}
       <div className="space-y-4 mb-4">
@@ -265,9 +290,7 @@ export function MediumSelectorModal({
               </p>
             )}
             <div>
-              <Label htmlFor="manufacturer-select">
-                Catalog
-              </Label>
+              <Label htmlFor="manufacturer-select">Catalog</Label>
               <Select
                 id="manufacturer-select"
                 aria-label="Catalog"
@@ -286,17 +309,20 @@ export function MediumSelectorModal({
             </div>
 
             <div>
-              <Label htmlFor="medium-select">
-                Glass
-              </Label>
+              <Label htmlFor="medium-select">Glass</Label>
               {isSpecial ? (
                 <Select
                   id="medium-select"
                   aria-label="Glass"
-                  options={specialMediaOptions.map((g) => ({ value: g, label: g }))}
+                  options={specialMediaOptions.map((g) => ({
+                    value: g,
+                    label: g,
+                  }))}
                   value={glassInput}
                   disabled={readOnly || !canSelectCatalogGlass}
-                  onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
+                  onChange={(e) =>
+                    updateCatalogSelection(e.target.value, manufacturer)
+                  }
                 />
               ) : (
                 <Datalist
@@ -308,7 +334,9 @@ export function MediumSelectorModal({
                   onChange={(e) => {
                     const typedValue = e.target.value;
                     const match = mediaOptions.find(
-                      (option) => option.toLocaleLowerCase() === typedValue.toLocaleLowerCase(),
+                      (option) =>
+                        option.toLocaleLowerCase() ===
+                        typedValue.toLocaleLowerCase(),
                     );
                     setGlassInput(match ?? typedValue);
                     if (match !== undefined) {
@@ -319,7 +347,10 @@ export function MediumSelectorModal({
               )}
               {glassMapHref && (
                 <div className="mt-2">
-                  <InlineLink href={glassMapHref} aria-label="View in glass map">
+                  <InlineLink
+                    href={glassMapHref}
+                    aria-label="View in glass map"
+                  >
                     View in glass map
                   </InlineLink>
                 </div>
@@ -349,22 +380,26 @@ export function MediumSelectorModal({
                 value={refractiveIndexAtDLine}
                 disabled={readOnly}
                 onChange={(e) => setRefractiveIndexAtDLine(e.target.value)}
-                onBlur={(e) => setRefractiveIndexAtDLine(normalizePositiveNumericString(e.target.value))}
+                onBlur={(e) =>
+                  setRefractiveIndexAtDLine(
+                    normalizePositiveNumericString(e.target.value),
+                  )
+                }
               />
             </div>
 
             {showAbbeNumber && (
               <div>
-                <Label htmlFor="abbe-number-input">
-                  Abbe Number
-                </Label>
+                <Label htmlFor="abbe-number-input">Abbe Number</Label>
                 <Input
                   id="abbe-number-input"
                   aria-label="Abbe Number"
                   value={abbeNumber}
                   disabled={readOnly}
                   onChange={(e) => setAbbeNumber(e.target.value)}
-                  onBlur={(e) => setAbbeNumber(normalizeNumericOrEmptyString(e.target.value))}
+                  onBlur={(e) =>
+                    setAbbeNumber(normalizeNumericOrEmptyString(e.target.value))
+                  }
                 />
               </div>
             )}

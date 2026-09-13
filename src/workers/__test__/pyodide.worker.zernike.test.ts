@@ -8,14 +8,42 @@ const testModel: OpticalModel = {
   setAutoAperture: "manualAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20.0, fields: [0, Math.SQRT1_2, 1], isRelative: true, isWideAngle: true },
-    wavelengths: { weights: [[656.3, 1], [587, 2], [486.1, 1]], referenceIndex: 1 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20.0,
+      fields: [0, Math.SQRT1_2, 1],
+      isRelative: true,
+      isWideAngle: true,
+    },
+    wavelengths: {
+      weights: [
+        [656.3, 1],
+        [587, 2],
+        [486.1, 1],
+      ],
+      referenceIndex: 1,
+    },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -42 },
   surfaces: [
-    { label: "Default", curvatureRadius: 23.713, thickness: 4.831, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 10.009 },
-    { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "", semiDiameter: 8.3321 },
+    {
+      label: "Default",
+      curvatureRadius: 23.713,
+      thickness: 4.831,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      semiDiameter: 10.009,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -20.4942,
+      thickness: 41.2365,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 8.3321,
+    },
   ],
 };
 
@@ -32,14 +60,26 @@ describe("_getZernikeCoefficients", () => {
       wavelength_nm: 587.0,
     };
     let capturedCode = "";
-    const result = await _getZernikeCoefficients(async (code) => {
-      capturedCode = code;
-      return JSON.stringify(mockData);
-    }, testModel, 0, 1, "centroid", 56, "noll");
+    const result = await _getZernikeCoefficients(
+      async (code) => {
+        capturedCode = code;
+        return JSON.stringify(mockData);
+      },
+      testModel,
+      0,
+      1,
+      "centroid",
+      56,
+      "noll",
+    );
     expect(capturedCode).toContain("opm = ExactOpticalModel()");
-    expect(capturedCode).toContain("from rayoptics_web_utils.zernike import get_zernike_coefficients");
+    expect(capturedCode).toContain(
+      "from rayoptics_web_utils.zernike import get_zernike_coefficients",
+    );
     expect(capturedCode).toContain("zernike_terms=json.loads(");
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, zernike_terms=zernike_terms, image_point='centroid', pupil_space='entrance')");
+    expect(capturedCode).toContain(
+      "get_zernike_coefficients(_build_opm(), 0, 1, zernike_terms=zernike_terms, image_point='centroid', pupil_space='entrance')",
+    );
     expect(capturedCode).not.toContain("ordering=");
     expect(capturedCode).not.toContain("num_terms=");
     expect(capturedCode).toContain("json.dumps");
@@ -56,7 +96,16 @@ describe("_getZernikeCoefficients", () => {
     await _getZernikeCoefficients(runPython, testModel, 0, 1);
     expect(capturedCode).toContain("pupil_space='entrance'");
 
-    await _getZernikeCoefficients(runPython, testModel, 0, 1, undefined, 37, "noll", "exit");
+    await _getZernikeCoefficients(
+      runPython,
+      testModel,
+      0,
+      1,
+      undefined,
+      37,
+      "noll",
+      "exit",
+    );
     expect(capturedCode).toContain("pupil_space='exit'");
   });
 
@@ -72,11 +121,18 @@ describe("_getZernikeCoefficients", () => {
       wavelength_nm: 486.1,
     };
     let capturedCode = "";
-    await _getZernikeCoefficients(async (code) => {
-      capturedCode = code;
-      return JSON.stringify(mockData);
-    }, testModel, 2, 0);
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, zernike_terms=zernike_terms, image_point='chief_ray', pupil_space='entrance')");
+    await _getZernikeCoefficients(
+      async (code) => {
+        capturedCode = code;
+        return JSON.stringify(mockData);
+      },
+      testModel,
+      2,
+      0,
+    );
+    expect(capturedCode).toContain(
+      "get_zernike_coefficients(_build_opm(), 2, 0, zernike_terms=zernike_terms, image_point='chief_ray', pupil_space='entrance')",
+    );
   });
 
   it("defaults numTerms to 37 when not provided", async () => {
@@ -91,10 +147,15 @@ describe("_getZernikeCoefficients", () => {
       wavelength_nm: 587.0,
     };
     let capturedCode = "";
-    await _getZernikeCoefficients(async (code) => {
-      capturedCode = code;
-      return JSON.stringify(mockData);
-    }, testModel, 0, 0);
+    await _getZernikeCoefficients(
+      async (code) => {
+        capturedCode = code;
+        return JSON.stringify(mockData);
+      },
+      testModel,
+      0,
+      0,
+    );
     expect(capturedCode).toContain("[[0,0],[1,1],[1,-1],[2,0]");
   });
 
@@ -110,13 +171,20 @@ describe("_getZernikeCoefficients", () => {
       wavelength_nm: 587.0,
     };
     let capturedCode = "";
-    await _getZernikeCoefficients(async (code) => {
-      capturedCode = code;
-      return JSON.stringify(mockData);
-    }, testModel, 0, 0);
+    await _getZernikeCoefficients(
+      async (code) => {
+        capturedCode = code;
+        return JSON.stringify(mockData);
+      },
+      testModel,
+      0,
+      0,
+    );
 
     const expectedTerms = JSON.stringify(zernikeTermsForOrdering("noll", 37));
-    expect(capturedCode).toContain(`zernike_terms=json.loads(${JSON.stringify(expectedTerms)})`);
+    expect(capturedCode).toContain(
+      `zernike_terms=json.loads(${JSON.stringify(expectedTerms)})`,
+    );
   });
 
   it("passes Fringe terms to Python when specified", async () => {
@@ -132,10 +200,18 @@ describe("_getZernikeCoefficients", () => {
     };
     const ordering: ZernikeOrdering = "fringe";
     let capturedCode = "";
-    await _getZernikeCoefficients(async (code) => {
-      capturedCode = code;
-      return JSON.stringify(mockData);
-    }, testModel, 0, 0, undefined, 37, ordering);
+    await _getZernikeCoefficients(
+      async (code) => {
+        capturedCode = code;
+        return JSON.stringify(mockData);
+      },
+      testModel,
+      0,
+      0,
+      undefined,
+      37,
+      ordering,
+    );
     expect(capturedCode).toContain("[[0,0],[1,1],[1,-1],[2,0],[2,2],[2,-2]");
     expect(capturedCode).not.toContain("ordering='fringe'");
   });

@@ -15,7 +15,10 @@ type ExternalLinkProps = Omit<
 
 const { color, size, style } = cx.externalLink;
 
-const fontSizeByVariant: Record<NonNullable<ExternalLinkProps["variant"]>, string> = {
+const fontSizeByVariant: Record<
+  NonNullable<ExternalLinkProps["variant"]>,
+  string
+> = {
   default: size.fontSize,
   description: size.descriptionFontSize,
 };

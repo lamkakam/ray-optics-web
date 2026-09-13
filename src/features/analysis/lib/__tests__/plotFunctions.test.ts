@@ -1,10 +1,24 @@
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { AstigmatismCurveData, DiffractionMtfData, FieldCurveData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
+import type {
+  AstigmatismCurveData,
+  DiffractionMtfData,
+  FieldCurveData,
+  LongitudinalSphericalAberrationData,
+  OpdFanData,
+  RayFanData,
+  StrehlVsWavelengthData,
+} from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
-import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
+import {
+  commitAnalysisPlotResult,
+  loadAnalysisPlot,
+} from "@/features/analysis/lib/plotFunctions";
+import {
+  createAnalysisPlotSlice,
+  type AnalysisPlotState,
+} from "@/features/analysis/stores/analysisPlotStore";
 import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 
 const mockModel = {} as OpticalModel;
@@ -50,14 +64,15 @@ const astigmatismCurveData: AstigmatismCurveData = {
   unitY: "deg",
 };
 
-const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData = [
-  {
-    wvlIdx: 0,
-    LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
-    unitX: "mm",
-    unitY: "",
-  },
-];
+const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData =
+  [
+    {
+      wvlIdx: 0,
+      LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+      unitX: "mm",
+      unitY: "",
+    },
+  ];
 
 function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
   return {
@@ -83,7 +98,14 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
           [0.5, 0.7],
         ],
       },
-      transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
+      transverse: {
+        TSA: 0.1,
+        TCO: 0.2,
+        TAS: 0.3,
+        SAS: 0.4,
+        PTB: 0.5,
+        DST: 0.6,
+      },
       wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
       curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
     } satisfies SeidelData),
@@ -132,7 +154,9 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     ]),
     getFieldCurvatureData: jest.fn().mockResolvedValue(fieldCurveData),
     getAstigmatismCurveData: jest.fn().mockResolvedValue(astigmatismCurveData),
-    getLSAData: jest.fn().mockResolvedValue(longitudinalSphericalAberrationData),
+    getLSAData: jest
+      .fn()
+      .mockResolvedValue(longitudinalSphericalAberrationData),
     getWavefrontData: jest.fn(),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -144,20 +168,24 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     }),
     getDiffractionPSFData: jest.fn(),
     getDiffractionMTFData: jest.fn(),
-    getStrehlVsWavelengthData: jest.fn().mockResolvedValue(strehlVsWavelengthData),
+    getStrehlVsWavelengthData: jest
+      .fn()
+      .mockResolvedValue(strehlVsWavelengthData),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
 }
 
 describe("loadAnalysisPlot", () => {
   beforeEach(() => _resetAnalysisCache());
   it("returns undefined when proxy is undefined", async () => {
-    await expect(loadAnalysisPlot({
-      plotType: "rayFan",
-      proxy: undefined,
-      model: mockModel,
-      fieldIndex: 0,
-      wavelengthIndex: 0,
-    })).resolves.toBeUndefined();
+    await expect(
+      loadAnalysisPlot({
+        plotType: "rayFan",
+        proxy: undefined,
+        model: mockModel,
+        fieldIndex: 0,
+        wavelengthIndex: 0,
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it("loads wavefrontMap through getWavefrontData", async () => {
@@ -171,7 +199,12 @@ describe("loadAnalysisPlot", () => {
       imagePoint: "centroid",
     });
 
-    expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2, "centroid");
+    expect(proxy.getWavefrontData).toHaveBeenCalledWith(
+      mockModel,
+      1,
+      2,
+      "centroid",
+    );
     expect(result).toEqual({
       kind: "wavefrontMap",
       wavefrontMapData: undefined,
@@ -255,7 +288,12 @@ describe("loadAnalysisPlot", () => {
       imagePoint: "centroid",
     });
 
-    expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1, "centroid");
+    expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(
+      mockModel,
+      2,
+      1,
+      "centroid",
+    );
     expect(result).toEqual({
       kind: "diffractionPSF",
       diffractionPsfData: undefined,
@@ -273,7 +311,12 @@ describe("loadAnalysisPlot", () => {
       imagePoint: "centroid",
     });
 
-    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1, "centroid");
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
+      mockModel,
+      2,
+      1,
+      "centroid",
+    );
     expect(result).toEqual({
       kind: "diffractionMTF",
       diffractionMtfData: undefined,
@@ -291,7 +334,11 @@ describe("loadAnalysisPlot", () => {
       imagePoint: "centroid",
     });
 
-    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(mockModel, 1, "centroid");
+    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(
+      mockModel,
+      1,
+      "centroid",
+    );
     expect(result).toEqual({
       kind: "strehlVsWavelength",
       strehlVsWavelengthData,
@@ -333,7 +380,11 @@ describe("loadAnalysisPlot", () => {
       imagePoint: "centroid",
     });
 
-    expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(mockModel, 0, "centroid");
+    expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(
+      mockModel,
+      0,
+      "centroid",
+    );
     expect(result).toEqual({
       kind: "spotDiagram",
       spotDiagramData: [
@@ -432,10 +483,13 @@ describe("commitAnalysisPlotResult", () => {
   it("commits diffractionMTF data into the analysis plot store", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
 
-    commitAnalysisPlotResult({
-      kind: "diffractionMTF",
-      diffractionMtfData,
-    }, store);
+    commitAnalysisPlotResult(
+      {
+        kind: "diffractionMTF",
+        diffractionMtfData,
+      },
+      store,
+    );
 
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
@@ -443,21 +497,29 @@ describe("commitAnalysisPlotResult", () => {
   it("commits strehlVsWavelength data into the analysis plot store", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
 
-    commitAnalysisPlotResult({
-      kind: "strehlVsWavelength",
-      strehlVsWavelengthData,
-    }, store);
+    commitAnalysisPlotResult(
+      {
+        kind: "strehlVsWavelength",
+        strehlVsWavelengthData,
+      },
+      store,
+    );
 
-    expect(store.getState().strehlVsWavelengthData).toEqual(strehlVsWavelengthData);
+    expect(store.getState().strehlVsWavelengthData).toEqual(
+      strehlVsWavelengthData,
+    );
   });
 
   it("commits fieldCurvature data into the analysis plot store", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
 
-    commitAnalysisPlotResult({
-      kind: "fieldCurvature",
-      fieldCurvatureData: fieldCurveData,
-    }, store);
+    commitAnalysisPlotResult(
+      {
+        kind: "fieldCurvature",
+        fieldCurvatureData: fieldCurveData,
+      },
+      store,
+    );
 
     expect(store.getState().fieldCurvatureData).toEqual(fieldCurveData);
   });
@@ -465,10 +527,13 @@ describe("commitAnalysisPlotResult", () => {
   it("commits astigmatismCurve data into the analysis plot store", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
 
-    commitAnalysisPlotResult({
-      kind: "astigmatismCurve",
-      astigmatismCurveData,
-    }, store);
+    commitAnalysisPlotResult(
+      {
+        kind: "astigmatismCurve",
+        astigmatismCurveData,
+      },
+      store,
+    );
 
     expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
   });
@@ -477,14 +542,17 @@ describe("commitAnalysisPlotResult", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
     store.getState().setDiffractionMtfData(diffractionMtfData);
 
-    commitAnalysisPlotResult({
-      kind: "surfaceBySurface3rdOrder",
-      surfaceBySurface3rdOrderData: {
-        aberrTypes: ["S-I"],
-        surfaceLabels: ["S1"],
-        data: [[0.1]],
+    commitAnalysisPlotResult(
+      {
+        kind: "surfaceBySurface3rdOrder",
+        surfaceBySurface3rdOrderData: {
+          aberrTypes: ["S-I"],
+          surfaceLabels: ["S1"],
+          data: [[0.1]],
+        },
       },
-    }, store);
+      store,
+    );
 
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });

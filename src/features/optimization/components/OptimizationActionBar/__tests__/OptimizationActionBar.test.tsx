@@ -14,8 +14,16 @@ describe("OptimizationActionBar", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Optimize" })).toHaveClass("px-3", "py-1.5", "text-sm");
-    expect(screen.getByRole("button", { name: "Apply to Editor" })).toHaveClass("px-3", "py-1.5", "text-sm");
+    expect(screen.getByRole("button", { name: "Optimize" })).toHaveClass(
+      "px-3",
+      "py-1.5",
+      "text-sm",
+    );
+    expect(screen.getByRole("button", { name: "Apply to Editor" })).toHaveClass(
+      "px-3",
+      "py-1.5",
+      "text-sm",
+    );
   });
 
   it("renders action buttons and forwards clicks", async () => {
@@ -52,6 +60,8 @@ describe("OptimizationActionBar", () => {
     );
 
     expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Apply to Editor" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Apply to Editor" }),
+    ).toBeDisabled();
   });
 });

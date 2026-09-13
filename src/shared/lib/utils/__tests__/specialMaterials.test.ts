@@ -1,5 +1,8 @@
 /** Exact mapping contract for media names shared with generated worker code. */
-import { builtInSpecialMaterial, nonBuiltInSpecialMaterial } from "@/shared/lib/utils/specialMaterials";
+import {
+  builtInSpecialMaterial,
+  nonBuiltInSpecialMaterial,
+} from "@/shared/lib/utils/specialMaterials";
 
 describe("special materials", () => {
   it("contains exactly the built-in media", () => {

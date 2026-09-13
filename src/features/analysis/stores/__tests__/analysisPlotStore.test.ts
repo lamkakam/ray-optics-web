@@ -73,7 +73,9 @@ describe("analysisPlotStore", () => {
 
     it("has longitudinalSphericalAberrationData as undefined", () => {
       const store = makeStore();
-      expect(store.getState().longitudinalSphericalAberrationData).toBeUndefined();
+      expect(
+        store.getState().longitudinalSphericalAberrationData,
+      ).toBeUndefined();
     });
 
     it("has opdFanData as undefined", () => {
@@ -222,10 +224,12 @@ describe("analysisPlotStore", () => {
         naSagittal: 0.011,
       });
 
-      expect(store.getState().diffractionMtfData).toEqual(expect.objectContaining({
-        fieldIdx: 1,
-        wvlIdx: 2,
-      }));
+      expect(store.getState().diffractionMtfData).toEqual(
+        expect.objectContaining({
+          fieldIdx: 1,
+          wvlIdx: 2,
+        }),
+      );
       expect(store.getState().rayFanData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
       expect(store.getState().spotDiagramData).toBeUndefined();
@@ -502,7 +506,9 @@ describe("analysisPlotStore", () => {
 
       store.getState().setAstigmatismCurveData(astigmatismCurveData);
 
-      expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
+      expect(store.getState().astigmatismCurveData).toEqual(
+        astigmatismCurveData,
+      );
       expect(store.getState().fieldCurvatureData).toBeUndefined();
     });
   });

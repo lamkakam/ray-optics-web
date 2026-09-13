@@ -13,9 +13,13 @@ let resizeObserverCallback: ResizeObserverCallback | undefined;
 let mockBuildOption: jest.Mock;
 let mockGetChartHeight: jest.Mock;
 
-jest.mock("echarts/core", () => ({
-  init: (...args: unknown[]) => mockEchartsInit(...args),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    init: (...args: unknown[]) => mockEchartsInit(...args),
+  }),
+  { virtual: true },
+);
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -42,7 +46,9 @@ describe("createAnalysisChartComponent", () => {
     mockResizeObserverObserve = jest.fn();
     mockResizeObserverDisconnect = jest.fn();
     mockBuildOption = jest.fn(() => ({ series: [] }));
-    mockGetChartHeight = jest.fn(({ parentWidth }: { readonly parentWidth: number }) => parentWidth / 4);
+    mockGetChartHeight = jest.fn(
+      ({ parentWidth }: { readonly parentWidth: number }) => parentWidth / 4,
+    );
     resizeObserverCallback = undefined;
 
     class MockResizeObserver implements ResizeObserver {
@@ -176,17 +182,28 @@ describe("createAnalysisChartComponent", () => {
     render(
       <div style={{ width: "640px", height: "480px" }}>
         <TestChart data="series-d" />
-      </div>
+      </div>,
     );
 
     const chart = screen.getByTestId("test-chart");
     const chartParent = chart.parentElement as HTMLDivElement;
-    Object.defineProperty(chartParent, "clientWidth", { configurable: true, value: 640 });
-    Object.defineProperty(chartParent, "clientHeight", { configurable: true, value: 480 });
+    Object.defineProperty(chartParent, "clientWidth", {
+      configurable: true,
+      value: 640,
+    });
+    Object.defineProperty(chartParent, "clientHeight", {
+      configurable: true,
+      value: 480,
+    });
 
     act(() => {
       resizeObserverCallback?.(
-        [{ target: chartParent, contentRect: { width: 640, height: 480 } as DOMRectReadOnly }] as unknown as ResizeObserverEntry[],
+        [
+          {
+            target: chartParent,
+            contentRect: { width: 640, height: 480 } as DOMRectReadOnly,
+          },
+        ] as unknown as ResizeObserverEntry[],
         {} as ResizeObserver,
       );
     });
@@ -215,7 +232,7 @@ describe("createAnalysisChartComponent", () => {
     render(
       <div style={{ width: "640px", height: "480px" }}>
         <TestChart data="series-e" />
-      </div>
+      </div>,
     );
 
     act(() => {
@@ -224,12 +241,23 @@ describe("createAnalysisChartComponent", () => {
 
     const chart = screen.getByTestId("test-chart");
     const chartParent = chart.parentElement as HTMLDivElement;
-    Object.defineProperty(chartParent, "clientWidth", { configurable: true, value: 640 });
-    Object.defineProperty(chartParent, "clientHeight", { configurable: true, value: 180 });
+    Object.defineProperty(chartParent, "clientWidth", {
+      configurable: true,
+      value: 640,
+    });
+    Object.defineProperty(chartParent, "clientHeight", {
+      configurable: true,
+      value: 180,
+    });
 
     act(() => {
       resizeObserverCallback?.(
-        [{ target: chartParent, contentRect: { width: 640, height: 180 } as DOMRectReadOnly }] as unknown as ResizeObserverEntry[],
+        [
+          {
+            target: chartParent,
+            contentRect: { width: 640, height: 180 } as DOMRectReadOnly,
+          },
+        ] as unknown as ResizeObserverEntry[],
         {} as ResizeObserver,
       );
     });

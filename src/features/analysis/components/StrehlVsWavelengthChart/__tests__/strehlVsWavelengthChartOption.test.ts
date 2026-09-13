@@ -2,22 +2,38 @@ import { buildStrehlVsWavelengthOption } from "@/features/analysis/components/St
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  LineChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    LineChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  TooltipComponent: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: {},
+    TooltipComponent: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 describe("strehlVsWavelengthChartOption", () => {
   const strehlVsWavelengthData: StrehlVsWavelengthData = {
@@ -38,7 +54,9 @@ describe("strehlVsWavelengthChartOption", () => {
 
     expect(option.xAxis.name).toBe("Wavelength (nm)");
     expect(option.xAxis.min).toBe(strehlVsWavelengthData.x[0]);
-    expect(option.xAxis.max).toBe(strehlVsWavelengthData.x[strehlVsWavelengthData.x.length - 1]);
+    expect(option.xAxis.max).toBe(
+      strehlVsWavelengthData.x[strehlVsWavelengthData.x.length - 1],
+    );
     expect(option.yAxis.name).toBe("Strehl Ratio");
     expect(option.yAxis.min).toBe(0);
     expect(option.yAxis.max).toBe(1);
@@ -47,7 +65,11 @@ describe("strehlVsWavelengthChartOption", () => {
         name: "Strehl",
         type: "line",
         showSymbol: false,
-        data: [[486.1, 0.72], [587.6, 0.94], [656.3, 0.81]],
+        data: [
+          [486.1, 0.72],
+          [587.6, 0.94],
+          [656.3, 0.81],
+        ],
       }),
     ]);
   });
@@ -60,6 +82,9 @@ describe("strehlVsWavelengthChartOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.series[0].data).toEqual([[486.1, 0.72], [587.6, 0.94]]);
+    expect(option.series[0].data).toEqual([
+      [486.1, 0.72],
+      [587.6, 0.94],
+    ]);
   });
 });

@@ -3,7 +3,12 @@
 import { useMemo } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
-import type { RadiusMode, AsphereOptimizationState, DecenterOptimizationState, GlassMode } from "@/features/optimization/stores/optimizationStore";
+import type {
+  RadiusMode,
+  AsphereOptimizationState,
+  DecenterOptimizationState,
+  GlassMode,
+} from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
@@ -51,7 +56,9 @@ function getGlassSurfaceIndex(row: RadiusRow): number | undefined {
   return undefined;
 }
 
-function getAsphereModeLabel(asphereState: AsphereOptimizationState | undefined): string {
+function getAsphereModeLabel(
+  asphereState: AsphereOptimizationState | undefined,
+): string {
   if (asphereState === undefined) {
     return "C";
   }
@@ -73,11 +80,15 @@ function getAsphereModeLabel(asphereState: AsphereOptimizationState | undefined)
   return labels.length > 0 ? labels.join(",") : "C";
 }
 
-function getDecenterModeLabel(state: DecenterOptimizationState | undefined): string {
+function getDecenterModeLabel(
+  state: DecenterOptimizationState | undefined,
+): string {
   if (state === undefined) return "C";
   const modes = [state.alpha, state.beta, state.gamma, state.x, state.y];
-  const labels = [modes.some(({ mode }) => mode === "variable") ? "V" : undefined,
-    modes.some(({ mode }) => mode === "pickup") ? "P" : undefined].filter((value): value is string => value !== undefined);
+  const labels = [
+    modes.some(({ mode }) => mode === "variable") ? "V" : undefined,
+    modes.some(({ mode }) => mode === "pickup") ? "P" : undefined,
+  ].filter((value): value is string => value !== undefined);
   return labels.length === 0 ? "C" : labels.join(",");
 }
 
@@ -173,199 +184,249 @@ export function OptimizationLensPrescriptionGrid({
 }: OptimizationLensPrescriptionGridProps) {
   const gridTheme = useAgGridTheme();
 
-  const lensColumns = useMemo<ColDef<RadiusRow>[]>(() => [
-    {
-      ...lensPrescriptionGridIndexColumnDef,
-      valueGetter: (params) => {
-        if (params.data?.row.kind !== "surface") {
-          return undefined;
-        }
+  const lensColumns = useMemo<ColDef<RadiusRow>[]>(
+    () => [
+      {
+        ...lensPrescriptionGridIndexColumnDef,
+        valueGetter: (params) => {
+          if (params.data?.row.kind !== "surface") {
+            return undefined;
+          }
 
-        return params.data.radiusSurfaceIndex;
+          return params.data.radiusSurfaceIndex;
+        },
       },
-    },
-    createSurfaceColumn<RadiusRow>({ getGridRow: (data) => data.row }),
-    createCommentColumn<RadiusRow>({ getGridRow: (data) => data.row }),
-    createRadiusOfCurvatureColumn<RadiusRow>({ getGridRow: (data) => data.row }),
-    {
-      headerName: "Var.",
-      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-      cellRenderer: (params: { data: RadiusRow }) => {
-        if (params.data.radiusSurfaceIndex === undefined) {
-          return undefined;
-        }
+      createSurfaceColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+      createCommentColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+      createRadiusOfCurvatureColumn<RadiusRow>({
+        getGridRow: (data) => data.row,
+      }),
+      {
+        headerName: "Var.",
+        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+        cellRenderer: (params: { data: RadiusRow }) => {
+          if (params.data.radiusSurfaceIndex === undefined) {
+            return undefined;
+          }
 
-        const mode = radiusModes.find((entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex);
-        const surfaceIndex = params.data.radiusSurfaceIndex;
-        return (
-          <LensPrescriptionActionWrapper onAction={() => onOpenRadiusModal(surfaceIndex)}>
-            <Tooltip
-              text="Click to configure radius variable or pickup"
-              position="top"
-              portal
-              noTouch
-              triggerClassName="flex h-full w-full"
+          const mode = radiusModes.find(
+            (entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex,
+          );
+          const surfaceIndex = params.data.radiusSurfaceIndex;
+          return (
+            <LensPrescriptionActionWrapper
+              onAction={() => onOpenRadiusModal(surfaceIndex)}
             >
-              <OptimizationVariableModeCell
-                label={getSurfaceModeLabel(mode?.mode)}
-                ariaLabel={`Radius mode for surface ${surfaceIndex}`}
-                onOpenModal={() => onOpenRadiusModal(surfaceIndex)}
-              />
-            </Tooltip>
-          </LensPrescriptionActionWrapper>
-        );
+              <Tooltip
+                text="Click to configure radius variable or pickup"
+                position="top"
+                portal
+                noTouch
+                triggerClassName="flex h-full w-full"
+              >
+                <OptimizationVariableModeCell
+                  label={getSurfaceModeLabel(mode?.mode)}
+                  ariaLabel={`Radius mode for surface ${surfaceIndex}`}
+                  onOpenModal={() => onOpenRadiusModal(surfaceIndex)}
+                />
+              </Tooltip>
+            </LensPrescriptionActionWrapper>
+          );
+        },
       },
-    },
-    createThicknessColumn<RadiusRow>({ getGridRow: (data) => data.row }),
-    {
-      headerName: "Var.",
-      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-      cellRenderer: (params: { data: RadiusRow }) => {
-        if (params.data.thicknessSurfaceIndex === undefined) {
-          return undefined;
-        }
+      createThicknessColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+      {
+        headerName: "Var.",
+        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+        cellRenderer: (params: { data: RadiusRow }) => {
+          if (params.data.thicknessSurfaceIndex === undefined) {
+            return undefined;
+          }
 
-        const mode = thicknessModes.find((entry) => entry.surfaceIndex === params.data.thicknessSurfaceIndex);
-        const surfaceIndex = params.data.thicknessSurfaceIndex;
-        return (
-          <LensPrescriptionActionWrapper onAction={() => onOpenThicknessModal(surfaceIndex)}>
-            <Tooltip
-              text="Click to configure thickness variable or pickup"
-              position="top"
-              portal
-              noTouch
-              triggerClassName="flex h-full w-full"
+          const mode = thicknessModes.find(
+            (entry) => entry.surfaceIndex === params.data.thicknessSurfaceIndex,
+          );
+          const surfaceIndex = params.data.thicknessSurfaceIndex;
+          return (
+            <LensPrescriptionActionWrapper
+              onAction={() => onOpenThicknessModal(surfaceIndex)}
             >
-              <OptimizationVariableModeCell
-                label={getSurfaceModeLabel(mode?.mode)}
-                ariaLabel={`Thickness mode for surface ${surfaceIndex}`}
-                onOpenModal={() => onOpenThicknessModal(surfaceIndex)}
-              />
-            </Tooltip>
-          </LensPrescriptionActionWrapper>
-        );
+              <Tooltip
+                text="Click to configure thickness variable or pickup"
+                position="top"
+                portal
+                noTouch
+                triggerClassName="flex h-full w-full"
+              >
+                <OptimizationVariableModeCell
+                  label={getSurfaceModeLabel(mode?.mode)}
+                  ariaLabel={`Thickness mode for surface ${surfaceIndex}`}
+                  onOpenModal={() => onOpenThicknessModal(surfaceIndex)}
+                />
+              </Tooltip>
+            </LensPrescriptionActionWrapper>
+          );
+        },
       },
-    },
-    createMediumColumn<RadiusRow>({
-      getGridRow: (data) => data.row,
-      onOpenMediumModal,
-      tooltipText: "Click to view medium or glass",
-    }),
-    ...(canOptimizeGlass ? [{
-      headerName: "Var.",
-      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-      cellRenderer: (params: { data: RadiusRow }) => {
-        const surfaceIndex = getGlassSurfaceIndex(params.data);
-        if (surfaceIndex === undefined || onOpenGlassModal === undefined) {
-          return undefined;
-        }
+      createMediumColumn<RadiusRow>({
+        getGridRow: (data) => data.row,
+        onOpenMediumModal,
+        tooltipText: "Click to view medium or glass",
+      }),
+      ...(canOptimizeGlass
+        ? [
+            {
+              headerName: "Var.",
+              width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+              cellRenderer: (params: { data: RadiusRow }) => {
+                const surfaceIndex = getGlassSurfaceIndex(params.data);
+                if (
+                  surfaceIndex === undefined ||
+                  onOpenGlassModal === undefined
+                ) {
+                  return undefined;
+                }
 
-        const mode = glassModes.find((entry) => entry.surfaceIndex === surfaceIndex);
-        const targetLabel = surfaceIndex === 0 ? "Object" : `surface ${surfaceIndex}`;
-        return (
-          <LensPrescriptionActionWrapper onAction={() => onOpenGlassModal(surfaceIndex)}>
-            <Tooltip
-              text="Click to configure glass candidates"
-              position="top"
-              portal
-              noTouch
-              triggerClassName="flex h-full w-full"
+                const mode = glassModes.find(
+                  (entry) => entry.surfaceIndex === surfaceIndex,
+                );
+                const targetLabel =
+                  surfaceIndex === 0 ? "Object" : `surface ${surfaceIndex}`;
+                return (
+                  <LensPrescriptionActionWrapper
+                    onAction={() => onOpenGlassModal(surfaceIndex)}
+                  >
+                    <Tooltip
+                      text="Click to configure glass candidates"
+                      position="top"
+                      portal
+                      noTouch
+                      triggerClassName="flex h-full w-full"
+                    >
+                      <OptimizationVariableModeCell
+                        label={getGlassModeLabel(mode?.mode)}
+                        ariaLabel={`Glass mode for ${targetLabel}`}
+                        onOpenModal={() => onOpenGlassModal(surfaceIndex)}
+                      />
+                    </Tooltip>
+                  </LensPrescriptionActionWrapper>
+                );
+              },
+            } satisfies ColDef<RadiusRow>,
+          ]
+        : []),
+      createSemiDiameterColumn<RadiusRow>({
+        getGridRow: (data) => data.row,
+        semiDiameterReadonly: autoAperture,
+      }),
+      createApertureColumn<RadiusRow>({
+        getGridRow: (data) => data.row,
+        onOpenApertureModal,
+        tooltipText: "Click to view aperture",
+      }),
+      createAsphericalColumn<RadiusRow>({
+        getGridRow: (data) => data.row,
+        onOpenAsphericalModal,
+        tooltipText: "Click to view aspherical parameters",
+      }),
+      {
+        headerName: "Var.",
+        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+        cellRenderer: (params: { data: RadiusRow }) => {
+          if (
+            params.data.row.kind !== "surface" ||
+            params.data.radiusSurfaceIndex === undefined
+          ) {
+            return undefined;
+          }
+
+          const asphereState = asphereStates.find(
+            (entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex,
+          );
+          const surfaceIndex = params.data.radiusSurfaceIndex;
+
+          return (
+            <LensPrescriptionActionWrapper
+              onAction={() => onOpenAsphereVarModal(surfaceIndex)}
             >
-              <OptimizationVariableModeCell
-                label={getGlassModeLabel(mode?.mode)}
-                ariaLabel={`Glass mode for ${targetLabel}`}
-                onOpenModal={() => onOpenGlassModal(surfaceIndex)}
-              />
-            </Tooltip>
-          </LensPrescriptionActionWrapper>
-        );
+              <Tooltip
+                text="Click to configure asphere variable or pickup"
+                position="top"
+                portal
+                noTouch
+                triggerClassName="flex h-full w-full"
+              >
+                <OptimizationVariableModeCell
+                  label={getAsphereModeLabel(asphereState)}
+                  ariaLabel={`Asphere mode for surface ${surfaceIndex}`}
+                  onOpenModal={() => onOpenAsphereVarModal(surfaceIndex)}
+                />
+              </Tooltip>
+            </LensPrescriptionActionWrapper>
+          );
+        },
       },
-    } satisfies ColDef<RadiusRow>] : []),
-    createSemiDiameterColumn<RadiusRow>({
-      getGridRow: (data) => data.row,
-      semiDiameterReadonly: autoAperture,
-    }),
-    createApertureColumn<RadiusRow>({
-      getGridRow: (data) => data.row,
-      onOpenApertureModal,
-      tooltipText: "Click to view aperture",
-    }),
-    createAsphericalColumn<RadiusRow>({
-      getGridRow: (data) => data.row,
+      createDecenterColumn<RadiusRow>({
+        getGridRow: (data) => data.row,
+        onOpenDecenterModal,
+      }),
+      {
+        headerName: "Var.",
+        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+        cellRenderer: (params: { data: RadiusRow }) => {
+          const surfaceIndex = params.data.radiusSurfaceIndex;
+          if (surfaceIndex === undefined || params.data.row.kind === "object")
+            return undefined;
+          const state = decenterStates.find(
+            (entry) => entry.surfaceIndex === surfaceIndex,
+          );
+          return (
+            <LensPrescriptionActionWrapper
+              onAction={() => onOpenTiltDecenterVarModal(surfaceIndex)}
+            >
+              <Tooltip
+                text="Click to configure tilt and decenter variable or pickup"
+                position="top"
+                portal
+                noTouch
+                triggerClassName="flex h-full w-full"
+              >
+                <OptimizationVariableModeCell
+                  label={getDecenterModeLabel(state)}
+                  ariaLabel={`Tilt and decenter mode for surface ${surfaceIndex}`}
+                  onOpenModal={() => onOpenTiltDecenterVarModal(surfaceIndex)}
+                />
+              </Tooltip>
+            </LensPrescriptionActionWrapper>
+          );
+        },
+      },
+      createDiffractionGratingColumn<RadiusRow>({
+        getGridRow: (data) => data.row,
+        onOpenDiffractionGratingModal,
+        tooltipText: "Click to view diffraction grating",
+      }),
+    ],
+    [
+      autoAperture,
+      asphereStates,
+      decenterStates,
+      canOptimizeGlass,
+      glassModes,
       onOpenAsphericalModal,
-      tooltipText: "Click to view aspherical parameters",
-    }),
-    {
-      headerName: "Var.",
-      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-      cellRenderer: (params: { data: RadiusRow }) => {
-        if (params.data.row.kind !== "surface" || params.data.radiusSurfaceIndex === undefined) {
-          return undefined;
-        }
-
-        const asphereState = asphereStates.find((entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex);
-        const surfaceIndex = params.data.radiusSurfaceIndex;
-
-        return (
-          <LensPrescriptionActionWrapper onAction={() => onOpenAsphereVarModal(surfaceIndex)}>
-            <Tooltip
-              text="Click to configure asphere variable or pickup"
-              position="top"
-              portal
-              noTouch
-              triggerClassName="flex h-full w-full"
-            >
-              <OptimizationVariableModeCell
-                label={getAsphereModeLabel(asphereState)}
-                ariaLabel={`Asphere mode for surface ${surfaceIndex}`}
-                onOpenModal={() => onOpenAsphereVarModal(surfaceIndex)}
-              />
-            </Tooltip>
-          </LensPrescriptionActionWrapper>
-        );
-      },
-    },
-    createDecenterColumn<RadiusRow>({
-      getGridRow: (data) => data.row,
+      onOpenApertureModal,
+      onOpenAsphereVarModal,
       onOpenDecenterModal,
-    }),
-    {
-      headerName: "Var.", width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-      cellRenderer: (params: { data: RadiusRow }) => {
-        const surfaceIndex = params.data.radiusSurfaceIndex;
-        if (surfaceIndex === undefined || params.data.row.kind === "object") return undefined;
-        const state = decenterStates.find((entry) => entry.surfaceIndex === surfaceIndex);
-        return <LensPrescriptionActionWrapper onAction={() => onOpenTiltDecenterVarModal(surfaceIndex)}>
-          <Tooltip text="Click to configure tilt and decenter variable or pickup" position="top" portal noTouch triggerClassName="flex h-full w-full">
-            <OptimizationVariableModeCell label={getDecenterModeLabel(state)} ariaLabel={`Tilt and decenter mode for surface ${surfaceIndex}`} onOpenModal={() => onOpenTiltDecenterVarModal(surfaceIndex)} />
-          </Tooltip>
-        </LensPrescriptionActionWrapper>;
-      },
-    },
-    createDiffractionGratingColumn<RadiusRow>({
-      getGridRow: (data) => data.row,
+      onOpenTiltDecenterVarModal,
       onOpenDiffractionGratingModal,
-      tooltipText: "Click to view diffraction grating",
-    }),
-  ], [
-    autoAperture,
-    asphereStates,
-    decenterStates,
-    canOptimizeGlass,
-    glassModes,
-    onOpenAsphericalModal,
-    onOpenApertureModal,
-    onOpenAsphereVarModal,
-    onOpenDecenterModal,
-    onOpenTiltDecenterVarModal,
-    onOpenDiffractionGratingModal,
-    onOpenMediumModal,
-    onOpenGlassModal,
-    onOpenRadiusModal,
-    onOpenThicknessModal,
-    radiusModes,
-    thicknessModes,
-  ]);
+      onOpenMediumModal,
+      onOpenGlassModal,
+      onOpenRadiusModal,
+      onOpenThicknessModal,
+      radiusModes,
+      thicknessModes,
+    ],
+  );
 
   return (
     <div

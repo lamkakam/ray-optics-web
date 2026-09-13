@@ -10,7 +10,8 @@ const USER_DEFINED_MATERIALS = "import json\nuser_defined_materials = {}";
 const REMAINING_SCRIPT = "import rayoptics\nprint('hello')";
 
 const COPY_ALL_LABEL = "Copy all to clipboard";
-const COPY_USER_DEFINED_MATERIALS_LABEL = "Copy user-defined materials to clipboard";
+const COPY_USER_DEFINED_MATERIALS_LABEL =
+  "Copy user-defined materials to clipboard";
 const COPY_REMAINING_SCRIPT_LABEL = "Copy remaining script to clipboard";
 
 function renderPythonScriptModal(onClose = jest.fn()) {
@@ -32,7 +33,7 @@ describe("PythonScriptModal", () => {
         userDefinedMaterials={USER_DEFINED_MATERIALS}
         remainingScript={REMAINING_SCRIPT}
         onClose={jest.fn()}
-      />
+      />,
     );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -44,7 +45,7 @@ describe("PythonScriptModal", () => {
         userDefinedMaterials={USER_DEFINED_MATERIALS}
         remainingScript={REMAINING_SCRIPT}
         onClose={jest.fn()}
-      />
+      />,
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Python Script")).toBeInTheDocument();
@@ -52,11 +53,17 @@ describe("PythonScriptModal", () => {
 
   it("displays the two sections in separate <pre><code> blocks", () => {
     renderPythonScriptModal();
-    const codeElements = screen.getByRole("dialog").querySelectorAll("pre > code");
+    const codeElements = screen
+      .getByRole("dialog")
+      .querySelectorAll("pre > code");
 
     expect(codeElements).toHaveLength(2);
-    expect(codeElements[0]).toHaveTextContent(USER_DEFINED_MATERIALS, { normalizeWhitespace: false });
-    expect(codeElements[1]).toHaveTextContent(REMAINING_SCRIPT, { normalizeWhitespace: false });
+    expect(codeElements[0]).toHaveTextContent(USER_DEFINED_MATERIALS, {
+      normalizeWhitespace: false,
+    });
+    expect(codeElements[1]).toHaveTextContent(REMAINING_SCRIPT, {
+      normalizeWhitespace: false,
+    });
   });
 
   it("uses the modal body as the only scroll container for both code sections", () => {
@@ -66,18 +73,28 @@ describe("PythonScriptModal", () => {
     const preElements = dialog.querySelectorAll("pre");
 
     expect(body).toHaveClass("overflow-auto");
-    expect(body.querySelectorAll(".overflow-auto, .overflow-x-auto, .overflow-y-auto")).toHaveLength(0);
+    expect(
+      body.querySelectorAll(
+        ".overflow-auto, .overflow-x-auto, .overflow-y-auto",
+      ),
+    ).toHaveLength(0);
 
     for (const preElement of preElements) {
       expect(preElement.parentElement).toHaveClass("relative", "w-full");
-      expect(preElement.parentElement).not.toHaveClass("overflow-auto", "overflow-x-auto", "overflow-y-auto");
+      expect(preElement.parentElement).not.toHaveClass(
+        "overflow-auto",
+        "overflow-x-auto",
+        "overflow-y-auto",
+      );
       expect(preElement.className).not.toMatch(/\bmax-h-/);
     }
   });
 
   it("renders the custom glass path placeholder as inline code without a copy button", () => {
     renderPythonScriptModal();
-    const placeholder = screen.getByText("<PATH TO CUSTOM GLASS JSON FILE>", { exact: true });
+    const placeholder = screen.getByText("<PATH TO CUSTOM GLASS JSON FILE>", {
+      exact: true,
+    });
 
     expect(placeholder.tagName).toBe("CODE");
     expect(placeholder.closest("button")).not.toBeInTheDocument();
@@ -99,7 +116,7 @@ describe("PythonScriptModal", () => {
         userDefinedMaterials={USER_DEFINED_MATERIALS}
         remainingScript={REMAINING_SCRIPT}
         onClose={onClose}
-      />
+      />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -119,18 +136,30 @@ describe("PythonScriptModal", () => {
     it("renders one Copy all button and one floating Copy button for each section", () => {
       renderPythonScriptModal();
 
-      expect(screen.getByRole("button", { name: COPY_ALL_LABEL })).toHaveTextContent("Copy all");
-      expect(screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL })).toHaveTextContent("Copy");
-      expect(screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL })).toHaveTextContent("Copy");
+      expect(
+        screen.getByRole("button", { name: COPY_ALL_LABEL }),
+      ).toHaveTextContent("Copy all");
+      expect(
+        screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL }),
+      ).toHaveTextContent("Copy");
+      expect(
+        screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL }),
+      ).toHaveTextContent("Copy");
       expect(screen.getAllByRole("button")).toHaveLength(4);
     });
 
     it("copies the combined script or the selected section", async () => {
       renderPythonScriptModal();
 
-      await userEvent.click(screen.getByRole("button", { name: COPY_ALL_LABEL }));
-      await userEvent.click(screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL }));
-      await userEvent.click(screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL }));
+      await userEvent.click(
+        screen.getByRole("button", { name: COPY_ALL_LABEL }),
+      );
+      await userEvent.click(
+        screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL }),
+      );
+      await userEvent.click(
+        screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL }),
+      );
 
       expect(writeText).toHaveBeenNthCalledWith(
         1,
@@ -143,8 +172,12 @@ describe("PythonScriptModal", () => {
     it("resets each section's Copied feedback on its own two-second timer", async () => {
       jest.useFakeTimers();
       renderPythonScriptModal();
-      const materialsButton = screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL });
-      const remainingButton = screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL });
+      const materialsButton = screen.getByRole("button", {
+        name: COPY_USER_DEFINED_MATERIALS_LABEL,
+      });
+      const remainingButton = screen.getByRole("button", {
+        name: COPY_REMAINING_SCRIPT_LABEL,
+      });
 
       await act(async () => {
         fireEvent.click(materialsButton);
@@ -181,17 +214,28 @@ describe("PythonScriptModal", () => {
   it("gives each copy button distinct tooltip text", () => {
     renderPythonScriptModal();
 
-    expect(screen.getByRole("tooltip", { name: COPY_ALL_LABEL })).toBeInTheDocument();
-    expect(screen.getByRole("tooltip", { name: COPY_USER_DEFINED_MATERIALS_LABEL })).toBeInTheDocument();
-    expect(screen.getByRole("tooltip", { name: COPY_REMAINING_SCRIPT_LABEL })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tooltip", { name: COPY_ALL_LABEL }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("tooltip", { name: COPY_USER_DEFINED_MATERIALS_LABEL }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("tooltip", { name: COPY_REMAINING_SCRIPT_LABEL }),
+    ).toBeInTheDocument();
   });
 
   it("shows the hovered section tooltip", () => {
     renderPythonScriptModal();
-    const btn = screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL });
+    const btn = screen.getByRole("button", {
+      name: COPY_USER_DEFINED_MATERIALS_LABEL,
+    });
 
-    act(() => { fireEvent.mouseEnter(btn.parentElement!); });
-    expect(screen.getByRole("tooltip", { name: COPY_USER_DEFINED_MATERIALS_LABEL })).toHaveClass("opacity-100");
+    act(() => {
+      fireEvent.mouseEnter(btn.parentElement!);
+    });
+    expect(
+      screen.getByRole("tooltip", { name: COPY_USER_DEFINED_MATERIALS_LABEL }),
+    ).toHaveClass("opacity-100");
   });
-
 });

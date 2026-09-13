@@ -60,7 +60,7 @@ test("import fisheye config, update system, and verify loaded prescription/specs
     page.locator('button[aria-label="Load Config"]').click(),
   ]);
   await fileChooser.setFiles(
-    path.join(__dirname, "jsons", "fisheye-lens-config.json")
+    path.join(__dirname, "jsons", "fisheye-lens-config.json"),
   );
 
   const dialog = page.getByRole("dialog");
@@ -86,22 +86,27 @@ test("import fisheye config, update system, and verify loaded prescription/specs
     const row = await getPrescriptionSurfaceRow(page, prescGrid, surfaceIndex);
 
     await expect(
-      await getGridCellByHeaderText(page, prescGrid, row, "Surface")
+      await getGridCellByHeaderText(page, prescGrid, row, "Surface"),
     ).toContainText(surface[0]);
     await expect(
-      await getGridCellByHeaderText(page, prescGrid, row, "Radius of Curvature")
+      await getGridCellByHeaderText(
+        page,
+        prescGrid,
+        row,
+        "Radius of Curvature",
+      ),
     ).toContainText(surface[1]);
     await expect(
-      await getGridCellByHeaderText(page, prescGrid, row, "Thickness")
+      await getGridCellByHeaderText(page, prescGrid, row, "Thickness"),
     ).toContainText(surface[2]);
     await expect(
-      await getGridCellByHeaderText(page, prescGrid, row, "Medium")
+      await getGridCellByHeaderText(page, prescGrid, row, "Medium"),
     ).toContainText(surface[3]);
     const semiDiameterCell = await getGridCellByHeaderText(
       page,
       prescGrid,
       row,
-      "Semi-diam."
+      "Semi-diam.",
     );
     const semiDiameter = Number.parseFloat(await semiDiameterCell.innerText());
     expect(Number.isFinite(semiDiameter)).toBe(true);
@@ -114,8 +119,8 @@ test("import fisheye config, update system, and verify loaded prescription/specs
         prescGrid,
         surfaceIndex,
         "Asph.",
-        "Edit aspherical parameters"
-      )
+        "Edit aspherical parameters",
+      ),
     ).toHaveText("None");
     await expect(
       await getPrescriptionActionButton(
@@ -123,17 +128,17 @@ test("import fisheye config, update system, and verify loaded prescription/specs
         prescGrid,
         surfaceIndex,
         "Tilt & Decenter",
-        "Edit decenter and tilt"
-      )
+        "Edit decenter and tilt",
+      ),
     ).toHaveText("None");
   }
 
   await page.getByRole("tab", { name: "System Specs" }).click();
-  await expect(
-    page.locator('[aria-label="System aperture type"]')
-  ).toHaveValue("object:epd");
+  await expect(page.locator('[aria-label="System aperture type"]')).toHaveValue(
+    "object:epd",
+  );
   await expect(page.locator('[aria-label="Aperture value"]')).toHaveValue(
-    "0.25"
+    "0.25",
   );
 
   await page.getByLabel("Configure field").click();
@@ -142,18 +147,24 @@ test("import fisheye config, update system, and verify loaded prescription/specs
   await expect(page.getByLabel("Field type")).toHaveValue("angle");
   await expect(page.getByLabel("Max half-field value")).toHaveValue("90");
   await expect(
-    page.getByLabel("Use wide angle mode for more robust ray aiming")
+    page.getByLabel("Use wide angle mode for more robust ray aiming"),
   ).toBeChecked();
 
   const fieldGrid = '[role="dialog"][aria-labelledby="field-modal-title"]';
   await expect(
-    page.locator(`${fieldGrid} .ag-row[row-index="0"] .ag-cell[col-id="value"]`)
+    page.locator(
+      `${fieldGrid} .ag-row[row-index="0"] .ag-cell[col-id="value"]`,
+    ),
   ).toContainText("0");
   await expect(
-    page.locator(`${fieldGrid} .ag-row[row-index="1"] .ag-cell[col-id="value"]`)
+    page.locator(
+      `${fieldGrid} .ag-row[row-index="1"] .ag-cell[col-id="value"]`,
+    ),
   ).toContainText("0.707");
   await expect(
-    page.locator(`${fieldGrid} .ag-row[row-index="2"] .ag-cell[col-id="value"]`)
+    page.locator(
+      `${fieldGrid} .ag-row[row-index="2"] .ag-cell[col-id="value"]`,
+    ),
   ).toContainText("1");
   await fieldModal.getByRole("button", { name: "Cancel" }).click();
   await fieldModal.waitFor({ state: "hidden", timeout: 5_000 });
@@ -166,36 +177,36 @@ test("import fisheye config, update system, and verify loaded prescription/specs
 
   await expect(
     page.locator(
-      `${wavelengthGrid} .ag-row[row-index="0"] .ag-cell[col-id="wavelength"]`
-    )
+      `${wavelengthGrid} .ag-row[row-index="0"] .ag-cell[col-id="wavelength"]`,
+    ),
   ).toContainText("486.133");
   await expect(
     page.locator(
-      `${wavelengthGrid} .ag-row[row-index="0"] .ag-cell[col-id="weight"]`
-    )
+      `${wavelengthGrid} .ag-row[row-index="0"] .ag-cell[col-id="weight"]`,
+    ),
   ).toContainText("1");
   await expect(
     page.locator(
-      `${wavelengthGrid} .ag-row[row-index="1"] .ag-cell[col-id="wavelength"]`
-    )
+      `${wavelengthGrid} .ag-row[row-index="1"] .ag-cell[col-id="wavelength"]`,
+    ),
   ).toContainText("546.073");
   await expect(
     page.locator(
-      `${wavelengthGrid} .ag-row[row-index="1"] .ag-cell[col-id="weight"]`
-    )
+      `${wavelengthGrid} .ag-row[row-index="1"] .ag-cell[col-id="weight"]`,
+    ),
   ).toContainText("2");
   await expect(
     page.locator(
-      `${wavelengthGrid} .ag-row[row-index="2"] .ag-cell[col-id="wavelength"]`
-    )
+      `${wavelengthGrid} .ag-row[row-index="2"] .ag-cell[col-id="wavelength"]`,
+    ),
   ).toContainText("656.273");
   await expect(
     page.locator(
-      `${wavelengthGrid} .ag-row[row-index="2"] .ag-cell[col-id="weight"]`
-    )
+      `${wavelengthGrid} .ag-row[row-index="2"] .ag-cell[col-id="weight"]`,
+    ),
   ).toContainText("1");
   await expect(
-    page.locator('input[type="radio"][aria-label="Reference wavelength 2"]')
+    page.locator('input[type="radio"][aria-label="Reference wavelength 2"]'),
   ).toBeChecked();
   await wavelengthModal.getByRole("button", { name: "Cancel" }).click();
   await wavelengthModal.waitFor({ state: "hidden", timeout: 5_000 });

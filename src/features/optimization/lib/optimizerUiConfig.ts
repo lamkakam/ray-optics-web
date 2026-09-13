@@ -51,10 +51,30 @@ export const OPTIMIZER_UI_CONFIG = {
       },
     ],
     numericFields: [
-      { kind: "max_nfev", label: "Max. num of steps", default: 200, validation: "positiveInteger" },
-      { kind: "ftol", label: "Merit function change tolerance", default: 1e-5, validation: "leastSquaresTolerance" },
-      { kind: "xtol", label: "Independent variable change tolerance", default: 1e-5, validation: "leastSquaresTolerance" },
-      { kind: "gtol", label: "Gradient tolerance", default: 1e-5, validation: "leastSquaresTolerance" },
+      {
+        kind: "max_nfev",
+        label: "Max. num of steps",
+        default: 200,
+        validation: "positiveInteger",
+      },
+      {
+        kind: "ftol",
+        label: "Merit function change tolerance",
+        default: 1e-5,
+        validation: "leastSquaresTolerance",
+      },
+      {
+        kind: "xtol",
+        label: "Independent variable change tolerance",
+        default: 1e-5,
+        validation: "leastSquaresTolerance",
+      },
+      {
+        kind: "gtol",
+        label: "Gradient tolerance",
+        default: 1e-5,
+        validation: "leastSquaresTolerance",
+      },
     ],
   },
   differential_evolution: {
@@ -63,9 +83,24 @@ export const OPTIMIZER_UI_CONFIG = {
     canOptimizeGlass: false,
     requiresResidualCountAtLeastVariableCount: false,
     numericFields: [
-      { kind: "max_nfev", label: "Max. num of steps", default: 200, validation: "positiveInteger" },
-      { kind: "tol", label: "Relative tolerance", default: 0.01, validation: "positiveFloat" },
-      { kind: "atol", label: "Absolute tolerance", default: 0, validation: "nonNegativeFloat" },
+      {
+        kind: "max_nfev",
+        label: "Max. num of steps",
+        default: 200,
+        validation: "positiveInteger",
+      },
+      {
+        kind: "tol",
+        label: "Relative tolerance",
+        default: 0.01,
+        validation: "positiveFloat",
+      },
+      {
+        kind: "atol",
+        label: "Absolute tolerance",
+        default: 0,
+        validation: "nonNegativeFloat",
+      },
     ],
   },
   glass_expert: {
@@ -74,9 +109,24 @@ export const OPTIMIZER_UI_CONFIG = {
     canOptimizeGlass: true,
     requiresResidualCountAtLeastVariableCount: false,
     numericFields: [
-      { kind: "num_neighbours", label: "Num. of neighbours", default: 7, validation: "positiveInteger" },
-      { kind: "maxiter", label: "Max. iterations per refinement run", default: 1000, validation: "positiveInteger" },
-      { kind: "tol", label: "Tolerance", default: 1e-3, validation: "positiveFloat" },
+      {
+        kind: "num_neighbours",
+        label: "Num. of neighbours",
+        default: 7,
+        validation: "positiveInteger",
+      },
+      {
+        kind: "maxiter",
+        label: "Max. iterations per refinement run",
+        default: 1000,
+        validation: "positiveInteger",
+      },
+      {
+        kind: "tol",
+        label: "Tolerance",
+        default: 1e-3,
+        validation: "positiveFloat",
+      },
     ],
   },
 } satisfies OptimizerUiConfig;

@@ -21,9 +21,13 @@ describe("Progress", () => {
   });
 
   it("normalizes custom min and max values", () => {
-    render(<Progress value={15} min={10} max={20} ariaLabel="Upload progress" />);
+    render(
+      <Progress value={15} min={10} max={20} ariaLabel="Upload progress" />,
+    );
 
-    const progress = screen.getByRole("progressbar", { name: "Upload progress" });
+    const progress = screen.getByRole("progressbar", {
+      name: "Upload progress",
+    });
 
     expect(progress).toHaveAttribute("aria-valuemin", "10");
     expect(progress).toHaveAttribute("aria-valuemax", "20");
@@ -35,14 +39,18 @@ describe("Progress", () => {
     render(<Progress value={-25} />);
 
     expect(screen.getByText("0%")).toBeInTheDocument();
-    expect(screen.getByTestId("progress-indicator")).toHaveStyle({ width: "0%" });
+    expect(screen.getByTestId("progress-indicator")).toHaveStyle({
+      width: "0%",
+    });
   });
 
   it("clamps out-of-range high values to one hundred percent visually and in status", () => {
     render(<Progress value={150} />);
 
     expect(screen.getByText("100%")).toBeInTheDocument();
-    expect(screen.getByTestId("progress-indicator")).toHaveStyle({ width: "100%" });
+    expect(screen.getByTestId("progress-indicator")).toHaveStyle({
+      width: "100%",
+    });
   });
 
   it("is exported from the primitives barrel", () => {
@@ -53,7 +61,9 @@ describe("Progress", () => {
     const { rerender } = render(<Progress value={20} min={20} max={20} />);
 
     expect(screen.getByText("0%")).toBeInTheDocument();
-    expect(screen.getByTestId("progress-indicator")).toHaveStyle({ width: "0%" });
+    expect(screen.getByTestId("progress-indicator")).toHaveStyle({
+      width: "0%",
+    });
 
     rerender(<Progress value={20} min={30} max={20} />);
     expect(screen.getByText("0%")).toBeInTheDocument();

@@ -11,23 +11,39 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light" }),
 }));
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-  init: (...args: unknown[]) => mockEchartsInit(...args),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+    init: (...args: unknown[]) => mockEchartsInit(...args),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  LineChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    LineChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  TooltipComponent: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: {},
+    TooltipComponent: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 describe("StrehlVsWavelengthChart", () => {
   const strehlVsWavelengthData: StrehlVsWavelengthData = {
@@ -59,8 +75,14 @@ describe("StrehlVsWavelengthChart", () => {
       writable: true,
       value: MockResizeObserver,
     });
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get: () => 480 });
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get: () => 320 });
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 480,
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get: () => 320,
+    });
   });
 
   afterEach(() => {
@@ -68,9 +90,16 @@ describe("StrehlVsWavelengthChart", () => {
   });
 
   it("renders the ECharts host with the expected test id and aria label", () => {
-    render(<StrehlVsWavelengthChart strehlVsWavelengthData={strehlVsWavelengthData} />);
+    render(
+      <StrehlVsWavelengthChart
+        strehlVsWavelengthData={strehlVsWavelengthData}
+      />,
+    );
 
-    expect(screen.getByTestId("strehl-vs-wavelength-chart")).toHaveAttribute("aria-label", "Strehl vs Wavelength plot");
+    expect(screen.getByTestId("strehl-vs-wavelength-chart")).toHaveAttribute(
+      "aria-label",
+      "Strehl vs Wavelength plot",
+    );
     act(() => {
       jest.advanceTimersByTime(500);
     });

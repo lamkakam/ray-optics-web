@@ -13,7 +13,10 @@ export type GlassCatalogsLoadResult =
   | { readonly data: CompleteGlassCatalogsData; readonly error: undefined }
   | { readonly data: undefined; readonly error: string };
 
-let inFlightLoads = new WeakMap<PyodideWorkerAPI, Promise<GlassCatalogsLoadResult>>();
+let inFlightLoads = new WeakMap<
+  PyodideWorkerAPI,
+  Promise<GlassCatalogsLoadResult>
+>();
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Failed to load glass data";
@@ -23,7 +26,9 @@ function getErrorMessage(error: unknown): string {
  * Loads complete catalogs, sharing an in-flight promise for concurrent callers using
  * the same proxy. Failures resolve as data/error results and settled entries are removed.
  */
-export function loadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalogsLoadResult> {
+export function loadGlassCatalogs(
+  proxy: PyodideWorkerAPI,
+): Promise<GlassCatalogsLoadResult> {
   const inFlightLoad = inFlightLoads.get(proxy);
 
   if (inFlightLoad !== undefined) {
@@ -54,5 +59,8 @@ export function loadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalog
 
 /** Clears in-flight requests for test isolation. */
 export function _resetGlassCatalogLoaderForTest(): void {
-  inFlightLoads = new WeakMap<PyodideWorkerAPI, Promise<GlassCatalogsLoadResult>>();
+  inFlightLoads = new WeakMap<
+    PyodideWorkerAPI,
+    Promise<GlassCatalogsLoadResult>
+  >();
 }

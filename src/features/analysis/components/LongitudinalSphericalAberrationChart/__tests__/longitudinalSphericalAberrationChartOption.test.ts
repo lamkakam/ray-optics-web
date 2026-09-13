@@ -2,23 +2,39 @@ import { buildLongitudinalSphericalAberrationOption } from "@/features/analysis/
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { LongitudinalSphericalAberrationData } from "@/features/analysis/types/plotData";
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  LineChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    LineChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  LegendComponent: {},
-  TooltipComponent: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: {},
+    LegendComponent: {},
+    TooltipComponent: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 describe("longitudinalSphericalAberrationChartOption", () => {
   const lsaData: LongitudinalSphericalAberrationData = [
@@ -50,20 +66,32 @@ describe("longitudinalSphericalAberrationChartOption", () => {
     expect(option.xAxis.name).toBe("Longitudinal Focus Shift (mm)");
     expect(option.yAxis.type).toBe("value");
     expect(option.yAxis.name).toBe("Normalized Pupil Coordinate");
-    expect(option.xAxis.splitLine).toEqual(expect.objectContaining({ show: true }));
-    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({ show: true }));
+    expect(option.xAxis.splitLine).toEqual(
+      expect.objectContaining({ show: true }),
+    );
+    expect(option.yAxis.splitLine).toEqual(
+      expect.objectContaining({ show: true }),
+    );
     expect(option.series).toEqual([
       expect.objectContaining({
         name: "486.1nm",
         type: "line",
         showSymbol: false,
-        data: [[0, 0], [-0.02, 0.5], [-0.08, 1]],
+        data: [
+          [0, 0],
+          [-0.02, 0.5],
+          [-0.08, 1],
+        ],
       }),
       expect.objectContaining({
         name: "587.6nm",
         type: "line",
         showSymbol: false,
-        data: [[0, 0], [-0.01, 0.5], [-0.05, 1]],
+        data: [
+          [0, 0],
+          [-0.01, 0.5],
+          [-0.05, 1],
+        ],
       }),
     ]);
   });
@@ -71,18 +99,22 @@ describe("longitudinalSphericalAberrationChartOption", () => {
   it("labels afocal LSA as output vergence", () => {
     const option = buildLongitudinalSphericalAberrationOption(
       lsaData.map((series) => ({ ...series, unitX: "D" })),
-      ["486.1nm", "587.6nm"], 480, 320, "#000",
+      ["486.1nm", "587.6nm"],
+      480,
+      320,
+      "#000",
     );
     expect(option.xAxis.name).toBe("Output Vergence (D)");
   });
 
   it("reserves extra top space for wrapped wavelength legends and reduces grid height", () => {
-    const sixWavelengthLsaData: LongitudinalSphericalAberrationData = Array.from({ length: 6 }, (_, index) => ({
-      wvlIdx: index,
-      LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
-      unitX: "mm",
-      unitY: "",
-    }));
+    const sixWavelengthLsaData: LongitudinalSphericalAberrationData =
+      Array.from({ length: 6 }, (_, index) => ({
+        wvlIdx: index,
+        LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+        unitX: "mm",
+        unitY: "",
+      }));
 
     const option = buildLongitudinalSphericalAberrationOption(
       sixWavelengthLsaData,
@@ -92,20 +124,25 @@ describe("longitudinalSphericalAberrationChartOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.legend).toEqual(expect.objectContaining({ left: 72, right: 28 }));
-    expect(option.grid).toEqual(expect.objectContaining({
-      top: 84,
-      height: 260,
-    }));
+    expect(option.legend).toEqual(
+      expect.objectContaining({ left: 72, right: 28 }),
+    );
+    expect(option.grid).toEqual(
+      expect.objectContaining({
+        top: 84,
+        height: 260,
+      }),
+    );
   });
 
   it("centers wide one-row wavelength legends over the plot band", () => {
-    const sixWavelengthLsaData: LongitudinalSphericalAberrationData = Array.from({ length: 6 }, (_, index) => ({
-      wvlIdx: index,
-      LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
-      unitX: "mm",
-      unitY: "",
-    }));
+    const sixWavelengthLsaData: LongitudinalSphericalAberrationData =
+      Array.from({ length: 6 }, (_, index) => ({
+        wvlIdx: index,
+        LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+        unitX: "mm",
+        unitY: "",
+      }));
 
     const option = buildLongitudinalSphericalAberrationOption(
       sixWavelengthLsaData,
@@ -115,7 +152,9 @@ describe("longitudinalSphericalAberrationChartOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.legend).toEqual(expect.objectContaining({ left: 104, right: 60 }));
+    expect(option.legend).toEqual(
+      expect.objectContaining({ left: 104, right: 60 }),
+    );
     expect(option.grid).toEqual(expect.objectContaining({ top: 36 }));
   });
 

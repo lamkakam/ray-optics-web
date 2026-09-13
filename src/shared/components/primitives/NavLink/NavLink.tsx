@@ -63,7 +63,9 @@ export function NavLink({
   return (
     <Link
       href={href}
-      className={[baseClasses, variantClasses, className].filter(Boolean).join(" ")}
+      className={[baseClasses, variantClasses, className]
+        .filter(Boolean)
+        .join(" ")}
       aria-label={ariaLabel}
       aria-current={ariaCurrent}
       onClick={onClick}

@@ -35,7 +35,7 @@ import { WavelengthConfigModal } from "@/features/lens-editor/components/Wavelen
  * Imperative access to specs actions is via `useSpecsConfiguratorStore()` (stable, non-reactive). For reactive states, use `useSpecsConfiguratorStore` with Zustand's `useStore`.
  */
 export function SpecsConfiguratorContainer() {
-  const store= useSpecsConfiguratorStore();
+  const store = useSpecsConfiguratorStore();
 
   const pupilSpace = useStore(store, (s) => s.pupilSpace);
   const pupilType = useStore(store, (s) => s.pupilType);
@@ -61,7 +61,7 @@ export function SpecsConfiguratorContainer() {
     }) => {
       store.getState().setAperture(patch);
     },
-    [store]
+    [store],
   );
 
   const handleFieldApply = useCallback(
@@ -75,15 +75,18 @@ export function SpecsConfiguratorContainer() {
       store.getState().setField(result);
       store.getState().closeFieldModal();
     },
-    [store]
+    [store],
   );
 
   const handleWavelengthApply = useCallback(
-    (result: { weights: WavelengthWeights; referenceIndex: ReferenceIndex }) => {
+    (result: {
+      weights: WavelengthWeights;
+      referenceIndex: ReferenceIndex;
+    }) => {
       store.getState().setWavelengths(result);
       store.getState().closeWavelengthModal();
     },
-    [store]
+    [store],
   );
 
   return (

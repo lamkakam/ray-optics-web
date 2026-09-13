@@ -12,20 +12,33 @@ import type {
 
 type SharedOptimizerConfig = OptimizationAlgorithmConfig;
 type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
-  readonly [TKey in keyof TConfig]: TConfig[TKey] extends number ? string : TConfig[TKey];
+  readonly [TKey in keyof TConfig]: TConfig[TKey] extends number
+    ? string
+    : TConfig[TKey];
 };
-type OptimizerFormState<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
-  TConfig extends SharedOptimizerConfig ? OptimizerFormStateByConfig<TConfig> : never;
-type OptimizerNumericFieldKind<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
-  TConfig extends SharedOptimizerConfig ? Exclude<keyof TConfig, "kind" | "method"> : never;
+type OptimizerFormState<
+  TConfig extends SharedOptimizerConfig = SharedOptimizerConfig,
+> = TConfig extends SharedOptimizerConfig
+  ? OptimizerFormStateByConfig<TConfig>
+  : never;
+type OptimizerNumericFieldKind<
+  TConfig extends SharedOptimizerConfig = SharedOptimizerConfig,
+> = TConfig extends SharedOptimizerConfig
+  ? Exclude<keyof TConfig, "kind" | "method">
+  : never;
 
 interface OptimizationAlgorithmTabProps {
   readonly optimizer: OptimizerFormState;
   readonly onChangeOptimizer: (patch: Partial<OptimizerFormState>) => void;
 }
 
-function getNumericFieldValue(optimizer: OptimizerFormState, fieldKind: OptimizerNumericFieldKind): string {
-  return (optimizer as unknown as Record<OptimizerNumericFieldKind, string>)[fieldKind];
+function getNumericFieldValue(
+  optimizer: OptimizerFormState,
+  fieldKind: OptimizerNumericFieldKind,
+): string {
+  return (optimizer as unknown as Record<OptimizerNumericFieldKind, string>)[
+    fieldKind
+  ];
 }
 
 function createNumericFieldPatch(
@@ -55,18 +68,25 @@ export function OptimizationAlgorithmTab({
   const optimizerConfig = OPTIMIZER_UI_CONFIG[optimizer.kind];
 
   return (
-    <div data-testid="optimization-algorithm-tab" className="grid gap-4 md:grid-cols-2">
+    <div
+      data-testid="optimization-algorithm-tab"
+      className="grid gap-4 md:grid-cols-2"
+    >
       <div>
         <Label htmlFor="optimizer-kind">Optimizer Kind</Label>
         <Select
           id="optimizer-kind"
           aria-label="Optimizer Kind"
           value={optimizer.kind}
-          options={Object.entries(OPTIMIZER_UI_CONFIG).map(([kind, config]) => ({
-            label: config.label,
-            value: kind,
-          }))}
-          onChange={(event) => onChangeOptimizer({ kind: event.target.value as OptimizerKind })}
+          options={Object.entries(OPTIMIZER_UI_CONFIG).map(
+            ([kind, config]) => ({
+              label: config.label,
+              value: kind,
+            }),
+          )}
+          onChange={(event) =>
+            onChangeOptimizer({ kind: event.target.value as OptimizerKind })
+          }
         />
       </div>
       {optimizer.kind === "least_squares" ? (
@@ -76,8 +96,14 @@ export function OptimizationAlgorithmTab({
             id="optimizer-method"
             aria-label="Method"
             value={optimizer.method}
-            options={OPTIMIZER_UI_CONFIG.least_squares.methods.map((method) => ({ label: method.label, value: method.kind }))}
-            onChange={(event) => onChangeOptimizer({ method: event.target.value as LeastSquaresMethod })}
+            options={OPTIMIZER_UI_CONFIG.least_squares.methods.map(
+              (method) => ({ label: method.label, value: method.kind }),
+            )}
+            onChange={(event) =>
+              onChangeOptimizer({
+                method: event.target.value as LeastSquaresMethod,
+              })
+            }
           />
         </div>
       ) : undefined}
@@ -89,7 +115,11 @@ export function OptimizationAlgorithmTab({
               id={`optimizer-${field.kind}`}
               aria-label={field.label}
               value={getNumericFieldValue(optimizer, field.kind)}
-              onChange={(event) => onChangeOptimizer(createNumericFieldPatch(field.kind, event.target.value))}
+              onChange={(event) =>
+                onChangeOptimizer(
+                  createNumericFieldPatch(field.kind, event.target.value),
+                )
+              }
             />
           </div>
         );

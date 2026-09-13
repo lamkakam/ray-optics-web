@@ -23,10 +23,12 @@ describe("Switch", () => {
         checked
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
-      />
+      />,
     );
 
-    const switchButton = screen.getByRole("switch", { name: "Use model glass" });
+    const switchButton = screen.getByRole("switch", {
+      name: "Use model glass",
+    });
 
     expect(switchButton).toHaveAttribute("aria-checked", "true");
   });
@@ -37,10 +39,12 @@ describe("Switch", () => {
         checked={false}
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
-      />
+      />,
     );
 
-    const switchButton = screen.getByRole("switch", { name: "Use model glass" });
+    const switchButton = screen.getByRole("switch", {
+      name: "Use model glass",
+    });
 
     expect(switchButton).toHaveAttribute("type", "button");
   });
@@ -52,10 +56,12 @@ describe("Switch", () => {
         checked={false}
         ariaLabel="Use model glass"
         onCheckedChange={onCheckedChange}
-      />
+      />,
     );
 
-    await userEvent.click(screen.getByRole("switch", { name: "Use model glass" }));
+    await userEvent.click(
+      screen.getByRole("switch", { name: "Use model glass" }),
+    );
 
     expect(onCheckedChange).toHaveBeenCalledTimes(1);
     expect(onCheckedChange).toHaveBeenCalledWith(true);
@@ -68,10 +74,12 @@ describe("Switch", () => {
         checked
         ariaLabel="Use model glass"
         onCheckedChange={onCheckedChange}
-      />
+      />,
     );
 
-    await userEvent.click(screen.getByRole("switch", { name: "Use model glass" }));
+    await userEvent.click(
+      screen.getByRole("switch", { name: "Use model glass" }),
+    );
 
     expect(onCheckedChange).toHaveBeenCalledTimes(1);
     expect(onCheckedChange).toHaveBeenCalledWith(false);
@@ -85,17 +93,21 @@ describe("Switch", () => {
         ariaLabel="Use model glass"
         onCheckedChange={onCheckedChange}
         disabled
-      />
+      />,
     );
 
-    await userEvent.click(screen.getByRole("switch", { name: "Use model glass" }));
+    await userEvent.click(
+      screen.getByRole("switch", { name: "Use model glass" }),
+    );
 
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
 
   it("does not change state when a consumer click handler prevents default", async () => {
     const onCheckedChange = jest.fn();
-    const onClick = jest.fn((event: React.MouseEvent<HTMLButtonElement>) => event.preventDefault());
+    const onClick = jest.fn((event: React.MouseEvent<HTMLButtonElement>) =>
+      event.preventDefault(),
+    );
     render(
       <Switch
         checked={false}
@@ -105,7 +117,9 @@ describe("Switch", () => {
       />,
     );
 
-    await userEvent.click(screen.getByRole("switch", { name: "Use model glass" }));
+    await userEvent.click(
+      screen.getByRole("switch", { name: "Use model glass" }),
+    );
 
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onCheckedChange).not.toHaveBeenCalled();
@@ -119,7 +133,7 @@ describe("Switch", () => {
         onCheckedChange={jest.fn()}
         checkedContent="On"
         uncheckedContent="Off"
-      />
+      />,
     );
 
     expect(screen.getByText("On")).toBeInTheDocument();
@@ -134,7 +148,7 @@ describe("Switch", () => {
         onCheckedChange={jest.fn()}
         checkedContent="On"
         uncheckedContent="Off"
-      />
+      />,
     );
 
     expect(screen.getByText("Off")).toBeInTheDocument();
@@ -150,7 +164,7 @@ describe("Switch", () => {
         checkedContent="Auto"
         uncheckedContent="Manual"
         size="sm"
-      />
+      />,
     );
 
     const content = screen.getByTestId("switch-content");
@@ -166,7 +180,7 @@ describe("Switch", () => {
         checkedContent="Auto"
         uncheckedContent="Manual"
         size="sm"
-      />
+      />,
     );
 
     expect(content).toHaveClass("left-1", "right-6");
@@ -180,7 +194,7 @@ describe("Switch", () => {
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
         checkedContent={<span data-testid="switch-icon">icon</span>}
-      />
+      />,
     );
 
     expect(screen.getByTestId("switch-icon")).toBeInTheDocument();
@@ -192,7 +206,7 @@ describe("Switch", () => {
         checked
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
-      />
+      />,
     );
 
     expectClasses(
@@ -211,7 +225,7 @@ describe("Switch", () => {
         checked={false}
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
-      />
+      />,
     );
 
     expectClasses(
@@ -230,7 +244,7 @@ describe("Switch", () => {
         checked={false}
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
-      />
+      />,
     );
 
     expectClasses(
@@ -261,7 +275,7 @@ describe("Switch", () => {
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
         disabled
-      />
+      />,
     );
 
     expectClasses(
@@ -278,11 +292,20 @@ describe("Switch", () => {
         ariaLabel="Use model glass"
         onCheckedChange={jest.fn()}
         uncheckedContent="Off"
-      />
+      />,
     );
 
-    expect(screen.getByRole("switch")).toHaveClass("relative", "inline-flex", "items-center", "border-0");
-    expect(screen.getByTestId("switch-content")).toHaveClass("pointer-events-none");
-    expect(screen.getByTestId("switch-thumb")).toHaveClass("pointer-events-none");
+    expect(screen.getByRole("switch")).toHaveClass(
+      "relative",
+      "inline-flex",
+      "items-center",
+      "border-0",
+    );
+    expect(screen.getByTestId("switch-content")).toHaveClass(
+      "pointer-events-none",
+    );
+    expect(screen.getByTestId("switch-thumb")).toHaveClass(
+      "pointer-events-none",
+    );
   });
 });

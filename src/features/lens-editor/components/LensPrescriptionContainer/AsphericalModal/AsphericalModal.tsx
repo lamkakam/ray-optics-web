@@ -83,9 +83,9 @@ function isToroidType(type: AsphericalType): boolean {
 
 const contentMap: {
   [key in AsphericalType]: {
-    description: React.ReactNode,
-    coeffLabels: { key: string, label: React.ReactNode }[],
-  }
+    description: React.ReactNode;
+    coeffLabels: { key: string; label: React.ReactNode }[];
+  };
 } = {
   Conic: {
     description: undefined,
@@ -97,7 +97,9 @@ const contentMap: {
       <>
         <Paragraph>
           <MathJax>
-            {"\\(z(r) = \\frac{cr^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}r^{2}}} + \\sum_{i=1}^{10}a_{2i}r^{2i}\\)"}
+            {
+              "\\(z(r) = \\frac{cr^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}r^{2}}} + \\sum_{i=1}^{10}a_{2i}r^{2i}\\)"
+            }
           </MathJax>
         </Paragraph>
         <Paragraph>
@@ -119,7 +121,7 @@ const contentMap: {
           <Paragraph>
             <MathJax inline>{`\\(a_{${coefficientIndex}}\\)`}</MathJax>
           </Paragraph>
-        )
+        ),
       };
     }),
   },
@@ -129,7 +131,9 @@ const contentMap: {
       <>
         <Paragraph>
           <MathJax>
-            {"\\(z(r) = \\frac{cr^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}r^{2}}} + \\sum_{i=1}^{10}a_{i}r^{i}\\)"}
+            {
+              "\\(z(r) = \\frac{cr^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}r^{2}}} + \\sum_{i=1}^{10}a_{i}r^{i}\\)"
+            }
           </MathJax>
         </Paragraph>
         <Paragraph>
@@ -151,7 +155,7 @@ const contentMap: {
           <Paragraph>
             <MathJax inline>{`\\(a_{${coefficientIndex}}\\)`}</MathJax>
           </Paragraph>
-        )
+        ),
       };
     }),
   },
@@ -167,7 +171,9 @@ const contentMap: {
         <Paragraph>
           {"where "}
           <MathJax inline>
-            {"\\(f(x) = \\frac{cx^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}x^{2}}} + \\sum_{i=1}^{10}a_{2i}x^{2i}\\)"}
+            {
+              "\\(f(x) = \\frac{cx^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}x^{2}}} + \\sum_{i=1}^{10}a_{2i}x^{2i}\\)"
+            }
           </MathJax>
         </Paragraph>
         <Paragraph>
@@ -190,7 +196,7 @@ const contentMap: {
           <Paragraph>
             <MathJax inline>{`\\(a_{${coefficientIndex}}\\)`}</MathJax>
           </Paragraph>
-        )
+        ),
       };
     }),
   },
@@ -206,7 +212,9 @@ const contentMap: {
         <Paragraph>
           {"where "}
           <MathJax inline>
-            {"\\(f(y) = \\frac{cy^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}y^{2}}} + \\sum_{i=1}^{10}a_{2i}y^{2i}\\)"}
+            {
+              "\\(f(y) = \\frac{cy^{2}}{1 + \\sqrt{1 - (\\textbf{cc} + 1)c^{2}y^{2}}} + \\sum_{i=1}^{10}a_{2i}y^{2i}\\)"
+            }
           </MathJax>
         </Paragraph>
         <Paragraph>
@@ -229,7 +237,7 @@ const contentMap: {
           <Paragraph>
             <MathJax inline>{`\\(a_{${coefficientIndex}}\\)`}</MathJax>
           </Paragraph>
-        )
+        ),
       };
     }),
   },
@@ -268,36 +276,43 @@ export function AsphericalModal({
   onRemove,
 }: AsphericalModalProps) {
   /** String draft of the conic constant. */
-  const [conicConstantStr, setConicConstantStr] = useState(String(initialConicConstant));
+  const [conicConstantStr, setConicConstantStr] = useState(
+    String(initialConicConstant),
+  );
   /** Selected aspherical surface representation. */
   const [type, setType] = useState<AsphericalType>(initialType);
   /** String draft of the toroidal sweep radius. */
-  const [toricSweepRadiusOfCurvatureStr, setToricSweepRadiusOfCurvatureStr] = useState(
-    String(initialToricSweepRadiusOfCurvature)
-  );
+  const [toricSweepRadiusOfCurvatureStr, setToricSweepRadiusOfCurvatureStr] =
+    useState(String(initialToricSweepRadiusOfCurvature));
   /** String drafts for all ten polynomial coefficients. */
   const [coefficientStrs, setCoefficientStrs] = useState<string[]>(() =>
-    padCoefficients(initialCoefficients)
+    padCoefficients(initialCoefficients),
   );
 
   const asphericalCoefficientExplain = (
-    <div className="mt-2 mb-2">
-      {contentMap[type].description}
-    </div>
+    <div className="mt-2 mb-2">{contentMap[type].description}</div>
   );
 
   const handleConfirm = () => {
-    const conicConstant = parseNumericString(conicConstantStr, initialConicConstant);
+    const conicConstant = parseNumericString(
+      conicConstantStr,
+      initialConicConstant,
+    );
     const toricSweepRadiusOfCurvature = isToroidType(type)
       ? parseNumericString(toricSweepRadiusOfCurvatureStr, 0)
       : 0;
     const coefficients = coefficientStrs.map((s, i) =>
-      parseNumericString(s, initialCoefficients[i] ?? 0)
+      parseNumericString(s, initialCoefficients[i] ?? 0),
     );
     const polynomialCoefficients = supportsPolynomialCoefficients(type)
       ? truncateTrailingZeros(coefficients)
       : [];
-    onConfirm({ conicConstant, type, polynomialCoefficients, toricSweepRadiusOfCurvature });
+    onConfirm({
+      conicConstant,
+      type,
+      polynomialCoefficients,
+      toricSweepRadiusOfCurvature,
+    });
   };
 
   const updateCoefficient = (index: number, value: string) => {
@@ -314,96 +329,100 @@ export function AsphericalModal({
       title="Aspherical Parameters"
       titleId="aspherical-modal-title"
       size="md"
-      footer={(
+      footer={
         <div className="flex items-center gap-3">
           {readOnly ? (
             <div className="flex justify-end w-full">
-              <Button variant="secondary" onClick={onClose}>Close</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Close
+              </Button>
             </div>
           ) : (
             <>
-              <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
+              <Button variant="danger" onClick={onRemove}>
+                Remove Aspherical
+              </Button>
               <span className="flex-1" />
-              <Button variant="secondary" onClick={onClose}>Cancel</Button>
-              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleConfirm}>
+                Confirm
+              </Button>
             </>
           )}
         </div>
-      )}
+      }
     >
-        {/* ── Conic constant + Type (2-col grid) ── */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <Label htmlFor="conic-constant">
-              Conic constant
-            </Label>
-            <Input
-              id="conic-constant"
-              aria-label="Conic constant"
-              type="text"
-              value={conicConstantStr}
-              disabled={readOnly}
-              onChange={(e) => setConicConstantStr(e.target.value)}
-            />
+      {/* ── Conic constant + Type (2-col grid) ── */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <Label htmlFor="conic-constant">Conic constant</Label>
+          <Input
+            id="conic-constant"
+            aria-label="Conic constant"
+            type="text"
+            value={conicConstantStr}
+            disabled={readOnly}
+            onChange={(e) => setConicConstantStr(e.target.value)}
+          />
 
-            {isToroidType(type) && (
-              <div className="mt-4">
-                <Label htmlFor="toroid-sweep-radius-of-curvature">
-                  Toroid sweep radius of curvature
-                </Label>
-                <Input
-                  id="toroid-sweep-radius-of-curvature"
-                  aria-label="Toroid sweep radius of curvature"
-                  type="text"
-                  value={toricSweepRadiusOfCurvatureStr}
-                  disabled={readOnly}
-                  onChange={(e) => setToricSweepRadiusOfCurvatureStr(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="aspherical-type">
-              Type
-            </Label>
-            <Select
-              id="aspherical-type"
-              aria-label="Type"
-              value={type}
-              disabled={readOnly}
-              onChange={(e) => setType(e.target.value as AsphericalType)}
-              options={ASPHERICAL_TYPE_OPTIONS}
-            />
-          </div>
+          {isToroidType(type) && (
+            <div className="mt-4">
+              <Label htmlFor="toroid-sweep-radius-of-curvature">
+                Toroid sweep radius of curvature
+              </Label>
+              <Input
+                id="toroid-sweep-radius-of-curvature"
+                aria-label="Toroid sweep radius of curvature"
+                type="text"
+                value={toricSweepRadiusOfCurvatureStr}
+                disabled={readOnly}
+                onChange={(e) =>
+                  setToricSweepRadiusOfCurvatureStr(e.target.value)
+                }
+              />
+            </div>
+          )}
         </div>
 
-        {/* ── Polynomial coefficients (2-col grid) ── */}
-        {supportsPolynomialCoefficients(type) && (
-          <div className="mb-4">
-            <Paragraph variant="subheading" className="mb-2">
-              Even Aspherical Coefficients
-            </Paragraph>
-            {asphericalCoefficientExplain}
-            <div className="grid grid-cols-2 gap-3">
-              {contentMap[type].coeffLabels.map(({ key, label }, i) => (
-                <div key={key}>
-                  <Label htmlFor={`coeff-${key}`}>
-                    {label}
-                  </Label>
-                  <Input
-                    id={`coeff-${key}`}
-                    aria-label={key}
-                    type="text"
-                    value={coefficientStrs[i]}
-                    disabled={readOnly}
-                    onChange={(e) => updateCoefficient(i, e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
+        <div>
+          <Label htmlFor="aspherical-type">Type</Label>
+          <Select
+            id="aspherical-type"
+            aria-label="Type"
+            value={type}
+            disabled={readOnly}
+            onChange={(e) => setType(e.target.value as AsphericalType)}
+            options={ASPHERICAL_TYPE_OPTIONS}
+          />
+        </div>
+      </div>
+
+      {/* ── Polynomial coefficients (2-col grid) ── */}
+      {supportsPolynomialCoefficients(type) && (
+        <div className="mb-4">
+          <Paragraph variant="subheading" className="mb-2">
+            Even Aspherical Coefficients
+          </Paragraph>
+          {asphericalCoefficientExplain}
+          <div className="grid grid-cols-2 gap-3">
+            {contentMap[type].coeffLabels.map(({ key, label }, i) => (
+              <div key={key}>
+                <Label htmlFor={`coeff-${key}`}>{label}</Label>
+                <Input
+                  id={`coeff-${key}`}
+                  aria-label={key}
+                  type="text"
+                  value={coefficientStrs[i]}
+                  disabled={readOnly}
+                  onChange={(e) => updateCoefficient(i, e.target.value)}
+                />
+              </div>
+            ))}
           </div>
-        )}
-      </Modal>
+        </div>
+      )}
+    </Modal>
   );
 }

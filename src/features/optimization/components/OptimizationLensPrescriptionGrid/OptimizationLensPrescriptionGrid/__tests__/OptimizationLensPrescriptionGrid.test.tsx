@@ -1,7 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { RadiusMode, AsphereOptimizationState, GlassMode } from "@/features/optimization/stores/optimizationStore";
+import {
+  OBJECT_ROW_ID,
+  IMAGE_ROW_ID,
+  type GridRow,
+} from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type {
+  RadiusMode,
+  AsphereOptimizationState,
+  GlassMode,
+} from "@/features/optimization/stores/optimizationStore";
 import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -34,14 +42,18 @@ const imageRow: GridRow = {
   curvatureRadius: 0,
 };
 
-function makeAsphereState(overrides: Partial<AsphereOptimizationState> = {}): AsphereOptimizationState {
+function makeAsphereState(
+  overrides: Partial<AsphereOptimizationState> = {},
+): AsphereOptimizationState {
   return {
     surfaceIndex: 1,
     type: undefined,
     lockedType: false,
     conic: { mode: "constant" },
     toricSweep: { mode: "constant" },
-    coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
+    coefficients: Array.from({ length: 10 }, () => ({
+      mode: "constant" as const,
+    })),
     ...overrides,
   };
 }
@@ -95,9 +107,13 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    let renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    let renderedRows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     expect(renderedRows[0].querySelectorAll("td")[8]).toHaveTextContent("12.5");
-    expect(renderedRows[1].querySelectorAll("td")[8]).toHaveTextContent("11.25");
+    expect(renderedRows[1].querySelectorAll("td")[8]).toHaveTextContent(
+      "11.25",
+    );
 
     rerender(
       <OptimizationLensPrescriptionGrid
@@ -120,7 +136,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    renderedRows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     expect(renderedRows[0].querySelectorAll("td")[8]).toHaveTextContent("10");
     expect(renderedRows[1].querySelectorAll("td")[8]).toBeEmptyDOMElement();
   });
@@ -143,9 +161,17 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "normal");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "false");
-    expect(screen.getByTestId("optimization-lens-prescription-grid")).toHaveClass(
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-dom-layout",
+      "normal",
+    );
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-suppress-touch",
+      "false",
+    );
+    expect(
+      screen.getByTestId("optimization-lens-prescription-grid"),
+    ).toHaveClass(
       "ag-grid-touch-scroll",
       "h-[calc(100vh-160px)]",
       "min-[1440px]:h-full",
@@ -169,7 +195,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={asphereStates}
@@ -187,10 +220,21 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-has-on-cell-editing-started", "true");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-has-on-cell-editing-stopped", "true");
+    expect(
+      screen.getByTestId("optimization-lens-prescription-grid"),
+    ).not.toHaveClass("overflow-y-auto");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-default-col-def-suppress-movable",
+      "true",
+    );
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-has-on-cell-editing-started",
+      "true",
+    );
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-has-on-cell-editing-stopped",
+      "true",
+    );
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     expect(Array.from(headers, (header) => header.textContent)).toEqual([
@@ -220,33 +264,51 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
     expect(screen.getByText("Diffraction Grating")).toBeInTheDocument();
     expect(screen.getByText("Optimization note")).toBeInTheDocument();
-    expect(screen.queryByDisplayValue("Optimization note")).not.toBeInTheDocument();
+    expect(
+      screen.queryByDisplayValue("Optimization note"),
+    ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Radius mode for surface 1" }));
+    await user.click(
+      screen.getByRole("button", { name: "Radius mode for surface 1" }),
+    );
     expect(onOpenRadiusModal).toHaveBeenCalledWith(1);
 
-    await user.click(screen.getByRole("button", { name: "Thickness mode for surface 1" }));
+    await user.click(
+      screen.getByRole("button", { name: "Thickness mode for surface 1" }),
+    );
     expect(onOpenThicknessModal).toHaveBeenCalledWith(1);
 
     await user.click(screen.getByRole("button", { name: "Edit medium" }));
     expect(onOpenMediumModal).toHaveBeenCalledWith(surfaceRow);
 
-    await user.click(screen.getByRole("button", { name: "Edit aspherical parameters" }));
+    await user.click(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    );
     expect(onOpenAsphericalModal).toHaveBeenCalledWith(surfaceRow);
 
     await user.click(screen.getByRole("button", { name: "Edit aperture" }));
     expect(onOpenApertureModal).toHaveBeenCalledWith(surfaceRow);
 
-    await user.click(screen.getByRole("button", { name: "Asphere mode for surface 1" }));
+    await user.click(
+      screen.getByRole("button", { name: "Asphere mode for surface 1" }),
+    );
     expect(onOpenAsphereVarModalMock).toHaveBeenCalledWith(1);
 
-    await user.click(screen.getByRole("button", { name: "Edit decenter and tilt" }));
+    await user.click(
+      screen.getByRole("button", { name: "Edit decenter and tilt" }),
+    );
     expect(onOpenDecenterModal).toHaveBeenCalledWith(surfaceRow);
 
-    await user.click(screen.getByRole("button", { name: "Tilt and decenter mode for surface 1" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Tilt and decenter mode for surface 1",
+      }),
+    );
     expect(onOpenTiltDecenterVarModal).toHaveBeenCalledWith(1);
 
-    await user.click(screen.getByRole("button", { name: "Edit diffraction grating" }));
+    await user.click(
+      screen.getByRole("button", { name: "Edit diffraction grating" }),
+    );
     expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith(surfaceRow);
   });
 
@@ -255,15 +317,32 @@ describe("OptimizationLensPrescriptionGrid", () => {
       { surfaceIndex: 1, mode: "constant" },
       { surfaceIndex: 2, mode: "constant" },
     ];
-    const thicknessModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const thicknessModes: RadiusMode[] = [
+      { surfaceIndex: 1, mode: "constant" },
+    ];
     const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
 
     render(
       <OptimizationLensPrescriptionGrid
         rows={[
-          { id: "optimization-row-0", radiusSurfaceIndex: undefined, thicknessSurfaceIndex: undefined, row: objectRow },
-          { id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow },
-          { id: "optimization-row-2", radiusSurfaceIndex: 2, thicknessSurfaceIndex: undefined, row: imageRow },
+          {
+            id: "optimization-row-0",
+            radiusSurfaceIndex: undefined,
+            thicknessSurfaceIndex: undefined,
+            row: objectRow,
+          },
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+          {
+            id: "optimization-row-2",
+            radiusSurfaceIndex: 2,
+            thicknessSurfaceIndex: undefined,
+            row: imageRow,
+          },
         ]}
         radiusModes={radiusModes}
         thicknessModes={thicknessModes}
@@ -279,8 +358,12 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
-    expect(Array.from(rows[0].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
+    expect(
+      Array.from(rows[0].querySelectorAll("td"), (cell) => cell.textContent),
+    ).toEqual([
       "",
       "Object",
       "",
@@ -297,7 +380,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "",
     ]);
-    expect(Array.from(rows[1].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
+    expect(
+      Array.from(rows[1].querySelectorAll("td"), (cell) => cell.textContent),
+    ).toEqual([
       "1",
       "Default",
       "Optimization note",
@@ -314,7 +399,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "C",
       "None",
     ]);
-    expect(Array.from(rows[2].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
+    expect(
+      Array.from(rows[2].querySelectorAll("td"), (cell) => cell.textContent),
+    ).toEqual([
       "",
       "Image",
       "",
@@ -336,7 +423,11 @@ describe("OptimizationLensPrescriptionGrid", () => {
   it("shows prescription text labels for configured inspection cells", () => {
     const configuredSurfaceRow: GridRow = {
       ...surfaceRow,
-      aspherical: { kind: "EvenAspherical", conicConstant: -1, polynomialCoefficients: [0.1] },
+      aspherical: {
+        kind: "EvenAspherical",
+        conicConstant: -1,
+        polynomialCoefficients: [0.1],
+      },
       decenter: {
         coordinateSystemStrategy: "reverse",
         alpha: 0,
@@ -351,7 +442,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: configuredSurfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: configuredSurfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={[makeAsphereState()]}
@@ -366,15 +464,29 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveTextContent("Even Aspherical");
-    expect(screen.getByRole("button", { name: "Edit decenter and tilt" })).toHaveTextContent("reverse");
-    expect(screen.getByRole("button", { name: "Edit diffraction grating" })).toHaveTextContent("600 lp/mm");
+    expect(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    ).toHaveTextContent("Even Aspherical");
+    expect(
+      screen.getByRole("button", { name: "Edit decenter and tilt" }),
+    ).toHaveTextContent("reverse");
+    expect(
+      screen.getByRole("button", { name: "Edit diffraction grating" }),
+    ).toHaveTextContent("600 lp/mm");
   });
 
   it("shows saved variable mode labels in optimization Var. cells", () => {
-    const radiusModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }];
+    const radiusModes: RadiusMode[] = [
+      { surfaceIndex: 1, mode: "variable", min: "40", max: "60" },
+    ];
     const thicknessModes: RadiusMode[] = [
-      { surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" },
+      {
+        surfaceIndex: 1,
+        mode: "pickup",
+        sourceSurfaceIndex: "1",
+        scale: "1",
+        offset: "0",
+      },
     ];
     const asphereStates: AsphereOptimizationState[] = [
       makeAsphereState({
@@ -389,7 +501,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={radiusModes}
         thicknessModes={thicknessModes}
         asphereStates={asphereStates}
@@ -404,9 +523,15 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Radius mode for surface 1" })).toHaveTextContent("V");
-    expect(screen.getByRole("button", { name: "Thickness mode for surface 1" })).toHaveTextContent("P");
-    expect(screen.getByRole("button", { name: "Asphere mode for surface 1" })).toHaveTextContent("V,P");
+    expect(
+      screen.getByRole("button", { name: "Radius mode for surface 1" }),
+    ).toHaveTextContent("V");
+    expect(
+      screen.getByRole("button", { name: "Thickness mode for surface 1" }),
+    ).toHaveTextContent("P");
+    expect(
+      screen.getByRole("button", { name: "Asphere mode for surface 1" }),
+    ).toHaveTextContent("V,P");
   });
 
   it("shows C for saved constant radius and thickness modes", () => {
@@ -414,7 +539,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={[makeAsphereState()]}
@@ -429,14 +561,25 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Radius mode for surface 1" })).toHaveTextContent("C");
-    expect(screen.getByRole("button", { name: "Thickness mode for surface 1" })).toHaveTextContent("C");
+    expect(
+      screen.getByRole("button", { name: "Radius mode for surface 1" }),
+    ).toHaveTextContent("C");
+    expect(
+      screen.getByRole("button", { name: "Thickness mode for surface 1" }),
+    ).toHaveTextContent("C");
   });
 
   it("shows C for missing radius and thickness mode entries", () => {
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={[]}
         thicknessModes={[]}
         asphereStates={[makeAsphereState()]}
@@ -451,8 +594,12 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Radius mode for surface 1" })).toHaveTextContent("C");
-    expect(screen.getByRole("button", { name: "Thickness mode for surface 1" })).toHaveTextContent("C");
+    expect(
+      screen.getByRole("button", { name: "Radius mode for surface 1" }),
+    ).toHaveTextContent("C");
+    expect(
+      screen.getByRole("button", { name: "Thickness mode for surface 1" }),
+    ).toHaveTextContent("C");
   });
 
   it("shows C for missing asphere optimization state", () => {
@@ -460,7 +607,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={[]}
@@ -475,7 +629,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Asphere mode for surface 1" })).toHaveTextContent("C");
+    expect(
+      screen.getByRole("button", { name: "Asphere mode for surface 1" }),
+    ).toHaveTextContent("C");
   });
 
   it("shows C when all asphere modes are constant", () => {
@@ -483,7 +639,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={[makeAsphereState()]}
@@ -498,7 +661,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Asphere mode for surface 1" })).toHaveTextContent("C");
+    expect(
+      screen.getByRole("button", { name: "Asphere mode for surface 1" }),
+    ).toHaveTextContent("C");
   });
 
   it("opens optimization variable modals when clicking the Var. cell body", async () => {
@@ -510,7 +675,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={[makeAsphereState()]}
@@ -525,7 +697,10 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
+    const rowCells = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr")[0]
+      .querySelectorAll("td");
 
     await user.click(rowCells[4].firstElementChild!);
     expect(onOpenRadiusModal).toHaveBeenCalledWith(1);
@@ -544,7 +719,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={asphereStates}
@@ -560,19 +742,33 @@ describe("OptimizationLensPrescriptionGrid", () => {
     );
 
     await user.hover(screen.getByRole("button", { name: "Edit medium" }));
-    expect(screen.getByText("Click to view medium or glass")).toHaveClass("opacity-100");
+    expect(screen.getByText("Click to view medium or glass")).toHaveClass(
+      "opacity-100",
+    );
 
     await user.unhover(screen.getByRole("button", { name: "Edit medium" }));
-    await user.hover(screen.getByRole("button", { name: "Edit aspherical parameters" }));
-    expect(screen.getByText("Click to view aspherical parameters")).toHaveClass("opacity-100");
+    await user.hover(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    );
+    expect(screen.getByText("Click to view aspherical parameters")).toHaveClass(
+      "opacity-100",
+    );
 
-    await user.unhover(screen.getByRole("button", { name: "Edit aspherical parameters" }));
+    await user.unhover(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    );
     await user.hover(screen.getByRole("button", { name: "Edit aperture" }));
-    expect(screen.getByText("Click to view aperture")).toHaveClass("opacity-100");
+    expect(screen.getByText("Click to view aperture")).toHaveClass(
+      "opacity-100",
+    );
 
     await user.unhover(screen.getByRole("button", { name: "Edit aperture" }));
-    await user.hover(screen.getByRole("button", { name: "Edit diffraction grating" }));
-    expect(screen.getByText("Click to view diffraction grating")).toHaveClass("opacity-100");
+    await user.hover(
+      screen.getByRole("button", { name: "Edit diffraction grating" }),
+    );
+    expect(screen.getByText("Click to view diffraction grating")).toHaveClass(
+      "opacity-100",
+    );
   });
 
   it("shows optimization variable tooltip copy for Var. cell buttons", async () => {
@@ -581,7 +777,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     render(
       <OptimizationLensPrescriptionGrid
-        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+        ]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
         asphereStates={[makeAsphereState()]}
@@ -596,21 +799,33 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
-    const radiusTooltipTrigger = rowCells[4].firstElementChild?.firstElementChild!;
-    const thicknessTooltipTrigger = rowCells[6].firstElementChild?.firstElementChild!;
-    const asphereTooltipTrigger = rowCells[11].firstElementChild?.firstElementChild!;
+    const rowCells = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr")[0]
+      .querySelectorAll("td");
+    const radiusTooltipTrigger =
+      rowCells[4].firstElementChild?.firstElementChild!;
+    const thicknessTooltipTrigger =
+      rowCells[6].firstElementChild?.firstElementChild!;
+    const asphereTooltipTrigger =
+      rowCells[11].firstElementChild?.firstElementChild!;
 
     await user.hover(radiusTooltipTrigger);
-    expect(screen.getByText("Click to configure radius variable or pickup")).toHaveClass("opacity-100");
+    expect(
+      screen.getByText("Click to configure radius variable or pickup"),
+    ).toHaveClass("opacity-100");
 
     await user.unhover(radiusTooltipTrigger);
     await user.hover(thicknessTooltipTrigger);
-    expect(screen.getByText("Click to configure thickness variable or pickup")).toHaveClass("opacity-100");
+    expect(
+      screen.getByText("Click to configure thickness variable or pickup"),
+    ).toHaveClass("opacity-100");
 
     await user.unhover(thicknessTooltipTrigger);
     await user.hover(asphereTooltipTrigger);
-    expect(screen.getByText("Click to configure asphere variable or pickup")).toHaveClass("opacity-100");
+    expect(
+      screen.getByText("Click to configure asphere variable or pickup"),
+    ).toHaveClass("opacity-100");
   });
 
   it("inserts a Glass Expert Var. column immediately after Medium for Object and physical surfaces only", async () => {
@@ -629,9 +844,24 @@ describe("OptimizationLensPrescriptionGrid", () => {
       <OptimizationLensPrescriptionGrid
         canOptimizeGlass
         rows={[
-          { id: "optimization-row-0", radiusSurfaceIndex: undefined, thicknessSurfaceIndex: undefined, row: objectRow },
-          { id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow },
-          { id: "optimization-row-2", radiusSurfaceIndex: 2, thicknessSurfaceIndex: undefined, row: imageRow },
+          {
+            id: "optimization-row-0",
+            radiusSurfaceIndex: undefined,
+            thicknessSurfaceIndex: undefined,
+            row: objectRow,
+          },
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+          {
+            id: "optimization-row-2",
+            radiusSurfaceIndex: 2,
+            thicknessSurfaceIndex: undefined,
+            row: imageRow,
+          },
         ]}
         radiusModes={[]}
         thicknessModes={[]}
@@ -649,7 +879,12 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
-    expect(Array.from(screen.getByTestId("ag-grid-mock").querySelectorAll("th"), (header) => header.textContent)).toEqual([
+    expect(
+      Array.from(
+        screen.getByTestId("ag-grid-mock").querySelectorAll("th"),
+        (header) => header.textContent,
+      ),
+    ).toEqual([
       "Index",
       "Surface",
       "Comment",
@@ -667,12 +902,22 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Var.",
       "Diffraction Grating",
     ]);
-    expect(screen.getByRole("button", { name: "Glass mode for Object" })).toHaveTextContent("V");
-    expect(screen.getByRole("button", { name: "Glass mode for surface 1" })).toHaveTextContent("C");
-    expect(screen.queryByRole("button", { name: "Glass mode for Image" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Glass mode for Object" }),
+    ).toHaveTextContent("V");
+    expect(
+      screen.getByRole("button", { name: "Glass mode for surface 1" }),
+    ).toHaveTextContent("C");
+    expect(
+      screen.queryByRole("button", { name: "Glass mode for Image" }),
+    ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Glass mode for Object" }));
-    await user.click(screen.getByRole("button", { name: "Glass mode for surface 1" }));
+    await user.click(
+      screen.getByRole("button", { name: "Glass mode for Object" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Glass mode for surface 1" }),
+    );
 
     expect(onOpenGlassModal).toHaveBeenNthCalledWith(1, 0);
     expect(onOpenGlassModal).toHaveBeenNthCalledWith(2, 1);

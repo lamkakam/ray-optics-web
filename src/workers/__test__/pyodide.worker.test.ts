@@ -67,24 +67,87 @@ const allSphericalOpticalModel: OpticalModel = {
   setAutoAperture: "manualAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20.0, fields: [0., Math.SQRT1_2, 1.], isRelative: true, isWideAngle: true },
-    wavelengths: { weights: [[656.3, 1.], [587., 2.], [486.1, 1.]], referenceIndex: 1 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20.0,
+      fields: [0, Math.SQRT1_2, 1],
+      isRelative: true,
+      isWideAngle: true,
+    },
+    wavelengths: {
+      weights: [
+        [656.3, 1],
+        [587, 2],
+        [486.1, 1],
+      ],
+      referenceIndex: 1,
+    },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -42 },
   surfaces: [
-    { label: "Default", curvatureRadius: 23.713, thickness: 4.831, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 10.009 },
-    { label: "Default", curvatureRadius: 7331.288000, thickness: 5.86, medium: "air", manufacturer: "", semiDiameter: 8.9483 },
-    { label: "Stop", curvatureRadius: -24.456, thickness: 0.975, medium: "N-SF5", manufacturer: "Schott", semiDiameter: 4.7918 },
-    { label: "Default", curvatureRadius: 21.896, thickness: 4.822, medium: "air", manufacturer: "", semiDiameter: 4.7760 },
-    { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 8.0218 },
+    {
+      label: "Default",
+      curvatureRadius: 23.713,
+      thickness: 4.831,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      semiDiameter: 10.009,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 7331.288,
+      thickness: 5.86,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 8.9483,
+    },
+    {
+      label: "Stop",
+      curvatureRadius: -24.456,
+      thickness: 0.975,
+      medium: "N-SF5",
+      manufacturer: "Schott",
+      semiDiameter: 4.7918,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 21.896,
+      thickness: 4.822,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 4.776,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 86.759,
+      thickness: 3.127,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      semiDiameter: 8.0218,
+    },
     // manufacturer is set to be "Schott" on purpose for testing
-    { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "Schott", semiDiameter: 8.3321 },
+    {
+      label: "Default",
+      curvatureRadius: -20.4942,
+      thickness: 41.2365,
+      medium: "air",
+      manufacturer: "Schott",
+      semiDiameter: 8.3321,
+    },
   ],
 } as const;
 
 const minimalOptimizationConfig: OptimizationConfig = {
-  optimizer: { kind: "least_squares", method: "trf", max_nfev: 1, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+  optimizer: {
+    kind: "least_squares",
+    method: "trf",
+    max_nfev: 1,
+    ftol: 1e-8,
+    xtol: 1e-8,
+    gtol: 1e-8,
+  },
   variables: [],
   pickups: [],
   merit_function: { operands: [] },
@@ -97,7 +160,6 @@ const minimalGlassOptimizationConfig: GlassOptimizationConfig = {
   pickups: [],
   merit_function: { operands: [] },
 };
-
 
 describe("_getFirstOrderData", () => {
   it("imports the custom aperture helpers during initialization", async () => {
@@ -122,7 +184,9 @@ describe("_getFirstOrderData", () => {
       return JSON.stringify({ efl: 200, bfl: 100 });
     }, allSphericalOpticalModel);
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_first_order_data(_build_opm()))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_first_order_data(_build_opm()))",
+    );
     expect(result).toMatchObject({ efl: 200, bfl: 100 });
   });
 });
@@ -136,28 +200,37 @@ describe("_getSurfaceSemiDiameters", () => {
     }, allSphericalOpticalModel);
 
     expect(pythonScript).toContain("opm.update_model()");
-    expect(pythonScript).toContain("json.dumps(get_surface_semi_diameters(_build_opm()))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_surface_semi_diameters(_build_opm()))",
+    );
     expect(result).toEqual([100, 4.5, 5.5, 200]);
   });
 
   it("imports the helper during initialization", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); }, "/test.whl");
+    await _init(async (code) => {
+      scripts.push(code);
+    }, "/test.whl");
     expect(scripts.join("\n")).toContain("get_surface_semi_diameters");
   });
 });
-
 
 describe("_plotLensLayout", () => {
   it("should build the model script and call plot_lens_layout(opm) with false flags by default", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     let pythonScript = "";
-    const result = await _plotLensLayout(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel, false);
+    const result = await _plotLensLayout(
+      async (code) => {
+        pythonScript = code;
+        return mockBase64;
+      },
+      allSphericalOpticalModel,
+      false,
+    );
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("plot_lens_layout(_build_opm(), show_ray_fan_vs_wvls=False, is_dark=False)");
+    expect(pythonScript).toContain(
+      "plot_lens_layout(_build_opm(), show_ray_fan_vs_wvls=False, is_dark=False)",
+    );
     expect(result).toBe(mockBase64);
   });
 
@@ -176,16 +249,21 @@ describe("_plotLensLayout", () => {
       ],
     };
 
-    const result = await _plotLensLayout(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, modelWithDiffractionGrating, true);
+    const result = await _plotLensLayout(
+      async (code) => {
+        pythonScript = code;
+        return mockBase64;
+      },
+      modelWithDiffractionGrating,
+      true,
+    );
 
-    expect(pythonScript).toContain("plot_lens_layout(_build_opm(), show_ray_fan_vs_wvls=True, is_dark=True)");
+    expect(pythonScript).toContain(
+      "plot_lens_layout(_build_opm(), show_ray_fan_vs_wvls=True, is_dark=True)",
+    );
     expect(result).toBe(mockBase64);
   });
 });
-
 
 describe("_getRayFanData", () => {
   it("should build the model script, call json.dumps(get_ray_fan_data(...)) and return parsed data", async () => {
@@ -206,24 +284,37 @@ describe("_getRayFanData", () => {
       },
     ];
     let pythonScript = "";
-    const result = await _getRayFanData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, "centroid");
+    const result = await _getRayFanData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+      "centroid",
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_ray_fan_data(_build_opm(), 1, image_point='centroid'))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_ray_fan_data(_build_opm(), 1, image_point='centroid'))",
+    );
     expect(result).toEqual(mockData);
   });
 
   it("uses the chief ray when imagePoint is omitted", async () => {
     let pythonScript = "";
-    await _getRayFanData(async (code) => {
-      pythonScript = code;
-      return "[]";
-    }, allSphericalOpticalModel, 0);
+    await _getRayFanData(
+      async (code) => {
+        pythonScript = code;
+        return "[]";
+      },
+      allSphericalOpticalModel,
+      0,
+    );
 
-    expect(pythonScript).toContain("get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')");
+    expect(pythonScript).toContain(
+      "get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')",
+    );
   });
 
   it("normalizes null ray fan samples to undefined gaps", async () => {
@@ -244,13 +335,16 @@ describe("_getRayFanData", () => {
       },
     ];
 
-    const result = await _getRayFanData(async () => JSON.stringify(mockData), allSphericalOpticalModel, 1);
+    const result = await _getRayFanData(
+      async () => JSON.stringify(mockData),
+      allSphericalOpticalModel,
+      1,
+    );
 
     expect(result[0].Sagittal.y).toEqual([-0.2, undefined, 0.2]);
     expect(result[0].Tangential.y).toEqual([-0.1, undefined, 0.1]);
   });
 });
-
 
 describe("_getOpdFanData", () => {
   it("should build the model script, call json.dumps(get_opd_fan_data(...)) and return parsed data", async () => {
@@ -271,24 +365,37 @@ describe("_getOpdFanData", () => {
       },
     ];
     let pythonScript = "";
-    const result = await _getOpdFanData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, "centroid");
+    const result = await _getOpdFanData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+      "centroid",
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_opd_fan_data(_build_opm(), 1, image_point='centroid'))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_opd_fan_data(_build_opm(), 1, image_point='centroid'))",
+    );
     expect(result).toEqual(mockData);
   });
 
   it("uses the chief ray when imagePoint is omitted", async () => {
     let pythonScript = "";
-    await _getOpdFanData(async (code) => {
-      pythonScript = code;
-      return "[]";
-    }, allSphericalOpticalModel, 0);
+    await _getOpdFanData(
+      async (code) => {
+        pythonScript = code;
+        return "[]";
+      },
+      allSphericalOpticalModel,
+      0,
+    );
 
-    expect(pythonScript).toContain("get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')");
+    expect(pythonScript).toContain(
+      "get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')",
+    );
   });
 
   it("normalizes null OPD fan samples to undefined gaps", async () => {
@@ -309,7 +416,11 @@ describe("_getOpdFanData", () => {
       },
     ];
 
-    const result = await _getOpdFanData(async () => JSON.stringify(mockData), allSphericalOpticalModel, 1);
+    const result = await _getOpdFanData(
+      async () => JSON.stringify(mockData),
+      allSphericalOpticalModel,
+      1,
+    );
 
     expect(result[0].Sagittal.y).toEqual([-0.2, undefined, 0.2]);
     expect(result[0].Tangential.y).toEqual([-0.1, undefined, 0.1]);
@@ -329,7 +440,16 @@ describe("analysis Python generation defaults", () => {
         return "[]";
       }
       if (code.includes("get_wavefront_data")) {
-        return JSON.stringify({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" });
+        return JSON.stringify({
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [],
+          y: [],
+          z: [],
+          unitX: "",
+          unitY: "",
+          unitZ: "",
+        });
       }
       return "{}";
     };
@@ -340,16 +460,27 @@ describe("analysis Python generation defaults", () => {
     await _getDiffractionPSFData(runPython, allSphericalOpticalModel, 0, 0);
     await _getDiffractionMTFData(runPython, allSphericalOpticalModel, 0, 0);
 
-    expect(scripts).toEqual(expect.arrayContaining([
-      expect.stringContaining("get_spot_data(_build_opm(), 0, image_point='chief_ray')"),
-      expect.stringContaining("get_wavefront_data(_build_opm(), 0, 0, num_rays=64, image_point='chief_ray')"),
-      expect.stringContaining("get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')"),
-      expect.stringContaining("get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=64, max_dims=256, image_point='chief_ray')"),
-      expect.stringContaining("get_diffraction_mtf_data(_build_opm(), 0, 0, num_rays=64, max_dims=256, image_point='chief_ray')"),
-    ]));
+    expect(scripts).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "get_spot_data(_build_opm(), 0, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_wavefront_data(_build_opm(), 0, 0, num_rays=64, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=64, max_dims=256, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_diffraction_mtf_data(_build_opm(), 0, 0, num_rays=64, max_dims=256, image_point='chief_ray')",
+        ),
+      ]),
+    );
   });
 });
-
 
 describe("_getSpotDiagramData", () => {
   it("should build the model script, call json.dumps(get_spot_data(...)) and return parsed data", async () => {
@@ -372,13 +503,20 @@ describe("_getSpotDiagramData", () => {
       },
     ];
     let pythonScript = "";
-    const result = await _getSpotDiagramData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, "centroid");
+    const result = await _getSpotDiagramData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+      "centroid",
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_spot_data(_build_opm(), 1, image_point='centroid'))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_spot_data(_build_opm(), 1, image_point='centroid'))",
+    );
     expect(result).toEqual(mockData);
   });
 });
@@ -394,13 +532,19 @@ describe("_getFieldCurvatureData", () => {
       unitY: "deg",
     };
     let pythonScript = "";
-    const result = await _getFieldCurvatureData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 2);
+    const result = await _getFieldCurvatureData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      2,
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_field_curvature_data(_build_opm(), 2))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_field_curvature_data(_build_opm(), 2))",
+    );
     expect(result).toEqual(mockData);
   });
 });
@@ -415,13 +559,19 @@ describe("_getAstigmatismCurveData", () => {
       unitY: "deg",
     };
     let pythonScript = "";
-    const result = await _getAstigmatismCurveData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1);
+    const result = await _getAstigmatismCurveData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_astigmatism_curve_data(_build_opm(), 1))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_astigmatism_curve_data(_build_opm(), 1))",
+    );
     expect(result).toEqual(mockData);
   });
 });
@@ -471,17 +621,26 @@ describe("_getDiffractionMTFData", () => {
       naSagittal: 0.011,
     };
     let pythonScript = "";
-    const result = await _getDiffractionMTFData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 2, 1, "centroid", 64, 256);
+    const result = await _getDiffractionMTFData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      2,
+      1,
+      "centroid",
+      64,
+      256,
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256, image_point='centroid'))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256, image_point='centroid'))",
+    );
     expect(result).toEqual(mockData);
   });
 });
-
 
 describe("_getWavefrontData", () => {
   it("should build the model script, call json.dumps(get_wavefront_data(...)) and return parsed data", async () => {
@@ -500,13 +659,22 @@ describe("_getWavefrontData", () => {
       unitZ: "waves",
     };
     let pythonScript = "";
-    const result = await _getWavefrontData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, 2, "centroid", 64);
+    const result = await _getWavefrontData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+      2,
+      "centroid",
+      64,
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64, image_point='centroid'))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64, image_point='centroid'))",
+    );
     expect(result).toEqual({
       ...mockData,
       z: [
@@ -528,17 +696,25 @@ describe("_getStrehlVsWavelengthData", () => {
       unitY: "",
     };
     let pythonScript = "";
-    const result = await _getStrehlVsWavelengthData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, "centroid", 100, 21);
+    const result = await _getStrehlVsWavelengthData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+      "centroid",
+      100,
+      21,
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21, image_point='centroid'))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21, image_point='centroid'))",
+    );
     expect(result).toEqual(mockData);
   });
 });
-
 
 describe("_getGeoPSFData", () => {
   it("should build the model script, call json.dumps(get_geo_psf_data(...)) and return parsed data", async () => {
@@ -551,17 +727,23 @@ describe("_getGeoPSFData", () => {
       unitY: "mm",
     };
     let pythonScript = "";
-    const result = await _getGeoPSFData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, 2);
+    const result = await _getGeoPSFData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+      2,
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_geo_psf_data(_build_opm(), 1, 2, num_rays=64))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_geo_psf_data(_build_opm(), 1, 2, num_rays=64))",
+    );
     expect(result).toEqual(mockData);
   });
 });
-
 
 describe("_getDiffractionPSFData", () => {
   afterEach(() => {
@@ -584,13 +766,23 @@ describe("_getDiffractionPSFData", () => {
       unitZ: "",
     };
     let pythonScript = "";
-    const result = await _getDiffractionPSFData(async (code) => {
-      pythonScript = code;
-      return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, 2, "centroid", 64, 256);
+    const result = await _getDiffractionPSFData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+      2,
+      "centroid",
+      64,
+      256,
+    );
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256, image_point='centroid'))");
+    expect(pythonScript).toContain(
+      "json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256, image_point='centroid'))",
+    );
     expect(result).toEqual(mockData);
   });
 
@@ -606,15 +798,24 @@ describe("_getDiffractionPSFData", () => {
       unitZ: "",
     };
     const scopedGlobals = { destroy: jest.fn() };
-    const runPythonAsync = jest.fn().mockResolvedValue(JSON.stringify(mockData));
+    const runPythonAsync = jest
+      .fn()
+      .mockResolvedValue(JSON.stringify(mockData));
 
     _setPyodideForTesting({
       runPython: jest.fn().mockReturnValue(scopedGlobals),
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      ffi: {
+        PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+      },
     });
 
-    const result = await getDiffractionPSFData(allSphericalOpticalModel, 1, 2, "centroid");
+    const result = await getDiffractionPSFData(
+      allSphericalOpticalModel,
+      1,
+      2,
+      "centroid",
+    );
 
     expect(runPythonAsync).toHaveBeenCalledTimes(1);
     expect(runPythonAsync.mock.calls[0]?.[0]).toContain(
@@ -624,16 +825,28 @@ describe("_getDiffractionPSFData", () => {
   });
 });
 
-
 describe("_get3rdOrderSeidelData", () => {
   it("should build the model script, call json.dumps(get_3rd_order_seidel_data(opm)) and return parsed SeidelData", async () => {
     const mockData = {
       surfaceBySurface: {
         index: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
         columns: ["S1", "S2", "sum"],
-        data: [[0.1, 0.2, 0.3], [0.4, 0.5, 0.9], [0.6, 0.7, 1.3], [0.8, 0.9, 1.7], [1.0, 1.1, 2.1]],
+        data: [
+          [0.1, 0.2, 0.3],
+          [0.4, 0.5, 0.9],
+          [0.6, 0.7, 1.3],
+          [0.8, 0.9, 1.7],
+          [1.0, 1.1, 2.1],
+        ],
       },
-      transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
+      transverse: {
+        TSA: 0.1,
+        TCO: 0.2,
+        TAS: 0.3,
+        SAS: 0.4,
+        PTB: 0.5,
+        DST: 0.6,
+      },
       wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
       curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
     };
@@ -643,11 +856,12 @@ describe("_get3rdOrderSeidelData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel);
     expect(capturedCode).toContain("opm = ExactOpticalModel()");
-    expect(capturedCode).toContain("json.dumps(get_3rd_order_seidel_data(_build_opm()))");
+    expect(capturedCode).toContain(
+      "json.dumps(get_3rd_order_seidel_data(_build_opm()))",
+    );
     expect(result).toMatchObject(mockData);
   });
 });
-
 
 /**
  * Initialization generation contract: the worker installs both RayOptics and
@@ -655,29 +869,44 @@ describe("_get3rdOrderSeidelData", () => {
  * later model, material, focusing, and optimization scripts.
  */
 describe("_init", () => {
-  const testWheelUrl = "http://localhost/rayoptics_web_utils-0.1.0-py3-none-any.whl";
+  const testWheelUrl =
+    "http://localhost/rayoptics_web_utils-0.1.0-py3-none-any.whl";
 
   it("should install the local wheel and import rayoptics_web_utils", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
+    await _init(async (code) => {
+      scripts.push(code);
+    }, testWheelUrl);
     const allCode = scripts.join("\n");
 
     // Install the wheel
-    expect(allCode).toContain(`micropip.install("${testWheelUrl}", deps=False)`);
+    expect(allCode).toContain(
+      `micropip.install("${testWheelUrl}", deps=False)`,
+    );
 
     // Initialize the package
-    expect(allCode).toContain("from rayoptics_web_utils import init as _rwu_init");
+    expect(allCode).toContain(
+      "from rayoptics_web_utils import init as _rwu_init",
+    );
     expect(allCode).toContain("_rwu_init()");
     expect(allCode).toContain("caf2 = _rwu_init_result['caf2']");
-    expect(allCode).toContain("fused_silica = _rwu_init_result['fused_silica']");
+    expect(allCode).toContain(
+      "fused_silica = _rwu_init_result['fused_silica']",
+    );
     expect(allCode).toContain("water = _rwu_init_result['water']");
     expect(allCode).toContain("d263teco = _rwu_init_result['d263teco']");
 
     // Import analysis and plotting functions
-    expect(allCode).toContain("from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data");
-    expect(allCode).toContain("get_field_curvature_data, get_astigmatism_curve_data");
+    expect(allCode).toContain(
+      "from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data",
+    );
+    expect(allCode).toContain(
+      "get_field_curvature_data, get_astigmatism_curve_data",
+    );
     expect(allCode).toContain("plot_lens_layout,");
-    expect(allCode).toContain("from rayoptics_web_utils.aperture import Annular, OffsetCircular");
+    expect(allCode).toContain(
+      "from rayoptics_web_utils.aperture import Annular, OffsetCircular",
+    );
     expect(allCode).not.toContain("plot_ray_fan,");
     expect(allCode).not.toContain("plot_opd_fan,");
     expect(allCode).not.toContain("plot_spot_diagram,");
@@ -689,7 +918,9 @@ describe("_init", () => {
 
   it("should install rayoptics and opticalglass", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
+    await _init(async (code) => {
+      scripts.push(code);
+    }, testWheelUrl);
     const allCode = scripts.join("\n");
     expect(allCode).toContain('micropip.install("rayoptics==0.9.8"');
     expect(allCode).toContain('micropip.install("opticalglass==1.1.1"');
@@ -697,7 +928,9 @@ describe("_init", () => {
 
   it("installs every supporting package in one micropip request", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
+    await _init(async (code) => {
+      scripts.push(code);
+    }, testWheelUrl);
     const allCode = scripts.join("\n");
 
     expect(allCode).toContain(`await micropip.install([
@@ -711,7 +944,9 @@ describe("_init", () => {
 
   it("should import rayoptics environment", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
+    await _init(async (code) => {
+      scripts.push(code);
+    }, testWheelUrl);
     const allCode = scripts.join("\n");
     expect(allCode).toContain("from rayoptics.environment import *");
   });
@@ -763,7 +998,9 @@ describe("init", () => {
       runPython: jest.fn(),
       loadPackage,
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      ffi: {
+        PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+      },
       globals: new Map(),
     } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
 
@@ -792,38 +1029,52 @@ describe("init", () => {
 
   it("constructs the wheel URL without a base path", async () => {
     const scripts: string[] = [];
-    const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
-      scripts.push(code);
-      return undefined;
-    });
+    const runPythonAsync = jest
+      .fn()
+      .mockImplementation(async (code: string) => {
+        scripts.push(code);
+        return undefined;
+      });
     jest.mocked(loadPyodide).mockResolvedValueOnce({
       runPython: jest.fn(),
       loadPackage: jest.fn().mockResolvedValue(undefined),
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      ffi: {
+        PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+      },
       globals: new Map(),
     } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
 
     await init();
 
-    expect(scripts.join("\n")).toContain(`micropip.install("${self.location.origin}/rayoptics_web_utils-`);
-    expect(scripts.join("\n")).toMatch(/rayoptics_web_utils-[^"\n]+-py3-none-any\.whl/);
-    expect(scripts.join("\n")).not.toContain(`${self.location.origin}//rayoptics_web_utils-`);
+    expect(scripts.join("\n")).toContain(
+      `micropip.install("${self.location.origin}/rayoptics_web_utils-`,
+    );
+    expect(scripts.join("\n")).toMatch(
+      /rayoptics_web_utils-[^"\n]+-py3-none-any\.whl/,
+    );
+    expect(scripts.join("\n")).not.toContain(
+      `${self.location.origin}//rayoptics_web_utils-`,
+    );
   });
 
   it("constructs the wheel URL with a base path", async () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/ray-optics-web";
     const scripts: string[] = [];
     const loadPackage = jest.fn().mockResolvedValue(undefined);
-    const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
-      scripts.push(code);
-      return undefined;
-    });
+    const runPythonAsync = jest
+      .fn()
+      .mockImplementation(async (code: string) => {
+        scripts.push(code);
+        return undefined;
+      });
     jest.mocked(loadPyodide).mockResolvedValueOnce({
       runPython: jest.fn(),
       loadPackage,
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      ffi: {
+        PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+      },
       globals: new Map(),
       FS: {
         mkdirTree: jest.fn(),
@@ -834,8 +1085,12 @@ describe("init", () => {
     await init();
 
     expect(loadPackage).toHaveBeenCalled();
-    expect(scripts.join("\n")).toContain(`micropip.install("${self.location.origin}/ray-optics-web/rayoptics_web_utils-`);
-    expect(scripts.join("\n")).toMatch(/ray-optics-web\/rayoptics_web_utils-[^"\n]+-py3-none-any\.whl/);
+    expect(scripts.join("\n")).toContain(
+      `micropip.install("${self.location.origin}/ray-optics-web/rayoptics_web_utils-`,
+    );
+    expect(scripts.join("\n")).toMatch(
+      /ray-optics-web\/rayoptics_web_utils-[^"\n]+-py3-none-any\.whl/,
+    );
   });
 
   it("reuses an initialized runtime without loading it again", async () => {
@@ -846,7 +1101,9 @@ describe("init", () => {
       runPython: jest.fn(),
       loadPackage,
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      ffi: {
+        PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+      },
       globals: new Map(),
     } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
 
@@ -882,9 +1139,12 @@ describe("init", () => {
   });
 
   it("destroys and rejects an unexpected initialization PyProxy result", async () => {
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const unexpectedResult = { destroy: jest.fn() };
-    const runPythonAsync = jest.fn()
+    const runPythonAsync = jest
+      .fn()
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(unexpectedResult);
@@ -892,7 +1152,11 @@ describe("init", () => {
       runPython: jest.fn(),
       loadPackage: jest.fn().mockResolvedValue(undefined),
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: (value: unknown) => value === unexpectedResult } },
+      ffi: {
+        PyProxy: {
+          [Symbol.hasInstance]: (value: unknown) => value === unexpectedResult,
+        },
+      },
       globals: new Map(),
     } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
 
@@ -901,21 +1165,27 @@ describe("init", () => {
     );
 
     expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);
-    expect(consoleError).toHaveBeenCalledWith(expect.objectContaining({
-      message: "Pyodide initialization returned an unexpected PyProxy result",
-    }));
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Pyodide initialization returned an unexpected PyProxy result",
+      }),
+    );
     consoleError.mockRestore();
   });
 
   it.each(["success", "failure"] as const)(
     "releases the initialization callback proxy after %s",
     async (outcome) => {
-      const onProgress = jest.fn() as jest.Mock & { [releaseProxy]?: () => void };
+      const onProgress = jest.fn() as jest.Mock & {
+        [releaseProxy]?: () => void;
+      };
       const release = jest.fn();
       onProgress[releaseProxy] = release;
       if (outcome === "failure") {
         const error = new Error("load failed");
-        const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+        const consoleError = jest
+          .spyOn(console, "error")
+          .mockImplementation(() => undefined);
         jest.mocked(loadPyodide).mockRejectedValueOnce(error);
         await expect(init(onProgress)).rejects.toThrow("load failed");
         expect(consoleError).toHaveBeenCalledWith(error);
@@ -966,37 +1236,66 @@ describe("public worker guards before initialization", () => {
       () => deleteUserDefinedGlasses([]),
       () => updateUserDefinedGlasses([]),
       () => getUserDefinedGlasses([]),
-      () => evaluateOptimizationProblem(allSphericalOpticalModel, minimalOptimizationConfig),
+      () =>
+        evaluateOptimizationProblem(
+          allSphericalOpticalModel,
+          minimalOptimizationConfig,
+        ),
       () => optimizeOpm(allSphericalOpticalModel, minimalOptimizationConfig),
-      () => optimizeGlasses(allSphericalOpticalModel, minimalGlassOptimizationConfig),
+      () =>
+        optimizeGlasses(
+          allSphericalOpticalModel,
+          minimalGlassOptimizationConfig,
+        ),
     ];
 
     for (const call of calls) {
-      await expect(call()).rejects.toThrow("Pyodide not initialized. Call init() first.");
+      await expect(call()).rejects.toThrow(
+        "Pyodide not initialized. Call init() first.",
+      );
     }
   });
 
   it("reports unsupported interruption and ignores a stop without an active run", async () => {
     await expect(canInterruptOptimization()).resolves.toBe(false);
-    await expect(requestOptimizationStop("missing-run")).resolves.toEqual({ signaled: false });
+    await expect(requestOptimizationStop("missing-run")).resolves.toEqual({
+      signaled: false,
+    });
   });
 
   it("passes chief-ray defaults through initialized public computation wrappers", async () => {
     const scopedGlobals = { destroy: jest.fn() };
     const runPython = jest.fn().mockReturnValue(scopedGlobals);
-    const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
-      if (code.includes("get_ray_fan_data") || code.includes("get_opd_fan_data") || code.includes("get_spot_data")) {
-        return "[]";
-      }
-      if (code.includes("get_wavefront_data")) {
-        return JSON.stringify({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" });
-      }
-      return "{}";
-    });
+    const runPythonAsync = jest
+      .fn()
+      .mockImplementation(async (code: string) => {
+        if (
+          code.includes("get_ray_fan_data") ||
+          code.includes("get_opd_fan_data") ||
+          code.includes("get_spot_data")
+        ) {
+          return "[]";
+        }
+        if (code.includes("get_wavefront_data")) {
+          return JSON.stringify({
+            fieldIdx: 0,
+            wvlIdx: 0,
+            x: [],
+            y: [],
+            z: [],
+            unitX: "",
+            unitY: "",
+            unitZ: "",
+          });
+        }
+        return "{}";
+      });
     _setPyodideForTesting({
       runPython,
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      ffi: {
+        PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+      },
     });
 
     await getRayFanData(allSphericalOpticalModel, 0);
@@ -1007,25 +1306,61 @@ describe("public worker guards before initialization", () => {
     await getDiffractionPSFData(allSphericalOpticalModel, 0, 0);
     await getDiffractionMTFData(allSphericalOpticalModel, 0, 0);
     await getZernikeCoefficients(allSphericalOpticalModel, 0, 0);
-    await evaluateOptimizationProblem(allSphericalOpticalModel, minimalOptimizationConfig);
+    await evaluateOptimizationProblem(
+      allSphericalOpticalModel,
+      minimalOptimizationConfig,
+    );
     await optimizeOpm(allSphericalOpticalModel, minimalOptimizationConfig);
-    await optimizeGlasses(allSphericalOpticalModel, minimalGlassOptimizationConfig);
+    await optimizeGlasses(
+      allSphericalOpticalModel,
+      minimalGlassOptimizationConfig,
+    );
 
     const scripts = runPythonAsync.mock.calls.map(([code]) => code as string);
-    expect(scripts).toEqual(expect.arrayContaining([
-      expect.stringContaining("get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')"),
-      expect.stringContaining("get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')"),
-      expect.stringContaining("get_spot_data(_build_opm(), 0, image_point='chief_ray')"),
-      expect.stringContaining("get_wavefront_data(_build_opm(), 0, 0, num_rays=128, image_point='chief_ray')"),
-      expect.stringContaining("get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')"),
-      expect.stringContaining("get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=128, max_dims=1024, image_point='chief_ray')"),
-      expect.stringContaining("get_diffraction_mtf_data(_build_opm(), 0, 0, num_rays=128, max_dims=256, image_point='chief_ray')"),
-      expect.stringContaining("get_zernike_coefficients(_build_opm(), 0, 0, zernike_terms=zernike_terms, image_point='chief_ray', pupil_space='entrance')"),
-      expect.stringContaining("evaluate_optimization_problem(_build_opm(), json.loads("),
-      expect.stringContaining("optimize_opm(_build_opm(), _optimization_config, image_point='chief_ray')"),
-      expect.stringContaining("optimize_glasses(_build_opm(), _optimization_config, image_point='chief_ray'")
-    ]));
-    expect(scripts.some((script) => script.includes("evaluate_optimization_problem(") && script.includes("image_point='chief_ray'"))).toBe(true);
+    expect(scripts).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_spot_data(_build_opm(), 0, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_wavefront_data(_build_opm(), 0, 0, num_rays=128, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=128, max_dims=1024, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_diffraction_mtf_data(_build_opm(), 0, 0, num_rays=128, max_dims=256, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_zernike_coefficients(_build_opm(), 0, 0, zernike_terms=zernike_terms, image_point='chief_ray', pupil_space='entrance')",
+        ),
+        expect.stringContaining(
+          "evaluate_optimization_problem(_build_opm(), json.loads(",
+        ),
+        expect.stringContaining(
+          "optimize_opm(_build_opm(), _optimization_config, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "optimize_glasses(_build_opm(), _optimization_config, image_point='chief_ray'",
+        ),
+      ]),
+    );
+    expect(
+      scripts.some(
+        (script) =>
+          script.includes("evaluate_optimization_problem(") &&
+          script.includes("image_point='chief_ray'"),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -1035,48 +1370,68 @@ describe("Pyodide computation executor lifecycle", () => {
   });
 
   /** Request cleanup breaks globals cycles and clears traceback roots before collecting Python garbage. */
-  it.each([false, true])("reclaims Python request state after execution (failure=%s)", async (fails) => {
-    const scopedGlobals = { destroy: jest.fn() };
-    const runPython = jest.fn().mockReturnValue(scopedGlobals);
-    const error = new Error("original Python failure");
-    _setPyodideForTesting({
-      runPython,
-      runPythonAsync: fails ? jest.fn().mockRejectedValue(error) : jest.fn().mockResolvedValue("{}"),
-      ffi: { PyProxy: { [Symbol.hasInstance]: () => false } },
-    });
+  it.each([false, true])(
+    "reclaims Python request state after execution (failure=%s)",
+    async (fails) => {
+      const scopedGlobals = { destroy: jest.fn() };
+      const runPython = jest.fn().mockReturnValue(scopedGlobals);
+      const error = new Error("original Python failure");
+      _setPyodideForTesting({
+        runPython,
+        runPythonAsync: fails
+          ? jest.fn().mockRejectedValue(error)
+          : jest.fn().mockResolvedValue("{}"),
+        ffi: { PyProxy: { [Symbol.hasInstance]: () => false } },
+      });
 
-    if (fails) {
-      await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toBe(error);
-    } else {
-      await expect(getFirstOrderData(allSphericalOpticalModel)).resolves.toEqual({});
-    }
+      if (fails) {
+        await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toBe(
+          error,
+        );
+      } else {
+        await expect(
+          getFirstOrderData(allSphericalOpticalModel),
+        ).resolves.toEqual({});
+      }
 
-    expect(runPython).toHaveBeenCalledWith("globals().clear()", { globals: scopedGlobals });
-    expect(runPython).toHaveBeenLastCalledWith(expect.stringContaining("gc.collect()"));
-    const cleanup = runPython.mock.calls.at(-1)?.[0] as string;
-    expect(cleanup).toContain("last_exc");
-    expect(cleanup).toContain("last_value");
-    expect(cleanup).toContain("last_traceback");
-    expect(scopedGlobals.destroy.mock.invocationCallOrder[0]).toBeLessThan(runPython.mock.invocationCallOrder.at(-1) ?? 0);
-  });
+      expect(runPython).toHaveBeenCalledWith("globals().clear()", {
+        globals: scopedGlobals,
+      });
+      expect(runPython).toHaveBeenLastCalledWith(
+        expect.stringContaining("gc.collect()"),
+      );
+      const cleanup = runPython.mock.calls.at(-1)?.[0] as string;
+      expect(cleanup).toContain("last_exc");
+      expect(cleanup).toContain("last_value");
+      expect(cleanup).toContain("last_traceback");
+      expect(scopedGlobals.destroy.mock.invocationCallOrder[0]).toBeLessThan(
+        runPython.mock.invocationCallOrder.at(-1) ?? 0,
+      );
+    },
+  );
 
   it("passes copied globals to runPythonAsync and destroys them after success", async () => {
     const scopedGlobals = { destroy: jest.fn() };
     const runPython = jest.fn().mockReturnValue(scopedGlobals);
-    const runPythonAsync = jest.fn().mockResolvedValue(JSON.stringify({ efl: 200 }));
+    const runPythonAsync = jest
+      .fn()
+      .mockResolvedValue(JSON.stringify({ efl: 200 }));
     _setPyodideForTesting({
       runPython,
       runPythonAsync,
-      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      ffi: {
+        PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+      },
     });
 
-    await expect(getFirstOrderData(allSphericalOpticalModel)).resolves.toEqual({ efl: 200 });
+    await expect(getFirstOrderData(allSphericalOpticalModel)).resolves.toEqual({
+      efl: 200,
+    });
 
     expect(runPython).toHaveBeenCalledWith("dict(globals())");
-    expect(runPythonAsync).toHaveBeenCalledWith(
-      expect.any(String),
-      { globals: scopedGlobals },
-    );
+    expect(runPythonAsync).toHaveBeenCalledWith(expect.any(String), {
+      globals: scopedGlobals,
+    });
     expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
   });
 
@@ -1084,16 +1439,21 @@ describe("Pyodide computation executor lifecycle", () => {
     "destroys copied globals when %s rejects",
     async (failure) => {
       const scopedGlobals = { destroy: jest.fn() };
-      const runPythonAsync = failure === "execution"
-        ? jest.fn().mockRejectedValue(new Error("python failed"))
-        : jest.fn().mockResolvedValue("not json");
+      const runPythonAsync =
+        failure === "execution"
+          ? jest.fn().mockRejectedValue(new Error("python failed"))
+          : jest.fn().mockResolvedValue("not json");
       _setPyodideForTesting({
         runPython: jest.fn().mockReturnValue(scopedGlobals),
         runPythonAsync,
-        ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+        ffi: {
+          PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) },
+        },
       });
 
-      await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toThrow();
+      await expect(
+        getFirstOrderData(allSphericalOpticalModel),
+      ).rejects.toThrow();
 
       expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
     },
@@ -1105,7 +1465,11 @@ describe("Pyodide computation executor lifecycle", () => {
     _setPyodideForTesting({
       runPython: jest.fn().mockReturnValue(scopedGlobals),
       runPythonAsync: jest.fn().mockResolvedValue(unexpectedResult),
-      ffi: { PyProxy: { [Symbol.hasInstance]: (value: unknown) => value === unexpectedResult } },
+      ffi: {
+        PyProxy: {
+          [Symbol.hasInstance]: (value: unknown) => value === unexpectedResult,
+        },
+      },
     });
 
     await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toThrow(

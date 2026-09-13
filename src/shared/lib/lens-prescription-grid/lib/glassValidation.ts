@@ -16,7 +16,10 @@
  * are unavailable, while import and mutation callers consume the explicit
  * failure result.
  */
-import type { GlassLookupMaps, GlassMediumLookupValue } from "@/features/glass-map/types/glassMap";
+import type {
+  GlassLookupMaps,
+  GlassMediumLookupValue,
+} from "@/features/glass-map/types/glassMap";
 import type { OpticalModel, Surfaces } from "@/shared/lib/types/opticalModel";
 
 interface PrescriptionMedium {
@@ -31,7 +34,11 @@ export type ResolvedPrescriptionMedium = GlassMediumLookupValue;
 export type PrescriptionMediumResolution =
   | { readonly kind: "resolved"; readonly value: ResolvedPrescriptionMedium }
   | { readonly kind: "catalog-unavailable" }
-  | { readonly kind: "unknown-medium"; readonly medium: string; readonly manufacturer: string };
+  | {
+      readonly kind: "unknown-medium";
+      readonly medium: string;
+      readonly manufacturer: string;
+    };
 
 /** One unknown prescription row with a JSON-pointer-compatible medium path. */
 export interface UnknownPrescriptionMediumIssue extends PrescriptionMedium {
@@ -41,8 +48,14 @@ export interface UnknownPrescriptionMediumIssue extends PrescriptionMedium {
 /** Result of canonicalizing all media in an optical model or surface contract. */
 export type PrescriptionMediaResolution<T extends OpticalModel | Surfaces> =
   | { readonly kind: "resolved"; readonly model: T }
-  | { readonly kind: "catalog-unavailable"; readonly path: UnknownPrescriptionMediumIssue["path"] }
-  | { readonly kind: "unknown-medium"; readonly issues: readonly UnknownPrescriptionMediumIssue[] };
+  | {
+      readonly kind: "catalog-unavailable";
+      readonly path: UnknownPrescriptionMediumIssue["path"];
+    }
+  | {
+      readonly kind: "unknown-medium";
+      readonly issues: readonly UnknownPrescriptionMediumIssue[];
+    };
 
 function normalizeLookupKey(value: string): string {
   return value.trim().toLowerCase();
@@ -53,16 +66,20 @@ function isFiniteNumericString(value: string): boolean {
   return trimmedValue !== "" && Number.isFinite(Number(trimmedValue));
 }
 
-function resolveLookupIndependentMedium(
-  { medium, manufacturer }: PrescriptionMedium,
-): ResolvedPrescriptionMedium | undefined {
+function resolveLookupIndependentMedium({
+  medium,
+  manufacturer,
+}: PrescriptionMedium): ResolvedPrescriptionMedium | undefined {
   const normalizedMedium = normalizeLookupKey(medium);
   if (normalizedMedium === "air") return { medium: "air", manufacturer: "" };
   if (normalizedMedium === "refl") return { medium: "REFL", manufacturer: "" };
 
   if (isFiniteNumericString(medium)) {
     const trimmedManufacturer = manufacturer.trim();
-    if (trimmedManufacturer === "" || isFiniteNumericString(trimmedManufacturer)) {
+    if (
+      trimmedManufacturer === "" ||
+      isFiniteNumericString(trimmedManufacturer)
+    ) {
       return { medium: medium.trim(), manufacturer: trimmedManufacturer };
     }
   }
@@ -75,7 +92,8 @@ export function resolvePrescriptionMedium(
   lookupMaps: GlassLookupMaps | undefined,
 ): PrescriptionMediumResolution {
   const independent = resolveLookupIndependentMedium(input);
-  if (independent !== undefined) return { kind: "resolved", value: independent };
+  if (independent !== undefined)
+    return { kind: "resolved", value: independent };
   if (lookupMaps === undefined) return { kind: "catalog-unavailable" };
 
   const normalizedMedium = normalizeLookupKey(input.medium);
@@ -83,14 +101,17 @@ export function resolvePrescriptionMedium(
   if (special !== undefined) return { kind: "resolved", value: special };
 
   const normalizedManufacturer = normalizeLookupKey(input.manufacturer);
-  const canonicalManufacturer = lookupMaps.manufacturerMap.get(normalizedManufacturer);
+  const canonicalManufacturer = lookupMaps.manufacturerMap.get(
+    normalizedManufacturer,
+  );
   const catalog = lookupMaps.mediumMap.get(
     `${normalizeLookupKey(canonicalManufacturer ?? normalizedManufacturer)}:${normalizedMedium}`,
   );
   if (catalog !== undefined) return { kind: "resolved", value: catalog };
 
-  const custom = lookupMaps.customMediumMap.get(normalizedMedium)
-    ?? lookupMaps.mediumMap.get(`custom:${normalizedMedium}`);
+  const custom =
+    lookupMaps.customMediumMap.get(normalizedMedium) ??
+    lookupMaps.mediumMap.get(`custom:${normalizedMedium}`);
   if (custom !== undefined) return { kind: "resolved", value: custom };
 
   return {
@@ -105,7 +126,8 @@ export function resolvePrescriptionMedia<T extends OpticalModel | Surfaces>(
   prescription: T,
   lookupMaps: GlassLookupMaps | undefined,
 ): PrescriptionMediaResolution<T> {
-  if (lookupMaps === undefined) return { kind: "catalog-unavailable", path: "/object/medium" };
+  if (lookupMaps === undefined)
+    return { kind: "catalog-unavailable", path: "/object/medium" };
 
   const entries: ReadonlyArray<{
     readonly path: UnknownPrescriptionMediumIssue["path"];
@@ -126,7 +148,11 @@ export function resolvePrescriptionMedia<T extends OpticalModel | Surfaces>(
       return { kind: "catalog-unavailable", path: entry.path };
     }
     if (result.kind === "unknown-medium") {
-      issues.push({ path: entry.path, medium: result.medium, manufacturer: result.manufacturer });
+      issues.push({
+        path: entry.path,
+        medium: result.medium,
+        manufacturer: result.manufacturer,
+      });
     } else {
       resolved.push(result.value);
     }
@@ -138,12 +164,18 @@ export function resolvePrescriptionMedia<T extends OpticalModel | Surfaces>(
   const model = {
     ...prescription,
     object: { ...prescription.object, ...objectMedium },
-    surfaces: prescription.surfaces.map((surface, index) => ({ ...surface, ...surfaceMedia[index] })),
+    surfaces: prescription.surfaces.map((surface, index) => ({
+      ...surface,
+      ...surfaceMedia[index],
+    })),
   } as T;
   return { kind: "resolved", model };
 }
 
-function displayMissingGlass({ medium, manufacturer }: PrescriptionMedium): string {
+function displayMissingGlass({
+  medium,
+  manufacturer,
+}: PrescriptionMedium): string {
   const trimmedMedium = medium.trim();
   const trimmedManufacturer = manufacturer.trim();
   return trimmedManufacturer !== ""
@@ -169,7 +201,9 @@ export function getMissingPrescriptionGlasses(
 }
 
 /** Formats missing glass references as a user-facing validation message. */
-export function formatMissingGlassMessage(missingGlasses: readonly string[]): string | undefined {
+export function formatMissingGlassMessage(
+  missingGlasses: readonly string[],
+): string | undefined {
   if (missingGlasses.length === 0) return undefined;
   return `Unknown glass in prescription: ${missingGlasses.join(", ")}. Select a glass that exists in the loaded glass catalog or add it as a custom glass.`;
 }

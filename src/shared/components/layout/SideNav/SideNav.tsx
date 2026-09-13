@@ -13,18 +13,33 @@ interface SideNavProps {
   /** Called when the ✕ close button is clicked */
   readonly onClose: () => void;
   /** Optional navigation interceptor; returning `false` keeps the nav open and leaves route handling to the caller */
-  readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
+  readonly onNavigate?: (
+    href: string,
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => boolean;
 }
 
 /** Ordered application routes rendered by the side navigation. */
 const NAV_ITEMS = [
   { segment: null, href: "/", label: "Lens Editor" },
-  { segment: "example-systems", href: "/example-systems", label: "Example Systems" },
+  {
+    segment: "example-systems",
+    href: "/example-systems",
+    label: "Example Systems",
+  },
   { segment: "optimization", href: "/optimization", label: "Optimization" },
   { segment: "glass-map", href: "/glass-map", label: "Glass Map" },
-  { segment: "import-custom-glass", href: "/import-custom-glass", label: "Import Custom Glass" },
+  {
+    segment: "import-custom-glass",
+    href: "/import-custom-glass",
+    label: "Import Custom Glass",
+  },
   { segment: "settings", href: "/settings", label: "Settings" },
-  { segment: "privacy-policy", href: "/privacy-policy", label: "Privacy Policy" },
+  {
+    segment: "privacy-policy",
+    href: "/privacy-policy",
+    label: "Privacy Policy",
+  },
   { segment: "about", href: "/about", label: "About" },
 ] as const;
 
@@ -60,7 +75,12 @@ export function SideNav({ isOpen, isLG, onClose, onNavigate }: SideNavProps) {
       className={`transition-transform duration-200 ease-out will-change-transform absolute top-0 left-0 h-full z-40 flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl ${isLG ? "w-[33vw]" : "w-[50vw]"} ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
     >
       <div className="flex justify-end p-2">
-        <Button variant="secondary" size="sm" aria-label="Close navigation" onClick={onClose}>
+        <Button
+          variant="secondary"
+          size="sm"
+          aria-label="Close navigation"
+          onClick={onClose}
+        >
           ✕
         </Button>
       </div>

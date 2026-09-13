@@ -11,8 +11,8 @@ describe("LensLayoutPanel", () => {
     render(<LensLayoutPanel />);
     expect(
       screen.getByText(
-        "Configure the System Specs and Lens Prescription below, then click \u201cUpdate System\u201d to view the lens layout. To start from an example, click the menu button, open Example Systems, and apply one there."
-      )
+        "Configure the System Specs and Lens Prescription below, then click \u201cUpdate System\u201d to view the lens layout. To start from an example, click the menu button, open Example Systems, and apply one there.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });

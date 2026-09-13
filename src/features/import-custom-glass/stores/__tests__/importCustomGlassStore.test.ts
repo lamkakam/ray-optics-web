@@ -20,16 +20,18 @@ describe("importCustomGlassStore", () => {
   it("accepts sort state only for custom glass data columns", () => {
     const store = makeStore();
 
-    store.getState().setSortState([
-      { colId: "label", sort: "asc" },
-      { colId: "ag-Grid-SelectionColumn", sort: "desc" },
-      { colId: "nd", sort: "desc", sortIndex: 1 },
-      { colId: "unknown", sort: "asc" },
-      { colId: "vd" },
-      { sort: "asc" } as unknown as ColumnState,
-      { colId: undefined, sort: "desc" } as unknown as ColumnState,
-      { colId: "", sort: "asc" },
-    ]);
+    store
+      .getState()
+      .setSortState([
+        { colId: "label", sort: "asc" },
+        { colId: "ag-Grid-SelectionColumn", sort: "desc" },
+        { colId: "nd", sort: "desc", sortIndex: 1 },
+        { colId: "unknown", sort: "asc" },
+        { colId: "vd" },
+        { sort: "asc" } as unknown as ColumnState,
+        { colId: undefined, sort: "desc" } as unknown as ColumnState,
+        { colId: "", sort: "asc" },
+      ]);
 
     expect(store.getState().sortState).toEqual([
       { colId: "label", sort: "asc" },
@@ -42,7 +44,11 @@ describe("importCustomGlassStore", () => {
 
     store.getState().setFilterModel({
       label: { filterType: "text", type: "contains", filter: "N-" },
-      "ag-Grid-SelectionColumn": { filterType: "text", type: "equals", filter: "x" },
+      "ag-Grid-SelectionColumn": {
+        filterType: "text",
+        type: "equals",
+        filter: "x",
+      },
       nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
       unknown: { filterType: "number", type: "lessThan", filter: 2 },
     });
@@ -57,7 +63,11 @@ describe("importCustomGlassStore", () => {
     const store = makeStore();
 
     store.getState().setSortState([{ colId: "ne", sort: "asc" }]);
-    store.getState().setFilterModel({ ve: { filterType: "number", type: "lessThan", filter: 70 } });
+    store
+      .getState()
+      .setFilterModel({
+        ve: { filterType: "number", type: "lessThan", filter: 70 },
+      });
 
     store.getState().resetTableState();
 

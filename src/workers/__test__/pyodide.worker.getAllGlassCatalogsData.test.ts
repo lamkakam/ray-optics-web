@@ -10,8 +10,11 @@ const mockRawData: AllGlassCatalogsData = {
       abbeNumberD: 64.17,
       abbeNumberE: 63.96,
       partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
-      dispersionCoeffKind: 'Sellmeier3T' as const,
-      dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+      dispersionCoeffKind: "Sellmeier3T" as const,
+      dispersionCoeffs: [
+        1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144,
+        103.560653,
+      ],
     },
   },
   CDGM: {},
@@ -36,7 +39,7 @@ describe("_getAllGlassCatalogsData", () => {
 
   it("returns parsed AllGlassCatalogsData", async () => {
     const result = await _getAllGlassCatalogsData(async () =>
-      JSON.stringify(mockRawData)
+      JSON.stringify(mockRawData),
     );
     expect(result.Schott["N-BK7"].refractiveIndexD).toBe(1.5168);
   });

@@ -40,11 +40,7 @@ const STATUS_SIZE_CLASSES = {
 } as const satisfies Record<ProgressSize, string>;
 
 const TRACK_VARIANT_CLASSES = {
-  linear: [
-    "overflow-hidden",
-    c.trackBgColor,
-    s.trackBorderRadius,
-  ],
+  linear: ["overflow-hidden", c.trackBgColor, s.trackBorderRadius],
 } as const satisfies Record<ProgressVariant, readonly string[]>;
 
 function clampPercent(value: number, min: number, max: number): number {
@@ -91,42 +87,36 @@ export function Progress({
       aria-valuemin={min}
       aria-valuemax={max}
       aria-valuenow={value}
-      className={twMerge(clsx(
-        "flex flex-col",
-        sz.width,
-        sz.gap,
-        className,
-      ))}
+      className={twMerge(clsx("flex flex-col", sz.width, sz.gap, className))}
     >
       <div
         data-testid="progress-track"
-        className={twMerge(clsx(
-          TRACK_VARIANT_CLASSES[variant],
-          TRACK_SIZE_CLASSES[size],
-        ))}
+        className={twMerge(
+          clsx(TRACK_VARIANT_CLASSES[variant], TRACK_SIZE_CLASSES[size]),
+        )}
       >
         <div
           data-testid="progress-indicator"
           aria-hidden="true"
-          className={twMerge(clsx(
-            "h-full",
-            c.indicatorBgColor,
-            s.indicatorBorderRadius,
-            s.indicatorTransition,
-            s.transitionDuration,
-            s.transitionEase,
-            s.indicatorWillChange,
-          ))}
+          className={twMerge(
+            clsx(
+              "h-full",
+              c.indicatorBgColor,
+              s.indicatorBorderRadius,
+              s.indicatorTransition,
+              s.transitionDuration,
+              s.transitionEase,
+              s.indicatorWillChange,
+            ),
+          )}
           style={{ width: `${percent}%` }}
         />
       </div>
       {showStatus ? (
         <span
-          className={twMerge(clsx(
-            "leading-none",
-            c.statusTextColor,
-            STATUS_SIZE_CLASSES[size],
-          ))}
+          className={twMerge(
+            clsx("leading-none", c.statusTextColor, STATUS_SIZE_CLASSES[size]),
+          )}
         >
           {percent}%
         </span>

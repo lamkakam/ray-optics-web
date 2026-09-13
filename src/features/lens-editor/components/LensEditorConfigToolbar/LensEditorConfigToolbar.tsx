@@ -57,11 +57,17 @@ export function LensEditorConfigToolbar({
   /** Whether the invalid-import error modal is open. */
   const [importErrorOpen, setImportErrorOpen] = useState(false);
   /** Current JSON, extension, TXT parse, or schema error message. */
-  const [importErrorMessage, setImportErrorMessage] = useState("The JSON file is invalid. Schema validation failed.");
+  const [importErrorMessage, setImportErrorMessage] = useState(
+    "The JSON file is invalid. Schema validation failed.",
+  );
   /** Validated JSON or TXT model awaiting confirmation. */
-  const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
+  const [pendingImportData, setPendingImportData] = useState<
+    OpticalModel | undefined
+  >();
   /** Parsed multi-column TXT import awaiting a focal-length choice. */
-  const [pendingZoomImport, setPendingZoomImport] = useState<Extract<PhotonsToPhotosParseResult, { kind: "zoom" }> | undefined>();
+  const [pendingZoomImport, setPendingZoomImport] = useState<
+    Extract<PhotonsToPhotosParseResult, { kind: "zoom" }> | undefined
+  >();
   /** Hidden JSON input activated by Load Config. */
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** Hidden TXT input activated by Import from Photons to Photos. */
@@ -89,11 +95,15 @@ export function LensEditorConfigToolbar({
         if (validateImportedLensData(parsed)) {
           setResolvedPendingImport(parsed);
         } else {
-          setImportErrorMessage("The JSON file is invalid. Schema validation failed.");
+          setImportErrorMessage(
+            "The JSON file is invalid. Schema validation failed.",
+          );
           setImportErrorOpen(true);
         }
       } catch {
-        setImportErrorMessage("The JSON file is invalid. Schema validation failed.");
+        setImportErrorMessage(
+          "The JSON file is invalid. Schema validation failed.",
+        );
         setImportErrorOpen(true);
       }
     };
@@ -108,15 +118,25 @@ export function LensEditorConfigToolbar({
       return;
     }
     if (resolution.kind === "catalog-unavailable") {
-      setImportErrorMessage("Glass catalogs are unavailable. Wait for the catalogs to load and try again.");
+      setImportErrorMessage(
+        "Glass catalogs are unavailable. Wait for the catalogs to load and try again.",
+      );
     } else {
-      const missingGlassMessage = formatMissingGlassMessage(formatUnknownMediumIssues(resolution.issues));
-      setImportErrorMessage(missingGlassMessage ?? "The imported file references unavailable glass.");
+      const missingGlassMessage = formatMissingGlassMessage(
+        formatUnknownMediumIssues(resolution.issues),
+      );
+      setImportErrorMessage(
+        missingGlassMessage ??
+          "The imported file references unavailable glass.",
+      );
     }
     setImportErrorOpen(true);
   };
 
-  const setValidatedPendingImport = (data: OpticalModel, sourceLabel: string) => {
+  const setValidatedPendingImport = (
+    data: OpticalModel,
+    sourceLabel: string,
+  ) => {
     if (validateImportedLensData(data)) {
       setResolvedPendingImport(data);
       return;
@@ -125,7 +145,9 @@ export function LensEditorConfigToolbar({
     setImportErrorOpen(true);
   };
 
-  const handlePhotonsToPhotosFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotonsToPhotosFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -139,14 +161,18 @@ export function LensEditorConfigToolbar({
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const result = parsePhotonsToPhotosText(String(event.target?.result ?? ""), lookupMaps);
+        const result = parsePhotonsToPhotosText(
+          String(event.target?.result ?? ""),
+          lookupMaps,
+        );
         if (result.kind === "prime") {
           setValidatedPendingImport(result.model, "Photons to Photos import");
         } else {
           setPendingZoomImport(result);
         }
       } catch (error) {
-        const detail = error instanceof Error ? error.message : "Unknown parser error.";
+        const detail =
+          error instanceof Error ? error.message : "Unknown parser error.";
         setImportErrorMessage(`Photons to Photos import failed: ${detail}`);
         setImportErrorOpen(true);
       }
@@ -158,10 +184,14 @@ export function LensEditorConfigToolbar({
   const handleConfirmZoomImport = (choiceIndex: number) => {
     if (!pendingZoomImport) return;
     try {
-      setValidatedPendingImport(pendingZoomImport.resolve(choiceIndex), "Photons to Photos import");
+      setValidatedPendingImport(
+        pendingZoomImport.resolve(choiceIndex),
+        "Photons to Photos import",
+      );
       setPendingZoomImport(undefined);
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown parser error.";
+      const detail =
+        error instanceof Error ? error.message : "Unknown parser error.";
       setImportErrorMessage(`Photons to Photos import failed: ${detail}`);
       setImportErrorOpen(true);
     }
@@ -189,7 +219,11 @@ export function LensEditorConfigToolbar({
         onChange={handlePhotonsToPhotosFileChange}
       />
 
-      <Tooltip text="Compute and update the optical system" position="bottom" noTouch>
+      <Tooltip
+        text="Compute and update the optical system"
+        position="bottom"
+        noTouch
+      >
         <Button
           variant="primary"
           disabled={isUpdateSystemDisabled}
@@ -199,7 +233,11 @@ export function LensEditorConfigToolbar({
           Update System
         </Button>
       </Tooltip>
-      <Tooltip text="Load a previously downloaded config" position="bottom" noTouch>
+      <Tooltip
+        text="Load a previously downloaded config"
+        position="bottom"
+        noTouch
+      >
         <Button
           variant="primary"
           onClick={() => fileInputRef.current?.click()}
@@ -208,7 +246,11 @@ export function LensEditorConfigToolbar({
           Load Config
         </Button>
       </Tooltip>
-      <Tooltip text="Import a Photons to Photos TXT prescription" position="bottom" noTouch>
+      <Tooltip
+        text="Import a Photons to Photos TXT prescription"
+        position="bottom"
+        noTouch
+      >
         <Button
           variant="primary"
           onClick={() => photonsToPhotosFileInputRef.current?.click()}

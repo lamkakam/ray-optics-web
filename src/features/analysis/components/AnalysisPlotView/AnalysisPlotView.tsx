@@ -13,12 +13,28 @@ import { SurfaceBySurface3rdOrderChart } from "@/features/analysis/components/Su
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
-import { Select, type SelectOption } from "@/shared/components/primitives/Select";
-import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import {
+  Select,
+  type SelectOption,
+} from "@/shared/components/primitives/Select";
+import type {
+  AstigmatismCurveData,
+  DiffractionMtfData,
+  DiffractionPsfData,
+  FieldCurveData,
+  GeoPsfData,
+  LongitudinalSphericalAberrationData,
+  OpdFanData,
+  RayFanData,
+  SpotDiagramData,
+  StrehlVsWavelengthData,
+  WavefrontMapData,
+} from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 /** Supported analysis plot discriminator. */
-export type PlotType = "rayFan"
+export type PlotType =
+  | "rayFan"
   | "opdFan"
   | "spotDiagram"
   | "fieldCurvature"
@@ -173,9 +189,9 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
   },
 };
 
-const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_CONFIG) as PlotType[]).map(
-  (key) => ({ value: key, label: PLOT_TYPE_CONFIG[key].label }),
-);
+const PLOT_TYPE_OPTIONS: SelectOption[] = (
+  Object.keys(PLOT_TYPE_CONFIG) as PlotType[]
+).map((key) => ({ value: key, label: PLOT_TYPE_CONFIG[key].label }));
 
 type ChartRendererProps = AnalysisPlotViewProps;
 
@@ -266,7 +282,9 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
     (props) => props.longitudinalSphericalAberrationData,
     (props, longitudinalSphericalAberrationData) => (
       <LongitudinalSphericalAberrationChart
-        longitudinalSphericalAberrationData={longitudinalSphericalAberrationData}
+        longitudinalSphericalAberrationData={
+          longitudinalSphericalAberrationData
+        }
         wavelengthLabels={props.wavelengthOptions.map((option) => option.label)}
         autoHeight={props.autoHeight}
       />
@@ -306,10 +324,7 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
     (props) => props.geoPsfData !== undefined,
     (props) => props.geoPsfData,
     (props, geoPsfData) => (
-      <GeoPsfChart
-        geoPsfData={geoPsfData}
-        autoHeight={props.autoHeight}
-      />
+      <GeoPsfChart geoPsfData={geoPsfData} autoHeight={props.autoHeight} />
     ),
   ),
   diffractionPSF: createPlotRenderer(
@@ -379,13 +394,13 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
   const selectedPlotRenderer = PLOT_RENDERERS[selectedPlotType];
 
   return (
-    <div className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}>
+    <div
+      className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}
+    >
       <div className="flex gap-3">
         {fieldVisible && (
           <div className="flex-1">
-            <Label htmlFor="analysis-field-select">
-              Half-Field
-            </Label>
+            <Label htmlFor="analysis-field-select">Half-Field</Label>
             <Select
               id="analysis-field-select"
               aria-label="Half-Field"
@@ -398,9 +413,7 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
         )}
         {PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent && (
           <div className="flex-1">
-            <Label htmlFor="analysis-wavelength-select">
-              Wavelength
-            </Label>
+            <Label htmlFor="analysis-wavelength-select">Wavelength</Label>
             <Select
               id="analysis-wavelength-select"
               aria-label="Wavelength"
@@ -411,9 +424,7 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
           </div>
         )}
         <div className="flex-1">
-          <Label htmlFor="analysis-plot-type-select">
-            Plot type
-          </Label>
+          <Label htmlFor="analysis-plot-type-select">Plot type</Label>
           <Select
             id="analysis-plot-type-select"
             aria-label="Plot type"
@@ -424,17 +435,19 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
         </div>
       </div>
 
-      <div className={autoHeight ? "flex items-center justify-center" : "flex min-h-0 flex-1 items-center justify-center"}>
+      <div
+        className={
+          autoHeight
+            ? "flex items-center justify-center"
+            : "flex min-h-0 flex-1 items-center justify-center"
+        }
+      >
         {loading ? (
-          <Paragraph variant="placeholder">
-            Loading plot...
-          </Paragraph>
+          <Paragraph variant="placeholder">Loading plot...</Paragraph>
         ) : selectedPlotRenderer.hasData(props) ? (
           selectedPlotRenderer.render(props)
         ) : (
-          <Paragraph variant="placeholder">
-            No plot available
-          </Paragraph>
+          <Paragraph variant="placeholder">No plot available</Paragraph>
         )}
       </div>
     </div>

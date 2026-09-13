@@ -4,7 +4,9 @@ import PrivacyPolicyPage from "@/app/privacy-policy/page";
 describe("PrivacyPolicyPage", () => {
   it("renders heading 'Privacy Policy'", () => {
     render(<PrivacyPolicyPage />);
-    expect(screen.getByRole("heading", { name: "Privacy Policy" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Privacy Policy" }),
+    ).toBeInTheDocument();
   });
 
   it("mentions jsdelivr CDN", () => {

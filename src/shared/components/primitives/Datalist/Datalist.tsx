@@ -8,7 +8,11 @@ export type DatalistOption = {
   readonly label: string;
 };
 
-interface DatalistProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "list" | "type"> {
+interface DatalistProps
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    "children" | "list" | "type"
+  > {
   readonly options: ReadonlyArray<DatalistOption>;
 }
 
@@ -50,10 +54,18 @@ export const Datalist = React.forwardRef<HTMLInputElement, DatalistProps>(
 
     return (
       <div className={clsx("w-full", className)}>
-        <input ref={ref} type="text" list={listId} className={inputClassName} {...rest} />
+        <input
+          ref={ref}
+          type="text"
+          list={listId}
+          className={inputClassName}
+          {...rest}
+        />
         <datalist id={listId}>
           {options.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
           ))}
         </datalist>
       </div>

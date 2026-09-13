@@ -13,7 +13,9 @@ jest.mock("next/link", () => {
     href,
     children,
     ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    readonly href: string;
+  }) {
     return (
       <a href={href} {...props}>
         {children}
@@ -30,32 +32,56 @@ describe("SideNav", () => {
   it("renders route links for all app destinations", () => {
     render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
 
-    expect(screen.getByRole("link", { name: "Lens Editor" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Example Systems" })).toHaveAttribute("href", "/example-systems");
-    expect(screen.getByRole("link", { name: "Optimization" })).toHaveAttribute("href", "/optimization");
-    expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute("href", "/glass-map");
-    expect(screen.getByRole("link", { name: "Import Custom Glass" })).toHaveAttribute("href", "/import-custom-glass");
-    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
-    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy-policy");
-    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+    expect(screen.getByRole("link", { name: "Lens Editor" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    expect(
+      screen.getByRole("link", { name: "Example Systems" }),
+    ).toHaveAttribute("href", "/example-systems");
+    expect(screen.getByRole("link", { name: "Optimization" })).toHaveAttribute(
+      "href",
+      "/optimization",
+    );
+    expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute(
+      "href",
+      "/glass-map",
+    );
+    expect(
+      screen.getByRole("link", { name: "Import Custom Glass" }),
+    ).toHaveAttribute("href", "/import-custom-glass");
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
+    expect(
+      screen.getByRole("link", { name: "Privacy Policy" }),
+    ).toHaveAttribute("href", "/privacy-policy");
+    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute(
+      "href",
+      "/about",
+    );
   });
 
   it("orders glass routes before settings", () => {
     render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
 
     const labels = screen.getAllByRole("link").map((link) => link.textContent);
-    expect(labels.slice(labels.indexOf("Glass Map"), labels.indexOf("Settings") + 1)).toEqual([
-      "Glass Map",
-      "Import Custom Glass",
-      "Settings",
-    ]);
+    expect(
+      labels.slice(labels.indexOf("Glass Map"), labels.indexOf("Settings") + 1),
+    ).toEqual(["Glass Map", "Import Custom Glass", "Settings"]);
   });
 
   it("marks the root route as active when no segment is selected", () => {
     render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
 
-    expect(screen.getByRole("link", { name: "Lens Editor" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Glass Map" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Lens Editor" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Glass Map" })).not.toHaveAttribute(
+      "aria-current",
+    );
   });
 
   it("marks a nested route as active from the selected segment", () => {
@@ -63,8 +89,13 @@ describe("SideNav", () => {
 
     render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
 
-    expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Lens Editor" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      screen.getByRole("link", { name: "Lens Editor" }),
+    ).not.toHaveAttribute("aria-current");
   });
 
   it("marks the example systems route as active from the selected segment", () => {
@@ -72,12 +103,18 @@ describe("SideNav", () => {
 
     render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
 
-    expect(screen.getByRole("link", { name: "Example Systems" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Lens Editor" })).not.toHaveAttribute("aria-current");
+    expect(
+      screen.getByRole("link", { name: "Example Systems" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(
+      screen.getByRole("link", { name: "Lens Editor" }),
+    ).not.toHaveAttribute("aria-current");
   });
 
   it("makes the closed nav hidden and inert", () => {
-    const { container } = render(<SideNav isOpen={false} isLG={false} onClose={jest.fn()} />);
+    const { container } = render(
+      <SideNav isOpen={false} isLG={false} onClose={jest.fn()} />,
+    );
     const nav = container.querySelector('nav[aria-label="Side navigation"]');
 
     expect(nav).toHaveAttribute("aria-hidden", "true");
@@ -85,7 +122,9 @@ describe("SideNav", () => {
   });
 
   it("applies the complete open and large-screen layout classes", () => {
-    const { container } = render(<SideNav isOpen={true} isLG={true} onClose={jest.fn()} />);
+    const { container } = render(
+      <SideNav isOpen={true} isLG={true} onClose={jest.fn()} />,
+    );
     const nav = container.querySelector('nav[aria-label="Side navigation"]');
 
     expect(nav).toHaveClass(
@@ -101,7 +140,9 @@ describe("SideNav", () => {
   });
 
   it("uses the small-screen width and off-screen transform when closed", () => {
-    const { container } = render(<SideNav isOpen={false} isLG={false} onClose={jest.fn()} />);
+    const { container } = render(
+      <SideNav isOpen={false} isLG={false} onClose={jest.fn()} />,
+    );
     const nav = container.querySelector('nav[aria-label="Side navigation"]');
 
     expect(nav).toHaveClass("w-[50vw]", "-translate-x-full");
@@ -109,8 +150,18 @@ describe("SideNav", () => {
 
   it("closes after accepted navigation and keeps open after blocked navigation", () => {
     const onClose = jest.fn();
-    const onNavigate = jest.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
-    const { rerender } = render(<SideNav isOpen={true} isLG={false} onClose={onClose} onNavigate={onNavigate} />);
+    const onNavigate = jest
+      .fn()
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    const { rerender } = render(
+      <SideNav
+        isOpen={true}
+        isLG={false}
+        onClose={onClose}
+        onNavigate={onNavigate}
+      />,
+    );
     const settings = screen.getByRole("link", { name: "Settings" });
 
     fireEvent.click(settings);

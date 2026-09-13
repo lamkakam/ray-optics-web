@@ -6,7 +6,10 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Select } from "@/shared/components/primitives/Select";
 import { Input } from "@/shared/components/primitives/Input";
 import { Header } from "@/shared/components/primitives/Header";
-import type { PupilSpace, PupilType } from "@/features/lens-editor/stores/specsConfiguratorStore";
+import type {
+  PupilSpace,
+  PupilType,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
 
 interface AperturePatch {
   readonly pupilSpace?: PupilSpace;
@@ -39,10 +42,25 @@ const APERTURE_OPTIONS: readonly {
   pupilSpace: PupilSpace;
   pupilType: PupilType;
 }[] = [
-    { label: "Entrance Pupil Diameter", value: "object:epd", pupilSpace: "object", pupilType: "epd" },
-    { label: "Image Space Geometric F/#", value: "image:f/#", pupilSpace: "image", pupilType: "f/#" },
-    { label: "Object Space NA", value: "object:NA", pupilSpace: "object", pupilType: "NA" },
-  ];
+  {
+    label: "Entrance Pupil Diameter",
+    value: "object:epd",
+    pupilSpace: "object",
+    pupilType: "epd",
+  },
+  {
+    label: "Image Space Geometric F/#",
+    value: "image:f/#",
+    pupilSpace: "image",
+    pupilType: "f/#",
+  },
+  {
+    label: "Object Space NA",
+    value: "object:NA",
+    pupilSpace: "object",
+    pupilType: "NA",
+  },
+];
 
 /**
  * Presentational panel for editing optical system specifications: system aperture (type + value), visible Half-Field summary, and wavelength summary. Calls back to the container for all state changes; holds only a local draft string for the aperture value input.
@@ -79,7 +97,9 @@ export function SpecsConfiguratorPanel({
     <div className="max-w-[50vw] space-y-4">
       {/* System Aperture */}
       <section>
-        <Header level={3} className="mb-2">System Aperture</Header>
+        <Header level={3} className="mb-2">
+          System Aperture
+        </Header>
         <div className="flex items-center gap-3">
           <Select
             aria-label="System aperture type"
@@ -97,8 +117,14 @@ export function SpecsConfiguratorPanel({
 
       {/* Field */}
       <section>
-        <Header level={3} className="mb-2">Half-Field</Header>
-        <Tooltip text="Click to configure field settings" position="top-start" noTouch>
+        <Header level={3} className="mb-2">
+          Half-Field
+        </Header>
+        <Tooltip
+          text="Click to configure field settings"
+          position="top-start"
+          noTouch
+        >
           <Button
             variant="toggle"
             aria-label="Configure field"
@@ -112,8 +138,14 @@ export function SpecsConfiguratorPanel({
 
       {/* Wavelengths */}
       <section>
-        <Header level={3} className="mb-2">Wavelengths</Header>
-        <Tooltip text="Click to configure wavelengths" position="top-start" noTouch>
+        <Header level={3} className="mb-2">
+          Wavelengths
+        </Header>
+        <Tooltip
+          text="Click to configure wavelengths"
+          position="top-start"
+          noTouch
+        >
           <Button
             variant="toggle"
             aria-label="Configure wavelengths"

@@ -17,8 +17,8 @@ describe("ErrorModal", () => {
     render(<ErrorModal isOpen={true} onClose={jest.fn()} />);
     expect(
       screen.getByText(
-        "The input parameters are invalid. Please check your specifications and prescription."
-      )
+        "The input parameters are invalid. Please check your specifications and prescription.",
+      ),
     ).toBeInTheDocument();
   });
 

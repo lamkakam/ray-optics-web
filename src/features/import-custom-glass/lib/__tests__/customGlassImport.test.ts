@@ -9,7 +9,10 @@ import {
   toCustomGlassPayload,
   toWorkerInput,
 } from "@/features/import-custom-glass/lib/customGlassImport";
-import type { CatalogGlassData, UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
+import type {
+  CatalogGlassData,
+  UserDefinedGlassData,
+} from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 const customGlass: UserDefinedGlassData = {
@@ -32,7 +35,12 @@ const analyticalGlass: CatalogGlassData = {
   dispersionCoeffs: [1, 2, 3],
 };
 
-const fourPairs = [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]] as const;
+const fourPairs = [
+  [587.56, 1.5168],
+  [486.13, 1.522],
+  [546.07, 1.518],
+  [656.27, 1.514],
+] as const;
 
 function makeSaveInput(name = "ADDED") {
   return { name, pairs: fourPairs } as const;
@@ -42,7 +50,9 @@ function makeWorker(overrides: Partial<PyodideWorkerAPI> = {}) {
   return {
     addUserDefinedGlasses: jest.fn().mockResolvedValue({ ADDED: customGlass }),
     deleteUserDefinedGlasses: jest.fn().mockResolvedValue(undefined),
-    updateUserDefinedGlasses: jest.fn().mockResolvedValue({ ADDED: customGlass }),
+    updateUserDefinedGlasses: jest
+      .fn()
+      .mockResolvedValue({ ADDED: customGlass }),
     getUserDefinedGlasses: jest.fn().mockResolvedValue({ ADDED: customGlass }),
     ...overrides,
   } as unknown as PyodideWorkerAPI;
@@ -66,7 +76,9 @@ describe("makeEditablePair", () => {
         refractiveIndex: "",
       });
       expect(first.id).toMatch(/^row-custom-glass-\d+$/);
-      expect(second.id).toBe(`row-custom-glass-${Number(first.id.replace("row-custom-glass-", "")) + 1}`);
+      expect(second.id).toBe(
+        `row-custom-glass-${Number(first.id.replace("row-custom-glass-", "")) + 1}`,
+      );
     } finally {
       Object.defineProperty(crypto, "randomUUID", {
         configurable: true,
@@ -81,7 +93,9 @@ describe("makeEditablePair", () => {
       wavelength: "587.56",
       refractiveIndex: "1.5168",
     });
-    expect(makeEditablePair([Number.NaN, Number.POSITIVE_INFINITY])).toMatchObject({
+    expect(
+      makeEditablePair([Number.NaN, Number.POSITIVE_INFINITY]),
+    ).toMatchObject({
       wavelength: "",
       refractiveIndex: "",
     });
@@ -97,17 +111,32 @@ describe("formatNumber, toWorkerInput, and toCustomGlassPayload", () => {
   });
 
   it("trims the label and converts editable string rows to worker pairs", () => {
-    expect(toWorkerInput("  CUSTOM  ", [
-      { id: "a", fraunhofer: "d", wavelength: " 587.56 ", refractiveIndex: "1.5168" },
-      { id: "b", fraunhofer: "", wavelength: "", refractiveIndex: "0" },
-    ])).toEqual({
+    expect(
+      toWorkerInput("  CUSTOM  ", [
+        {
+          id: "a",
+          fraunhofer: "d",
+          wavelength: " 587.56 ",
+          refractiveIndex: "1.5168",
+        },
+        { id: "b", fraunhofer: "", wavelength: "", refractiveIndex: "0" },
+      ]),
+    ).toEqual({
       name: "CUSTOM",
-      pairs: [[587.56, 1.5168], [0, 0]],
+      pairs: [
+        [587.56, 1.5168],
+        [0, 0],
+      ],
     });
   });
 
   it("builds a versioned JSON payload for every custom glass", () => {
-    expect(toCustomGlassPayload({ FIRST: customGlass, SECOND: { ...customGlass, dispersionCoeffs: [[486.13, 1.522]] } })).toEqual({
+    expect(
+      toCustomGlassPayload({
+        FIRST: customGlass,
+        SECOND: { ...customGlass, dispersionCoeffs: [[486.13, 1.522]] },
+      }),
+    ).toEqual({
       version: "1.0",
       Custom: {
         FIRST: { type: "tabulated", data: [[587.56, 1.5168]] },
@@ -135,29 +164,47 @@ describe("getUserDefinedCustomGlasses", () => {
     };
     const emptyCatalog: Record<string, CatalogGlassData> = {};
 
-    expect(getUserDefinedCustomGlasses(customCatalog)).toEqual({ TABULATED: customGlass });
+    expect(getUserDefinedCustomGlasses(customCatalog)).toEqual({
+      TABULATED: customGlass,
+    });
     expect(getUserDefinedCustomGlasses(emptyCatalog)).toBe(emptyCatalog);
   });
 });
 
 describe("isUserDefinedGlassAlreadyExistsError", () => {
   it("detects worker duplicate user-defined glass errors", () => {
-    expect(isUserDefinedGlassAlreadyExistsError(new Error("ValueError: User-defined glass already exists: test"))).toBe(true);
+    expect(
+      isUserDefinedGlassAlreadyExistsError(
+        new Error("ValueError: User-defined glass already exists: test"),
+      ),
+    ).toBe(true);
   });
 
   it("does not match unrelated errors", () => {
-    expect(isUserDefinedGlassAlreadyExistsError(new Error("KeyError: test"))).toBe(false);
+    expect(
+      isUserDefinedGlassAlreadyExistsError(new Error("KeyError: test")),
+    ).toBe(false);
   });
 
   it("recognizes duplicate messages supplied as strings and rejects unrelated unknown values", () => {
-    expect(isUserDefinedGlassAlreadyExistsError("User-defined glass already exists: test")).toBe(true);
-    expect(isUserDefinedGlassAlreadyExistsError({ message: "User-defined glass already exists: test" })).toBe(false);
+    expect(
+      isUserDefinedGlassAlreadyExistsError(
+        "User-defined glass already exists: test",
+      ),
+    ).toBe(true);
+    expect(
+      isUserDefinedGlassAlreadyExistsError({
+        message: "User-defined glass already exists: test",
+      }),
+    ).toBe(false);
   });
 });
 
 describe("saveCustomGlass", () => {
   it("renames edited glass by adding the new worker label and deleting the previous store label", async () => {
-    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ RENAMED: customGlass });
+    const addUserDefinedGlasses = jest
+      .fn()
+      .mockResolvedValue({ RENAMED: customGlass });
     const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
     const updateUserDefinedGlasses = jest.fn();
     const getUserDefinedGlasses = jest.fn();
@@ -169,7 +216,12 @@ describe("saveCustomGlass", () => {
       previousLabel: "ORIGINAL",
       input: {
         name: "RENAMED",
-        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+        pairs: [
+          [587.56, 1.5168],
+          [486.13, 1.522],
+          [546.07, 1.518],
+          [656.27, 1.514],
+        ],
       },
       proxy: {
         addUserDefinedGlasses,
@@ -183,10 +235,17 @@ describe("saveCustomGlass", () => {
       },
     });
 
-    expect(addUserDefinedGlasses).toHaveBeenCalledWith([{
-      name: "RENAMED",
-      pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
-    }]);
+    expect(addUserDefinedGlasses).toHaveBeenCalledWith([
+      {
+        name: "RENAMED",
+        pairs: [
+          [587.56, 1.5168],
+          [486.13, 1.522],
+          [546.07, 1.518],
+          [656.27, 1.514],
+        ],
+      },
+    ]);
     expect(deleteUserDefinedGlasses).toHaveBeenCalledWith(["ORIGINAL"]);
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
     expect(upsertCustomGlasses).toHaveBeenCalledWith({ RENAMED: customGlass });
@@ -195,7 +254,9 @@ describe("saveCustomGlass", () => {
 
   it("updates an edited glass when the label is unchanged and persists after the worker succeeds", async () => {
     const worker = makeWorker({
-      updateUserDefinedGlasses: jest.fn().mockResolvedValue({ ORIGINAL: customGlass }),
+      updateUserDefinedGlasses: jest
+        .fn()
+        .mockResolvedValue({ ORIGINAL: customGlass }),
     });
     const persistInput = jest.fn().mockResolvedValue(undefined);
     const upsertCustomGlasses = jest.fn();
@@ -209,7 +270,9 @@ describe("saveCustomGlass", () => {
       persistInput,
     });
 
-    expect(worker.updateUserDefinedGlasses).toHaveBeenCalledWith([makeSaveInput("ORIGINAL")]);
+    expect(worker.updateUserDefinedGlasses).toHaveBeenCalledWith([
+      makeSaveInput("ORIGINAL"),
+    ]);
     expect(worker.addUserDefinedGlasses).not.toHaveBeenCalled();
     expect(worker.deleteUserDefinedGlasses).not.toHaveBeenCalled();
     expect(persistInput).toHaveBeenCalledWith(makeSaveInput("ORIGINAL"));
@@ -218,7 +281,9 @@ describe("saveCustomGlass", () => {
 
   it("uses the update path for edit mode without a previous label", async () => {
     const worker = makeWorker({
-      updateUserDefinedGlasses: jest.fn().mockResolvedValue({ ADDED: customGlass }),
+      updateUserDefinedGlasses: jest
+        .fn()
+        .mockResolvedValue({ ADDED: customGlass }),
     });
     const upsertCustomGlasses = jest.fn();
 
@@ -230,14 +295,18 @@ describe("saveCustomGlass", () => {
       storeActions: { upsertCustomGlasses, deleteCustomGlasses: jest.fn() },
     });
 
-    expect(worker.updateUserDefinedGlasses).toHaveBeenCalledWith([makeSaveInput()]);
+    expect(worker.updateUserDefinedGlasses).toHaveBeenCalledWith([
+      makeSaveInput(),
+    ]);
     expect(upsertCustomGlasses).toHaveBeenCalledWith({ ADDED: customGlass });
   });
 
   it("persists a renamed edit before deleting the old worker and persisted labels", async () => {
     const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
     const worker = makeWorker({
-      addUserDefinedGlasses: jest.fn().mockResolvedValue({ RENAMED: customGlass }),
+      addUserDefinedGlasses: jest
+        .fn()
+        .mockResolvedValue({ RENAMED: customGlass }),
       deleteUserDefinedGlasses,
     });
     const persistInput = jest.fn().mockResolvedValue(undefined);
@@ -256,14 +325,20 @@ describe("saveCustomGlass", () => {
 
     expect(persistInput).toHaveBeenCalledWith(makeSaveInput("RENAMED"));
     expect(deletePersisted).toHaveBeenCalledWith(["ORIGINAL"]);
-    expect(persistInput.mock.invocationCallOrder[0]).toBeLessThan(deleteUserDefinedGlasses.mock.invocationCallOrder[0]);
-    expect(deleteUserDefinedGlasses.mock.invocationCallOrder[0]).toBeLessThan(deletePersisted.mock.invocationCallOrder[0]);
+    expect(persistInput.mock.invocationCallOrder[0]).toBeLessThan(
+      deleteUserDefinedGlasses.mock.invocationCallOrder[0],
+    );
+    expect(deleteUserDefinedGlasses.mock.invocationCallOrder[0]).toBeLessThan(
+      deletePersisted.mock.invocationCallOrder[0],
+    );
     expect(deleteCustomGlasses).toHaveBeenCalledWith(["ORIGINAL"]);
   });
 
   it("warns with fallback messages for non-Error persistence failures during a rename", async () => {
     const worker = makeWorker({
-      addUserDefinedGlasses: jest.fn().mockResolvedValue({ RENAMED: customGlass }),
+      addUserDefinedGlasses: jest
+        .fn()
+        .mockResolvedValue({ RENAMED: customGlass }),
     });
     const onPersistenceWarning = jest.fn();
 
@@ -272,18 +347,29 @@ describe("saveCustomGlass", () => {
       previousLabel: "ORIGINAL",
       input: makeSaveInput("RENAMED"),
       proxy: worker,
-      storeActions: { upsertCustomGlasses: jest.fn(), deleteCustomGlasses: jest.fn() },
+      storeActions: {
+        upsertCustomGlasses: jest.fn(),
+        deleteCustomGlasses: jest.fn(),
+      },
       persistInput: jest.fn().mockRejectedValue("persist failed"),
       deletePersisted: jest.fn().mockRejectedValue("delete failed"),
       onPersistenceWarning,
     });
 
-    expect(onPersistenceWarning).toHaveBeenNthCalledWith(1, "Failed to persist custom glass.");
-    expect(onPersistenceWarning).toHaveBeenNthCalledWith(2, "Failed to delete persisted custom glass.");
+    expect(onPersistenceWarning).toHaveBeenNthCalledWith(
+      1,
+      "Failed to persist custom glass.",
+    );
+    expect(onPersistenceWarning).toHaveBeenNthCalledWith(
+      2,
+      "Failed to delete persisted custom glass.",
+    );
   });
 
   it("persists add input only after the worker add succeeds", async () => {
-    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ ADDED: customGlass });
+    const addUserDefinedGlasses = jest
+      .fn()
+      .mockResolvedValue({ ADDED: customGlass });
     const persistInput = jest.fn().mockResolvedValue(undefined);
     const upsertCustomGlasses = jest.fn();
     const worker = makeWorker({ addUserDefinedGlasses });
@@ -293,7 +379,12 @@ describe("saveCustomGlass", () => {
       previousLabel: undefined,
       input: {
         name: "ADDED",
-        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+        pairs: [
+          [587.56, 1.5168],
+          [486.13, 1.522],
+          [546.07, 1.518],
+          [656.27, 1.514],
+        ],
       },
       proxy: worker,
       storeActions: {
@@ -305,14 +396,18 @@ describe("saveCustomGlass", () => {
 
     expect(addUserDefinedGlasses).toHaveBeenCalled();
     expect(worker.deleteUserDefinedGlasses).not.toHaveBeenCalled();
-    expect(persistInput.mock.invocationCallOrder[0]).toBeGreaterThan(addUserDefinedGlasses.mock.invocationCallOrder[0]);
+    expect(persistInput.mock.invocationCallOrder[0]).toBeGreaterThan(
+      addUserDefinedGlasses.mock.invocationCallOrder[0],
+    );
     expect(upsertCustomGlasses).toHaveBeenCalledWith({ ADDED: customGlass });
   });
 
   it("does not warn when optional persistence operations are omitted", async () => {
     const onPersistenceWarning = jest.fn();
     const worker = makeWorker({
-      addUserDefinedGlasses: jest.fn().mockResolvedValue({ RENAMED: customGlass }),
+      addUserDefinedGlasses: jest
+        .fn()
+        .mockResolvedValue({ RENAMED: customGlass }),
     });
 
     await saveCustomGlass({
@@ -320,7 +415,10 @@ describe("saveCustomGlass", () => {
       previousLabel: "ORIGINAL",
       input: makeSaveInput("RENAMED"),
       proxy: worker,
-      storeActions: { upsertCustomGlasses: jest.fn(), deleteCustomGlasses: jest.fn() },
+      storeActions: {
+        upsertCustomGlasses: jest.fn(),
+        deleteCustomGlasses: jest.fn(),
+      },
       onPersistenceWarning,
     });
 
@@ -330,18 +428,27 @@ describe("saveCustomGlass", () => {
 
   it("ignores persistence failures when the warning callback is omitted", async () => {
     const worker = makeWorker({
-      addUserDefinedGlasses: jest.fn().mockResolvedValue({ RENAMED: customGlass }),
+      addUserDefinedGlasses: jest
+        .fn()
+        .mockResolvedValue({ RENAMED: customGlass }),
     });
 
-    await expect(saveCustomGlass({
-      mode: "edit",
-      previousLabel: "ORIGINAL",
-      input: makeSaveInput("RENAMED"),
-      proxy: worker,
-      storeActions: { upsertCustomGlasses: jest.fn(), deleteCustomGlasses: jest.fn() },
-      persistInput: jest.fn().mockRejectedValue(new Error("persist failed")),
-      deletePersisted: jest.fn().mockRejectedValue(new Error("delete failed")),
-    })).resolves.toBeUndefined();
+    await expect(
+      saveCustomGlass({
+        mode: "edit",
+        previousLabel: "ORIGINAL",
+        input: makeSaveInput("RENAMED"),
+        proxy: worker,
+        storeActions: {
+          upsertCustomGlasses: jest.fn(),
+          deleteCustomGlasses: jest.fn(),
+        },
+        persistInput: jest.fn().mockRejectedValue(new Error("persist failed")),
+        deletePersisted: jest
+          .fn()
+          .mockRejectedValue(new Error("delete failed")),
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it("does not warn when the add persistence callback is omitted", async () => {
@@ -352,7 +459,10 @@ describe("saveCustomGlass", () => {
       previousLabel: undefined,
       input: makeSaveInput(),
       proxy: makeWorker(),
-      storeActions: { upsertCustomGlasses: jest.fn(), deleteCustomGlasses: jest.fn() },
+      storeActions: {
+        upsertCustomGlasses: jest.fn(),
+        deleteCustomGlasses: jest.fn(),
+      },
       onPersistenceWarning,
     });
 
@@ -360,42 +470,58 @@ describe("saveCustomGlass", () => {
   });
 
   it("ignores add persistence failures when the warning callback is omitted", async () => {
-    await expect(saveCustomGlass({
-      mode: "add",
-      previousLabel: undefined,
-      input: makeSaveInput(),
-      proxy: makeWorker(),
-      storeActions: { upsertCustomGlasses: jest.fn(), deleteCustomGlasses: jest.fn() },
-      persistInput: jest.fn().mockRejectedValue("persist failed"),
-    })).resolves.toBeUndefined();
+    await expect(
+      saveCustomGlass({
+        mode: "add",
+        previousLabel: undefined,
+        input: makeSaveInput(),
+        proxy: makeWorker(),
+        storeActions: {
+          upsertCustomGlasses: jest.fn(),
+          deleteCustomGlasses: jest.fn(),
+        },
+        persistInput: jest.fn().mockRejectedValue("persist failed"),
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it("does not persist add input when the worker add rejects", async () => {
-    const addUserDefinedGlasses = jest.fn().mockRejectedValue(new Error("worker failed"));
+    const addUserDefinedGlasses = jest
+      .fn()
+      .mockRejectedValue(new Error("worker failed"));
     const persistInput = jest.fn();
 
-    await expect(saveCustomGlass({
-      mode: "add",
-      previousLabel: undefined,
-      input: {
-        name: "ADDED",
-        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
-      },
-      proxy: {
-        addUserDefinedGlasses,
-      } as unknown as PyodideWorkerAPI,
-      storeActions: {
-        upsertCustomGlasses: jest.fn(),
-        deleteCustomGlasses: jest.fn(),
-      },
-      persistInput,
-    })).rejects.toThrow("worker failed");
+    await expect(
+      saveCustomGlass({
+        mode: "add",
+        previousLabel: undefined,
+        input: {
+          name: "ADDED",
+          pairs: [
+            [587.56, 1.5168],
+            [486.13, 1.522],
+            [546.07, 1.518],
+            [656.27, 1.514],
+          ],
+        },
+        proxy: {
+          addUserDefinedGlasses,
+        } as unknown as PyodideWorkerAPI,
+        storeActions: {
+          upsertCustomGlasses: jest.fn(),
+          deleteCustomGlasses: jest.fn(),
+        },
+        persistInput,
+      }),
+    ).rejects.toThrow("worker failed");
 
     expect(persistInput).not.toHaveBeenCalled();
   });
 
   it("warns but keeps store update when persistence fails after worker success", async () => {
-    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ ADDED: customGlass });
+    const addUserDefinedGlasses = jest
+      .fn()
+      .mockResolvedValue({ ADDED: customGlass });
     const persistInput = jest.fn().mockRejectedValue(new Error("idb failed"));
     const onPersistenceWarning = jest.fn();
     const upsertCustomGlasses = jest.fn();
@@ -405,7 +531,12 @@ describe("saveCustomGlass", () => {
       previousLabel: undefined,
       input: {
         name: "ADDED",
-        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+        pairs: [
+          [587.56, 1.5168],
+          [486.13, 1.522],
+          [546.07, 1.518],
+          [656.27, 1.514],
+        ],
       },
       proxy: {
         addUserDefinedGlasses,
@@ -423,8 +554,12 @@ describe("saveCustomGlass", () => {
   });
 
   it("does not persist during duplicate-add fallback when no worker mutation succeeds", async () => {
-    const addUserDefinedGlasses = jest.fn().mockRejectedValue(new Error("User-defined glass already exists: ADDED"));
-    const getUserDefinedGlasses = jest.fn().mockResolvedValue({ ADDED: customGlass });
+    const addUserDefinedGlasses = jest
+      .fn()
+      .mockRejectedValue(new Error("User-defined glass already exists: ADDED"));
+    const getUserDefinedGlasses = jest
+      .fn()
+      .mockResolvedValue({ ADDED: customGlass });
     const persistInput = jest.fn();
     const upsertCustomGlasses = jest.fn();
 
@@ -433,7 +568,12 @@ describe("saveCustomGlass", () => {
       previousLabel: undefined,
       input: {
         name: "ADDED",
-        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+        pairs: [
+          [587.56, 1.5168],
+          [486.13, 1.522],
+          [546.07, 1.518],
+          [656.27, 1.514],
+        ],
       },
       proxy: {
         addUserDefinedGlasses,
@@ -452,16 +592,23 @@ describe("saveCustomGlass", () => {
   });
 
   it("does not treat a duplicate error as an edit fallback", async () => {
-    const updateUserDefinedGlasses = jest.fn().mockRejectedValue(new Error("User-defined glass already exists: ADDED"));
+    const updateUserDefinedGlasses = jest
+      .fn()
+      .mockRejectedValue(new Error("User-defined glass already exists: ADDED"));
     const getUserDefinedGlasses = jest.fn();
 
-    await expect(saveCustomGlass({
-      mode: "edit",
-      previousLabel: undefined,
-      input: makeSaveInput(),
-      proxy: makeWorker({ updateUserDefinedGlasses, getUserDefinedGlasses }),
-      storeActions: { upsertCustomGlasses: jest.fn(), deleteCustomGlasses: jest.fn() },
-    })).rejects.toThrow("User-defined glass already exists: ADDED");
+    await expect(
+      saveCustomGlass({
+        mode: "edit",
+        previousLabel: undefined,
+        input: makeSaveInput(),
+        proxy: makeWorker({ updateUserDefinedGlasses, getUserDefinedGlasses }),
+        storeActions: {
+          upsertCustomGlasses: jest.fn(),
+          deleteCustomGlasses: jest.fn(),
+        },
+      }),
+    ).rejects.toThrow("User-defined glass already exists: ADDED");
 
     expect(getUserDefinedGlasses).not.toHaveBeenCalled();
   });
@@ -474,12 +621,17 @@ describe("saveCustomGlass", () => {
       previousLabel: undefined,
       input: makeSaveInput(),
       proxy: makeWorker(),
-      storeActions: { upsertCustomGlasses: jest.fn(), deleteCustomGlasses: jest.fn() },
+      storeActions: {
+        upsertCustomGlasses: jest.fn(),
+        deleteCustomGlasses: jest.fn(),
+      },
       persistInput: jest.fn().mockRejectedValue("idb failed"),
       onPersistenceWarning,
     });
 
-    expect(onPersistenceWarning).toHaveBeenCalledWith("Failed to persist custom glass.");
+    expect(onPersistenceWarning).toHaveBeenCalledWith(
+      "Failed to persist custom glass.",
+    );
   });
 });
 
@@ -492,15 +644,22 @@ describe("parseCustomGlassCsv", () => {
 
     expect(result).toEqual({
       name: "LF7",
-      pairs: [[486.13, 1.522], [546.07, 1.518], [587.56, 1.5168], [694.3, 1.514]],
+      pairs: [
+        [486.13, 1.522],
+        [546.07, 1.518],
+        [587.56, 1.5168],
+        [694.3, 1.514],
+      ],
     });
   });
 
   it("uses the filename stem after a path separator and supports a filename without an extension", () => {
-    expect(parseCustomGlassCsv(
-      new File([], "C:\\catalogs\\LF7", { type: "text/csv" }),
-      "wl,n\n0.1,1\n0.2,1\n0.3,1\n0.4,1",
-    )).toMatchObject({ name: "LF7" });
+    expect(
+      parseCustomGlassCsv(
+        new File([], "C:\\catalogs\\LF7", { type: "text/csv" }),
+        "wl,n\n0.1,1\n0.2,1\n0.3,1\n0.4,1",
+      ),
+    ).toMatchObject({ name: "LF7" });
   });
 
   it.each([
@@ -511,14 +670,19 @@ describe("parseCustomGlassCsv", () => {
     ["Wl,n", "CSV header must contain exactly two columns: wl,n."],
     ["wl,N", "CSV header must contain exactly two columns: wl,n."],
   ])("rejects invalid CSV header text %p", (text, reason) => {
-    expect(parseCustomGlassCsv(new File([], "LF7.csv"), text)).toEqual({ filename: "LF7.csv", reason });
+    expect(parseCustomGlassCsv(new File([], "LF7.csv"), text)).toEqual({
+      filename: "LF7.csv",
+      reason,
+    });
   });
 
   it("rejects a file whose name cannot supply a glass label", () => {
-    expect(parseCustomGlassCsv(
-      new File([], ""),
-      "wl,n\n0.1,1\n0.2,1\n0.3,1\n0.4,1",
-    )).toEqual({ filename: "", reason: "Filename must provide a non-blank glass label." });
+    expect(
+      parseCustomGlassCsv(new File([], ""), "wl,n\n0.1,1\n0.2,1\n0.3,1\n0.4,1"),
+    ).toEqual({
+      filename: "",
+      reason: "Filename must provide a non-blank glass label.",
+    });
   });
 
   it.each([
@@ -533,55 +697,87 @@ describe("parseCustomGlassCsv", () => {
     ["-0.1,1", "Row 2 values must be positive."],
     ["0.1,-1", "Row 2 values must be positive."],
   ])("rejects invalid CSV row %p", (row, reason) => {
-    expect(parseCustomGlassCsv(
-      new File([], "LF7.csv"),
-      `wl,n\n${row}\n0.2,1\n0.3,1\n0.4,1`,
-    )).toEqual({ filename: "LF7.csv", reason });
+    expect(
+      parseCustomGlassCsv(
+        new File([], "LF7.csv"),
+        `wl,n\n${row}\n0.2,1\n0.3,1\n0.4,1`,
+      ),
+    ).toEqual({ filename: "LF7.csv", reason });
   });
 
   it("rejects duplicate wavelengths and files with fewer than four pairs", () => {
-    expect(parseCustomGlassCsv(
-      new File([], "LF7.csv"),
-      "wl,n\n0.1,1\n0.1,1.1\n0.2,1\n0.3,1",
-    )).toEqual({ filename: "LF7.csv", reason: "Duplicate wavelength 0.1 found." });
-    expect(parseCustomGlassCsv(
-      new File([], "LF7.csv"),
-      "wl,n\n0.1,1\n0.2,1\n0.3,1",
-    )).toEqual({ filename: "LF7.csv", reason: "CSV must contain at least four valid wavelength/index pairs." });
+    expect(
+      parseCustomGlassCsv(
+        new File([], "LF7.csv"),
+        "wl,n\n0.1,1\n0.1,1.1\n0.2,1\n0.3,1",
+      ),
+    ).toEqual({
+      filename: "LF7.csv",
+      reason: "Duplicate wavelength 0.1 found.",
+    });
+    expect(
+      parseCustomGlassCsv(new File([], "LF7.csv"), "wl,n\n0.1,1\n0.2,1\n0.3,1"),
+    ).toEqual({
+      filename: "LF7.csv",
+      reason: "CSV must contain at least four valid wavelength/index pairs.",
+    });
   });
 
   it("ignores blank lines and trims CSV values while preserving row order", () => {
-    expect(parseCustomGlassCsv(
-      new File([], "LF7.csv"),
-      " wl , n \r\n 0.1 , 1 \r\n \t \r\n\r\n 0.2 , 1.1 \r\n 0.3 , 1.2 \r\n 0.4 , 1.3 \r\n",
-    )).toEqual({
+    expect(
+      parseCustomGlassCsv(
+        new File([], "LF7.csv"),
+        " wl , n \r\n 0.1 , 1 \r\n \t \r\n\r\n 0.2 , 1.1 \r\n 0.3 , 1.2 \r\n 0.4 , 1.3 \r\n",
+      ),
+    ).toEqual({
       name: "LF7",
-      pairs: [[100, 1], [200, 1.1], [300, 1.2], [400, 1.3]],
+      pairs: [
+        [100, 1],
+        [200, 1.1],
+        [300, 1.2],
+        [400, 1.3],
+      ],
     });
 
-    expect(parseCustomGlassCsv(
-      new File([], "  LF7 .csv "),
-      "wl,n\n0.1,1\n0.2,1.1\n0.3,1.2\n0.4,1.3",
-    )).toMatchObject({ name: "LF7" });
-    expect(parseCustomGlassCsv(
-      new File([], ".csv"),
-      "wl,n\n0.1,1\n0.2,1.1\n0.3,1.2\n0.4,1.3",
-    )).toMatchObject({ name: ".csv" });
+    expect(
+      parseCustomGlassCsv(
+        new File([], "  LF7 .csv "),
+        "wl,n\n0.1,1\n0.2,1.1\n0.3,1.2\n0.4,1.3",
+      ),
+    ).toMatchObject({ name: "LF7" });
+    expect(
+      parseCustomGlassCsv(
+        new File([], ".csv"),
+        "wl,n\n0.1,1\n0.2,1.1\n0.3,1.2\n0.4,1.3",
+      ),
+    ).toMatchObject({ name: ".csv" });
   });
 });
 
 describe("downloadCustomGlassJson", () => {
   it("creates, downloads, and revokes a formatted JSON blob", async () => {
-    const { downloadCustomGlassJson } = await import("@/features/import-custom-glass/lib/customGlassImport");
+    const { downloadCustomGlassJson } = await import(
+      "@/features/import-custom-glass/lib/customGlassImport"
+    );
     const originalCreateObjectURL = URL.createObjectURL;
     const originalRevokeObjectURL = URL.revokeObjectURL;
     const createObjectURL = jest.fn().mockReturnValue("blob:custom-glass");
     const revokeObjectURL = jest.fn();
-    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectURL });
-    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectURL });
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
     const anchor = document.createElement("a");
-    const click = jest.spyOn(anchor, "click").mockImplementation(() => undefined);
-    const createElement = jest.spyOn(document, "createElement").mockReturnValue(anchor);
+    const click = jest
+      .spyOn(anchor, "click")
+      .mockImplementation(() => undefined);
+    const createElement = jest
+      .spyOn(document, "createElement")
+      .mockReturnValue(anchor);
 
     try {
       downloadCustomGlassJson({
@@ -598,10 +794,16 @@ describe("downloadCustomGlassJson", () => {
         reader.onerror = () => reject(reader.error);
         reader.readAsText(blob);
       });
-      expect(blobText).toBe(JSON.stringify({
-          version: "1.0",
-          Custom: { LF7: { type: "tabulated", data: [[486.13, 1.522]] } },
-        }, undefined, 2));
+      expect(blobText).toBe(
+        JSON.stringify(
+          {
+            version: "1.0",
+            Custom: { LF7: { type: "tabulated", data: [[486.13, 1.522]] } },
+          },
+          undefined,
+          2,
+        ),
+      );
       expect(createElement).toHaveBeenCalledWith("a");
       expect(anchor.href).toBe("blob:custom-glass");
       expect(anchor.download).toBe("custom-glass.json");
@@ -609,8 +811,14 @@ describe("downloadCustomGlassJson", () => {
       expect(revokeObjectURL).toHaveBeenCalledWith("blob:custom-glass");
     } finally {
       createElement.mockRestore();
-      Object.defineProperty(URL, "createObjectURL", { configurable: true, value: originalCreateObjectURL });
-      Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: originalRevokeObjectURL });
+      Object.defineProperty(URL, "createObjectURL", {
+        configurable: true,
+        value: originalCreateObjectURL,
+      });
+      Object.defineProperty(URL, "revokeObjectURL", {
+        configurable: true,
+        value: originalRevokeObjectURL,
+      });
       click.mockRestore();
     }
   });

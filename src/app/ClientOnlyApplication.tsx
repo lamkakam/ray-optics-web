@@ -19,7 +19,9 @@ const ClientApplication = dynamic(() => import("@/app/ClientApplication"), {
  * providers, worker integration, service-worker registrar, and routed content
  * mount in the browser after JavaScript loads.
  */
-export default function ClientOnlyApplication({ children }: ClientOnlyApplicationProps) {
+export default function ClientOnlyApplication({
+  children,
+}: ClientOnlyApplicationProps) {
   return <ClientApplication>{children}</ClientApplication>;
 }
 /** Routed content deferred until the interactive application mounts. */

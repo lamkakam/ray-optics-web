@@ -235,19 +235,28 @@ describe("specsConfiguratorStore", () => {
       const store = makeStore();
       store.setState({ pupilSpace: space, pupilType: type });
 
-      expect(store.getState().toOpticalSpecs().pupil).toEqual({ space, type, value: 0.5 });
+      expect(store.getState().toOpticalSpecs().pupil).toEqual({
+        space,
+        type,
+        value: 0.5,
+      });
     });
 
     it.each([
       ["object", "f/#"],
       ["image", "epd"],
       ["image", "NA"],
-    ] as const)("rejects unsupported pupil combination %s/%s", (space, type) => {
-      const store = makeStore();
-      store.setState({ pupilSpace: space, pupilType: type });
+    ] as const)(
+      "rejects unsupported pupil combination %s/%s",
+      (space, type) => {
+        const store = makeStore();
+        store.setState({ pupilSpace: space, pupilType: type });
 
-      expect(() => store.getState().toOpticalSpecs()).toThrow(/Invalid pupil specification/);
-    });
+        expect(() => store.getState().toOpticalSpecs()).toThrow(
+          /Invalid pupil specification/,
+        );
+      },
+    );
 
     it.each([
       ["object", "height"],
@@ -257,14 +266,18 @@ describe("specsConfiguratorStore", () => {
       const store = makeStore();
       store.setState({ fieldSpace: space, fieldType: type });
 
-      expect(store.getState().toOpticalSpecs().field).toEqual(expect.objectContaining({ space, type }));
+      expect(store.getState().toOpticalSpecs().field).toEqual(
+        expect.objectContaining({ space, type }),
+      );
     });
 
     it("rejects image-angle field specifications", () => {
       const store = makeStore();
       store.setState({ fieldSpace: "image", fieldType: "angle" });
 
-      expect(() => store.getState().toOpticalSpecs()).toThrow(/Invalid field specification/);
+      expect(() => store.getState().toOpticalSpecs()).toThrow(
+        /Invalid field specification/,
+      );
     });
   });
 
@@ -274,7 +287,14 @@ describe("specsConfiguratorStore", () => {
       const committed = store.getState().committedSpecs;
       expect(committed).toEqual({
         pupil: { space: "object", type: "epd", value: 0.5 },
-        field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true, isWideAngle: false },
+        field: {
+          space: "object",
+          type: "height",
+          maxField: 0,
+          fields: [0],
+          isRelative: true,
+          isWideAngle: false,
+        },
         wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
       });
     });
@@ -316,7 +336,14 @@ describe("specsConfiguratorStore", () => {
       const store = makeStore();
       const heightSpecs: OpticalSpecs = {
         pupil: { space: "object", type: "epd", value: 25 },
-        field: { space: "object", type: "height", maxField: 10, fields: [0, 0.5, 1], isRelative: true, isWideAngle: false },
+        field: {
+          space: "object",
+          type: "height",
+          maxField: 10,
+          fields: [0, 0.5, 1],
+          isRelative: true,
+          isWideAngle: false,
+        },
         wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
       };
       store.getState().setCommittedSpecs(heightSpecs);
@@ -406,7 +433,13 @@ describe("specsConfiguratorStore", () => {
       store.getState().setCommittedSpecs(sampleSpecs); // 3 wavelengths
       const twoWlSpecs: OpticalSpecs = {
         ...sampleSpecs,
-        wavelengths: { weights: [[486.133, 1], [587.562, 1]], referenceIndex: 0 },
+        wavelengths: {
+          weights: [
+            [486.133, 1],
+            [587.562, 1],
+          ],
+          referenceIndex: 0,
+        },
       };
       expect(store.getState().clampWavelengthIndex(5, twoWlSpecs)).toBe(1);
     });

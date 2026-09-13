@@ -9,10 +9,14 @@ const OPTIONS = [
 ];
 
 describe("Datalist", () => {
-
   it("associates its text input with a generated datalist and renders options", () => {
     const { container } = render(
-      <Datalist aria-label="Glass" options={OPTIONS} value="" onChange={() => undefined} />,
+      <Datalist
+        aria-label="Glass"
+        options={OPTIONS}
+        value=""
+        onChange={() => undefined}
+      />,
     );
     const input = screen.getByLabelText("Glass");
     const listId = input.getAttribute("list");
@@ -22,7 +26,9 @@ describe("Datalist", () => {
     expect(listId).toMatch(/^datalist-[A-Za-z0-9_]+$/);
     expect(container.querySelector(`datalist#${listId}`)).toBeInTheDocument();
     expect(container.querySelectorAll("datalist option")).toHaveLength(2);
-    expect(container.querySelector('option[value="N-BK7"]')).toHaveTextContent("N-BK7");
+    expect(container.querySelector('option[value="N-BK7"]')).toHaveTextContent(
+      "N-BK7",
+    );
   });
 
   it("forwards input attributes, events, and ref", async () => {
@@ -49,24 +55,52 @@ describe("Datalist", () => {
   });
 
   it("forwards disabled state", () => {
-    render(<Datalist aria-label="Glass" options={OPTIONS} value="" onChange={() => undefined} disabled />);
+    render(
+      <Datalist
+        aria-label="Glass"
+        options={OPTIONS}
+        value=""
+        onChange={() => undefined}
+        disabled
+      />,
+    );
     expect(screen.getByLabelText("Glass")).toBeDisabled();
   });
 
   it("uses a mobile-safe input font size to prevent browser zoom", () => {
-    render(<Datalist aria-label="Glass" options={OPTIONS} value="" onChange={() => undefined} />);
-    expect(screen.getByLabelText("Glass")).toHaveClass("text-base", "min-[1440px]:text-sm");
+    render(
+      <Datalist
+        aria-label="Glass"
+        options={OPTIONS}
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getByLabelText("Glass")).toHaveClass(
+      "text-base",
+      "min-[1440px]:text-sm",
+    );
   });
 
   it("generates unique datalist IDs for multiple instances", () => {
     render(
       <>
-        <Datalist aria-label="First glass" options={OPTIONS} value="" onChange={() => undefined} />
-        <Datalist aria-label="Second glass" options={OPTIONS} value="" onChange={() => undefined} />
+        <Datalist
+          aria-label="First glass"
+          options={OPTIONS}
+          value=""
+          onChange={() => undefined}
+        />
+        <Datalist
+          aria-label="Second glass"
+          options={OPTIONS}
+          value=""
+          onChange={() => undefined}
+        />
       </>,
     );
-    expect(screen.getByLabelText("First glass").getAttribute("list"))
-      .not.toBe(screen.getByLabelText("Second glass").getAttribute("list"));
+    expect(screen.getByLabelText("First glass").getAttribute("list")).not.toBe(
+      screen.getByLabelText("Second glass").getAttribute("list"),
+    );
   });
-
 });

@@ -16,7 +16,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -30,7 +30,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -46,13 +46,15 @@ describe("DiffractionGratingModal", () => {
         onClose={jest.fn()}
         onRemove={jest.fn()}
         readOnly
-      />
+      />,
     );
 
     expect(screen.getByRole("textbox", { name: "lp/mm" })).toBeDisabled();
     expect(screen.getByRole("textbox", { name: "order" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
   });
 
   it("defaults lp/mm to 1000 and order to 1", () => {
@@ -63,7 +65,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByRole("textbox", { name: "lp/mm" })).toHaveValue("1000");
@@ -78,7 +80,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByRole("textbox", { name: "lp/mm" })).toHaveValue("1200");
@@ -94,7 +96,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={onConfirm}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
 
     await userEvent.clear(screen.getByRole("textbox", { name: "lp/mm" }));
@@ -115,7 +117,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={onConfirm}
         onClose={jest.fn()}
         onRemove={jest.fn()}
-      />
+      />,
     );
 
     await userEvent.clear(screen.getByRole("textbox", { name: "lp/mm" }));
@@ -136,7 +138,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={jest.fn()}
         onClose={onClose}
         onRemove={jest.fn()}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -152,7 +154,7 @@ describe("DiffractionGratingModal", () => {
         onConfirm={jest.fn()}
         onClose={jest.fn()}
         onRemove={onRemove}
-      />
+      />,
     );
 
     await userEvent.click(screen.getByRole("button", { name: "Remove" }));

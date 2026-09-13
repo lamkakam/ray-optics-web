@@ -3,7 +3,11 @@ import {
   _resetAnalysisCache,
   getCachedAnalysis,
 } from "@/features/analysis/lib/analysisCache";
-import { loadAnalysisPlot, loadSeidelData, loadZernikeData } from "@/features/analysis/lib/plotFunctions";
+import {
+  loadAnalysisPlot,
+  loadSeidelData,
+  loadZernikeData,
+} from "@/features/analysis/lib/plotFunctions";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 const model = {} as OpticalModel;
@@ -13,7 +17,9 @@ describe("analysisCache", () => {
 
   it("coalesces identical in-flight requests for the same model instance and aim point", async () => {
     let resolve!: (value: string) => void;
-    const pending = new Promise<string>((done) => { resolve = done; });
+    const pending = new Promise<string>((done) => {
+      resolve = done;
+    });
     const load = jest.fn(() => pending);
 
     const first = getCachedAnalysis(model, "chief_ray", "rayFan:1", load);
@@ -53,12 +59,17 @@ describe("analysisCache", () => {
   });
 
   it("evicts rejected requests so they can be retried", async () => {
-    const load = jest.fn()
+    const load = jest
+      .fn()
       .mockRejectedValueOnce(new Error("failed"))
       .mockResolvedValueOnce("recovered");
 
-    await expect(getCachedAnalysis(model, "chief_ray", "firstOrder", load)).rejects.toThrow("failed");
-    await expect(getCachedAnalysis(model, "chief_ray", "firstOrder", load)).resolves.toBe("recovered");
+    await expect(
+      getCachedAnalysis(model, "chief_ray", "firstOrder", load),
+    ).rejects.toThrow("failed");
+    await expect(
+      getCachedAnalysis(model, "chief_ray", "firstOrder", load),
+    ).resolves.toBe("recovered");
     expect(load).toHaveBeenCalledTimes(2);
   });
 
@@ -87,8 +98,19 @@ describe("analysisCache", () => {
   });
 
   it("keys Zernike payloads by field, wavelength, ordering, term count, and pupil space", async () => {
-    const proxy = { getZernikeCoefficients: jest.fn().mockResolvedValue({}) } as unknown as PyodideWorkerAPI;
-    const base = { proxy, model, imagePoint: "chief_ray" as const, fieldIndex: 0, wavelengthIndex: 0, ordering: "noll" as const, numTerms: 37, pupilSpace: "entrance" as const };
+    const proxy = {
+      getZernikeCoefficients: jest.fn().mockResolvedValue({}),
+    } as unknown as PyodideWorkerAPI;
+    const base = {
+      proxy,
+      model,
+      imagePoint: "chief_ray" as const,
+      fieldIndex: 0,
+      wavelengthIndex: 0,
+      ordering: "noll" as const,
+      numTerms: 37,
+      pupilSpace: "entrance" as const,
+    };
 
     await loadZernikeData(base);
     await loadZernikeData(base);

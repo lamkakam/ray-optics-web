@@ -4,13 +4,25 @@ import {
   type LensEditorState,
 } from "@/features/lens-editor/stores/lensEditorStore";
 import { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-
+import {
+  OBJECT_ROW_ID,
+  IMAGE_ROW_ID,
+  type GridRow,
+} from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type {
+  OpticalModel,
+  OpticalSpecs,
+} from "@/shared/lib/types/opticalModel";
 
 const testSpecs: OpticalSpecs = {
   pupil: { space: "object", type: "epd", value: 25 },
-  field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+  field: {
+    space: "object",
+    type: "angle",
+    maxField: 20,
+    fields: [0, 0.7, 1],
+    isRelative: true,
+  },
   wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
 };
 
@@ -28,7 +40,13 @@ function makeStore() {
 
 function makeTestRows(): GridRow[] {
   return [
-    { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10, medium: "air", manufacturer: "" },
+    {
+      id: OBJECT_ROW_ID,
+      kind: "object",
+      objectDistance: 1e10,
+      medium: "air",
+      manufacturer: "",
+    },
     {
       id: "s1",
       kind: "surface",
@@ -69,7 +87,11 @@ describe("lensEditorStore", () => {
         medium: "air",
         manufacturer: "",
       });
-      expect(rows[1]).toMatchObject({ id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 });
+      expect(rows[1]).toMatchObject({
+        id: IMAGE_ROW_ID,
+        kind: "image",
+        curvatureRadius: 0,
+      });
     });
 
     it('defaults the active bottom drawer tab to "specs"', () => {
@@ -81,7 +103,6 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       expect(store.getState().bottomDrawerHeight).toBeUndefined();
     });
-
   });
 
   describe("computed auto-aperture semi-diameters", () => {
@@ -90,12 +111,19 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
 
       store.getState().setAutoSemiDiameters({ s1: 11.5, s2: 9.25 });
-      expect(store.getState().autoSemiDiameters).toEqual({ s1: 11.5, s2: 9.25 });
-      expect(store.getState().rows.find((row) => row.id === "s1")).toMatchObject({ semiDiameter: 10 });
+      expect(store.getState().autoSemiDiameters).toEqual({
+        s1: 11.5,
+        s2: 9.25,
+      });
+      expect(
+        store.getState().rows.find((row) => row.id === "s1"),
+      ).toMatchObject({ semiDiameter: 10 });
 
       store.getState().clearAutoSemiDiameters();
       expect(store.getState().autoSemiDiameters).toEqual({});
-      expect(store.getState().rows.find((row) => row.id === "s1")).toMatchObject({ semiDiameter: 10 });
+      expect(
+        store.getState().rows.find((row) => row.id === "s1"),
+      ).toMatchObject({ semiDiameter: 10 });
     });
   });
 
@@ -113,7 +141,9 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
 
       expect(store.getState().prescriptionRevision).toBe(1);
-      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+      expect(store.getState().optimizationSyncPolicy).toBe(
+        "resetOptimizationModes",
+      );
     });
 
     it("records preserve policy for optimization-origin row replacement", () => {
@@ -124,7 +154,9 @@ describe("lensEditorStore", () => {
       });
 
       expect(store.getState().prescriptionRevision).toBe(1);
-      expect(store.getState().optimizationSyncPolicy).toBe("preserveOptimizationModes");
+      expect(store.getState().optimizationSyncPolicy).toBe(
+        "preserveOptimizationModes",
+      );
     });
   });
 
@@ -136,19 +168,27 @@ describe("lensEditorStore", () => {
       const updated = store.getState().rows.find((r) => r.id === "s1");
       expect(updated).toMatchObject({ curvatureRadius: 100 });
       expect(store.getState().prescriptionRevision).toBe(2);
-      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+      expect(store.getState().optimizationSyncPolicy).toBe(
+        "resetOptimizationModes",
+      );
     });
 
     it("records preserve policy for focusing-origin row updates", () => {
       const store = makeStore();
       store.getState().setRows(makeTestRows());
 
-      store.getState().updateRow("s2", { thickness: 10 }, {
-        optimizationSyncPolicy: "preserveOptimizationModes",
-      });
+      store.getState().updateRow(
+        "s2",
+        { thickness: 10 },
+        {
+          optimizationSyncPolicy: "preserveOptimizationModes",
+        },
+      );
 
       expect(store.getState().prescriptionRevision).toBe(2);
-      expect(store.getState().optimizationSyncPolicy).toBe("preserveOptimizationModes");
+      expect(store.getState().optimizationSyncPolicy).toBe(
+        "preserveOptimizationModes",
+      );
     });
 
     it("does not modify other rows", () => {
@@ -166,30 +206,50 @@ describe("lensEditorStore", () => {
       store.getState().updateRow("nonexistent", { curvatureRadius: 999 });
       expect(store.getState().rows).toEqual(rows);
       expect(store.getState().prescriptionRevision).toBe(1);
-      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+      expect(store.getState().optimizationSyncPolicy).toBe(
+        "resetOptimizationModes",
+      );
     });
 
     it("does not update a pending medium when no draft exists", () => {
       const store = makeStore();
       const before = store.getState();
 
-      store.getState().updatePendingMediumSelection({ medium: "N-BK7", manufacturer: "Schott" });
+      store
+        .getState()
+        .updatePendingMediumSelection({
+          medium: "N-BK7",
+          manufacturer: "Schott",
+        });
 
-      expect(store.getState().pendingMediumSelection).toBe(before.pendingMediumSelection);
-      expect(store.getState().prescriptionRevision).toBe(before.prescriptionRevision);
+      expect(store.getState().pendingMediumSelection).toBe(
+        before.pendingMediumSelection,
+      );
+      expect(store.getState().prescriptionRevision).toBe(
+        before.prescriptionRevision,
+      );
     });
 
     it("preserves the target row identity even when an update patch includes id or kind", () => {
       const store = makeStore();
       store.getState().setRows(makeTestRows());
 
-      store.getState().updateRow("s1", { id: "wrong-id", kind: "object" } as Partial<GridRow>);
+      store
+        .getState()
+        .updateRow("s1", {
+          id: "wrong-id",
+          kind: "object",
+        } as Partial<GridRow>);
 
-      expect(store.getState().rows.find((row) => row.id === "s1")).toEqual(expect.objectContaining({
-        id: "s1",
-        kind: "surface",
-      }));
-      expect(store.getState().rows.find((row) => row.id === "wrong-id")).toBeUndefined();
+      expect(store.getState().rows.find((row) => row.id === "s1")).toEqual(
+        expect.objectContaining({
+          id: "s1",
+          kind: "surface",
+        }),
+      );
+      expect(
+        store.getState().rows.find((row) => row.id === "wrong-id"),
+      ).toBeUndefined();
     });
   });
 
@@ -293,7 +353,10 @@ describe("lensEditorStore", () => {
 
     it("initializes decenterModal as closed", () => {
       const store = makeStore();
-      expect(store.getState().decenterModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().decenterModal).toEqual({
+        open: false,
+        rowId: "",
+      });
     });
 
     it("opens and closes diffraction grating modal", () => {
@@ -313,7 +376,10 @@ describe("lensEditorStore", () => {
 
     it("initializes diffraction grating modal as closed", () => {
       const store = makeStore();
-      expect(store.getState().diffractionGratingModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().diffractionGratingModal).toEqual({
+        open: false,
+        rowId: "",
+      });
     });
 
     it("opens and closes aperture modal", () => {
@@ -333,7 +399,10 @@ describe("lensEditorStore", () => {
 
     it("initializes aperture modal as closed", () => {
       const store = makeStore();
-      expect(store.getState().apertureModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().apertureModal).toEqual({
+        open: false,
+        rowId: "",
+      });
     });
   });
 
@@ -356,7 +425,9 @@ describe("lensEditorStore", () => {
         expect(newRow.semiDiameter).toBe(1);
       }
       expect(store.getState().prescriptionRevision).toBe(2);
-      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+      expect(store.getState().optimizationSyncPolicy).toBe(
+        "resetOptimizationModes",
+      );
     });
 
     it("adds a row after the object row", () => {
@@ -425,7 +496,9 @@ describe("lensEditorStore", () => {
 
       const row = store.getState().rows.find((item) => item.id === "s1");
       expect(row?.kind === "surface" ? row.medium : undefined).toBe("N-SF6");
-      expect(row?.kind === "surface" ? row.manufacturer : undefined).toBe("Schott");
+      expect(row?.kind === "surface" ? row.manufacturer : undefined).toBe(
+        "Schott",
+      );
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
       expect(store.getState().pendingMediumSelection).toBeUndefined();
     });
@@ -460,9 +533,13 @@ describe("lensEditorStore", () => {
 
       store.getState().commitPendingMediumSelection();
 
-      const row = store.getState().rows.find((item) => item.id === OBJECT_ROW_ID);
+      const row = store
+        .getState()
+        .rows.find((item) => item.id === OBJECT_ROW_ID);
       expect(row?.kind === "object" ? row.medium : undefined).toBe("N-BK7");
-      expect(row?.kind === "object" ? row.manufacturer : undefined).toBe("Schott");
+      expect(row?.kind === "object" ? row.manufacturer : undefined).toBe(
+        "Schott",
+      );
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
       expect(store.getState().pendingMediumSelection).toBeUndefined();
     });
@@ -473,7 +550,10 @@ describe("lensEditorStore", () => {
 
       store.getState().openMediumModal(IMAGE_ROW_ID);
 
-      expect(store.getState().mediumModal).toEqual({ open: true, rowId: IMAGE_ROW_ID });
+      expect(store.getState().mediumModal).toEqual({
+        open: true,
+        rowId: IMAGE_ROW_ID,
+      });
       expect(store.getState().pendingMediumSelection).toBeUndefined();
     });
 
@@ -494,7 +574,12 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       store.getState().openMediumModal("missing");
 
-      store.getState().commitPendingMediumSelection({ medium: "N-BK7", manufacturer: "Schott" });
+      store
+        .getState()
+        .commitPendingMediumSelection({
+          medium: "N-BK7",
+          manufacturer: "Schott",
+        });
 
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
       expect(store.getState().pendingMediumSelection).toBeUndefined();
@@ -545,7 +630,9 @@ describe("lensEditorStore", () => {
 
       expect(store.getState().selectedRowId).toBe("s2");
       expect(store.getState().prescriptionRevision).toBe(2);
-      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+      expect(store.getState().optimizationSyncPolicy).toBe(
+        "resetOptimizationModes",
+      );
     });
   });
 
@@ -564,7 +651,10 @@ describe("lensEditorStore", () => {
     it("setCommittedOpticalModel can be called multiple times to overwrite", () => {
       const store = makeStore();
       store.getState().setCommittedOpticalModel(testModel);
-      const updatedModel: OpticalModel = { ...testModel, setAutoAperture: "autoAperture" };
+      const updatedModel: OpticalModel = {
+        ...testModel,
+        setAutoAperture: "autoAperture",
+      };
       store.getState().setCommittedOpticalModel(updatedModel);
       expect(store.getState().committedOpticalModel).toEqual(updatedModel);
     });
@@ -589,5 +679,4 @@ describe("lensEditorStore", () => {
       expect(store.getState().autoAperture).toBe(false);
     });
   });
-
 });

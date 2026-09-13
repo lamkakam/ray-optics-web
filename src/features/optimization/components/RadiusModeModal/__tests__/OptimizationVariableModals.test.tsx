@@ -2,7 +2,10 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
+import type {
+  RadiusMode,
+  RadiusModeDraft,
+} from "@/features/optimization/stores/optimizationStore";
 import { RadiusModeModal } from "../RadiusModeModal";
 import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal/ThicknessModeModal";
 
@@ -22,7 +25,13 @@ const model: OpticalModel = {
   ],
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20, fields: [0, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      fields: [0, 1],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
   },
 };
@@ -65,17 +74,32 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "40",
+          max: "60",
+        }}
         canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.queryByRole("textbox", { name: "Min." })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Max." })).not.toBeInTheDocument();
-    expect(screen.queryByText("R = 0 means a flat surface (infinite radius).")).not.toBeInTheDocument();
-    expect(screen.queryByText("Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Min." }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Max." }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("R = 0 means a flat surface (infinite radius)."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
+      ),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
   });
 
@@ -85,15 +109,24 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "1", max: "10" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "1",
+          max: "10",
+        }}
         canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.queryByRole("textbox", { name: "Thickness Min." })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Thickness Max." })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Thickness Min." }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Thickness Max." }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps pickup mode fields visible for lm", async () => {
@@ -102,14 +135,22 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={multiSurfaceModel}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "2", scale: "1", offset: "0" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "pickup",
+          sourceSurfaceIndex: "2",
+          scale: "1",
+          offset: "0",
+        }}
         canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.getByRole("combobox", { name: "Source surface" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Source surface" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "scale" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "offset" })).toBeInTheDocument();
   });
@@ -120,20 +161,34 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={multiSurfaceModel}
         surfaceIndex={2}
-        selectedMode={{ surfaceIndex: 2, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        selectedMode={{
+          surfaceIndex: 2,
+          mode: "pickup",
+          sourceSurfaceIndex: "1",
+          scale: "1",
+          offset: "0",
+        }}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.queryByRole("textbox", { name: "Source surface index" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Source surface index" }),
+    ).not.toBeInTheDocument();
 
-    const sourceSurfaceSelect = screen.getByRole("combobox", { name: "Source surface" });
+    const sourceSurfaceSelect = screen.getByRole("combobox", {
+      name: "Source surface",
+    });
     expect(sourceSurfaceSelect).toHaveValue("1");
-    expect(Array.from(sourceSurfaceSelect.querySelectorAll("option")).map((option) => ({
-      value: option.value,
-      label: option.textContent,
-    }))).toEqual([
+    expect(
+      Array.from(sourceSurfaceSelect.querySelectorAll("option")).map(
+        (option) => ({
+          value: option.value,
+          label: option.textContent,
+        }),
+      ),
+    ).toEqual([
       { value: "1", label: "1" },
       { value: "3", label: "3" },
       { value: "4", label: "Image" },
@@ -150,13 +205,22 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={multiSurfaceModel}
         surfaceIndex={2}
-        selectedMode={{ surfaceIndex: 2, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        selectedMode={{
+          surfaceIndex: 2,
+          mode: "pickup",
+          sourceSurfaceIndex: "1",
+          scale: "1",
+          offset: "0",
+        }}
         onSetMode={onSetMode}
         onClose={onClose}
       />,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Source surface" }), "4");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Source surface" }),
+      "4",
+    );
 
     expect(onSetMode).not.toHaveBeenCalled();
 
@@ -178,20 +242,34 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={multiSurfaceModel}
         surfaceIndex={2}
-        selectedMode={{ surfaceIndex: 2, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        selectedMode={{
+          surfaceIndex: 2,
+          mode: "pickup",
+          sourceSurfaceIndex: "1",
+          scale: "1",
+          offset: "0",
+        }}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.queryByRole("textbox", { name: "Thickness source surface index" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Thickness source surface index" }),
+    ).not.toBeInTheDocument();
 
-    const sourceSurfaceSelect = screen.getByRole("combobox", { name: "Source surface" });
+    const sourceSurfaceSelect = screen.getByRole("combobox", {
+      name: "Source surface",
+    });
     expect(sourceSurfaceSelect).toHaveValue("1");
-    expect(Array.from(sourceSurfaceSelect.querySelectorAll("option")).map((option) => ({
-      value: option.value,
-      label: option.textContent,
-    }))).toEqual([
+    expect(
+      Array.from(sourceSurfaceSelect.querySelectorAll("option")).map(
+        (option) => ({
+          value: option.value,
+          label: option.textContent,
+        }),
+      ),
+    ).toEqual([
       { value: "1", label: "1" },
       { value: "3", label: "3" },
     ]);
@@ -210,7 +288,10 @@ describe("OptimizationVariableModals", () => {
         max: "60",
       });
 
-      const handleSetMode = (surfaceIndex: number, nextMode: RadiusModeDraft) => {
+      const handleSetMode = (
+        surfaceIndex: number,
+        nextMode: RadiusModeDraft,
+      ) => {
         onSetMode(surfaceIndex, nextMode);
         setMode({ surfaceIndex, ...nextMode } as RadiusMode);
       };
@@ -240,7 +321,10 @@ describe("OptimizationVariableModals", () => {
     expect(screen.getByDisplayValue("41")).toBeInTheDocument();
     expect(onSetMode).not.toHaveBeenCalled();
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Radius mode" }), "pickup");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Radius mode" }),
+      "pickup",
+    );
     expect(screen.getByDisplayValue("pickup")).toBeInTheDocument();
     expect(onSetMode).not.toHaveBeenCalled();
 
@@ -276,7 +360,10 @@ describe("OptimizationVariableModals", () => {
         offset: "0",
       });
 
-      const handleSetMode = (surfaceIndex: number, nextMode: RadiusModeDraft) => {
+      const handleSetMode = (
+        surfaceIndex: number,
+        nextMode: RadiusModeDraft,
+      ) => {
         onSetMode(surfaceIndex, nextMode);
         setMode({ surfaceIndex, ...nextMode } as RadiusMode);
       };
@@ -300,7 +387,10 @@ describe("OptimizationVariableModals", () => {
     expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
 
     await user.clear(screen.getByRole("textbox", { name: "Thickness scale" }));
-    await user.type(screen.getByRole("textbox", { name: "Thickness scale" }), "2");
+    await user.type(
+      screen.getByRole("textbox", { name: "Thickness scale" }),
+      "2",
+    );
     expect(screen.getByDisplayValue("2")).toBeInTheDocument();
     expect(onSetMode).not.toHaveBeenCalled();
 
@@ -325,7 +415,12 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "40",
+          max: "60",
+        }}
         canUseBounds
         onSetMode={onSetMode}
         onClose={onClose}
@@ -354,7 +449,12 @@ describe("OptimizationVariableModals", () => {
           isOpen
           optimizationModel={model}
           surfaceIndex={1}
-          selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+          selectedMode={{
+            surfaceIndex: 1,
+            mode: "variable",
+            min: "40",
+            max: "60",
+          }}
           canUseBounds
           onSetMode={onSetMode}
           onClose={onClose}
@@ -382,7 +482,13 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "pickup",
+          sourceSurfaceIndex: "1",
+          scale: "1",
+          offset: "0",
+        }}
         canUseBounds
         onSetMode={onSetMode}
         onClose={onClose}
@@ -390,7 +496,10 @@ describe("OptimizationVariableModals", () => {
     );
 
     await user.clear(screen.getByRole("textbox", { name: "Thickness scale" }));
-    await user.type(screen.getByRole("textbox", { name: "Thickness scale" }), "2");
+    await user.type(
+      screen.getByRole("textbox", { name: "Thickness scale" }),
+      "2",
+    );
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onSetMode).not.toHaveBeenCalled();
@@ -403,15 +512,26 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "40",
+          max: "60",
+        }}
         canUseBounds
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.getByText("R = 0 means a flat surface (infinite radius).")).toBeInTheDocument();
-    expect(screen.getByText("Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.")).toBeInTheDocument();
+    expect(
+      screen.getByText("R = 0 means a flat surface (infinite radius)."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("blocks saving radius bounds that straddle zero", async () => {
@@ -423,14 +543,21 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "-10000", max: "10000" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "-10000",
+          max: "10000",
+        }}
         canUseBounds
         onSetMode={onSetMode}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.getByText("Radius variable bounds must stay on one side of 0.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Radius variable bounds must stay on one side of 0."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
@@ -447,14 +574,21 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "60", max: "40" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "60",
+          max: "40",
+        }}
         canUseBounds
         onSetMode={onSetMode}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.getByText("Radius variable bounds must have Min. less than Max.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Radius variable bounds must have Min. less than Max."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
@@ -472,7 +606,12 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "-10000", max: "10000" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "-10000",
+          max: "10000",
+        }}
         onSetMode={onSetMode}
         onClose={onClose}
       />,
@@ -481,7 +620,9 @@ describe("OptimizationVariableModals", () => {
     await user.clear(screen.getByRole("textbox", { name: "Max." }));
     await user.type(screen.getByRole("textbox", { name: "Max." }), "-10");
 
-    expect(screen.queryByText("Radius variable bounds must stay on one side of 0.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Radius variable bounds must stay on one side of 0."),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
@@ -503,14 +644,23 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "10", max: "5" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "10",
+          max: "5",
+        }}
         canUseBounds
         onSetMode={onSetMode}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.getByText("Thickness variable bounds must have Min. less than Max.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Thickness variable bounds must have Min. less than Max.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
@@ -524,7 +674,12 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "40",
+          max: "60",
+        }}
         canUseBounds
         onSetMode={jest.fn()}
         onClose={jest.fn()}
@@ -539,15 +694,24 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "40",
+          max: "60",
+        }}
         canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.queryByRole("textbox", { name: "Min." })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Max." })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Min." }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Max." }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders thickness bounded or unbounded fields from canUseBounds alone", () => {
@@ -556,29 +720,47 @@ describe("OptimizationVariableModals", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "1", max: "10" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "1",
+          max: "10",
+        }}
         canUseBounds
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "Thickness Min." })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Thickness Max." })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Thickness Min." }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Thickness Max." }),
+    ).toBeInTheDocument();
 
     rerender(
       <ThicknessModeModal
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "1", max: "10" }}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          min: "1",
+          max: "10",
+        }}
         canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.queryByRole("textbox", { name: "Thickness Min." })).not.toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Thickness Max." })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Thickness Min." }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Thickness Max." }),
+    ).not.toBeInTheDocument();
   });
 });

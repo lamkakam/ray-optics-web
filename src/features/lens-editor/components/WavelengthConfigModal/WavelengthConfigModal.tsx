@@ -8,7 +8,11 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-import { FRAUNHOFER_LINES, type FraunhoferSymbol, lookupWavelength } from "@/shared/lib/data/fraunhoferLines";
+import {
+  FRAUNHOFER_LINES,
+  type FraunhoferSymbol,
+  lookupWavelength,
+} from "@/shared/lib/data/fraunhoferLines";
 
 interface WavelengthRow {
   readonly id: string;
@@ -41,7 +45,9 @@ function generateWlRowId(): string {
 }
 
 function findFraunhoferSymbol(wavelength: number): string {
-  const line = FRAUNHOFER_LINES.find((l) => Math.abs(l.wavelength - wavelength) < 0.001);
+  const line = FRAUNHOFER_LINES.find(
+    (l) => Math.abs(l.wavelength - wavelength) < 0.001,
+  );
   return line ? line.symbol : "";
 }
 
@@ -93,7 +99,9 @@ export function WavelengthConfigModal({
     return null;
   }
 
-  return <WavelengthConfigModalContent key="wavelength-config-modal" {...props} />;
+  return (
+    <WavelengthConfigModalContent key="wavelength-config-modal" {...props} />
+  );
 }
 
 function WavelengthConfigModalContent({
@@ -105,9 +113,13 @@ function WavelengthConfigModalContent({
   const gridTheme = useAgGridTheme();
 
   /** Editable AG Grid rows with stable ids and Fraunhofer metadata. */
-  const [rows, setRows] = useState<WavelengthRow[]>(() => weightsToRows(initialWeights));
+  const [rows, setRows] = useState<WavelengthRow[]>(() =>
+    weightsToRows(initialWeights),
+  );
   /** Index of the wavelength used as the reference. */
-  const [referenceIndex, setReferenceIndex] = useState(() => initialReferenceIndex);
+  const [referenceIndex, setReferenceIndex] = useState(
+    () => initialReferenceIndex,
+  );
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
   const referenceIndexRef = useRef(referenceIndex);
@@ -147,9 +159,7 @@ function WavelengthConfigModalContent({
   }, []);
 
   const updateRow = useCallback((id: string, patch: Partial<WavelengthRow>) => {
-    setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...patch } : r))
-    );
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }, []);
 
   const handleApply = () => {
@@ -159,100 +169,108 @@ function WavelengthConfigModalContent({
     });
   };
 
-  const columnDefs = useMemo<ColDef<WavelengthRow>[]>(() => [
-    {
-      headerName: "",
-      width: 100,
-      cellRenderer: (params: { data: WavelengthRow | undefined }) => {
-        if (!params.data) return undefined;
-        const row = params.data;
-        const isFirst = rowsRef.current.findIndex((r) => r.id === row.id) === 0;
-        return (
-          <GridRowButtons
-            onAdd={() => addRow(row.id)}
-            addHidden={rowsRef.current.length >= MAX_ROWS}
-            onDelete={!isFirst ? () => handleDeleteRow(row.id) : undefined}
-            addLabel="Add wavelength row"
-            deleteLabel="Delete wavelength row"
-          />
-        );
+  const columnDefs = useMemo<ColDef<WavelengthRow>[]>(
+    () => [
+      {
+        headerName: "",
+        width: 100,
+        cellRenderer: (params: { data: WavelengthRow | undefined }) => {
+          if (!params.data) return undefined;
+          const row = params.data;
+          const isFirst =
+            rowsRef.current.findIndex((r) => r.id === row.id) === 0;
+          return (
+            <GridRowButtons
+              onAdd={() => addRow(row.id)}
+              addHidden={rowsRef.current.length >= MAX_ROWS}
+              onDelete={!isFirst ? () => handleDeleteRow(row.id) : undefined}
+              addLabel="Add wavelength row"
+              deleteLabel="Delete wavelength row"
+            />
+          );
+        },
       },
-    },
-    {
-      headerName: "Fraunhofer",
-      field: "fraunhofer",
-      width: 110,
-      editable: true,
-      cellEditor: "agSelectCellEditor",
-      cellEditorParams: {
-        values: FRAUNHOFER_LINES.map((l) => l.symbol),
+      {
+        headerName: "Fraunhofer",
+        field: "fraunhofer",
+        width: 110,
+        editable: true,
+        cellEditor: "agSelectCellEditor",
+        cellEditorParams: {
+          values: FRAUNHOFER_LINES.map((l) => l.symbol),
+        },
+        valueSetter: (params) => {
+          if (!params.data) return false;
+          const symbol = params.newValue as FraunhoferSymbol;
+          const wl = lookupWavelength(symbol);
+          updateRow(params.data.id, { fraunhofer: symbol, wavelength: wl });
+          return true;
+        },
       },
-      valueSetter: (params) => {
-        if (!params.data) return false;
-        const symbol = params.newValue as FraunhoferSymbol;
-        const wl = lookupWavelength(symbol);
-        updateRow(params.data.id, { fraunhofer: symbol, wavelength: wl });
-        return true;
+      {
+        headerName: "Wavelength (nm)",
+        field: "wavelength",
+        width: 150,
+        editable: true,
+        valueGetter: (params) => {
+          if (!params.data) return 0;
+          return params.data.wavelength;
+        },
+        valueParser: (params) => {
+          const parsed = parseFloat(params.newValue);
+          return Number.isNaN(parsed) || parsed <= 0
+            ? lookupWavelength("e")
+            : parsed;
+        },
+        valueSetter: (params) => {
+          if (!params.data) return false;
+          const newVal = params.newValue as number;
+          const fraunhofer = findFraunhoferSymbol(newVal);
+          updateRow(params.data.id, { wavelength: newVal, fraunhofer });
+          return true;
+        },
       },
-    },
-    {
-      headerName: "Wavelength (nm)",
-      field: "wavelength",
-      width: 150,
-      editable: true,
-      valueGetter: (params) => {
-        if (!params.data) return 0;
-        return params.data.wavelength;
+      {
+        headerName: "Weight",
+        field: "weight",
+        width: 85,
+        editable: true,
+        valueGetter: (params) => {
+          if (!params.data) return 0;
+          return params.data.weight;
+        },
+        valueParser: (params) => {
+          const parsed = parseFloat(params.newValue);
+          return Number.isNaN(parsed) || parsed < 0 ? 1 : parsed;
+        },
+        valueSetter: (params) => {
+          if (!params.data) return false;
+          updateRow(params.data.id, { weight: params.newValue as number });
+          return true;
+        },
       },
-      valueParser: (params) => {
-        const parsed = parseFloat(params.newValue);
-        return Number.isNaN(parsed) || parsed <= 0 ? lookupWavelength("e") : parsed;
+      {
+        headerName: "Reference",
+        width: 100,
+        cellRenderer: (params: { data: WavelengthRow | undefined }) => {
+          if (!params.data) return undefined;
+          const idx = rowsRef.current.findIndex(
+            (r) => r.id === params.data?.id,
+          );
+          return (
+            <input
+              type="radio"
+              name="reference-wavelength"
+              aria-label={`Reference wavelength ${idx + 1}`}
+              checked={idx === referenceIndexRef.current}
+              onChange={() => setReferenceIndex(idx)}
+            />
+          );
+        },
       },
-      valueSetter: (params) => {
-        if (!params.data) return false;
-        const newVal = params.newValue as number;
-        const fraunhofer = findFraunhoferSymbol(newVal);
-        updateRow(params.data.id, { wavelength: newVal, fraunhofer });
-        return true;
-      },
-    },
-    {
-      headerName: "Weight",
-      field: "weight",
-      width: 85,
-      editable: true,
-      valueGetter: (params) => {
-        if (!params.data) return 0;
-        return params.data.weight;
-      },
-      valueParser: (params) => {
-        const parsed = parseFloat(params.newValue);
-        return Number.isNaN(parsed) || parsed < 0 ? 1 : parsed;
-      },
-      valueSetter: (params) => {
-        if (!params.data) return false;
-        updateRow(params.data.id, { weight: params.newValue as number });
-        return true;
-      },
-    },
-    {
-      headerName: "Reference",
-      width: 100,
-      cellRenderer: (params: { data: WavelengthRow | undefined }) => {
-        if (!params.data) return undefined;
-        const idx = rowsRef.current.findIndex((r) => r.id === params.data?.id);
-        return (
-          <input
-            type="radio"
-            name="reference-wavelength"
-            aria-label={`Reference wavelength ${idx + 1}`}
-            checked={idx === referenceIndexRef.current}
-            onChange={() => setReferenceIndex(idx)}
-          />
-        );
-      },
-    },
-  ], [addRow, handleDeleteRow, updateRow]);
+    ],
+    [addRow, handleDeleteRow, updateRow],
+  );
 
   return (
     <Modal
@@ -260,12 +278,16 @@ function WavelengthConfigModalContent({
       title="Wavelengths"
       titleId="wavelength-modal-title"
       size="4xl"
-      footer={(
+      footer={
         <div className="flex items-center justify-end gap-3">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleApply}>Apply</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleApply}>
+            Apply
+          </Button>
         </div>
-      )}
+      }
     >
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
@@ -275,7 +297,11 @@ function WavelengthConfigModalContent({
               theme={gridTheme}
               rowData={rows}
               columnDefs={columnDefs}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+              defaultColDef={{
+                sortable: false,
+                filter: false,
+                suppressMovable: true,
+              }}
               domLayout="normal"
               getRowId={(params) => params.data.id}
             />

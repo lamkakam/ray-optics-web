@@ -10,9 +10,16 @@
  * eligible. Persisted identities missing from the current catalog snapshot are
  * retained as unavailable rows so users can remove stale Custom selections.
  */
-import { CATALOG_NAMES, type AllGlassCatalogsData, type CatalogName } from "@/features/glass-map/types/glassMap";
+import {
+  CATALOG_NAMES,
+  type AllGlassCatalogsData,
+  type CatalogName,
+} from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { GlassCandidateConfig, GlassCatalogName } from "@/features/optimization/types/optimizationWorkerTypes";
+import type {
+  GlassCandidateConfig,
+  GlassCatalogName,
+} from "@/features/optimization/types/optimizationWorkerTypes";
 
 /** The only bundled Special materials eligible for categorical substitution. */
 export const ELIGIBLE_SPECIAL_GLASS_NAMES = [
@@ -22,16 +29,20 @@ export const ELIGIBLE_SPECIAL_GLASS_NAMES = [
   "D263TECO",
 ] as const;
 
-const ELIGIBLE_SPECIAL_GLASS_NAME_SET = new Set<string>(ELIGIBLE_SPECIAL_GLASS_NAMES);
-const CATALOG_ORDER = new Map<string, number>(CATALOG_NAMES.map((catalog, index) => [catalog, index]));
+const ELIGIBLE_SPECIAL_GLASS_NAME_SET = new Set<string>(
+  ELIGIBLE_SPECIAL_GLASS_NAMES,
+);
+const CATALOG_ORDER = new Map<string, number>(
+  CATALOG_NAMES.map((catalog, index) => [catalog, index]),
+);
 
 function compareGlassCandidates(
   left: GlassCandidateConfig,
   right: GlassCandidateConfig,
 ): number {
   const catalogDifference =
-    (CATALOG_ORDER.get(left.catalog) ?? Number.MAX_SAFE_INTEGER)
-    - (CATALOG_ORDER.get(right.catalog) ?? Number.MAX_SAFE_INTEGER);
+    (CATALOG_ORDER.get(left.catalog) ?? Number.MAX_SAFE_INTEGER) -
+    (CATALOG_ORDER.get(right.catalog) ?? Number.MAX_SAFE_INTEGER);
   return catalogDifference !== 0
     ? catalogDifference
     : left.name.localeCompare(right.name);
@@ -60,7 +71,9 @@ export interface GlassCandidateRow extends GlassCandidateConfig {
 }
 
 /** Creates an unambiguous internal key without changing the persisted payload. */
-export function getGlassCandidateIdentity(candidate: GlassCandidateConfig): string {
+export function getGlassCandidateIdentity(
+  candidate: GlassCandidateConfig,
+): string {
   return `${candidate.catalog}\u0000${candidate.name}`;
 }
 
@@ -119,8 +132,11 @@ export function mergePersistedGlassCandidateRows(
     }
   }
 
-  return sortGlassCandidates([...rowsByIdentity.values()]).map((candidate) =>
-    rowsByIdentity.get(getGlassCandidateIdentity(candidate)) as GlassCandidateRow,
+  return sortGlassCandidates([...rowsByIdentity.values()]).map(
+    (candidate) =>
+      rowsByIdentity.get(
+        getGlassCandidateIdentity(candidate),
+      ) as GlassCandidateRow,
   );
 }
 
@@ -134,15 +150,18 @@ export function getIncumbentGlassCatalog(
   surfaceIndex: number,
   catalogs: AllGlassCatalogsData | undefined,
 ): GlassCatalogName | undefined {
-  const target = surfaceIndex === 0
-    ? model.object
-    : model.surfaces[surfaceIndex - 1];
+  const target =
+    surfaceIndex === 0 ? model.object : model.surfaces[surfaceIndex - 1];
   if (target === undefined) {
     return undefined;
   }
 
   const medium = target.medium.trim();
-  if (medium.toUpperCase() === "REFL" || medium.toLowerCase() === "air" || !Number.isNaN(Number.parseFloat(medium))) {
+  if (
+    medium.toUpperCase() === "REFL" ||
+    medium.toLowerCase() === "air" ||
+    !Number.isNaN(Number.parseFloat(medium))
+  ) {
     return undefined;
   }
   if (CATALOG_NAMES.includes(target.manufacturer as CatalogName)) {
@@ -151,7 +170,10 @@ export function getIncumbentGlassCatalog(
   if (ELIGIBLE_SPECIAL_GLASS_NAME_SET.has(medium)) {
     return "Special";
   }
-  if (target.manufacturer === "" && Object.hasOwn(catalogs?.Custom ?? {}, medium)) {
+  if (
+    target.manufacturer === "" &&
+    Object.hasOwn(catalogs?.Custom ?? {}, medium)
+  ) {
     return "Custom";
   }
   return undefined;

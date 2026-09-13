@@ -65,7 +65,7 @@ test("manually input Sasian Triplet and update system", async ({
     page,
     '[role="dialog"][aria-labelledby="field-modal-title"]',
     1,
-    "0.707"
+    "0.707",
   );
   await fieldModal
     .locator('.ag-row[row-index="1"]')
@@ -78,7 +78,7 @@ test("manually input Sasian Triplet and update system", async ({
     page,
     '[role="dialog"][aria-labelledby="field-modal-title"]',
     2,
-    "1"
+    "1",
   );
   await fieldModal.getByRole("button", { name: "Apply" }).click();
   await fieldModal.waitFor({ state: "hidden", timeout: 5_000 });
@@ -123,26 +123,62 @@ test("manually input Sasian Triplet and update system", async ({
     await insertPrescriptionSurfaceAtEnd(page, prescGrid, surfaceCount);
   }
   // S1: Default, R=23.713, t=4.831, N-LAK9/Schott
-  await editPrescriptionNumberCell(page, prescGrid, 1, "Radius of Curvature", "23.713");
+  await editPrescriptionNumberCell(
+    page,
+    prescGrid,
+    1,
+    "Radius of Curvature",
+    "23.713",
+  );
   await editPrescriptionNumberCell(page, prescGrid, 1, "Thickness", "4.831");
   await setPrescriptionMedium(page, prescGrid, 1, "Schott", "N-LAK9");
   // S2: Default, R=7331.288, t=5.86, air (no medium change)
-  await editPrescriptionNumberCell(page, prescGrid, 2, "Radius of Curvature", "7331.288");
+  await editPrescriptionNumberCell(
+    page,
+    prescGrid,
+    2,
+    "Radius of Curvature",
+    "7331.288",
+  );
   await editPrescriptionNumberCell(page, prescGrid, 2, "Thickness", "5.86");
   // S3: Stop, R=-24.456, t=0.975, N-SF5/Schott
   await selectPrescriptionGridOption(page, prescGrid, 3, "Surface", "Stop");
-  await editPrescriptionNumberCell(page, prescGrid, 3, "Radius of Curvature", "-24.456");
+  await editPrescriptionNumberCell(
+    page,
+    prescGrid,
+    3,
+    "Radius of Curvature",
+    "-24.456",
+  );
   await editPrescriptionNumberCell(page, prescGrid, 3, "Thickness", "0.975");
   await setPrescriptionMedium(page, prescGrid, 3, "Schott", "N-SF5");
   // S4: Default, R=21.896, t=4.822, air
-  await editPrescriptionNumberCell(page, prescGrid, 4, "Radius of Curvature", "21.896");
+  await editPrescriptionNumberCell(
+    page,
+    prescGrid,
+    4,
+    "Radius of Curvature",
+    "21.896",
+  );
   await editPrescriptionNumberCell(page, prescGrid, 4, "Thickness", "4.822");
   // S5: Default, R=86.759, t=3.127, N-LAK9/Schott
-  await editPrescriptionNumberCell(page, prescGrid, 5, "Radius of Curvature", "86.759");
+  await editPrescriptionNumberCell(
+    page,
+    prescGrid,
+    5,
+    "Radius of Curvature",
+    "86.759",
+  );
   await editPrescriptionNumberCell(page, prescGrid, 5, "Thickness", "3.127");
   await setPrescriptionMedium(page, prescGrid, 5, "Schott", "N-LAK9");
   // S6: Default, R=-20.4942, t=41.2365, air
-  await editPrescriptionNumberCell(page, prescGrid, 6, "Radius of Curvature", "-20.4942");
+  await editPrescriptionNumberCell(
+    page,
+    prescGrid,
+    6,
+    "Radius of Curvature",
+    "-20.4942",
+  );
   await editPrescriptionNumberCell(page, prescGrid, 6, "Thickness", "41.2365");
 
   // 5. Click Update System
@@ -159,7 +195,7 @@ test("manually input Sasian Triplet and update system", async ({
   });
 
   // 8. Verify: lens layout image visible
-  await expect(
-    page.locator('img[alt="Lens layout diagram"]')
-  ).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('img[alt="Lens layout diagram"]')).toBeVisible({
+    timeout: 10_000,
+  });
 });

@@ -14,5 +14,7 @@ export interface OptimizationOperandMetadata {
   readonly defaultTarget?: string;
   readonly defaultOptions?: OptimizationOperandOptions;
   readonly expandsByFieldAndWavelength: boolean;
-  readonly getNominalResidualCountPerSample: (options?: OptimizationOperandOptions) => number;
+  readonly getNominalResidualCountPerSample: (
+    options?: OptimizationOperandOptions,
+  ) => number;
 }

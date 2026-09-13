@@ -26,7 +26,10 @@ import {
   quarantineStoredCustomGlassRow,
   readStoredCustomGlassRows,
 } from "@/features/import-custom-glass/lib/customGlassStorage";
-import type { CompleteGlassCatalogsData, UserDefinedMaterialsData } from "@/features/glass-map/types/glassMap";
+import type {
+  CompleteGlassCatalogsData,
+  UserDefinedMaterialsData,
+} from "@/features/glass-map/types/glassMap";
 
 /** Routed content rendered inside the shared application chrome. */
 interface AppShellProps {
@@ -137,16 +140,25 @@ export default function AppShell({ children }: AppShellProps) {
   /** Visibility of the shell-owned generic error modal. */
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   /** Route deferred by the unapplied-optimization navigation guard. */
-  const [pendingNavigationHref, setPendingNavigationHref] = useState<string | undefined>();
+  const [pendingNavigationHref, setPendingNavigationHref] = useState<
+    string | undefined
+  >();
   /** Initial catalog preload lifecycle after Pyodide becomes ready. */
-  const [glassCatalogPreloadStatus, setGlassCatalogPreloadStatus] =
-    useState<GlassCatalogPreloadStatus | undefined>();
+  const [glassCatalogPreloadStatus, setGlassCatalogPreloadStatus] = useState<
+    GlassCatalogPreloadStatus | undefined
+  >();
   /** Blocking catalog preload error displayed by the initialization overlay. */
-  const [glassCatalogPreloadError, setGlassCatalogPreloadError] = useState<string | undefined>();
+  const [glassCatalogPreloadError, setGlassCatalogPreloadError] = useState<
+    string | undefined
+  >();
   /** Persisted custom-glass labels quarantined during startup hydration. */
-  const [quarantinedCustomGlassLabels, setQuarantinedCustomGlassLabels] = useState<readonly string[]>([]);
+  const [quarantinedCustomGlassLabels, setQuarantinedCustomGlassLabels] =
+    useState<readonly string[]>([]);
   /** Complete active Optimization history entry restored when guarded popstate navigation is intercepted. */
-  const activeHistoryEntryRef = useRef<HistoryEntry>({ href: pathname, state: undefined });
+  const activeHistoryEntryRef = useRef<HistoryEntry>({
+    href: pathname,
+    state: undefined,
+  });
   /** Whether catalog preload must keep the blocking overlay visible. */
   const glassCatalogsLoading =
     isReady &&
@@ -155,14 +167,15 @@ export default function AppShell({ children }: AppShellProps) {
     glassCatalogPreloadStatus !== "loaded" &&
     glassCatalogPreloadStatus !== "error";
   /** Whether catalogs are available from the store or completed initial preload. */
-  const glassCatalogsLoaded = catalogsData !== undefined || glassCatalogPreloadStatus === "loaded";
+  const glassCatalogsLoaded =
+    catalogsData !== undefined || glassCatalogPreloadStatus === "loaded";
 
   /** Returns whether a target route must be deferred behind the unapplied-result modal. */
   const shouldWarnBeforeLeavingOptimization = useCallback(
     (targetHref: string) =>
-      pathname === "/optimization"
-      && targetHref !== "/optimization"
-      && hasUnappliedOptimizationResult,
+      pathname === "/optimization" &&
+      targetHref !== "/optimization" &&
+      hasUnappliedOptimizationResult,
     [hasUnappliedOptimizationResult, pathname],
   );
 
@@ -216,13 +229,25 @@ export default function AppShell({ children }: AppShellProps) {
 
     if (proxy === undefined) return;
     try {
-      await applyOptimizationModelToEditor({ model, lensStore, specsStore, proxy });
+      await applyOptimizationModelToEditor({
+        model,
+        lensStore,
+        specsStore,
+        proxy,
+      });
       optimizationStore.getState().markOptimizationResultAppliedToEditor();
       proceedToHref(href);
     } catch {
       setErrorModalOpen(true);
     }
-  }, [lensStore, optimizationStore, pendingNavigationHref, proceedToHref, proxy, specsStore]);
+  }, [
+    lensStore,
+    optimizationStore,
+    pendingNavigationHref,
+    proceedToHref,
+    proxy,
+    specsStore,
+  ]);
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -247,9 +272,9 @@ export default function AppShell({ children }: AppShellProps) {
       const previousPathname = getPathnameFromHref(activeEntry.href);
       const nextPathname = getPathnameFromHref(nextHref);
       if (
-        previousPathname === "/optimization"
-        && nextPathname !== "/optimization"
-        && optimizationStore.getState().hasUnappliedOptimizationResult
+        previousPathname === "/optimization" &&
+        nextPathname !== "/optimization" &&
+        optimizationStore.getState().hasUnappliedOptimizationResult
       ) {
         event.stopImmediatePropagation();
         window.history.pushState(activeEntry.state, "", activeEntry.href);
@@ -264,7 +289,8 @@ export default function AppShell({ children }: AppShellProps) {
     };
 
     window.addEventListener("popstate", handler, { capture: true });
-    return () => window.removeEventListener("popstate", handler, { capture: true });
+    return () =>
+      window.removeEventListener("popstate", handler, { capture: true });
   }, [optimizationStore]);
 
   useEffect(() => {
@@ -297,19 +323,28 @@ export default function AppShell({ children }: AppShellProps) {
         const storedRows = await readStoredCustomGlassRows().catch(() => []);
         for (const row of storedRows) {
           if (!isPersistedCustomGlassRow(row)) {
-            const label = typeof row === "object" && row !== null && "label" in row && typeof row.label === "string"
-              ? row.label
-              : "unlabeled";
+            const label =
+              typeof row === "object" &&
+              row !== null &&
+              "label" in row &&
+              typeof row.label === "string"
+                ? row.label
+                : "unlabeled";
             quarantinedLabels.push(label);
-            await quarantineStoredCustomGlassRow(row, label).catch(() => undefined);
+            await quarantineStoredCustomGlassRow(row, label).catch(
+              () => undefined,
+            );
             continue;
           }
 
           try {
-            const added: UserDefinedMaterialsData = await proxy.addUserDefinedGlasses([{
-              name: row.label,
-              pairs: row.pairs,
-            }]);
+            const added: UserDefinedMaterialsData =
+              await proxy.addUserDefinedGlasses([
+                {
+                  name: row.label,
+                  pairs: row.pairs,
+                },
+              ]);
             hydratedData.Custom = {
               ...hydratedData.Custom,
               ...added,
@@ -345,7 +380,7 @@ export default function AppShell({ children }: AppShellProps) {
       isReady,
       openErrorModal: () => setErrorModalOpen(true),
     }),
-    [proxy, isReady]
+    [proxy, isReady],
   );
   /** Stable catalog context combining store data with shell-local preload state. */
   const glassCatalogContextValue = useMemo(
@@ -388,12 +423,13 @@ export default function AppShell({ children }: AppShellProps) {
       glassMapStore,
       lookupMaps,
       proxy,
-    ]
+    ],
   );
   /** Whether Pyodide or catalog initialization still blocks the application. */
   const showLoadingOverlay =
     !isReady ||
-    (proxy !== undefined && (glassCatalogsLoading || glassCatalogPreloadError !== undefined));
+    (proxy !== undefined &&
+      (glassCatalogsLoading || glassCatalogPreloadError !== undefined));
   /** Active Pyodide milestone or the fixed catalog-preload milestone. */
   const overlayProgress =
     isReady && proxy !== undefined && glassCatalogsLoading
@@ -410,7 +446,10 @@ export default function AppShell({ children }: AppShellProps) {
         <span className="text-center text-sm text-gray-700 dark:text-gray-300">
           {overlayProgress.status}
         </span>
-        <Progress value={overlayProgress.value} ariaLabel="Initialization progress" />
+        <Progress
+          value={overlayProgress.value}
+          ariaLabel="Initialization progress"
+        />
       </div>
     );
 

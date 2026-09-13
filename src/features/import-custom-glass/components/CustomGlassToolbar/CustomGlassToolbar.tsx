@@ -81,12 +81,46 @@ export function CustomGlassToolbar({
           event.target.value = "";
         }}
       />
-      <Button variant="secondary" aria-label="Import from JSON" onClick={() => jsonFileInputRef.current?.click()}>Import from JSON</Button>
-      <Button variant="secondary" aria-label="Import from CSV Files" onClick={() => csvFileInputRef.current?.click()}>Import from CSV Files</Button>
-      <Button variant="primary" aria-label="Add Glass" onClick={onAdd}>Add Glass</Button>
-      <Button variant="secondary" aria-label="Edit Glass" disabled={selectedCount !== 1} onClick={onEdit}>Edit Glass</Button>
-      <Button variant="secondary" aria-label="Download JSON" onClick={onDownloadJson}>Download JSON</Button>
-      <Button variant="danger" aria-label="Delete Glass" disabled={selectedCount === 0} onClick={onDelete}>Delete Glass</Button>
+      <Button
+        variant="secondary"
+        aria-label="Import from JSON"
+        onClick={() => jsonFileInputRef.current?.click()}
+      >
+        Import from JSON
+      </Button>
+      <Button
+        variant="secondary"
+        aria-label="Import from CSV Files"
+        onClick={() => csvFileInputRef.current?.click()}
+      >
+        Import from CSV Files
+      </Button>
+      <Button variant="primary" aria-label="Add Glass" onClick={onAdd}>
+        Add Glass
+      </Button>
+      <Button
+        variant="secondary"
+        aria-label="Edit Glass"
+        disabled={selectedCount !== 1}
+        onClick={onEdit}
+      >
+        Edit Glass
+      </Button>
+      <Button
+        variant="secondary"
+        aria-label="Download JSON"
+        onClick={onDownloadJson}
+      >
+        Download JSON
+      </Button>
+      <Button
+        variant="danger"
+        aria-label="Delete Glass"
+        disabled={selectedCount === 0}
+        onClick={onDelete}
+      >
+        Delete Glass
+      </Button>
     </div>
   );
 }

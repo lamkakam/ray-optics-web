@@ -44,43 +44,57 @@ describe("optimization modal helpers", () => {
       const firstRule = jest.fn(() => "First error");
       const secondRule = jest.fn(() => "Second error");
 
-      expect(validateVariableBounds("Radius", "10", "5", [firstRule, secondRule])).toBe("First error");
+      expect(
+        validateVariableBounds("Radius", "10", "5", [firstRule, secondRule]),
+      ).toBe("First error");
       expect(secondRule).not.toHaveBeenCalled();
     });
 
     it("rejects non-finite bounds with the shared min/max rule", () => {
-      expect(validateVariableBounds("Thickness", "foo", "5", [minLessThanMaxRule])).toBe(
-        "Thickness variable bounds must have Min. less than Max.",
-      );
-      expect(validateVariableBounds("Thickness", "1", "Infinity", [minLessThanMaxRule])).toBe(
-        "Thickness variable bounds must have Min. less than Max.",
-      );
-      expect(validateVariableBounds("Thickness", "Infinity", "5", [minLessThanMaxRule])).toBe(
-        "Thickness variable bounds must have Min. less than Max.",
-      );
-      expect(validateVariableBounds("Thickness", "1", "NaN", [minLessThanMaxRule])).toBe(
-        "Thickness variable bounds must have Min. less than Max.",
-      );
+      expect(
+        validateVariableBounds("Thickness", "foo", "5", [minLessThanMaxRule]),
+      ).toBe("Thickness variable bounds must have Min. less than Max.");
+      expect(
+        validateVariableBounds("Thickness", "1", "Infinity", [
+          minLessThanMaxRule,
+        ]),
+      ).toBe("Thickness variable bounds must have Min. less than Max.");
+      expect(
+        validateVariableBounds("Thickness", "Infinity", "5", [
+          minLessThanMaxRule,
+        ]),
+      ).toBe("Thickness variable bounds must have Min. less than Max.");
+      expect(
+        validateVariableBounds("Thickness", "1", "NaN", [minLessThanMaxRule]),
+      ).toBe("Thickness variable bounds must have Min. less than Max.");
     });
 
     it("rejects min greater than or equal to max with the shared min/max rule", () => {
-      expect(validateVariableBounds("Radius", "5", "5", [minLessThanMaxRule])).toBe(
-        "Radius variable bounds must have Min. less than Max.",
-      );
-      expect(validateVariableBounds("Radius", "6", "5", [minLessThanMaxRule])).toBe(
-        "Radius variable bounds must have Min. less than Max.",
-      );
+      expect(
+        validateVariableBounds("Radius", "5", "5", [minLessThanMaxRule]),
+      ).toBe("Radius variable bounds must have Min. less than Max.");
+      expect(
+        validateVariableBounds("Radius", "6", "5", [minLessThanMaxRule]),
+      ).toBe("Radius variable bounds must have Min. less than Max.");
     });
 
     it("accepts finite bounds with min less than max", () => {
-      expect(validateVariableBounds("Thickness", "1", "5", [minLessThanMaxRule])).toBeUndefined();
+      expect(
+        validateVariableBounds("Thickness", "1", "5", [minLessThanMaxRule]),
+      ).toBeUndefined();
     });
 
     it("rejects curvature-radius bounds that straddle zero", () => {
-      expect(validateVariableBounds("Radius", "-5", "5", [curvatureRadiusNoZeroStraddleRule])).toBe(
-        "Radius variable bounds must stay on one side of 0.",
-      );
-      expect(validateVariableBounds("Radius", "-5", "-1", [curvatureRadiusNoZeroStraddleRule])).toBeUndefined();
+      expect(
+        validateVariableBounds("Radius", "-5", "5", [
+          curvatureRadiusNoZeroStraddleRule,
+        ]),
+      ).toBe("Radius variable bounds must stay on one side of 0.");
+      expect(
+        validateVariableBounds("Radius", "-5", "-1", [
+          curvatureRadiusNoZeroStraddleRule,
+        ]),
+      ).toBeUndefined();
     });
   });
 
@@ -136,7 +150,9 @@ describe("optimization modal helpers", () => {
       { value: 2, label: "2" },
     ]);
     expect(getThicknessPickupSourceSurfaceOptions(0, 1)).toEqual([]);
-    expect(getThicknessPickupSourceSurfaceOptions(2, 1)).toEqual([{ value: 2, label: "2" }]);
+    expect(getThicknessPickupSourceSurfaceOptions(2, 1)).toEqual([
+      { value: 2, label: "2" },
+    ]);
   });
 
   it("converts a radius mode into a draft", () => {
@@ -155,8 +171,18 @@ describe("optimization modal helpers", () => {
   });
 
   it("converts each committed radius mode into its matching draft shape", () => {
-    expect(toRadiusModeDraft({ surfaceIndex: 1, mode: "constant" })).toEqual({ mode: "constant" });
-    expect(toRadiusModeDraft({ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "2", scale: "-1", offset: "3" })).toEqual({
+    expect(toRadiusModeDraft({ surfaceIndex: 1, mode: "constant" })).toEqual({
+      mode: "constant",
+    });
+    expect(
+      toRadiusModeDraft({
+        surfaceIndex: 1,
+        mode: "pickup",
+        sourceSurfaceIndex: "2",
+        scale: "-1",
+        offset: "3",
+      }),
+    ).toEqual({
       mode: "pickup",
       sourceSurfaceIndex: "2",
       scale: "-1",
@@ -181,6 +207,8 @@ describe("optimization modal helpers", () => {
 
     expect(serializeRadiusMode(variableMode)).toBe("variable:-5:-1");
     expect(serializeRadiusMode(pickupMode)).toBe("pickup:1:2:0.5");
-    expect(serializeRadiusMode({ surfaceIndex: 1, mode: "constant" })).toBe("constant");
+    expect(serializeRadiusMode({ surfaceIndex: 1, mode: "constant" })).toBe(
+      "constant",
+    );
   });
 });

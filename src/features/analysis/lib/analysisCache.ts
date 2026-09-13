@@ -20,7 +20,10 @@ type ModelKeys = Partial<Record<ImagePoint, AnalysisCacheKey>>;
 let keyRegistry = new WeakMap<OpticalModel, ModelKeys>();
 const cache = new LRUCache<AnalysisCacheKey, CacheEntry>({ max: 3 });
 
-function canonicalKey(model: OpticalModel, imagePoint: ImagePoint): AnalysisCacheKey {
+function canonicalKey(
+  model: OpticalModel,
+  imagePoint: ImagePoint,
+): AnalysisCacheKey {
   let modelKeys = keyRegistry.get(model);
   if (modelKeys === undefined) {
     modelKeys = {};

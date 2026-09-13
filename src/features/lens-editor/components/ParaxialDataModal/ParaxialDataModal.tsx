@@ -59,13 +59,23 @@ function formatAttributeKey(key: string): string {
  *   within the dialog's existing `90dvh` limit.
  * - The fixed-footer Ok button is the sole dismissal action; backdrop clicks and Escape do not close it.
  */
-export function ParaxialDataModal({ isOpen, data, onClose }: ParaxialDataModalProps) {
+export function ParaxialDataModal({
+  isOpen,
+  data,
+  onClose,
+}: ParaxialDataModalProps) {
   const rows = Object.entries(data).map(([key, value]) => {
     const readableLabel = PARAXIAL_ATTRIBUTE_LABELS[key];
     const keyChip = <Chip key={`${key}-key`}>{formatAttributeKey(key)}</Chip>;
-    const attribute = readableLabel === undefined
-      ? keyChip
-      : <span key={`${key}-label`} className="inline-flex items-center gap-2">{readableLabel}{keyChip}</span>;
+    const attribute =
+      readableLabel === undefined ? (
+        keyChip
+      ) : (
+        <span key={`${key}-label`} className="inline-flex items-center gap-2">
+          {readableLabel}
+          {keyChip}
+        </span>
+      );
 
     return [attribute, formatOptionalSixDecimal({ value })] as const;
   });
@@ -76,11 +86,13 @@ export function ParaxialDataModal({ isOpen, data, onClose }: ParaxialDataModalPr
       title="Paraxial Data"
       titleId="paraxial-data-modal-title"
       size="lg"
-      footer={(
+      footer={
         <div className="flex justify-end">
-          <Button variant="primary" onClick={onClose}>Ok</Button>
+          <Button variant="primary" onClick={onClose}>
+            Ok
+          </Button>
         </div>
-      )}
+      }
     >
       <Table
         headers={["Attribute", "Data"]}

@@ -9,7 +9,9 @@ jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mathjax-context">{children}</div>
   ),
-  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  MathJax: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 import { CATALOG_NAMES } from "@/features/glass-map/types/glassMap";
 
@@ -40,30 +42,46 @@ beforeEach(() => jest.clearAllMocks());
 describe("GlassMapControls", () => {
   it("renders plot type radios", () => {
     render(<GlassMapControls {...defaultProps} />);
-    expect(screen.getByRole("radio", { name: /refractive index/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /partial dispersion/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: /refractive index/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: /partial dispersion/i }),
+    ).toBeInTheDocument();
   });
 
   it("refractive index radio is checked when plotType=refractiveIndex", () => {
     render(<GlassMapControls {...defaultProps} />);
-    expect(screen.getByRole("radio", { name: /refractive index/i })).toBeChecked();
+    expect(
+      screen.getByRole("radio", { name: /refractive index/i }),
+    ).toBeChecked();
   });
 
   it("partial dispersion radio is checked when plotType=partialDispersion", () => {
     render(<GlassMapControls {...defaultProps} plotType="partialDispersion" />);
-    expect(screen.getByRole("radio", { name: /partial dispersion/i })).toBeChecked();
+    expect(
+      screen.getByRole("radio", { name: /partial dispersion/i }),
+    ).toBeChecked();
   });
 
   it("calls onPlotTypeChange with partialDispersion when clicked", async () => {
     render(<GlassMapControls {...defaultProps} />);
-    await userEvent.click(screen.getByRole("radio", { name: /partial dispersion/i }));
-    expect(defaultProps.onPlotTypeChange).toHaveBeenCalledWith("partialDispersion");
+    await userEvent.click(
+      screen.getByRole("radio", { name: /partial dispersion/i }),
+    );
+    expect(defaultProps.onPlotTypeChange).toHaveBeenCalledWith(
+      "partialDispersion",
+    );
   });
 
   it("calls onPlotTypeChange with refractiveIndex when clicked", async () => {
     render(<GlassMapControls {...defaultProps} plotType="partialDispersion" />);
-    await userEvent.click(screen.getByRole("radio", { name: /refractive index/i }));
-    expect(defaultProps.onPlotTypeChange).toHaveBeenCalledWith("refractiveIndex");
+    await userEvent.click(
+      screen.getByRole("radio", { name: /refractive index/i }),
+    );
+    expect(defaultProps.onPlotTypeChange).toHaveBeenCalledWith(
+      "refractiveIndex",
+    );
   });
 
   it("renders d/e radios for abbeLine", () => {
@@ -97,13 +115,17 @@ describe("GlassMapControls", () => {
 
   it("hides partial dispersion type selector when plotType=refractiveIndex", () => {
     render(<GlassMapControls {...defaultProps} />);
-    expect(screen.queryByRole("radio", { name: /P_g,F/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("radio", { name: /P_g,F/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("calls onPartialDispersionTypeChange with P_Fd when clicked", async () => {
     render(<GlassMapControls {...defaultProps} plotType="partialDispersion" />);
     await userEvent.click(screen.getByRole("radio", { name: /P_F,d/i }));
-    expect(defaultProps.onPartialDispersionTypeChange).toHaveBeenCalledWith("P_Fd");
+    expect(defaultProps.onPartialDispersionTypeChange).toHaveBeenCalledWith(
+      "P_Fd",
+    );
   });
 
   it("renders a checkbox for each catalog", () => {
@@ -119,7 +141,12 @@ describe("GlassMapControls", () => {
   });
 
   it("CDGM checkbox is unchecked when disabled", () => {
-    render(<GlassMapControls {...defaultProps} enabledCatalogs={{ ...allEnabled, CDGM: false }} />);
+    render(
+      <GlassMapControls
+        {...defaultProps}
+        enabledCatalogs={{ ...allEnabled, CDGM: false }}
+      />,
+    );
     expect(screen.getByRole("checkbox", { name: "CDGM" })).not.toBeChecked();
   });
 

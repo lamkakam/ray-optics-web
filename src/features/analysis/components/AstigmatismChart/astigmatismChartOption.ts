@@ -30,7 +30,12 @@ export function buildAstigmatismOption(
   chartHeight: number,
   textColor: string,
 ) {
-  const axesAndGrid = buildFieldCategoryLineAxesAndGrid(astigmatismCurveData, chartWidth, chartHeight, textColor);
+  const axesAndGrid = buildFieldCategoryLineAxesAndGrid(
+    astigmatismCurveData,
+    chartWidth,
+    chartHeight,
+    textColor,
+  );
 
   return {
     animation: false,

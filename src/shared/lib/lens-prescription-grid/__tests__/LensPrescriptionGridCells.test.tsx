@@ -8,7 +8,11 @@ import {
   MediumCell,
   formatApertureLabel,
 } from "@/shared/lib/lens-prescription-grid";
-import type { ClearAperture, DecenterConfig, EdgeAperture } from "@/shared/lib/types/opticalModel";
+import type {
+  ClearAperture,
+  DecenterConfig,
+  EdgeAperture,
+} from "@/shared/lib/types/opticalModel";
 
 const baseDecenter = {
   alpha: 0,
@@ -20,18 +24,29 @@ const baseDecenter = {
 
 describe("LensPrescriptionGridCells", () => {
   it("formats aperture labels", () => {
-    const circularClear = (offsetX: number, offsetY: number): ClearAperture => ({
+    const circularClear = (
+      offsetX: number,
+      offsetY: number,
+    ): ClearAperture => ({
       shape: "circular",
       offsetX,
       offsetY,
     });
-    const annularClear = (obstructionRadius: number, offsetX: number, offsetY: number): ClearAperture => ({
+    const annularClear = (
+      obstructionRadius: number,
+      offsetX: number,
+      offsetY: number,
+    ): ClearAperture => ({
       shape: "annular",
       obstructionRadius,
       offsetX,
       offsetY,
     });
-    const circularEdge = (radius: number, offsetX: number, offsetY: number): EdgeAperture => ({
+    const circularEdge = (
+      radius: number,
+      offsetX: number,
+      offsetY: number,
+    ): EdgeAperture => ({
       shape: "circular",
       radius,
       offsetX,
@@ -40,67 +55,110 @@ describe("LensPrescriptionGridCells", () => {
 
     expect(formatApertureLabel(undefined, undefined)).toBe("Default");
     expect(formatApertureLabel(circularClear(0, 0), undefined)).toBe("Default");
-    expect(formatApertureLabel(circularClear(-1.25, 2.5), undefined)).toBe("Cir offset (-1.25, 2.5)");
-    expect(formatApertureLabel(circularClear(-1.25, 0), undefined)).toBe("Cir offset (-1.25, 0)");
-    expect(formatApertureLabel(circularClear(0, 2.5), undefined)).toBe("Cir offset (0, 2.5)");
-    expect(formatApertureLabel(annularClear(1.5, 0, 0), undefined)).toBe("Annu obs 1.5");
-    expect(formatApertureLabel(annularClear(1.5, -1, 2), undefined)).toBe("Annu obs 1.5, offset (-1, 2)");
-    expect(formatApertureLabel(undefined, circularEdge(3.25, 0, 0))).toBe("Default; Edge Cir 3.25");
+    expect(formatApertureLabel(circularClear(-1.25, 2.5), undefined)).toBe(
+      "Cir offset (-1.25, 2.5)",
+    );
+    expect(formatApertureLabel(circularClear(-1.25, 0), undefined)).toBe(
+      "Cir offset (-1.25, 0)",
+    );
+    expect(formatApertureLabel(circularClear(0, 2.5), undefined)).toBe(
+      "Cir offset (0, 2.5)",
+    );
+    expect(formatApertureLabel(annularClear(1.5, 0, 0), undefined)).toBe(
+      "Annu obs 1.5",
+    );
+    expect(formatApertureLabel(annularClear(1.5, -1, 2), undefined)).toBe(
+      "Annu obs 1.5, offset (-1, 2)",
+    );
+    expect(formatApertureLabel(undefined, circularEdge(3.25, 0, 0))).toBe(
+      "Default; Edge Cir 3.25",
+    );
     expect(formatApertureLabel(undefined, circularEdge(3.25, 0.5, -0.75))).toBe(
       "Default; Edge Cir 3.25, offset (0.5, -0.75)",
     );
     expect(formatApertureLabel(undefined, circularEdge(3.25, 0, -0.75))).toBe(
       "Default; Edge Cir 3.25, offset (0, -0.75)",
     );
-    expect(formatApertureLabel(annularClear(1.5, -1, 2), circularEdge(3.25, 0.5, -0.75))).toBe(
-      "Annu obs 1.5, offset (-1, 2); Edge Cir 3.25, offset (0.5, -0.75)",
+    expect(
+      formatApertureLabel(
+        annularClear(1.5, -1, 2),
+        circularEdge(3.25, 0.5, -0.75),
+      ),
+    ).toBe("Annu obs 1.5, offset (-1, 2); Edge Cir 3.25, offset (0.5, -0.75)");
+    expect(
+      formatApertureLabel(
+        {
+          shape: "rectangular",
+          xHalfWidth: 4,
+          yHalfWidth: 2,
+          rotation: 0,
+          offsetX: 0,
+          offsetY: 0,
+        },
+        undefined,
+      ),
+    ).toBe("Rect (4,2)");
+    expect(
+      formatApertureLabel(
+        {
+          shape: "rectangular",
+          xHalfWidth: 4,
+          yHalfWidth: 2,
+          rotation: 15,
+          offsetX: -1,
+          offsetY: 2,
+        },
+        {
+          shape: "rectangular",
+          xHalfWidth: 5,
+          yHalfWidth: 3,
+          rotation: -30,
+          offsetX: 0.5,
+          offsetY: -0.75,
+        },
+      ),
+    ).toBe(
+      "Rect (4,2), rot 15°, offset (-1, 2); Edge Rect (5,3), rot -30°, offset (0.5, -0.75)",
     );
-    expect(formatApertureLabel({
-      shape: "rectangular",
-      xHalfWidth: 4,
-      yHalfWidth: 2,
-      rotation: 0,
-      offsetX: 0,
-      offsetY: 0,
-    }, undefined)).toBe("Rect (4,2)");
-    expect(formatApertureLabel({
-      shape: "rectangular",
-      xHalfWidth: 4,
-      yHalfWidth: 2,
-      rotation: 15,
-      offsetX: -1,
-      offsetY: 2,
-    }, {
-      shape: "rectangular",
-      xHalfWidth: 5,
-      yHalfWidth: 3,
-      rotation: -30,
-      offsetX: 0.5,
-      offsetY: -0.75,
-    })).toBe("Rect (4,2), rot 15°, offset (-1, 2); Edge Rect (5,3), rot -30°, offset (0.5, -0.75)");
-    expect(formatApertureLabel({
-      shape: "ronchi",
-      lpmm: 10,
-      rotation: 0,
-      offsetX: 0,
-      offsetY: 0,
-    }, undefined)).toBe("Ronchi 10 lp/mm");
-    expect(formatApertureLabel({
-      shape: "ronchi",
-      lpmm: 12.5,
-      rotation: 22,
-      offsetX: -1,
-      offsetY: 2,
-    }, undefined)).toBe("Ronchi 12.5 lp/mm, rot 22°, offset (-1, 2)");
+    expect(
+      formatApertureLabel(
+        {
+          shape: "ronchi",
+          lpmm: 10,
+          rotation: 0,
+          offsetX: 0,
+          offsetY: 0,
+        },
+        undefined,
+      ),
+    ).toBe("Ronchi 10 lp/mm");
+    expect(
+      formatApertureLabel(
+        {
+          shape: "ronchi",
+          lpmm: 12.5,
+          rotation: 22,
+          offsetX: -1,
+          offsetY: 2,
+        },
+        undefined,
+      ),
+    ).toBe("Ronchi 12.5 lp/mm, rot 22°, offset (-1, 2)");
   });
 
   it("renders aperture labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
     const { rerender } = render(
-      <ApertureCell clearAperture={undefined} edgeAperture={undefined} onOpenModal={onOpenModal} />,
+      <ApertureCell
+        clearAperture={undefined}
+        edgeAperture={undefined}
+        onOpenModal={onOpenModal}
+      />,
     );
 
-    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Default");
+    expect(
+      screen.getByRole("button", { name: "Edit aperture" }),
+    ).toHaveTextContent("Default");
 
     rerender(
       <ApertureCell
@@ -109,126 +167,232 @@ describe("LensPrescriptionGridCells", () => {
         onOpenModal={onOpenModal}
       />,
     );
-    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent(
-      "Cir offset (-1, 2); Edge Cir 4",
-    );
+    expect(
+      screen.getByRole("button", { name: "Edit aperture" }),
+    ).toHaveTextContent("Cir offset (-1, 2); Edge Cir 4");
 
-    await userEvent.click(screen.getByRole("button", { name: "Edit aperture" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit aperture" }),
+    );
     expect(onOpenModal).toHaveBeenCalledTimes(1);
   });
 
   it("renders aspherical labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
-    const { rerender } = render(<AsphericalCell aspherical={undefined} onOpenModal={onOpenModal} />);
+    const { rerender } = render(
+      <AsphericalCell aspherical={undefined} onOpenModal={onOpenModal} />,
+    );
 
-    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveTextContent("None");
-
-    rerender(<AsphericalCell aspherical={{ kind: "Conic", conicConstant: -1 }} onOpenModal={onOpenModal} />);
-    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveTextContent("Conic");
+    expect(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    ).toHaveTextContent("None");
 
     rerender(
       <AsphericalCell
-        aspherical={{ kind: "EvenAspherical", conicConstant: -1, polynomialCoefficients: [0.1] }}
+        aspherical={{ kind: "Conic", conicConstant: -1 }}
         onOpenModal={onOpenModal}
       />,
     );
-    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveTextContent("Even Aspherical");
+    expect(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    ).toHaveTextContent("Conic");
 
-    await userEvent.click(screen.getByRole("button", { name: "Edit aspherical parameters" }));
+    rerender(
+      <AsphericalCell
+        aspherical={{
+          kind: "EvenAspherical",
+          conicConstant: -1,
+          polynomialCoefficients: [0.1],
+        }}
+        onOpenModal={onOpenModal}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    ).toHaveTextContent("Even Aspherical");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    );
     expect(onOpenModal).toHaveBeenCalledTimes(1);
   });
 
   it("renders decenter strategy labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
-    const { rerender } = render(<DecenterCell decenter={undefined} onOpenModal={onOpenModal} />);
+    const { rerender } = render(
+      <DecenterCell decenter={undefined} onOpenModal={onOpenModal} />,
+    );
 
-    expect(screen.getByRole("button", { name: "Edit decenter and tilt" })).toHaveTextContent("None");
+    expect(
+      screen.getByRole("button", { name: "Edit decenter and tilt" }),
+    ).toHaveTextContent("None");
 
-    for (const strategy of ["bend", "dec and return", "decenter", "reverse"] as const) {
+    for (const strategy of [
+      "bend",
+      "dec and return",
+      "decenter",
+      "reverse",
+    ] as const) {
       rerender(
         <DecenterCell
           decenter={{ ...baseDecenter, coordinateSystemStrategy: strategy }}
           onOpenModal={onOpenModal}
         />,
       );
-      expect(screen.getByRole("button", { name: "Edit decenter and tilt" })).toHaveTextContent(strategy);
+      expect(
+        screen.getByRole("button", { name: "Edit decenter and tilt" }),
+      ).toHaveTextContent(strategy);
     }
 
-    await userEvent.click(screen.getByRole("button", { name: "Edit decenter and tilt" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit decenter and tilt" }),
+    );
     expect(onOpenModal).toHaveBeenCalledTimes(1);
   });
 
   it("renders diffraction grating labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
-    const { rerender } = render(<DiffractionGratingCell diffractionGrating={undefined} onOpenModal={onOpenModal} />);
+    const { rerender } = render(
+      <DiffractionGratingCell
+        diffractionGrating={undefined}
+        onOpenModal={onOpenModal}
+      />,
+    );
 
-    expect(screen.getByRole("button", { name: "Edit diffraction grating" })).toHaveTextContent("None");
+    expect(
+      screen.getByRole("button", { name: "Edit diffraction grating" }),
+    ).toHaveTextContent("None");
 
-    rerender(<DiffractionGratingCell diffractionGrating={{ lpmm: 600, order: 1 }} onOpenModal={onOpenModal} />);
-    expect(screen.getByRole("button", { name: "Edit diffraction grating" })).toHaveTextContent("600 lp/mm");
+    rerender(
+      <DiffractionGratingCell
+        diffractionGrating={{ lpmm: 600, order: 1 }}
+        onOpenModal={onOpenModal}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Edit diffraction grating" }),
+    ).toHaveTextContent("600 lp/mm");
 
-    await userEvent.click(screen.getByRole("button", { name: "Edit diffraction grating" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Edit diffraction grating" }),
+    );
     expect(onOpenModal).toHaveBeenCalledTimes(1);
   });
 
   it("keeps tooltip-backed action cells touch-scroll safe", () => {
-    const { rerender } = render(<MediumCell medium="AIR" onOpenModal={() => {}} />);
-    expect(screen.getByRole("button", { name: "Edit medium" }).parentElement?.style.touchAction).not.toBe("none");
+    const { rerender } = render(
+      <MediumCell medium="AIR" onOpenModal={() => {}} />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Edit medium" }).parentElement?.style
+        .touchAction,
+    ).not.toBe("none");
 
     rerender(<AsphericalCell aspherical={undefined} onOpenModal={() => {}} />);
     expect(
-      screen.getByRole("button", { name: "Edit aspherical parameters" }).parentElement?.style.touchAction,
+      screen.getByRole("button", { name: "Edit aspherical parameters" })
+        .parentElement?.style.touchAction,
     ).not.toBe("none");
 
     rerender(<DecenterCell decenter={undefined} onOpenModal={() => {}} />);
-    expect(screen.getByRole("button", { name: "Edit decenter and tilt" }).parentElement?.style.touchAction).not.toBe(
-      "none",
-    );
+    expect(
+      screen.getByRole("button", { name: "Edit decenter and tilt" })
+        .parentElement?.style.touchAction,
+    ).not.toBe("none");
 
-    rerender(<DiffractionGratingCell diffractionGrating={undefined} onOpenModal={() => {}} />);
-    expect(screen.getByRole("button", { name: "Edit diffraction grating" }).parentElement?.style.touchAction).not.toBe(
-      "none",
+    rerender(
+      <DiffractionGratingCell
+        diffractionGrating={undefined}
+        onOpenModal={() => {}}
+      />,
     );
+    expect(
+      screen.getByRole("button", { name: "Edit diffraction grating" })
+        .parentElement?.style.touchAction,
+    ).not.toBe("none");
   });
 
   it("uses single-line ellipsis for overflowing action cell text", () => {
-    const expectedClasses = ["overflow-hidden", "text-ellipsis", "whitespace-nowrap"];
-    const { rerender } = render(<MediumCell medium="N-SF11 with a very long catalog display name" onOpenModal={() => {}} />);
+    const expectedClasses = [
+      "overflow-hidden",
+      "text-ellipsis",
+      "whitespace-nowrap",
+    ];
+    const { rerender } = render(
+      <MediumCell
+        medium="N-SF11 with a very long catalog display name"
+        onOpenModal={() => {}}
+      />,
+    );
 
-    expect(screen.getByRole("button", { name: "Edit medium" })).toHaveClass(...expectedClasses);
+    expect(screen.getByRole("button", { name: "Edit medium" })).toHaveClass(
+      ...expectedClasses,
+    );
 
     rerender(
       <ApertureCell
         clearAperture={{ shape: "circular", offsetX: -12.345, offsetY: 67.89 }}
-        edgeAperture={{ shape: "circular", radius: 123.456, offsetX: 0.12, offsetY: -0.34 }}
+        edgeAperture={{
+          shape: "circular",
+          radius: 123.456,
+          offsetX: 0.12,
+          offsetY: -0.34,
+        }}
         onOpenModal={() => {}}
       />,
     );
-    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveClass(...expectedClasses);
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveClass(
+      ...expectedClasses,
+    );
 
     rerender(
       <AsphericalCell
-        aspherical={{ kind: "EvenAspherical", conicConstant: -1, polynomialCoefficients: [0.1] }}
+        aspherical={{
+          kind: "EvenAspherical",
+          conicConstant: -1,
+          polynomialCoefficients: [0.1],
+        }}
         onOpenModal={() => {}}
       />,
     );
-    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveClass(...expectedClasses);
+    expect(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }),
+    ).toHaveClass(...expectedClasses);
 
     rerender(
       <DecenterCell
-        decenter={{ ...baseDecenter, coordinateSystemStrategy: "dec and return" }}
+        decenter={{
+          ...baseDecenter,
+          coordinateSystemStrategy: "dec and return",
+        }}
         onOpenModal={() => {}}
       />,
     );
-    expect(screen.getByRole("button", { name: "Edit decenter and tilt" })).toHaveClass(...expectedClasses);
+    expect(
+      screen.getByRole("button", { name: "Edit decenter and tilt" }),
+    ).toHaveClass(...expectedClasses);
 
-    rerender(<DiffractionGratingCell diffractionGrating={{ lpmm: 1200, order: 1 }} onOpenModal={() => {}} />);
-    expect(screen.getByRole("button", { name: "Edit diffraction grating" })).toHaveClass(...expectedClasses);
+    rerender(
+      <DiffractionGratingCell
+        diffractionGrating={{ lpmm: 1200, order: 1 }}
+        onOpenModal={() => {}}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Edit diffraction grating" }),
+    ).toHaveClass(...expectedClasses);
   });
 
   it("keeps portal tooltips mouse-hover only for the full trigger", () => {
-    render(<DiffractionGratingCell diffractionGrating={{ lpmm: 600, order: 1 }} onOpenModal={() => {}} />);
-    const tooltipTrigger = screen.getByRole("button", { name: "Edit diffraction grating" }).parentElement!;
+    render(
+      <DiffractionGratingCell
+        diffractionGrating={{ lpmm: 600, order: 1 }}
+        onOpenModal={() => {}}
+      />,
+    );
+    const tooltipTrigger = screen.getByRole("button", {
+      name: "Edit diffraction grating",
+    }).parentElement!;
 
     fireEvent.touchStart(tooltipTrigger);
     fireEvent.mouseEnter(tooltipTrigger);
@@ -247,22 +411,40 @@ describe("LensPrescriptionGridCells", () => {
         tooltip: "Click to set medium or glass",
       },
       {
-        element: <AsphericalCell aspherical={undefined} onOpenModal={() => undefined} />,
+        element: (
+          <AsphericalCell
+            aspherical={undefined}
+            onOpenModal={() => undefined}
+          />
+        ),
         buttonName: "Edit aspherical parameters",
         tooltip: "Click to set aspherical parameters",
       },
       {
-        element: <ApertureCell clearAperture={undefined} edgeAperture={undefined} onOpenModal={() => undefined} />,
+        element: (
+          <ApertureCell
+            clearAperture={undefined}
+            edgeAperture={undefined}
+            onOpenModal={() => undefined}
+          />
+        ),
         buttonName: "Edit aperture",
         tooltip: "Click to set aperture",
       },
       {
-        element: <DecenterCell decenter={undefined} onOpenModal={() => undefined} />,
+        element: (
+          <DecenterCell decenter={undefined} onOpenModal={() => undefined} />
+        ),
         buttonName: "Edit decenter and tilt",
         tooltip: "Click to open settings for Tilt and Decenter",
       },
       {
-        element: <DiffractionGratingCell diffractionGrating={undefined} onOpenModal={() => undefined} />,
+        element: (
+          <DiffractionGratingCell
+            diffractionGrating={undefined}
+            onOpenModal={() => undefined}
+          />
+        ),
         buttonName: "Edit diffraction grating",
         tooltip: "Click to set diffraction grating",
       },
@@ -270,7 +452,9 @@ describe("LensPrescriptionGridCells", () => {
 
     for (const { element, buttonName, tooltip } of cases) {
       const { unmount } = render(element);
-      fireEvent.mouseEnter(screen.getByRole("button", { name: buttonName }).parentElement!);
+      fireEvent.mouseEnter(
+        screen.getByRole("button", { name: buttonName }).parentElement!,
+      );
       expect(screen.getByRole("tooltip")).toHaveTextContent(tooltip);
       unmount();
     }

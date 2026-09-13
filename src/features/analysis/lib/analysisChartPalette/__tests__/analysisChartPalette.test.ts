@@ -32,11 +32,21 @@ function getContrastRatio(firstColor: string, secondColor: string): number {
 
 describe("analysisChartPalette", () => {
   it("progresses from darker to lighter colors without duplicates", () => {
-    expect(new Set(ANALYSIS_HEATMAP_COLOR_PALETTE).size).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE.length);
+    expect(new Set(ANALYSIS_HEATMAP_COLOR_PALETTE).size).toBe(
+      ANALYSIS_HEATMAP_COLOR_PALETTE.length,
+    );
 
-    for (let index = 1; index < ANALYSIS_HEATMAP_COLOR_PALETTE.length; index += 1) {
-      const previousLuminance = getRelativeLuminance(ANALYSIS_HEATMAP_COLOR_PALETTE[index - 1]);
-      const currentLuminance = getRelativeLuminance(ANALYSIS_HEATMAP_COLOR_PALETTE[index]);
+    for (
+      let index = 1;
+      index < ANALYSIS_HEATMAP_COLOR_PALETTE.length;
+      index += 1
+    ) {
+      const previousLuminance = getRelativeLuminance(
+        ANALYSIS_HEATMAP_COLOR_PALETTE[index - 1],
+      );
+      const currentLuminance = getRelativeLuminance(
+        ANALYSIS_HEATMAP_COLOR_PALETTE[index],
+      );
 
       expect(currentLuminance).toBeGreaterThan(previousLuminance);
     }
@@ -44,7 +54,9 @@ describe("analysisChartPalette", () => {
 
   it("keeps every stop readable against the dark theme background", () => {
     for (const color of ANALYSIS_HEATMAP_COLOR_PALETTE) {
-      expect(getContrastRatio(color, DARK_THEME_BACKGROUND)).toBeGreaterThanOrEqual(1.75);
+      expect(
+        getContrastRatio(color, DARK_THEME_BACKGROUND),
+      ).toBeGreaterThanOrEqual(1.75);
     }
   });
 

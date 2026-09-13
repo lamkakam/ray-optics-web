@@ -21,7 +21,11 @@ export type SurfaceValueScaler<TValue = unknown, TParent = unknown> = (
   parent: TParent,
 ) => TValue;
 
-type AnySurfaceValueScaler = (value: never, factor: number, parent: never) => unknown;
+type AnySurfaceValueScaler = (
+  value: never,
+  factor: number,
+  parent: never,
+) => unknown;
 
 /** Recursive scaling-policy entry; `undefined` preserves a numeric field while keeping it in validation. */
 export type SurfaceValueScalingPolicyEntry =
@@ -31,7 +35,9 @@ export type SurfaceValueScalingPolicyEntry =
 
 /** Type-safe partial scaling policy for an optical-model object. */
 export type OpticalModelValueScalingPolicy<T extends object> = {
-  readonly [K in keyof T]?: SurfaceValueScaler<T[K], T> | SurfaceValueScalingPolicyEntry;
+  readonly [K in keyof T]?:
+    | SurfaceValueScaler<T[K], T>
+    | SurfaceValueScalingPolicyEntry;
 };
 
 /** Scaling ownership policy. Linear dimensions multiply by the factor; asphere coefficients divide by the factor raised to their radial order minus one; angular and dimensionless values plus Ronchi and diffraction-grating line-pair densities are preserved. Radial-polynomial orders are sequential, while even and toroidal polynomial orders are even. */
@@ -78,7 +84,11 @@ export const SURFACE_VALUE_SCALING_POLICY = {
         factor: number,
         aspherical: NonNullable<Surface["aspherical"]>,
       ) =>
-        scaleAsphericalPolynomialCoefficients(polynomialCoefficients, factor, aspherical),
+        scaleAsphericalPolynomialCoefficients(
+          polynomialCoefficients,
+          factor,
+          aspherical,
+        ),
     },
     decenter: {
       alpha: undefined,
@@ -107,7 +117,9 @@ export const IMAGE_VALUE_SCALERS = SURFACE_VALUE_SCALING_POLICY.image;
 /** Physical-surface branch of the shared scaling policy. */
 export const SURFACE_VALUE_SCALERS = SURFACE_VALUE_SCALING_POLICY.surface;
 
-function isScaler(policy: SurfaceValueScalingPolicyEntry): policy is AnySurfaceValueScaler {
+function isScaler(
+  policy: SurfaceValueScalingPolicyEntry,
+): policy is AnySurfaceValueScaler {
   return typeof policy === "function";
 }
 
@@ -117,11 +129,16 @@ function scaleNumber(value: number, factor: number): number {
 
 /** Scales finite object distances below the infinity threshold and preserves larger values. */
 export function scaleObjectDistance(distance: number, factor: number): number {
-  return distance < OBJECT_DISTANCE_INFINITY_THRESHOLD ? scaleNumber(distance, factor) : distance;
+  return distance < OBJECT_DISTANCE_INFINITY_THRESHOLD
+    ? scaleNumber(distance, factor)
+    : distance;
 }
 
 /** Scales decenter offsets while preserving angular coordinates. */
-export function scaleDecenter(decenter: DecenterConfig | undefined, factor: number): DecenterConfig | undefined {
+export function scaleDecenter(
+  decenter: DecenterConfig | undefined,
+  factor: number,
+): DecenterConfig | undefined {
   if (decenter === undefined) {
     return undefined;
   }
@@ -134,7 +151,10 @@ export function scaleDecenter(decenter: DecenterConfig | undefined, factor: numb
 }
 
 /** Scales clear-aperture dimensions and offsets while preserving rotations and Ronchi density. */
-export function scaleClearAperture(aperture: ClearAperture | undefined, factor: number): ClearAperture | undefined {
+export function scaleClearAperture(
+  aperture: ClearAperture | undefined,
+  factor: number,
+): ClearAperture | undefined {
   if (aperture === undefined) {
     return undefined;
   }
@@ -166,7 +186,10 @@ export function scaleClearAperture(aperture: ClearAperture | undefined, factor: 
 }
 
 /** Scales edge-aperture dimensions and offsets while preserving rectangular rotation. */
-export function scaleEdgeAperture(aperture: EdgeAperture | undefined, factor: number): EdgeAperture | undefined {
+export function scaleEdgeAperture(
+  aperture: EdgeAperture | undefined,
+  factor: number,
+): EdgeAperture | undefined {
   if (aperture === undefined) {
     return undefined;
   }
@@ -199,21 +222,27 @@ export function scaleAspherical(
   }
 
   const scaleCoefficient = (coefficient: number, index: number): number => {
-    const order = aspherical.kind === "RadialPolynomial" ? index + 1 : (index + 1) * 2;
-    return coefficient / (factor ** (order - 1));
+    const order =
+      aspherical.kind === "RadialPolynomial" ? index + 1 : (index + 1) * 2;
+    return coefficient / factor ** (order - 1);
   };
 
   if (aspherical.kind === "XToroid" || aspherical.kind === "YToroid") {
     return {
       ...aspherical,
-      toricSweepRadiusOfCurvature: scaleNumber(aspherical.toricSweepRadiusOfCurvature, factor),
-      polynomialCoefficients: aspherical.polynomialCoefficients.map(scaleCoefficient),
+      toricSweepRadiusOfCurvature: scaleNumber(
+        aspherical.toricSweepRadiusOfCurvature,
+        factor,
+      ),
+      polynomialCoefficients:
+        aspherical.polynomialCoefficients.map(scaleCoefficient),
     };
   }
 
   return {
     ...aspherical,
-    polynomialCoefficients: aspherical.polynomialCoefficients.map(scaleCoefficient),
+    polynomialCoefficients:
+      aspherical.polynomialCoefficients.map(scaleCoefficient),
   };
 }
 
@@ -223,12 +252,18 @@ function scaleAsphericalPolynomialCoefficients(
   aspherical: NonNullable<Extract<GridRow, { kind: "surface" }>["aspherical"]>,
 ): number[] {
   return polynomialCoefficients.map((coefficient, index) => {
-    const order = aspherical.kind === "RadialPolynomial" ? index + 1 : (index + 1) * 2;
-    return coefficient / (factor ** (order - 1));
+    const order =
+      aspherical.kind === "RadialPolynomial" ? index + 1 : (index + 1) * 2;
+    return coefficient / factor ** (order - 1);
   });
 }
 
-function applyScalingPolicy<T>(value: T, policy: SurfaceValueScalingPolicyEntry, factor: number, parent: unknown): T {
+function applyScalingPolicy<T>(
+  value: T,
+  policy: SurfaceValueScalingPolicyEntry,
+  factor: number,
+  parent: unknown,
+): T {
   if (policy === undefined) {
     return value;
   }
@@ -248,7 +283,12 @@ function applyScalingPolicy<T>(value: T, policy: SurfaceValueScalingPolicyEntry,
       return;
     }
 
-    const scaledValue = applyScalingPolicy(record[field], fieldPolicy, factor, value);
+    const scaledValue = applyScalingPolicy(
+      record[field],
+      fieldPolicy,
+      factor,
+      value,
+    );
     if (scaledValue !== undefined || field in record) {
       result[field] = scaledValue;
     }
@@ -264,7 +304,12 @@ export function scaleObjectSurface(
 ): Extract<GridRow, { kind: "object" }> {
   return {
     ...row,
-    objectDistance: applyScalingPolicy(row.objectDistance, OBJECT_VALUE_SCALERS.distance, factor, row),
+    objectDistance: applyScalingPolicy(
+      row.objectDistance,
+      OBJECT_VALUE_SCALERS.distance,
+      factor,
+      row,
+    ),
   };
 }
 
@@ -294,9 +339,18 @@ export function scaleNormalSurface(
 }
 
 /** Dispatches scaling by grid-row kind. */
-export function scaleSurfaceValueRow(row: Extract<GridRow, { kind: "object" }>, factor: number): Extract<GridRow, { kind: "object" }>;
-export function scaleSurfaceValueRow(row: Extract<GridRow, { kind: "image" }>, factor: number): Extract<GridRow, { kind: "image" }>;
-export function scaleSurfaceValueRow(row: Extract<GridRow, { kind: "surface" }>, factor: number): Extract<GridRow, { kind: "surface" }>;
+export function scaleSurfaceValueRow(
+  row: Extract<GridRow, { kind: "object" }>,
+  factor: number,
+): Extract<GridRow, { kind: "object" }>;
+export function scaleSurfaceValueRow(
+  row: Extract<GridRow, { kind: "image" }>,
+  factor: number,
+): Extract<GridRow, { kind: "image" }>;
+export function scaleSurfaceValueRow(
+  row: Extract<GridRow, { kind: "surface" }>,
+  factor: number,
+): Extract<GridRow, { kind: "surface" }>;
 export function scaleSurfaceValueRow(row: GridRow, factor: number): GridRow;
 export function scaleSurfaceValueRow(row: GridRow, factor: number): GridRow {
   if (row.kind === "object") {
@@ -330,7 +384,10 @@ function collectNumbersDeep(value: unknown): number[] {
   return Object.values(value).flatMap((item) => collectNumbersDeep(item));
 }
 
-function collectByPolicy(value: unknown, policy: SurfaceValueScalingPolicyEntry): number[] {
+function collectByPolicy(
+  value: unknown,
+  policy: SurfaceValueScalingPolicyEntry,
+): number[] {
   if (policy === undefined || isScaler(policy)) {
     return collectNumbersDeep(value);
   }
@@ -340,13 +397,18 @@ function collectByPolicy(value: unknown, policy: SurfaceValueScalingPolicyEntry)
   }
 
   const record = value as Record<string, unknown>;
-  return Object.entries(policy).flatMap(([field, fieldPolicy]) => collectByPolicy(record[field], fieldPolicy));
+  return Object.entries(policy).flatMap(([field, fieldPolicy]) =>
+    collectByPolicy(record[field], fieldPolicy),
+  );
 }
 
 /** Collects every numeric value covered by the policy, including preserved fields, for finite and precision-underflow validation. */
 export function collectSurfaceScalingNumericValues(row: GridRow): number[] {
   if (row.kind === "object") {
-    return collectByPolicy({ distance: row.objectDistance }, SURFACE_VALUE_SCALING_POLICY.object);
+    return collectByPolicy(
+      { distance: row.objectDistance },
+      SURFACE_VALUE_SCALING_POLICY.object,
+    );
   }
 
   return collectByPolicy(row, SURFACE_VALUE_SCALING_POLICY[row.kind]);

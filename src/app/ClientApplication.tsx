@@ -28,7 +28,9 @@ interface ClientApplicationProps {
  * rendering disabled, so none of this tree or its routed children is emitted as
  * prerendered application markup.
  */
-export default function ClientApplication({ children }: ClientApplicationProps) {
+export default function ClientApplication({
+  children,
+}: ClientApplicationProps) {
   return (
     <ThemeProvider>
       <ImagePointProvider>

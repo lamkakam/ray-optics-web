@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { SpecsConfiguratorContainer } from "@/features/lens-editor/components/SpecsConfiguratorContainer";
-import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
 import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
 
 // Mock useTheme — default to light
@@ -31,25 +34,23 @@ const testSpecs: OpticalSpecs = {
 };
 
 function createTestStore() {
-  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
+  const store = createStore<SpecsConfiguratorState>(
+    createSpecsConfiguratorSlice,
+  );
   store.getState().loadFromSpecs(testSpecs);
   return store;
 }
 
 function renderWithContext() {
   const store = createTestStore();
-  return (
-    render(
-      <SpecsConfiguratorStoreContext.Provider value={store}>
-        <SpecsConfiguratorContainer />
-      </SpecsConfiguratorStoreContext.Provider>
-    )
+  return render(
+    <SpecsConfiguratorStoreContext.Provider value={store}>
+      <SpecsConfiguratorContainer />
+    </SpecsConfiguratorStoreContext.Provider>,
   );
 }
 
-
 describe("SpecsConfiguratorContainer", () => {
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -71,7 +72,9 @@ describe("SpecsConfiguratorContainer", () => {
 
   it("initializes aperture dropdown from store", () => {
     renderWithContext();
-    const dropdown = screen.getByLabelText("System aperture type") as HTMLSelectElement;
+    const dropdown = screen.getByLabelText(
+      "System aperture type",
+    ) as HTMLSelectElement;
     expect(dropdown.value).toBe("object:epd");
   });
 
@@ -111,7 +114,7 @@ describe("SpecsConfiguratorContainer", () => {
     render(
       <SpecsConfiguratorStoreContext.Provider value={store}>
         <SpecsConfiguratorContainer />
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
 
     const input = screen.getByLabelText("Aperture value") as HTMLInputElement;
@@ -129,14 +132,14 @@ describe("SpecsConfiguratorContainer", () => {
     render(
       <SpecsConfiguratorStoreContext.Provider value={store}>
         <SpecsConfiguratorContainer />
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
 
     await userEvent.click(screen.getByRole("button", { name: /field/i }));
     await userEvent.click(
       screen.getByRole("checkbox", {
         name: "Use wide angle mode for more robust ray aiming",
-      })
+      }),
     );
     await userEvent.click(screen.getByText("Apply"));
 
@@ -150,11 +153,14 @@ describe("SpecsConfiguratorContainer", () => {
     render(
       <SpecsConfiguratorStoreContext.Provider value={store}>
         <SpecsConfiguratorContainer />
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
 
     await userEvent.click(screen.getByRole("button", { name: /field/i }));
-    await userEvent.selectOptions(screen.getByLabelText("Field type"), "height");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Field type"),
+      "height",
+    );
     await userEvent.click(screen.getByText("Apply"));
 
     expect(store.getState().fieldSpace).toBe("object");

@@ -11,7 +11,11 @@ const suppliedValue = {
   openErrorModal: jest.fn(),
 };
 
-function ContextProbe({ onRead }: { readonly onRead: (value: ReturnType<typeof useAppShell>) => void }) {
+function ContextProbe({
+  onRead,
+}: {
+  readonly onRead: (value: ReturnType<typeof useAppShell>) => void;
+}) {
   onRead(useAppShell());
   return <span>Context consumer</span>;
 }

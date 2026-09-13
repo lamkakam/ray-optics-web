@@ -27,12 +27,16 @@ interface ConfirmImportModalProps {
  *
  * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
  */
-export function ConfirmImportModal({ isOpen, onConfirm, onCancel }: ConfirmImportModalProps) {
+export function ConfirmImportModal({
+  isOpen,
+  onConfirm,
+  onCancel,
+}: ConfirmImportModalProps) {
   return (
     <Modal
       isOpen={isOpen}
       title="Load Config"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel}>
             Cancel
@@ -41,10 +45,11 @@ export function ConfirmImportModal({ isOpen, onConfirm, onCancel }: ConfirmImpor
             Load
           </Button>
         </div>
-      )}
+      }
     >
       <Paragraph variant="body" className="mb-6">
-        This will overwrite your current System Specs and Lens Prescription. Continue?
+        This will overwrite your current System Specs and Lens Prescription.
+        Continue?
       </Paragraph>
     </Modal>
   );

@@ -2,12 +2,39 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
-import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
-import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import {
+  createAnalysisPlotSlice,
+  type AnalysisPlotState,
+} from "@/features/analysis/stores/analysisPlotStore";
+import {
+  createAnalysisDataSlice,
+  type AnalysisDataState,
+} from "@/features/analysis/stores/analysisDataStore";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
+import type {
+  OpticalModel,
+  OpticalSpecs,
+} from "@/shared/lib/types/opticalModel";
+import type {
+  AstigmatismCurveData,
+  DiffractionMtfData,
+  DiffractionPsfData,
+  FieldCurveData,
+  GeoPsfData,
+  LongitudinalSphericalAberrationData,
+  OpdFanData,
+  RayFanData,
+  SpotDiagramData,
+  StrehlVsWavelengthData,
+  WavefrontMapData,
+} from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
@@ -24,35 +51,54 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 let mockImagePoint = "centroid";
 
 jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
-  useImagePoint: () => ({ imagePoint: mockImagePoint, setImagePoint: jest.fn() }),
+  useImagePoint: () => ({
+    imagePoint: mockImagePoint,
+    setImagePoint: jest.fn(),
+  }),
 }));
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-  init: jest.fn(() => ({
-    setOption: jest.fn(),
-    dispose: jest.fn(),
-    resize: jest.fn(),
-  })),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+    init: jest.fn(() => ({
+      setOption: jest.fn(),
+      dispose: jest.fn(),
+      resize: jest.fn(),
+    })),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  ScatterChart: {},
-  LineChart: {},
-  BarChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    ScatterChart: {},
+    LineChart: {},
+    BarChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  LegendComponent: {},
-  TitleComponent: {},
-  TooltipComponent: {},
-  VisualMapComponent: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: {},
+    LegendComponent: {},
+    TitleComponent: {},
+    TooltipComponent: {},
+    VisualMapComponent: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 // Mock useScreenBreakpoint (AnalysisPlotView uses it)
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
@@ -61,13 +107,32 @@ jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
 
 const testSpecs: OpticalSpecs = {
   pupil: { space: "object", type: "epd", value: 25 },
-  field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
-  wavelengths: { weights: [[486.1, 1], [587.6, 2], [656.3, 1]], referenceIndex: 1 },
+  field: {
+    space: "object",
+    type: "angle",
+    maxField: 20,
+    fields: [0, 0.7, 1],
+    isRelative: true,
+  },
+  wavelengths: {
+    weights: [
+      [486.1, 1],
+      [587.6, 2],
+      [656.3, 1],
+    ],
+    referenceIndex: 1,
+  },
 };
 
 const testSpecsHeight: OpticalSpecs = {
   pupil: { space: "object", type: "epd", value: 25 },
-  field: { space: "object", type: "height", maxField: 10, fields: [0, 0.5, 1], isRelative: true },
+  field: {
+    space: "object",
+    type: "height",
+    maxField: 10,
+    fields: [0, 0.5, 1],
+    isRelative: true,
+  },
   wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
 };
 
@@ -109,7 +174,6 @@ const diffractionMtfData: DiffractionMtfData = {
   naTangential: 0.012,
   naSagittal: 0.011,
 };
-
 
 const wavefrontMapData: WavefrontMapData = {
   fieldIdx: 0,
@@ -179,14 +243,15 @@ const astigmatismCurveData: AstigmatismCurveData = {
   unitY: "deg",
 };
 
-const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData = [
-  {
-    wvlIdx: 0,
-    LSA: { x: [-0.1, 0, 0.1], y: [0, 0.5, 1] },
-    unitX: "mm",
-    unitY: "",
-  },
-];
+const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData =
+  [
+    {
+      wvlIdx: 0,
+      LSA: { x: [-0.1, 0, 0.1], y: [0, 0.5, 1] },
+      unitX: "mm",
+      unitY: "",
+    },
+  ];
 
 const opdFanData: OpdFanData = [
   {
@@ -267,21 +332,43 @@ const seidelData: SeidelData = {
   curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
 };
 
-function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
+function makeMockProxy(
+  overrides: Partial<PyodideWorkerAPI> = {},
+): PyodideWorkerAPI {
   return {
     init: jest.fn(),
     getFirstOrderData: jest.fn(),
     plotLensLayout: jest.fn(),
-    getRayFanData: jest.fn<Promise<RayFanData>, [OpticalModel, number, ImagePoint?]>().mockResolvedValue(rayFanData),
-    getOpdFanData: jest.fn<Promise<OpdFanData>, [OpticalModel, number]>().mockResolvedValue(opdFanData),
-    getSpotDiagramData: jest.fn<Promise<SpotDiagramData>, [OpticalModel, number]>().mockResolvedValue(spotDiagramData),
-    getFieldCurvatureData: jest.fn<Promise<FieldCurveData>, [OpticalModel, number]>().mockResolvedValue(fieldCurveData),
-    getAstigmatismCurveData: jest.fn<Promise<AstigmatismCurveData>, [OpticalModel, number]>().mockResolvedValue(astigmatismCurveData),
-    getWavefrontData: jest.fn<Promise<WavefrontMapData>, [OpticalModel, number, number]>().mockResolvedValue(wavefrontMapData),
-    getGeoPSFData: jest.fn<Promise<GeoPsfData>, [OpticalModel, number, number]>().mockResolvedValue(geoPsfData),
-    getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
-    getDiffractionMTFData: jest.fn<Promise<DiffractionMtfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionMtfData),
-    getStrehlVsWavelengthData: jest.fn<Promise<StrehlVsWavelengthData>, [OpticalModel, number]>().mockResolvedValue(strehlVsWavelengthData),
+    getRayFanData: jest
+      .fn<Promise<RayFanData>, [OpticalModel, number, ImagePoint?]>()
+      .mockResolvedValue(rayFanData),
+    getOpdFanData: jest
+      .fn<Promise<OpdFanData>, [OpticalModel, number]>()
+      .mockResolvedValue(opdFanData),
+    getSpotDiagramData: jest
+      .fn<Promise<SpotDiagramData>, [OpticalModel, number]>()
+      .mockResolvedValue(spotDiagramData),
+    getFieldCurvatureData: jest
+      .fn<Promise<FieldCurveData>, [OpticalModel, number]>()
+      .mockResolvedValue(fieldCurveData),
+    getAstigmatismCurveData: jest
+      .fn<Promise<AstigmatismCurveData>, [OpticalModel, number]>()
+      .mockResolvedValue(astigmatismCurveData),
+    getWavefrontData: jest
+      .fn<Promise<WavefrontMapData>, [OpticalModel, number, number]>()
+      .mockResolvedValue(wavefrontMapData),
+    getGeoPSFData: jest
+      .fn<Promise<GeoPsfData>, [OpticalModel, number, number]>()
+      .mockResolvedValue(geoPsfData),
+    getDiffractionPSFData: jest
+      .fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>()
+      .mockResolvedValue(diffractionPsfData),
+    getDiffractionMTFData: jest
+      .fn<Promise<DiffractionMtfData>, [OpticalModel, number, number]>()
+      .mockResolvedValue(diffractionMtfData),
+    getStrehlVsWavelengthData: jest
+      .fn<Promise<StrehlVsWavelengthData>, [OpticalModel, number]>()
+      .mockResolvedValue(strehlVsWavelengthData),
     get3rdOrderSeidelData: jest.fn(),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
@@ -293,7 +380,9 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
 }
 
 function makeSpecsStore(specs: OpticalSpecs): StoreApi<SpecsConfiguratorState> {
-  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
+  const store = createStore<SpecsConfiguratorState>(
+    createSpecsConfiguratorSlice,
+  );
   store.getState().loadFromSpecs(specs);
   store.getState().setCommittedSpecs(specs);
   return store;
@@ -325,21 +414,16 @@ function renderComponent(
   specsStore: StoreApi<SpecsConfiguratorState> = makeSpecsStore(testSpecs),
   lensStore: StoreApi<LensEditorState> = makeLensStore(testModel),
 ) {
-  return (
-    render(
-      <SpecsConfiguratorStoreContext.Provider value={specsStore}>
-        <LensEditorStoreContext.Provider value={lensStore}>
-          <AnalysisDataStoreContext.Provider value={analysisDataStore}>
-            <AnalysisPlotStoreContext.Provider value={store}>
-              <AnalysisPlotContainer
-                proxy={mockProxy}
-                onError={onError}
-              />
-            </AnalysisPlotStoreContext.Provider>
-          </AnalysisDataStoreContext.Provider>
-        </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
-    )
+  return render(
+    <SpecsConfiguratorStoreContext.Provider value={specsStore}>
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <AnalysisDataStoreContext.Provider value={analysisDataStore}>
+          <AnalysisPlotStoreContext.Provider value={store}>
+            <AnalysisPlotContainer proxy={mockProxy} onError={onError} />
+          </AnalysisPlotStoreContext.Provider>
+        </AnalysisDataStoreContext.Provider>
+      </LensEditorStoreContext.Provider>
+    </SpecsConfiguratorStoreContext.Provider>,
   );
 }
 
@@ -361,7 +445,9 @@ describe("AnalysisPlotContainer", () => {
 
   it("derives fieldOptions from committedSpecs with angle type", () => {
     renderComponent(testSpecs, testModel, store, makeMockProxy());
-    const fieldSelect = screen.getByLabelText("Half-Field") as HTMLSelectElement;
+    const fieldSelect = screen.getByLabelText(
+      "Half-Field",
+    ) as HTMLSelectElement;
     expect(fieldSelect).toContainHTML("0.00°");
     expect(fieldSelect).toContainHTML("14.0°");
     expect(fieldSelect).toContainHTML("20.0°");
@@ -369,7 +455,9 @@ describe("AnalysisPlotContainer", () => {
 
   it("derives fieldOptions from committedSpecs with height type", () => {
     renderComponent(testSpecsHeight, testModel, store, makeMockProxy());
-    const fieldSelect = screen.getByLabelText("Half-Field") as HTMLSelectElement;
+    const fieldSelect = screen.getByLabelText(
+      "Half-Field",
+    ) as HTMLSelectElement;
     expect(fieldSelect).toContainHTML("0.00 mm");
     expect(fieldSelect).toContainHTML("5.00 mm");
     expect(fieldSelect).toContainHTML("10.0 mm");
@@ -393,7 +481,11 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedFieldIndex).toBe(1);
     await waitFor(() => {
-      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1, "centroid");
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(
+        testModel,
+        1,
+        "centroid",
+      );
     });
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });
@@ -402,7 +494,10 @@ describe("AnalysisPlotContainer", () => {
     let resolveProxy!: (value: RayFanData) => void;
     const proxy = makeMockProxy({
       getRayFanData: jest.fn().mockImplementation(
-        () => new Promise<RayFanData>((resolve) => { resolveProxy = resolve; })
+        () =>
+          new Promise<RayFanData>((resolve) => {
+            resolveProxy = resolve;
+          }),
       ),
     });
     renderComponent(testSpecs, testModel, store, proxy);
@@ -470,7 +565,14 @@ describe("AnalysisPlotContainer", () => {
   it("handleFieldChange: no-op for plot call when fieldDependent === false", async () => {
     store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
     const proxy = makeMockProxy();
-    renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
+    renderComponent(
+      testSpecs,
+      testModel,
+      store,
+      proxy,
+      jest.fn(),
+      makeAnalysisDataStore(seidelData),
+    );
     expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
   });
 
@@ -480,70 +582,106 @@ describe("AnalysisPlotContainer", () => {
     ["spotDiagram", "spot-diagram-chart"],
     ["fieldCurvature", "field-curve-chart"],
     ["astigmatismCurve", "astigmatism-chart"],
-    ["longitudinalSphericalAberration", "longitudinal-spherical-aberration-chart"],
+    [
+      "longitudinalSphericalAberration",
+      "longitudinal-spherical-aberration-chart",
+    ],
     ["geoPSF", "geo-psf-chart"],
     ["wavefrontMap", "wavefront-map-chart"],
     ["strehlVsWavelength", "strehl-vs-wavelength-chart"],
     ["diffractionPSF", "diffraction-psf-chart"],
     ["diffractionMTF", "diffraction-mtf-chart"],
-  ] as const)("renders the %s chart from its committed store payload", (plotType, testId) => {
-    const analysisDataStore = makeAnalysisDataStore();
-    store.getState().setSelectedPlotType(plotType);
+  ] as const)(
+    "renders the %s chart from its committed store payload",
+    (plotType, testId) => {
+      const analysisDataStore = makeAnalysisDataStore();
+      store.getState().setSelectedPlotType(plotType);
 
-    switch (plotType) {
-      case "rayFan":
-        store.getState().setRayFanData(rayFanData);
-        break;
-      case "opdFan":
-        store.getState().setOpdFanData(opdFanData);
-        break;
-      case "spotDiagram":
-        store.getState().setSpotDiagramData(spotDiagramData);
-        break;
-      case "fieldCurvature":
-        store.getState().setFieldCurvatureData(fieldCurveData);
-        break;
-      case "astigmatismCurve":
-        store.getState().setAstigmatismCurveData(astigmatismCurveData);
-        break;
-      case "longitudinalSphericalAberration":
-        store.getState().setLongitudinalSphericalAberrationData(longitudinalSphericalAberrationData);
-        break;
-      case "geoPSF":
-        store.getState().setGeoPsfData(geoPsfData);
-        break;
-      case "wavefrontMap":
-        store.getState().setWavefrontMapData(wavefrontMapData);
-        break;
-      case "strehlVsWavelength":
-        store.getState().setStrehlVsWavelengthData(strehlVsWavelengthData);
-        break;
-      case "diffractionPSF":
-        store.getState().setDiffractionPsfData(diffractionPsfData);
-        break;
-      case "diffractionMTF":
-        store.getState().setDiffractionMtfData(diffractionMtfData);
-        break;
-    }
+      switch (plotType) {
+        case "rayFan":
+          store.getState().setRayFanData(rayFanData);
+          break;
+        case "opdFan":
+          store.getState().setOpdFanData(opdFanData);
+          break;
+        case "spotDiagram":
+          store.getState().setSpotDiagramData(spotDiagramData);
+          break;
+        case "fieldCurvature":
+          store.getState().setFieldCurvatureData(fieldCurveData);
+          break;
+        case "astigmatismCurve":
+          store.getState().setAstigmatismCurveData(astigmatismCurveData);
+          break;
+        case "longitudinalSphericalAberration":
+          store
+            .getState()
+            .setLongitudinalSphericalAberrationData(
+              longitudinalSphericalAberrationData,
+            );
+          break;
+        case "geoPSF":
+          store.getState().setGeoPsfData(geoPsfData);
+          break;
+        case "wavefrontMap":
+          store.getState().setWavefrontMapData(wavefrontMapData);
+          break;
+        case "strehlVsWavelength":
+          store.getState().setStrehlVsWavelengthData(strehlVsWavelengthData);
+          break;
+        case "diffractionPSF":
+          store.getState().setDiffractionPsfData(diffractionPsfData);
+          break;
+        case "diffractionMTF":
+          store.getState().setDiffractionMtfData(diffractionMtfData);
+          break;
+      }
 
-    renderComponent(testSpecs, testModel, store, undefined, jest.fn(), analysisDataStore);
+      renderComponent(
+        testSpecs,
+        testModel,
+        store,
+        undefined,
+        jest.fn(),
+        analysisDataStore,
+      );
 
-    expect(screen.getByTestId(testId)).toBeInTheDocument();
-  });
+      expect(screen.getByTestId(testId)).toBeInTheDocument();
+    },
+  );
 
   it("renders the surface by surface chart from analysisDataStore instead of loading a PNG", async () => {
     store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
     const proxy = makeMockProxy();
-    renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
+    renderComponent(
+      testSpecs,
+      testModel,
+      store,
+      proxy,
+      jest.fn(),
+      makeAnalysisDataStore(seidelData),
+    );
 
-    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("surface-by-surface-3rd-order-chart"),
+    ).toBeInTheDocument();
   });
 
   it("does not reload surface-by-surface data when that plot type is selected", async () => {
     const proxy = makeMockProxy();
-    renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
+    renderComponent(
+      testSpecs,
+      testModel,
+      store,
+      proxy,
+      jest.fn(),
+      makeAnalysisDataStore(seidelData),
+    );
 
-    await userEvent.selectOptions(screen.getByLabelText("Plot type"), "surfaceBySurface3rdOrder");
+    await userEvent.selectOptions(
+      screen.getByLabelText("Plot type"),
+      "surfaceBySurface3rdOrder",
+    );
 
     expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
     expect(store.getState().plotLoading).toBe(false);
@@ -558,7 +696,12 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedWavelengthIndex).toBe(2);
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 2, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        2,
+        "centroid",
+      );
     });
   });
 
@@ -569,12 +712,22 @@ describe("AnalysisPlotContainer", () => {
 
     await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 0, 2, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(
+        testModel,
+        0,
+        2,
+        "centroid",
+      );
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 2, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(
+        testModel,
+        1,
+        2,
+        "centroid",
+      );
     });
   });
 
@@ -585,12 +738,22 @@ describe("AnalysisPlotContainer", () => {
 
     await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 0, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(
+        testModel,
+        1,
+        0,
+        "centroid",
+      );
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 2, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(
+        testModel,
+        1,
+        2,
+        "centroid",
+      );
     });
   });
 
@@ -602,7 +765,12 @@ describe("AnalysisPlotContainer", () => {
     await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(testModel, 1, 2, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenLastCalledWith(
+        testModel,
+        1,
+        2,
+        "centroid",
+      );
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Plot type"), "geoPSF");
@@ -619,7 +787,11 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("spotDiagram");
     await waitFor(() => {
-      expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(testModel, 0, "centroid");
+      expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        "centroid",
+      );
     });
     expect(store.getState().spotDiagramData).toEqual(spotDiagramData);
   });
@@ -639,18 +811,19 @@ describe("AnalysisPlotContainer", () => {
         <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
           <AnalysisDataStoreContext.Provider value={makeAnalysisDataStore()}>
             <AnalysisPlotStoreContext.Provider value={store}>
-              <AnalysisPlotContainer
-                proxy={proxy}
-                onError={jest.fn()}
-              />
+              <AnalysisPlotContainer proxy={proxy} onError={jest.fn()} />
             </AnalysisPlotStoreContext.Provider>
           </AnalysisDataStoreContext.Provider>
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
 
     await waitFor(() => {
-      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1, "centroid");
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(
+        testModel,
+        1,
+        "centroid",
+      );
     });
     expect(proxy.getRayFanData).toHaveBeenCalledTimes(1);
     expect(proxy.getFirstOrderData).not.toHaveBeenCalled();
@@ -675,16 +848,15 @@ describe("AnalysisPlotContainer", () => {
     rerender(
       <SpecsConfiguratorStoreContext.Provider value={makeSpecsStore(testSpecs)}>
         <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
-          <AnalysisDataStoreContext.Provider value={makeAnalysisDataStore(seidelData)}>
+          <AnalysisDataStoreContext.Provider
+            value={makeAnalysisDataStore(seidelData)}
+          >
             <AnalysisPlotStoreContext.Provider value={store}>
-              <AnalysisPlotContainer
-                proxy={proxy}
-                onError={jest.fn()}
-              />
+              <AnalysisPlotContainer proxy={proxy} onError={jest.fn()} />
             </AnalysisPlotStoreContext.Provider>
           </AnalysisDataStoreContext.Provider>
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
 
     await waitFor(() => {
@@ -703,7 +875,11 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("opdFan");
     await waitFor(() => {
-      expect(proxy.getOpdFanData).toHaveBeenCalledWith(testModel, 0, "centroid");
+      expect(proxy.getOpdFanData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        "centroid",
+      );
     });
     expect(store.getState().opdFanData).toEqual(opdFanData);
   });
@@ -802,7 +978,12 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("diffractionPSF");
     await waitFor(() => {
-      expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(testModel, 0, 0, "centroid");
+      expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        0,
+        "centroid",
+      );
     });
     expect(store.getState().diffractionPsfData).toEqual(diffractionPsfData);
   });
@@ -815,7 +996,12 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("diffractionMTF");
     await waitFor(() => {
-      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 0, "centroid");
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        0,
+        "centroid",
+      );
     });
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
@@ -829,7 +1015,12 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedWavelengthIndex).toBe(2);
     await waitFor(() => {
-      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 2, "centroid");
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        2,
+        "centroid",
+      );
     });
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
@@ -842,7 +1033,12 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("wavefrontMap");
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 0, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        0,
+        "centroid",
+      );
     });
     expect(store.getState().wavefrontMapData).toEqual(wavefrontMapData);
   });
@@ -856,9 +1052,15 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("strehlVsWavelength");
     await waitFor(() => {
-      expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(testModel, 1, "centroid");
+      expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(
+        testModel,
+        1,
+        "centroid",
+      );
     });
-    expect(store.getState().strehlVsWavelengthData).toEqual(strehlVsWavelengthData);
+    expect(store.getState().strehlVsWavelengthData).toEqual(
+      strehlVsWavelengthData,
+    );
   });
 
   it("onError called when proxy throws on field change", async () => {
@@ -923,7 +1125,11 @@ describe("AnalysisPlotContainer", () => {
     await userEvent.selectOptions(fieldSelect, "1");
 
     await waitFor(() => {
-      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1, "centroid");
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(
+        testModel,
+        1,
+        "centroid",
+      );
     });
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });

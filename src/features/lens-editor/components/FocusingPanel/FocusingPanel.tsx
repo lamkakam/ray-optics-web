@@ -18,7 +18,10 @@ interface FocusingPanelProps {
   readonly disabled: boolean;
 }
 
-const CHROMATICITY_OPTIONS: ReadonlyArray<{ value: Chromaticity; label: string }> = [
+const CHROMATICITY_OPTIONS: ReadonlyArray<{
+  value: Chromaticity;
+  label: string;
+}> = [
   { value: "mono", label: "Monochromatic" },
   { value: "poly", label: "Polychromatic" },
 ];

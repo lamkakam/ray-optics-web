@@ -33,16 +33,22 @@ export async function applyOptimizationModelToEditor({
   proxy,
 }: ApplyOptimizationModelToEditorParams): Promise<void> {
   const rows = surfacesToGridRows(model);
-  const autoSemiDiameters = model.setAutoAperture === "autoAperture"
-    ? mapPhysicalSurfaceSemiDiameters(rows, await proxy.getSurfaceSemiDiameters(model))
-    : {};
+  const autoSemiDiameters =
+    model.setAutoAperture === "autoAperture"
+      ? mapPhysicalSurfaceSemiDiameters(
+          rows,
+          await proxy.getSurfaceSemiDiameters(model),
+        )
+      : {};
 
   specsStore.getState().loadFromSpecs(model.specs);
   specsStore.getState().setCommittedSpecs(model.specs);
   lensStore.getState().setRows(rows, {
     optimizationSyncPolicy: "preserveOptimizationModes",
   });
-  lensStore.getState().setAutoAperture(model.setAutoAperture === "autoAperture");
+  lensStore
+    .getState()
+    .setAutoAperture(model.setAutoAperture === "autoAperture");
   lensStore.getState().setCommittedOpticalModel(model);
   lensStore.getState().setAutoSemiDiameters(autoSemiDiameters);
 }

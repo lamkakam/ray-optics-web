@@ -1,7 +1,10 @@
 import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { GlassCatalogContext, type GlassCatalogContextValue } from "@/shared/components/providers/GlassCatalogProvider";
+import {
+  GlassCatalogContext,
+  type GlassCatalogContextValue,
+} from "@/shared/components/providers/GlassCatalogProvider";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { OptimizationInspectionModals } from "../OptimizationInspectionModals";
 
@@ -9,7 +12,9 @@ jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mathjax-context">{children}</div>
   ),
-  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  MathJax: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 const mockGlassData = {
@@ -43,7 +48,9 @@ const glassCatalogValue: GlassCatalogContextValue = {
   preload: jest.fn(),
 };
 
-function renderInspectionModals(props: React.ComponentProps<typeof OptimizationInspectionModals>) {
+function renderInspectionModals(
+  props: React.ComponentProps<typeof OptimizationInspectionModals>,
+) {
   return render(
     <GlassCatalogContext.Provider value={glassCatalogValue}>
       <OptimizationInspectionModals {...props} />
@@ -208,7 +215,9 @@ describe("OptimizationInspectionModals", () => {
     expect(screen.getByLabelText("Catalog")).toHaveValue("Special");
     expect(screen.getByLabelText("Glass")).toHaveValue("air");
     expect(
-      Array.from(screen.getByLabelText("Glass").querySelectorAll("option")).map((option) => option.value),
+      Array.from(screen.getByLabelText("Glass").querySelectorAll("option")).map(
+        (option) => option.value,
+      ),
     ).not.toContain("REFL");
   });
 
@@ -241,12 +250,22 @@ describe("OptimizationInspectionModals", () => {
     expect(screen.getByLabelText("Clear Aperture Shape")).toBeDisabled();
     expect(screen.getByLabelText("Edge Aperture Shape")).toBeDisabled();
     expect(screen.getByRole("textbox", { name: "Radius" })).toBeDisabled();
-    expect(screen.getByRole("textbox", { name: "Clear Offset X" })).toBeDisabled();
-    expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toBeDisabled();
-    expect(screen.getByRole("textbox", { name: "Edge Offset X" })).toBeDisabled();
-    expect(screen.getByRole("textbox", { name: "Edge Offset Y" })).toBeDisabled();
+    expect(
+      screen.getByRole("textbox", { name: "Clear Offset X" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("textbox", { name: "Clear Offset Y" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("textbox", { name: "Edge Offset X" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("textbox", { name: "Edge Offset Y" }),
+    ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders decenter inspection values as read-only", () => {
@@ -282,17 +301,33 @@ describe("OptimizationInspectionModals", () => {
       onCloseDiffractionGratingModal: jest.fn(),
     });
 
-    expect(screen.getByLabelText("Coordinate system for this and following surfaces")).toHaveValue("decenter");
+    expect(
+      screen.getByLabelText(
+        "Coordinate system for this and following surfaces",
+      ),
+    ).toHaveValue("decenter");
     expect(screen.getByLabelText("Alpha (°)")).toHaveValue("1");
     expect(screen.getByLabelText("Beta (°)")).toHaveValue("-2");
     expect(screen.getByLabelText("Gamma (°)")).toHaveValue("3");
     expect(screen.getByLabelText("Offset X")).toHaveValue("4");
     expect(screen.getByLabelText("Offset Y")).toHaveValue("-5");
-    expect(screen.getByLabelText("Coordinate system for this and following surfaces")).toBeDisabled();
-    for (const label of ["Alpha (°)", "Beta (°)", "Gamma (°)", "Offset X", "Offset Y"]) {
+    expect(
+      screen.getByLabelText(
+        "Coordinate system for this and following surfaces",
+      ),
+    ).toBeDisabled();
+    for (const label of [
+      "Alpha (°)",
+      "Beta (°)",
+      "Gamma (°)",
+      "Offset X",
+      "Offset Y",
+    ]) {
       expect(screen.getByLabelText(label)).toBeDisabled();
     }
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
   });
 
   it("preloads nested diffraction-grating data in read-only mode", () => {
@@ -323,6 +358,8 @@ describe("OptimizationInspectionModals", () => {
     expect(screen.getByRole("textbox", { name: "lp/mm" })).toHaveValue("1200");
     expect(screen.getByRole("textbox", { name: "order" })).toHaveValue("-1");
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm" }),
+    ).not.toBeInTheDocument();
   });
 });

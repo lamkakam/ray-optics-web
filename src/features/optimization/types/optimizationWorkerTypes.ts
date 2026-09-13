@@ -1,13 +1,24 @@
 /** Optimization-specific contracts shared by the UI and Pyodide worker boundary. */
-import type { AsphericalType, DecenterConfig, OpticalModel } from "@/shared/lib/types/opticalModel";
+import type {
+  AsphericalType,
+  DecenterConfig,
+  OpticalModel,
+} from "@/shared/lib/types/opticalModel";
 
 /** Scalar tilt/decenter targets supported by the optimizer. */
-export type DecenterTargetKind = "decenter_alpha" | "decenter_beta" | "decenter_gamma" | "decenter_x" | "decenter_y";
+export type DecenterTargetKind =
+  | "decenter_alpha"
+  | "decenter_beta"
+  | "decenter_gamma"
+  | "decenter_x"
+  | "decenter_y";
 /** RayOptics coordinate-system strategy carried with every tilt/decenter target. */
 export type DecenterType = DecenterConfig["coordinateSystemStrategy"];
 
 /** Worker-supported continuous optimizer families. */
-export type ContinuousOptimizerKind = "least_squares" | "differential_evolution";
+export type ContinuousOptimizerKind =
+  | "least_squares"
+  | "differential_evolution";
 /** Optimizer families selectable by the Optimization UI. */
 export type OptimizerKind = ContinuousOptimizerKind | "glass_expert";
 /** Worker-supported SciPy least-squares methods. */
@@ -41,16 +52,28 @@ export type OptimizationOperandConfig =
       readonly kind: OptimizationOperandKind;
       readonly target: number;
       readonly weight: number;
-      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
-      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly fields?: ReadonlyArray<{
+        readonly index: number;
+        readonly weight: number;
+      }>;
+      readonly wavelengths?: ReadonlyArray<{
+        readonly index: number;
+        readonly weight: number;
+      }>;
       readonly options?: { readonly num_rays?: number };
     }
   | {
       readonly kind: OptimizationOperandKind;
       readonly target?: undefined;
       readonly weight: number;
-      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
-      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly fields?: ReadonlyArray<{
+        readonly index: number;
+        readonly weight: number;
+      }>;
+      readonly wavelengths?: ReadonlyArray<{
+        readonly index: number;
+        readonly weight: number;
+      }>;
       readonly options?: { readonly num_rays?: number };
     };
 
@@ -84,7 +107,9 @@ export interface GlassExpertOptimizerConfig {
 }
 
 /** Any optimizer settings displayed by the Algorithm tab. */
-export type OptimizationAlgorithmConfig = ContinuousOptimizerConfig | GlassExpertOptimizerConfig;
+export type OptimizationAlgorithmConfig =
+  | ContinuousOptimizerConfig
+  | GlassExpertOptimizerConfig;
 
 export interface OptimizationConfig {
   /** Solver-specific continuous configuration discriminated by optimizer kind. */
@@ -127,7 +152,9 @@ export interface GlassOptimizationConfig {
 }
 
 /** Config accepted by one of the two optimization worker run paths. */
-export type OptimizationRunConfig = OptimizationConfig | GlassOptimizationConfig;
+export type OptimizationRunConfig =
+  | OptimizationConfig
+  | GlassOptimizationConfig;
 
 /** Variable configuration discriminated by radius, thickness, or asphere term kind. */
 export type OptimizationVariableConfig =
@@ -348,7 +375,8 @@ export interface GlassOptimizationValueEntry extends GlassCandidateConfig {
 }
 
 /** Python glass-expert report with aggregate nested L-BFGS-B metadata. */
-export interface GlassOptimizationReport extends Omit<OptimizationReport, "optimizer"> {
+export interface GlassOptimizationReport
+  extends Omit<OptimizationReport, "optimizer"> {
   readonly optimizer: {
     readonly kind: "glass_expert";
     readonly method: "L-BFGS-B";
@@ -364,7 +392,9 @@ export interface GlassOptimizationReport extends Omit<OptimizationReport, "optim
 }
 
 /** Report returned by one of the two optimization worker run paths. */
-export type OptimizationRunReport = OptimizationReport | GlassOptimizationReport;
+export type OptimizationRunReport =
+  | OptimizationReport
+  | GlassOptimizationReport;
 
 /** Optimized optical model paired with its continuous or mixed report. */
 export interface OptimizationRunResult {

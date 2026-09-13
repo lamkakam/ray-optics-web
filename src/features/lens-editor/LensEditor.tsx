@@ -4,12 +4,31 @@ import { useState, useCallback } from "react";
 import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { ZernikeData, ZernikeOrdering, ZernikePupilSpace } from "@/features/lens-editor/types/zernikeData";
-import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
+import type {
+  ZernikeData,
+  ZernikeOrdering,
+  ZernikePupilSpace,
+} from "@/features/lens-editor/types/zernikeData";
+import {
+  NUM_NOLL_TERMS,
+  NUM_FRINGE_TERMS,
+} from "@/features/lens-editor/lib/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
-import { commitAnalysisPlotResult, loadAnalysisPlot, loadFirstOrderData, loadSeidelData, loadZernikeData } from "@/features/analysis/lib/plotFunctions";
+import {
+  surfacesToGridRows,
+  gridRowsToSurfaces,
+} from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import {
+  formatMissingGlassMessage,
+  getMissingPrescriptionGlasses,
+} from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
+import {
+  commitAnalysisPlotResult,
+  loadAnalysisPlot,
+  loadFirstOrderData,
+  loadSeidelData,
+  loadZernikeData,
+} from "@/features/analysis/lib/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -83,11 +102,7 @@ export interface LensEditorProps {
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
  * - `useLensPrescriptionWebMCP(lensStore, lookupMaps)` supplies the five prescription descriptors and the current catalog snapshot to the shared `useWebMCP` lifecycle abstraction. Descriptor executions observe newly loaded or updated Custom glass maps through its latest-descriptor ref; unsupported browsers are skipped and each registration is aborted on cleanup.
  */
-export function LensEditor({
-  proxy,
-  isReady,
-  onError,
-}: LensEditorProps) {
+export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
   const { theme } = useTheme();
@@ -101,19 +116,33 @@ export function LensEditor({
 
   useLensPrescriptionWebMCP(lensStore, lookupMaps);
 
-  const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
-  const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
-  const selectedPlotType = useStore(analysisPlotStore, (s) => s.selectedPlotType);
+  const selectedFieldIndex = useStore(
+    analysisPlotStore,
+    (s) => s.selectedFieldIndex,
+  );
+  const selectedWavelengthIndex = useStore(
+    analysisPlotStore,
+    (s) => s.selectedWavelengthIndex,
+  );
+  const selectedPlotType = useStore(
+    analysisPlotStore,
+    (s) => s.selectedPlotType,
+  );
 
   const layoutImage = useStore(lensLayoutImageStore, (s) => s.layoutImage);
   const layoutLoading = useStore(lensLayoutImageStore, (s) => s.layoutLoading);
   const firstOrderData = useStore(analysisDataStore, (s) => s.firstOrderData);
   const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
-  const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
+  const committedOpticalModel = useStore(
+    lensStore,
+    (s) => s.committedOpticalModel,
+  );
   /** Whether an Update System computation is in progress. */
   const [computing, setComputing] = useState(false);
   /** Missing-glass validation error displayed by the editor-local error modal. */
-  const [validationErrorMessage, setValidationErrorMessage] = useState<string | undefined>();
+  const [validationErrorMessage, setValidationErrorMessage] = useState<
+    string | undefined
+  >();
   /** Visibility of the read-only paraxial first-order data modal. */
   const [paraxialDataModalOpen, setParaxialDataModalOpen] = useState(false);
   /** Visibility of the third-order Seidel modal. */
@@ -123,14 +152,29 @@ export function LensEditor({
 
   /** Fetches Zernike coefficients for the committed model and current image reference. */
   const handleFetchZernikeData = useCallback(
-    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering, pupilSpace: ZernikePupilSpace): Promise<ZernikeData> => {
+    async (
+      fieldIndex: number,
+      wvlIndex: number,
+      ordering: ZernikeOrdering,
+      pupilSpace: ZernikePupilSpace,
+    ): Promise<ZernikeData> => {
       if (!proxy) throw new Error("Pyodide not ready");
       const committedOpticalModel = lensStore.getState().committedOpticalModel;
-      if (!committedOpticalModel) throw new Error("No optical model computed yet");
+      if (!committedOpticalModel)
+        throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
-      return loadZernikeData({ proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex: wvlIndex, imagePoint, numTerms, ordering, pupilSpace });
+      return loadZernikeData({
+        proxy,
+        model: committedOpticalModel,
+        fieldIndex,
+        wavelengthIndex: wvlIndex,
+        imagePoint,
+        numTerms,
+        ordering,
+        pupilSpace,
+      });
     },
-    [proxy, lensStore, imagePoint]
+    [proxy, lensStore, imagePoint],
   );
 
   /**
@@ -141,12 +185,16 @@ export function LensEditor({
     if (!proxy) return;
 
     const autoAperture = lensStore.getState().autoAperture;
-    const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
+    const setAutoAperture = autoAperture
+      ? ("autoAperture" as const)
+      : ("manualAperture" as const);
     const specs = specsStore.getState().toOpticalSpecs();
     const submittedRows = lensStore.getState().rows;
     const surfacesData = gridRowsToSurfaces(submittedRows);
     const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
-    const missingGlassMessage = formatMissingGlassMessage(getMissingPrescriptionGlasses(model, lookupMaps));
+    const missingGlassMessage = formatMissingGlassMessage(
+      getMissingPrescriptionGlasses(model, lookupMaps),
+    );
     if (missingGlassMessage !== undefined) {
       setValidationErrorMessage(missingGlassMessage);
       return;
@@ -158,29 +206,47 @@ export function LensEditor({
     analysisPlotStore.getState().setPlotLoading(true);
 
     try {
-      const clampedFieldIndex = specsStore.getState().clampFieldIndex(selectedFieldIndex, specs);
-      const clampedWavelengthIndex = specsStore.getState().clampWavelengthIndex(selectedWavelengthIndex, specs);
-      analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex, specs.field.fields.length);
-      analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, specs.wavelengths.weights.length);
+      const clampedFieldIndex = specsStore
+        .getState()
+        .clampFieldIndex(selectedFieldIndex, specs);
+      const clampedWavelengthIndex = specsStore
+        .getState()
+        .clampWavelengthIndex(selectedWavelengthIndex, specs);
+      analysisPlotStore
+        .getState()
+        .setSelectedFieldIndex(clampedFieldIndex, specs.field.fields.length);
+      analysisPlotStore
+        .getState()
+        .setSelectedWavelengthIndex(
+          clampedWavelengthIndex,
+          specs.wavelengths.weights.length,
+        );
 
-      const [fod, layout, plotResult, seidel, sequentialSemiDiameters] = await Promise.all([
-        loadFirstOrderData({ proxy, model, imagePoint }),
-        proxy.plotLensLayout(model, isDark),
-        loadAnalysisPlot({
-          plotType: selectedPlotType,
-          proxy,
-          model,
-          fieldIndex: clampedFieldIndex,
-          wavelengthIndex: clampedWavelengthIndex,
-          imagePoint,
-        }),
-        loadSeidelData({ proxy, model, imagePoint }),
-        autoAperture ? proxy.getSurfaceSemiDiameters(model) : Promise.resolve(undefined),
-      ]);
+      const [fod, layout, plotResult, seidel, sequentialSemiDiameters] =
+        await Promise.all([
+          loadFirstOrderData({ proxy, model, imagePoint }),
+          proxy.plotLensLayout(model, isDark),
+          loadAnalysisPlot({
+            plotType: selectedPlotType,
+            proxy,
+            model,
+            fieldIndex: clampedFieldIndex,
+            wavelengthIndex: clampedWavelengthIndex,
+            imagePoint,
+          }),
+          loadSeidelData({ proxy, model, imagePoint }),
+          autoAperture
+            ? proxy.getSurfaceSemiDiameters(model)
+            : Promise.resolve(undefined),
+        ]);
 
-      const autoSemiDiameters = sequentialSemiDiameters === undefined
-        ? undefined
-        : mapPhysicalSurfaceSemiDiameters(submittedRows, sequentialSemiDiameters);
+      const autoSemiDiameters =
+        sequentialSemiDiameters === undefined
+          ? undefined
+          : mapPhysicalSurfaceSemiDiameters(
+              submittedRows,
+              sequentialSemiDiameters,
+            );
 
       analysisDataStore.getState().setFirstOrderData(fod);
       lensLayoutImageStore.getState().setLayoutImage(layout);
@@ -201,27 +267,52 @@ export function LensEditor({
       lensLayoutImageStore.getState().setLayoutLoading(false);
       analysisPlotStore.getState().setPlotLoading(false);
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError, theme, imagePoint, lookupMaps]);
+  }, [
+    proxy,
+    specsStore,
+    lensStore,
+    analysisPlotStore,
+    lensLayoutImageStore,
+    analysisDataStore,
+    selectedFieldIndex,
+    selectedWavelengthIndex,
+    selectedPlotType,
+    onError,
+    theme,
+    imagePoint,
+    lookupMaps,
+  ]);
 
   /** Builds the current optical-model snapshot from the provider-backed stores. */
   const getOpticalModel = useCallback((): OpticalModel => {
     const autoAperture = lensStore.getState().autoAperture;
-    const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
+    const setAutoAperture = autoAperture
+      ? ("autoAperture" as const)
+      : ("manualAperture" as const);
     const specs = specsStore.getState().toOpticalSpecs();
     const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
     return { setAutoAperture, specs, ...surfaces };
   }, [specsStore, lensStore]);
 
   /** Loads a validated imported optical model into both editor stores. */
-  const handleImportJson = useCallback((data: OpticalModel) => {
-    specsStore.getState().loadFromSpecs(data.specs);
-    lensStore.getState().setRows(surfacesToGridRows(data));
-    lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
-  }, [specsStore, lensStore]);
+  const handleImportJson = useCallback(
+    (data: OpticalModel) => {
+      specsStore.getState().loadFromSpecs(data.specs);
+      lensStore.getState().setRows(surfacesToGridRows(data));
+      lensStore
+        .getState()
+        .setAutoAperture(data.setAutoAperture === "autoAperture");
+    },
+    [specsStore, lensStore],
+  );
 
   const seidelButton = seidelData && (
     <div className={isLG ? undefined : "mb-2"}>
-      <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom" noTouch>
+      <Tooltip
+        text="View 3rd-order Seidel aberration coefficients"
+        position="bottom"
+        noTouch
+      >
         <Button
           variant="secondary"
           aria-label="3rd Order Seidel Aberrations"
@@ -249,7 +340,11 @@ export function LensEditor({
 
   const zernikeButton = committedOpticalModel && (
     <div className={isLG ? undefined : "mb-2"}>
-      <Tooltip text="View Zernike polynomial coefficients" position="bottom" noTouch>
+      <Tooltip
+        text="View Zernike polynomial coefficients"
+        position="bottom"
+        noTouch
+      >
         <Button
           variant="secondary"
           aria-label="Zernike Terms"
@@ -271,7 +366,9 @@ export function LensEditor({
     />
   );
   /** Whether at least one analysis modal control can be rendered. */
-  const hasAnalysisControls = Boolean(firstOrderData || seidelData || committedOpticalModel);
+  const hasAnalysisControls = Boolean(
+    firstOrderData || seidelData || committedOpticalModel,
+  );
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
 
   const lensLayoutPanel = (
@@ -279,11 +376,7 @@ export function LensEditor({
   );
 
   const analysisPlotContainer = (
-    <AnalysisPlotContainer
-      proxy={proxy}
-      onError={onError}
-      autoHeight={!isLG}
-    />
+    <AnalysisPlotContainer proxy={proxy} onError={onError} autoHeight={!isLG} />
   );
 
   const bottomDrawer = (
@@ -319,7 +412,9 @@ export function LensEditor({
       isOpen={zernikeModalOpen}
       fieldOptions={specsStore.getState().getFieldOptions()}
       wavelengthOptions={specsStore.getState().getWavelengthOptions()}
-      isFiniteImageSpace={Math.abs(committedOpticalModel.surfaces.at(-1)?.thickness ?? 0) <= 1e8}
+      isFiniteImageSpace={
+        Math.abs(committedOpticalModel.surfaces.at(-1)?.thickness ?? 0) <= 1e8
+      }
       onFetchData={handleFetchZernikeData}
       onClose={() => setZernikeModalOpen(false)}
     />
@@ -328,7 +423,9 @@ export function LensEditor({
   const lgContent = (
     <>
       {hasAnalysisControls && (
-        <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
+        <div
+          className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}
+        >
           {configToolbar}
           {paraxialDataButton}
           {seidelButton}
@@ -336,7 +433,9 @@ export function LensEditor({
         </div>
       )}
       {!hasAnalysisControls && (
-        <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
+        <div
+          className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}
+        >
           {configToolbar}
         </div>
       )}
@@ -350,7 +449,10 @@ export function LensEditor({
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
           {lensLayoutPanel}
         </div>
-        <div data-testid="lg-analysis-plot-panel" className="flex flex-1 flex-col min-h-0 overflow-hidden p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
+        <div
+          data-testid="lg-analysis-plot-panel"
+          className="flex flex-1 flex-col min-h-0 overflow-hidden p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]"
+        >
           {analysisPlotContainer}
         </div>
       </div>
@@ -368,26 +470,28 @@ export function LensEditor({
   );
 
   const smContent = (
-    <div data-testid="sm-scroll-container" className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+    <div
+      data-testid="sm-scroll-container"
+      className="flex-1 min-h-0 overflow-y-auto flex flex-col"
+    >
       <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex flex-wrap gap-2">
-          {configToolbar}
-        </div>
+        <div className="flex flex-wrap gap-2">{configToolbar}</div>
         <div className="flex flex-wrap gap-2 mt-2">
           {paraxialDataButton}
           {seidelButton}
           {zernikeButton}
         </div>
         {firstOrderData && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {firstOrderChips}
-          </div>
+          <div className="flex flex-wrap gap-2 mt-2">{firstOrderChips}</div>
         )}
       </div>
       <div data-testid="lens-layout-container" className="w-full px-2 py-3">
         {lensLayoutPanel}
       </div>
-      <div data-testid="analysis-plot-container" className="w-full px-2 py-3 border-t border-gray-200 dark:border-gray-700">
+      <div
+        data-testid="analysis-plot-container"
+        className="w-full px-2 py-3 border-t border-gray-200 dark:border-gray-700"
+      >
         {analysisPlotContainer}
       </div>
       {bottomDrawer}

@@ -30,7 +30,6 @@ const forwardObjectiveCases = [
 const immersionObjectiveName =
   "Superachromatic High NA Immersion Microscope Objective with Tube Lens US#9,645,380 Example 1 (2013)";
 
-
 test("updates the immersion objective at 0.1 mm half-field", async ({
   pyodidePage: page,
 }) => {
@@ -45,7 +44,9 @@ test("updates the immersion objective at 0.1 mm half-field", async ({
   await expect(loadDialog).toBeVisible();
   await loadDialog.getByRole("button", { name: "Load", exact: true }).click();
   await page.waitForURL("**/");
-  await expect(page.getByText(/^(?:Loading lens layout|Updating)\.\.\.$/)).toBeHidden({
+  await expect(
+    page.getByText(/^(?:Loading lens layout|Updating)\.\.\.$/),
+  ).toBeHidden({
     timeout: 120_000,
   });
 
@@ -63,9 +64,10 @@ test("updates the immersion objective at 0.1 mm half-field", async ({
 
   await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
   await expect(page.getByText(/^EFL:/)).toBeVisible();
-  await expect(page.getByRole("img", { name: "Lens layout diagram" })).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: "Lens layout diagram" }),
+  ).toBeVisible();
 });
-
 
 for (const objective of forwardObjectiveCases) {
   test(`builds ${objective.exampleName} after full reversal with exact Object Height`, async ({
@@ -73,24 +75,34 @@ for (const objective of forwardObjectiveCases) {
   }) => {
     await dismissAnyOpenDialog(page);
     await page.goto("/example-systems");
-    await page.getByRole("button", { name: objective.exampleName, exact: true }).click();
+    await page
+      .getByRole("button", { name: objective.exampleName, exact: true })
+      .click();
     await page.getByRole("button", { name: "Apply", exact: true }).click();
 
-    const loadDialog = page.getByRole("dialog", { name: "Load Example System" });
+    const loadDialog = page.getByRole("dialog", {
+      name: "Load Example System",
+    });
     await expect(loadDialog).toBeVisible();
     await loadDialog.getByRole("button", { name: "Load", exact: true }).click();
     await page.waitForURL("**/");
-    await expect(page.getByText(/^(?:Loading lens layout|Updating)\.\.\.$/)).toBeHidden({
+    await expect(
+      page.getByText(/^(?:Loading lens layout|Updating)\.\.\.$/),
+    ).toBeHidden({
       timeout: 120_000,
     });
 
     await page.getByRole("tab", { name: "Prescription" }).click();
     await page.getByRole("button", { name: "Formatting", exact: true }).click();
     const formattingDialog = page.getByRole("dialog", { name: "Formatting" });
-    await formattingDialog.getByRole("radio", {
-      name: "Reverse (also reversing thickness and medium)",
-    }).click();
-    await formattingDialog.getByRole("button", { name: "Confirm", exact: true }).click();
+    await formattingDialog
+      .getByRole("radio", {
+        name: "Reverse (also reversing thickness and medium)",
+      })
+      .click();
+    await formattingDialog
+      .getByRole("button", { name: "Confirm", exact: true })
+      .click();
     await expect(formattingDialog).toBeHidden();
 
     await page.getByRole("tab", { name: "System Specs" }).click();
@@ -111,7 +123,9 @@ for (const objective of forwardObjectiveCases) {
     await expect(wideAngle).toBeEnabled();
     await wideAngle.check();
     await expect(wideAngle).toBeChecked();
-    await fieldDialog.getByRole("button", { name: "Apply", exact: true }).click();
+    await fieldDialog
+      .getByRole("button", { name: "Apply", exact: true })
+      .click();
 
     await page.getByRole("tab", { name: "Prescription" }).click();
     const updateButton = page.getByRole("button", { name: "Update System" });
@@ -121,7 +135,9 @@ for (const objective of forwardObjectiveCases) {
 
     await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
     await expect(page.getByText(/^EFL:/)).toBeVisible();
-    await expect(page.getByRole("img", { name: "Lens layout diagram" })).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: "Lens layout diagram" }),
+    ).toBeVisible();
 
     const plotTypeSelect = page.getByLabel("Plot type");
     await plotTypeSelect.selectOption("opdFan");
@@ -151,7 +167,9 @@ for (const objective of forwardObjectiveCases) {
       await expect(zernikeDialog.getByText("Fit Residual RMS:")).toBeVisible();
       await expect(zernikeDialog.getByText("Pupil Coverage:")).toBeVisible();
       await expect(zernikeDialog.getByText("Approx. Strehl:")).toBeVisible();
-      await zernikeDialog.getByRole("button", { name: "Ok", exact: true }).click();
+      await zernikeDialog
+        .getByRole("button", { name: "Ok", exact: true })
+        .click();
       await expect(zernikeDialog).toBeHidden();
     };
 

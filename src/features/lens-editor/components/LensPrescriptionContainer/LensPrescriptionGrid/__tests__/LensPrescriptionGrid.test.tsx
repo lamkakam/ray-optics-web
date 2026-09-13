@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LensPrescriptionGrid } from "../";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import {
+  OBJECT_ROW_ID,
+  IMAGE_ROW_ID,
+  type GridRow,
+} from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Theme } from "@/shared/tokens/theme";
 
 // Mock useTheme — default to light
@@ -12,7 +16,13 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 }));
 
 const testRows: GridRow[] = [
-  { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10, medium: "air", manufacturer: "" },
+  {
+    id: OBJECT_ROW_ID,
+    kind: "object",
+    objectDistance: 1e10,
+    medium: "air",
+    manufacturer: "",
+  },
   {
     id: "s1",
     kind: "surface",
@@ -72,8 +82,14 @@ describe("LensPrescriptionGrid", () => {
   it("uses normal AG Grid layout with responsive fixed grid heights", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
 
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "normal");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "false");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-dom-layout",
+      "normal",
+    );
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-suppress-touch",
+      "false",
+    );
     expect(screen.getByLabelText("Lens prescription editor")).toHaveClass(
       "ag-grid-touch-scroll",
       "h-[calc(100vh-160px)]",
@@ -84,7 +100,9 @@ describe("LensPrescriptionGrid", () => {
 
   it("renders all rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     expect(rows).toHaveLength(4);
   });
 
@@ -93,16 +111,24 @@ describe("LensPrescriptionGrid", () => {
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     const headerTexts = Array.from(headers).map((h) => h.textContent);
 
-    expect(headerTexts.slice(0, 5)).toEqual(["", "Index", "Surface", "Comment", "Radius of Curvature"]);
+    expect(headerTexts.slice(0, 5)).toEqual([
+      "",
+      "Index",
+      "Surface",
+      "Comment",
+      "Radius of Curvature",
+    ]);
     expect(headerTexts).toContain("Surface");
     expect(headerTexts).toContain("Radius of Curvature");
     expect(headerTexts).toContain("Thickness");
     expect(headerTexts).toContain("Medium");
     expect(headerTexts).toContain("Semi-diam.");
-    expect(headerTexts.slice(headerTexts.indexOf("Semi-diam."), headerTexts.indexOf("Semi-diam.") + 2)).toEqual([
-      "Semi-diam.",
-      "Aperture",
-    ]);
+    expect(
+      headerTexts.slice(
+        headerTexts.indexOf("Semi-diam."),
+        headerTexts.indexOf("Semi-diam.") + 2,
+      ),
+    ).toEqual(["Semi-diam.", "Aperture"]);
     expect(headerTexts).toContain("Tilt & Decenter");
     expect(headerTexts).toContain("Diffraction Grating");
   });
@@ -110,23 +136,38 @@ describe("LensPrescriptionGrid", () => {
   it("renders physical comments as editable text, blanks object/image, and commits edits", async () => {
     const user = userEvent.setup();
     const onRowChange = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
-    const renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    render(
+      <LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />,
+    );
+    const renderedRows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     const commentColumnIndex = 3;
 
-    expect(renderedRows[0].querySelectorAll("td")[commentColumnIndex]).toBeEmptyDOMElement();
-    expect(renderedRows[3].querySelectorAll("td")[commentColumnIndex]).toBeEmptyDOMElement();
-    const commentInputs = screen.getAllByRole("textbox").filter((input) => (
-      input.closest("td") === renderedRows[1].querySelectorAll("td")[commentColumnIndex]
-      || input.closest("td") === renderedRows[2].querySelectorAll("td")[commentColumnIndex]
-    ));
+    expect(
+      renderedRows[0].querySelectorAll("td")[commentColumnIndex],
+    ).toBeEmptyDOMElement();
+    expect(
+      renderedRows[3].querySelectorAll("td")[commentColumnIndex],
+    ).toBeEmptyDOMElement();
+    const commentInputs = screen
+      .getAllByRole("textbox")
+      .filter(
+        (input) =>
+          input.closest("td") ===
+            renderedRows[1].querySelectorAll("td")[commentColumnIndex] ||
+          input.closest("td") ===
+            renderedRows[2].querySelectorAll("td")[commentColumnIndex],
+      );
     expect(commentInputs).toHaveLength(2);
     expect(commentInputs[0]).toHaveValue("Front element");
     expect(commentInputs[1]).toHaveValue("");
 
     await user.clear(commentInputs[0]);
     await user.type(commentInputs[0], "Updated comment{enter}");
-    expect(onRowChange).toHaveBeenCalledWith("s1", { comment: "Updated comment" });
+    expect(onRowChange).toHaveBeenCalledWith("s1", {
+      comment: "Updated comment",
+    });
   });
 
   it("pins the Index column to the left", () => {
@@ -139,8 +180,13 @@ describe("LensPrescriptionGrid", () => {
 
   it("renders blank index cells for object and image rows and one-based indices for surface rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
-    const indexValues = Array.from(rows, (row) => row.querySelectorAll("td")[1].textContent);
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
+    const indexValues = Array.from(
+      rows,
+      (row) => row.querySelectorAll("td")[1].textContent,
+    );
 
     expect(indexValues).toEqual(["", "1", "2", ""]);
   });
@@ -166,8 +212,13 @@ describe("LensPrescriptionGrid", () => {
 
     rerender(<LensPrescriptionGrid {...defaultProps} rows={insertedRows} />);
 
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
-    const indexValues = Array.from(rows, (row) => row.querySelectorAll("td")[1].textContent);
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
+    const indexValues = Array.from(
+      rows,
+      (row) => row.querySelectorAll("td")[1].textContent,
+    );
     expect(indexValues).toEqual(["", "1", "2", "3", ""]);
   });
 
@@ -177,14 +228,21 @@ describe("LensPrescriptionGrid", () => {
 
     rerender(<LensPrescriptionGrid {...defaultProps} rows={deletedRows} />);
 
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
-    const indexValues = Array.from(rows, (row) => row.querySelectorAll("td")[1].textContent);
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
+    const indexValues = Array.from(
+      rows,
+      (row) => row.querySelectorAll("td")[1].textContent,
+    );
     expect(indexValues).toEqual(["", "1", ""]);
   });
 
   it("has an aria-label on the wrapper", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    expect(screen.getByLabelText("Lens prescription editor")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Lens prescription editor"),
+    ).toBeInTheDocument();
   });
 
   // --- Surface label column ---
@@ -206,7 +264,9 @@ describe("LensPrescriptionGrid", () => {
 
   it("calls onRowChange when surface label is changed", async () => {
     const onRowChange = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />,
+    );
     const selects = screen.getAllByRole("combobox", { name: "Surface" });
 
     await userEvent.selectOptions(selects[0], "Stop");
@@ -217,14 +277,23 @@ describe("LensPrescriptionGrid", () => {
   // --- Medium column ---
   it("renders medium buttons for surface rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+    const mediumButtons = screen.getAllByRole("button", {
+      name: "Edit medium",
+    });
     expect(mediumButtons).toHaveLength(3); // object row + two surface rows
   });
 
   it("calls onOpenMediumModal when medium button is clicked", async () => {
     const onOpenMediumModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenMediumModal={onOpenMediumModal} />);
-    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenMediumModal={onOpenMediumModal}
+      />,
+    );
+    const mediumButtons = screen.getAllByRole("button", {
+      name: "Edit medium",
+    });
 
     await userEvent.click(mediumButtons[0]);
 
@@ -238,8 +307,15 @@ describe("LensPrescriptionGrid", () => {
 
   it("opens the surface row medium modal when the second medium button is clicked", async () => {
     const onOpenMediumModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenMediumModal={onOpenMediumModal} />);
-    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenMediumModal={onOpenMediumModal}
+      />,
+    );
+    const mediumButtons = screen.getAllByRole("button", {
+      name: "Edit medium",
+    });
 
     await userEvent.click(mediumButtons[1]);
 
@@ -249,32 +325,45 @@ describe("LensPrescriptionGrid", () => {
   // --- Aspherical column ---
   it("renders aspherical buttons for surface rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const buttons = screen.getAllByRole("button", { name: "Edit aspherical parameters" });
+    const buttons = screen.getAllByRole("button", {
+      name: "Edit aspherical parameters",
+    });
     expect(buttons).toHaveLength(2); // two surface rows
   });
 
   it("renders text labels for aspherical, decenter, and diffraction grating cells", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const rows = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("tbody tr");
     const s1Cells = rows[1].querySelectorAll("td");
     const s2Cells = rows[2].querySelectorAll("td");
 
-    expect(Array.from([s1Cells[9], s1Cells[10], s1Cells[11]], (cell) => cell.textContent)).toEqual([
-      "None",
-      "decenter",
-      "600 lp/mm",
-    ]);
-    expect(Array.from([s2Cells[9], s2Cells[10], s2Cells[11]], (cell) => cell.textContent)).toEqual([
-      "Conic",
-      "None",
-      "None",
-    ]);
+    expect(
+      Array.from(
+        [s1Cells[9], s1Cells[10], s1Cells[11]],
+        (cell) => cell.textContent,
+      ),
+    ).toEqual(["None", "decenter", "600 lp/mm"]);
+    expect(
+      Array.from(
+        [s2Cells[9], s2Cells[10], s2Cells[11]],
+        (cell) => cell.textContent,
+      ),
+    ).toEqual(["Conic", "None", "None"]);
   });
 
   it("calls onOpenAsphericalModal when aspherical button is clicked", async () => {
     const onOpenAsphericalModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenAsphericalModal={onOpenAsphericalModal} />);
-    const buttons = screen.getAllByRole("button", { name: "Edit aspherical parameters" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenAsphericalModal={onOpenAsphericalModal}
+      />,
+    );
+    const buttons = screen.getAllByRole("button", {
+      name: "Edit aspherical parameters",
+    });
 
     await userEvent.click(buttons[1]); // s2 has aspherical
 
@@ -294,7 +383,9 @@ describe("LensPrescriptionGrid", () => {
 
   it("calls onRowChange when a numeric cell value changes", async () => {
     const onRowChange = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />,
+    );
     const inputs = screen.getAllByRole("textbox");
 
     // Third textbox is s1 radius (value 50): Object thickness and s1 comment precede it.
@@ -314,7 +405,7 @@ describe("LensPrescriptionGrid", () => {
         {...defaultProps}
         onRowChange={onRowChange}
         onOpenMediumModal={onOpenMediumModal}
-      />
+      />,
     );
     const inputs = screen.getAllByRole("textbox");
 
@@ -336,21 +427,32 @@ describe("LensPrescriptionGrid", () => {
 
   it("calls onRowChange with objectDistance when Object thickness changes", async () => {
     const onRowChange = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />,
+    );
     const inputs = screen.getAllByRole("textbox");
 
     await userEvent.clear(inputs[0]);
     await userEvent.type(inputs[0], "500.5");
     await userEvent.tab();
 
-    expect(onRowChange).toHaveBeenCalledWith(OBJECT_ROW_ID, { objectDistance: 500.5 });
+    expect(onRowChange).toHaveBeenCalledWith(OBJECT_ROW_ID, {
+      objectDistance: 500.5,
+    });
   });
 
   // --- Cell click delegation (clicking empty space in a cell) ---
   it("opens medium modal when clicking cell area around the medium button", async () => {
     const onOpenMediumModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenMediumModal={onOpenMediumModal} />);
-    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenMediumModal={onOpenMediumModal}
+      />,
+    );
+    const mediumButtons = screen.getAllByRole("button", {
+      name: "Edit medium",
+    });
     const cellWrapper = mediumButtons[0].closest("[data-cell-wrapper]")!;
 
     await userEvent.click(cellWrapper);
@@ -360,8 +462,15 @@ describe("LensPrescriptionGrid", () => {
 
   it("opens aspherical modal when clicking cell area around the aspherical button", async () => {
     const onOpenAsphericalModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenAsphericalModal={onOpenAsphericalModal} />);
-    const buttons = screen.getAllByRole("button", { name: "Edit aspherical parameters" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenAsphericalModal={onOpenAsphericalModal}
+      />,
+    );
+    const buttons = screen.getAllByRole("button", {
+      name: "Edit aspherical parameters",
+    });
     const cellWrapper = buttons[0].closest("[data-cell-wrapper]")!;
 
     await userEvent.click(cellWrapper);
@@ -371,7 +480,12 @@ describe("LensPrescriptionGrid", () => {
 
   it("opens aperture modal when clicking the aperture button and surrounding cell area", async () => {
     const onOpenApertureModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenApertureModal={onOpenApertureModal} />);
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenApertureModal={onOpenApertureModal}
+      />,
+    );
     const buttons = screen.getAllByRole("button", { name: "Edit aperture" });
 
     await userEvent.click(buttons[0]);
@@ -399,7 +513,9 @@ describe("LensPrescriptionGrid", () => {
 
   it("calls onAddRowAfter when '+' button is clicked on object row", async () => {
     const onAddRowAfter = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onAddRowAfter={onAddRowAfter} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} onAddRowAfter={onAddRowAfter} />,
+    );
     const addButtons = screen.getAllByRole("button", { name: "Insert row" });
 
     await userEvent.click(addButtons[0]); // first '+' is for object row
@@ -409,7 +525,9 @@ describe("LensPrescriptionGrid", () => {
 
   it("calls onAddRowAfter when '+' button is clicked on surface row", async () => {
     const onAddRowAfter = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onAddRowAfter={onAddRowAfter} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} onAddRowAfter={onAddRowAfter} />,
+    );
     const addButtons = screen.getAllByRole("button", { name: "Insert row" });
 
     await userEvent.click(addButtons[1]); // second '+' is for s1
@@ -419,7 +537,9 @@ describe("LensPrescriptionGrid", () => {
 
   it("calls onDeleteRow when '-' button is clicked on surface row", async () => {
     const onDeleteRow = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onDeleteRow={onDeleteRow} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} onDeleteRow={onDeleteRow} />,
+    );
     const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
 
     await userEvent.click(deleteButtons[0]); // first '-' is for s1
@@ -430,14 +550,23 @@ describe("LensPrescriptionGrid", () => {
   // --- Decenter column ---
   it("renders decenter buttons for surface rows and image row", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    const decenterButtons = screen.getAllByRole("button", {
+      name: "Edit decenter and tilt",
+    });
     expect(decenterButtons).toHaveLength(3); // two surface rows + image row
   });
 
   it("calls onOpenDecenterModal when decenter button is clicked on a surface row", async () => {
     const onOpenDecenterModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
-    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenDecenterModal={onOpenDecenterModal}
+      />,
+    );
+    const decenterButtons = screen.getAllByRole("button", {
+      name: "Edit decenter and tilt",
+    });
 
     await userEvent.click(decenterButtons[0]);
 
@@ -446,8 +575,15 @@ describe("LensPrescriptionGrid", () => {
 
   it("calls onOpenDecenterModal when decenter button is clicked on image row", async () => {
     const onOpenDecenterModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
-    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenDecenterModal={onOpenDecenterModal}
+      />,
+    );
+    const decenterButtons = screen.getAllByRole("button", {
+      name: "Edit decenter and tilt",
+    });
 
     await userEvent.click(decenterButtons[2]); // last button is image row
 
@@ -456,8 +592,15 @@ describe("LensPrescriptionGrid", () => {
 
   it("opens decenter modal when clicking cell area around the decenter button", async () => {
     const onOpenDecenterModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
-    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenDecenterModal={onOpenDecenterModal}
+      />,
+    );
+    const decenterButtons = screen.getAllByRole("button", {
+      name: "Edit decenter and tilt",
+    });
     const cellWrapper = decenterButtons[0].closest("[data-cell-wrapper]")!;
 
     await userEvent.click(cellWrapper);
@@ -467,8 +610,15 @@ describe("LensPrescriptionGrid", () => {
 
   it("opens decenter modal when clicking cell area around the image row decenter button", async () => {
     const onOpenDecenterModal = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
-    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenDecenterModal={onOpenDecenterModal}
+      />,
+    );
+    const decenterButtons = screen.getAllByRole("button", {
+      name: "Edit decenter and tilt",
+    });
     const cellWrapper = decenterButtons[2].closest("[data-cell-wrapper]")!; // image row
 
     await userEvent.click(cellWrapper);
@@ -479,7 +629,9 @@ describe("LensPrescriptionGrid", () => {
   // --- Diffraction Grating column ---
   it("renders diffraction grating buttons for surface rows only", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const gratingButtons = screen.getAllByRole("button", { name: "Edit diffraction grating" });
+    const gratingButtons = screen.getAllByRole("button", {
+      name: "Edit diffraction grating",
+    });
     expect(gratingButtons).toHaveLength(2);
   });
 
@@ -489,9 +641,11 @@ describe("LensPrescriptionGrid", () => {
       <LensPrescriptionGrid
         {...defaultProps}
         onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
-      />
+      />,
     );
-    const gratingButtons = screen.getAllByRole("button", { name: "Edit diffraction grating" });
+    const gratingButtons = screen.getAllByRole("button", {
+      name: "Edit diffraction grating",
+    });
 
     await userEvent.click(gratingButtons[0]);
 
@@ -504,9 +658,11 @@ describe("LensPrescriptionGrid", () => {
       <LensPrescriptionGrid
         {...defaultProps}
         onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
-      />
+      />,
     );
-    const gratingButtons = screen.getAllByRole("button", { name: "Edit diffraction grating" });
+    const gratingButtons = screen.getAllByRole("button", {
+      name: "Edit diffraction grating",
+    });
     const cellWrapper = gratingButtons[0].closest("[data-cell-wrapper]")!;
 
     await userEvent.click(cellWrapper);
@@ -516,14 +672,18 @@ describe("LensPrescriptionGrid", () => {
 
   // --- semiDiameterReadonly prop ---
   it("renders semi-diam inputs for surface rows when semiDiameterReadonly is false (default)", () => {
-    render(<LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={false} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={false} />,
+    );
     const inputs = screen.getAllByRole("textbox");
     // Numeric inputs (8) plus one comment input per physical surface (2).
     expect(inputs).toHaveLength(10);
   });
 
   it("renders no semi-diam inputs for surface rows when semiDiameterReadonly is true", () => {
-    render(<LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={true} />);
+    render(
+      <LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={true} />,
+    );
     const inputs = screen.getAllByRole("textbox");
     // Numeric inputs (6) plus one comment input per physical surface (2).
     expect(inputs).toHaveLength(8);

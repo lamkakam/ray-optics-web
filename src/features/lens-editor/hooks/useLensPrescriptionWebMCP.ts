@@ -13,7 +13,10 @@ export function useLensPrescriptionWebMCP(
   store: StoreApi<LensEditorState>,
   lookupMaps: GlassLookupMaps | undefined,
 ): void {
-  const tools = useMemo(() => createLensPrescriptionTools(store, lookupMaps), [store, lookupMaps]);
+  const tools = useMemo(
+    () => createLensPrescriptionTools(store, lookupMaps),
+    [store, lookupMaps],
+  );
   useWebMCP(tools.getLensPrescription, [store]);
   useWebMCP(tools.setLensPrescription, [store]);
   useWebMCP(tools.insertLensSurface, [store]);

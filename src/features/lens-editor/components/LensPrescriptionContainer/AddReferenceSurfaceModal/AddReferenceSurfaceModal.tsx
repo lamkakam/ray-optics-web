@@ -36,7 +36,7 @@ export function AddReferenceSurfaceModal({
     <Modal
       isOpen={isOpen}
       title="Add Reference Surface?"
-      footer={(
+      footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel}>
             No
@@ -45,11 +45,13 @@ export function AddReferenceSurfaceModal({
             Yes
           </Button>
         </div>
-      )}
+      }
     >
       <Paragraph variant="body" className="mb-6">
-        The reversed prescription starts with a tilted or decentered physical surface. Rayoptics wavefront and OPD
-        calculations can be unreliable in that topology; a flat air reference surface after Object avoids the issue.
+        The reversed prescription starts with a tilted or decentered physical
+        surface. Rayoptics wavefront and OPD calculations can be unreliable in
+        that topology; a flat air reference surface after Object avoids the
+        issue.
       </Paragraph>
     </Modal>
   );

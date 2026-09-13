@@ -18,7 +18,7 @@ describe("LoadingOverlay", () => {
       <LoadingOverlay
         title="Title"
         contents={<span data-testid="node-content">Node content</span>}
-      />
+      />,
     );
     expect(screen.getByTestId("node-content")).toBeInTheDocument();
   });
@@ -28,16 +28,18 @@ describe("LoadingOverlay", () => {
       <LoadingOverlay
         title="Title"
         contents={<Progress value={25} ariaLabel="Initialization progress" />}
-      />
+      />,
     );
 
-    expect(screen.getByRole("progressbar", { name: "Initialization progress" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("progressbar", { name: "Initialization progress" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("25%")).toBeInTheDocument();
   });
 
   it("outer container has fixed and inset-0 classes", () => {
     const { container } = render(
-      <LoadingOverlay title="Title" contents="Content" />
+      <LoadingOverlay title="Title" contents="Content" />,
     );
     const outer = container.firstChild as HTMLElement;
     expect(outer.className).toMatch(/\bfixed\b/);

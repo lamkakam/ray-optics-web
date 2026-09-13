@@ -10,7 +10,19 @@
  */
 import type { StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
-import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type {
+  AstigmatismCurveData,
+  DiffractionMtfData,
+  DiffractionPsfData,
+  FieldCurveData,
+  GeoPsfData,
+  LongitudinalSphericalAberrationData,
+  OpdFanData,
+  RayFanData,
+  SpotDiagramData,
+  StrehlVsWavelengthData,
+  WavefrontMapData,
+} from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {
   /** Ray Fan chart payload, initially `undefined`. */
@@ -24,7 +36,9 @@ export interface AnalysisPlotState {
   /** Astigmatism-curve chart payload, initially `undefined`. */
   astigmatismCurveData: AstigmatismCurveData | undefined;
   /** Longitudinal spherical-aberration chart payload, initially `undefined`. */
-  longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData | undefined;
+  longitudinalSphericalAberrationData:
+    | LongitudinalSphericalAberrationData
+    | undefined;
   /** Geometric PSF chart payload, initially `undefined`. */
   geoPsfData: GeoPsfData | undefined;
   /** Diffraction PSF chart payload, initially `undefined`. */
@@ -55,7 +69,9 @@ export interface AnalysisPlotState {
   /** Sets or clears the astigmatism-curve payload and clears every other typed plot payload. */
   setAstigmatismCurveData: (data: AstigmatismCurveData | undefined) => void;
   /** Sets or clears the longitudinal spherical-aberration payload and clears every other typed plot payload. */
-  setLongitudinalSphericalAberrationData: (data: LongitudinalSphericalAberrationData | undefined) => void;
+  setLongitudinalSphericalAberrationData: (
+    data: LongitudinalSphericalAberrationData | undefined,
+  ) => void;
   /** Sets or clears the geometric PSF payload and clears every other typed plot payload. */
   setGeoPsfData: (data: GeoPsfData | undefined) => void;
   /** Sets or clears the diffraction PSF payload and clears every other typed plot payload. */
@@ -76,7 +92,9 @@ export interface AnalysisPlotState {
   setSelectedPlotType: (plotType: PlotType) => void;
 }
 
-export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) => ({
+export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
+  set,
+) => ({
   rayFanData: undefined,
   opdFanData: undefined,
   spotDiagramData: undefined,
@@ -93,153 +111,170 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
   selectedWavelengthIndex: 0,
   selectedPlotType: "rayFan",
 
-  setRayFanData: (data) => set({
-    rayFanData: data,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setOpdFanData: (data) => set({
-    opdFanData: data,
-    rayFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setSpotDiagramData: (data) => set({
-    spotDiagramData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setFieldCurvatureData: (data) => set({
-    fieldCurvatureData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setAstigmatismCurveData: (data) => set({
-    astigmatismCurveData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setLongitudinalSphericalAberrationData: (data) => set({
-    longitudinalSphericalAberrationData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setGeoPsfData: (data) => set({
-    geoPsfData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setDiffractionPsfData: (data) => set({
-    diffractionPsfData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setDiffractionMtfData: (data) => set({
-    diffractionMtfData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    wavefrontMapData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setWavefrontMapData: (data) => set({
-    wavefrontMapData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    strehlVsWavelengthData: undefined,
-  }),
-  setStrehlVsWavelengthData: (data) => set({
-    strehlVsWavelengthData: data,
-    rayFanData: undefined,
-    opdFanData: undefined,
-    spotDiagramData: undefined,
-    fieldCurvatureData: undefined,
-    astigmatismCurveData: undefined,
-    longitudinalSphericalAberrationData: undefined,
-    geoPsfData: undefined,
-    diffractionPsfData: undefined,
-    diffractionMtfData: undefined,
-    wavefrontMapData: undefined,
-  }),
+  setRayFanData: (data) =>
+    set({
+      rayFanData: data,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setOpdFanData: (data) =>
+    set({
+      opdFanData: data,
+      rayFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setSpotDiagramData: (data) =>
+    set({
+      spotDiagramData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setFieldCurvatureData: (data) =>
+    set({
+      fieldCurvatureData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setAstigmatismCurveData: (data) =>
+    set({
+      astigmatismCurveData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setLongitudinalSphericalAberrationData: (data) =>
+    set({
+      longitudinalSphericalAberrationData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setGeoPsfData: (data) =>
+    set({
+      geoPsfData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setDiffractionPsfData: (data) =>
+    set({
+      diffractionPsfData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setDiffractionMtfData: (data) =>
+    set({
+      diffractionMtfData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setWavefrontMapData: (data) =>
+    set({
+      wavefrontMapData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      strehlVsWavelengthData: undefined,
+    }),
+  setStrehlVsWavelengthData: (data) =>
+    set({
+      strehlVsWavelengthData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+    }),
   setPlotLoading: (loading) => set({ plotLoading: loading }),
   setSelectedFieldIndex: (index, maxCount) =>
-    set({ selectedFieldIndex: maxCount !== undefined ? Math.min(index, maxCount - 1) : index }),
+    set({
+      selectedFieldIndex:
+        maxCount !== undefined ? Math.min(index, maxCount - 1) : index,
+    }),
   setSelectedWavelengthIndex: (index, maxCount) =>
-    set({ selectedWavelengthIndex: maxCount !== undefined ? Math.min(index, maxCount - 1) : index }),
+    set({
+      selectedWavelengthIndex:
+        maxCount !== undefined ? Math.min(index, maxCount - 1) : index,
+    }),
   setSelectedPlotType: (plotType) => set({ selectedPlotType: plotType }),
 });

@@ -13,6 +13,9 @@ export function mapPhysicalSurfaceSemiDiameters(
   }
 
   return Object.fromEntries(
-    physicalRows.map((row, index) => [row.id, sequentialSemiDiameters[index + 1]]),
+    physicalRows.map((row, index) => [
+      row.id,
+      sequentialSemiDiameters[index + 1],
+    ]),
   );
 }

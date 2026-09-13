@@ -2,8 +2,14 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { FocusingContainer } from "@/features/lens-editor/components/FocusingContainer";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -41,7 +47,9 @@ const testSurfaces = {
 };
 
 function createTestSpecsStore() {
-  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
+  const store = createStore<SpecsConfiguratorState>(
+    createSpecsConfiguratorSlice,
+  );
   store.getState().setField({
     space: "object",
     type: "angle",
@@ -63,14 +71,22 @@ const testOpticalModel: OpticalModel = {
   ...testSurfaces,
   specs: {
     pupil: { space: "object", type: "epd", value: 25 },
-    field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      fields: [0, 0.7, 1],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
   },
 };
 
 const focusingResult = { delta_thi: 0.5, metric_value: 0.01 };
 
-function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
+function makeMockProxy(
+  overrides: Partial<PyodideWorkerAPI> = {},
+): PyodideWorkerAPI {
   return {
     init: jest.fn(),
     getFirstOrderData: jest.fn(),
@@ -108,7 +124,7 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     expect(screen.getByRole("button", { name: "Focus" })).toBeInTheDocument();
   });
@@ -128,7 +144,7 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     expect(screen.getByRole("button", { name: "Focus" })).toBeDisabled();
   });
@@ -148,7 +164,7 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     expect(screen.getByRole("button", { name: "Focus" })).toBeDisabled();
   });
@@ -170,10 +186,15 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
-    await waitFor(() => expect(proxy.focusByMonoRmsSpot).toHaveBeenCalledWith(testOpticalModel, 0));
+    await waitFor(() =>
+      expect(proxy.focusByMonoRmsSpot).toHaveBeenCalledWith(
+        testOpticalModel,
+        0,
+      ),
+    );
   });
 
   it("calls onUpdateSystem after updating the store", async () => {
@@ -193,7 +214,7 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     await waitFor(() => expect(onUpdateSystem).toHaveBeenCalledTimes(1));
@@ -216,7 +237,7 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     await waitFor(() => expect(onUpdateSystem).toHaveBeenCalled());
@@ -228,7 +249,9 @@ describe("FocusingContainer", () => {
     if (lastSurface && lastSurface.kind === "surface") {
       expect(lastSurface.thickness).toBeCloseTo(41.7365, 4);
     }
-    expect(lensStore.getState().optimizationSyncPolicy).toBe("preserveOptimizationModes");
+    expect(lensStore.getState().optimizationSyncPolicy).toBe(
+      "preserveOptimizationModes",
+    );
   });
 
   it("calls onError when proxy throws", async () => {
@@ -250,7 +273,7 @@ describe("FocusingContainer", () => {
             onError={onError}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
@@ -262,9 +285,10 @@ describe("FocusingContainer", () => {
     let resolveProxy!: () => void;
     const slowProxy = makeMockProxy({
       focusByMonoRmsSpot: jest.fn().mockImplementation(
-        () => new Promise<typeof focusingResult>((resolve) => {
-          resolveProxy = () => resolve(focusingResult);
-        })
+        () =>
+          new Promise<typeof focusingResult>((resolve) => {
+            resolveProxy = () => resolve(focusingResult);
+          }),
       ),
     });
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
@@ -280,14 +304,16 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     expect(screen.getByText("Focusing…")).toBeInTheDocument();
     await act(async () => {
       resolveProxy();
     });
-    await waitFor(() => expect(screen.queryByText("Focusing…")).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText("Focusing…")).not.toBeInTheDocument(),
+    );
   });
 
   it("field dropdown options sync with specsStore even before commit", async () => {
@@ -305,7 +331,7 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
 
     // Initial: maxField=20, fields=[0, 0.7, 1] → options "0.00°", "14.0°", "20.0°"
@@ -337,13 +363,15 @@ describe("FocusingContainer", () => {
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
 
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "0.00°" })).toBeInTheDocument();
       expect(screen.getByRole("option", { name: "30.0°" })).toBeInTheDocument();
-      expect(screen.queryByRole("option", { name: "14.0°" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("option", { name: "14.0°" }),
+      ).not.toBeInTheDocument();
     });
   });
 });

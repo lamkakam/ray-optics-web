@@ -2,7 +2,10 @@ import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysis
 import { buildWavefrontMapBitmap } from "@/features/analysis/components/WavefrontMapChart/wavefrontMapDeckData";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
-function hexToRgba(hexColor: string, alpha: number): readonly [number, number, number, number] {
+function hexToRgba(
+  hexColor: string,
+  alpha: number,
+): readonly [number, number, number, number] {
   return [
     Number.parseInt(hexColor.slice(1, 3), 16),
     Number.parseInt(hexColor.slice(3, 5), 16),
@@ -38,9 +41,15 @@ describe("wavefrontMapDeckData", () => {
     expect(prepared.axisExtent).toBe(2);
 
     expect(Array.from(prepared.image.data.slice(0, 4))).toEqual([0, 0, 0, 0]);
-    expect(Array.from(prepared.image.data.slice(4, 8))).toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255));
-    expect(Array.from(prepared.image.data.slice(16, 20))).toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[5], 255));
-    expect(Array.from(prepared.image.data.slice(28, 32))).toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[10], 255));
+    expect(Array.from(prepared.image.data.slice(4, 8))).toEqual(
+      hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255),
+    );
+    expect(Array.from(prepared.image.data.slice(16, 20))).toEqual(
+      hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[5], 255),
+    );
+    expect(Array.from(prepared.image.data.slice(28, 32))).toEqual(
+      hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[10], 255),
+    );
   });
 
   it("keeps equal finite values stable without NaN color indexing", () => {
@@ -53,7 +62,9 @@ describe("wavefrontMapDeckData", () => {
 
     expect(prepared.minValue).toBe(0.25);
     expect(prepared.maxValue).toBe(0.25);
-    expect(Array.from(prepared.image.data)).toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255));
+    expect(Array.from(prepared.image.data)).toEqual(
+      hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255),
+    );
   });
 
   it("interpolates finite values between neighboring palette stops", () => {
@@ -64,9 +75,15 @@ describe("wavefrontMapDeckData", () => {
       z: [[0, 0.05, 1]],
     });
 
-    expect(Array.from(prepared.image.data.slice(4, 8))).toEqual([91, 52, 144, 255]);
-    expect(Array.from(prepared.image.data.slice(4, 8))).not.toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255));
-    expect(Array.from(prepared.image.data.slice(4, 8))).not.toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[1], 255));
+    expect(Array.from(prepared.image.data.slice(4, 8))).toEqual([
+      91, 52, 144, 255,
+    ]);
+    expect(Array.from(prepared.image.data.slice(4, 8))).not.toEqual(
+      hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255),
+    );
+    expect(Array.from(prepared.image.data.slice(4, 8))).not.toEqual(
+      hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[1], 255),
+    );
   });
 
   it("keeps non-finite samples transparent and excludes them from the color range", () => {
@@ -81,7 +98,9 @@ describe("wavefrontMapDeckData", () => {
     expect(prepared.maxValue).toBe(0.5);
     expect(Array.from(prepared.image.data.slice(0, 4))).toEqual([0, 0, 0, 0]);
     expect(Array.from(prepared.image.data.slice(4, 8))).toEqual([0, 0, 0, 0]);
-    expect(Array.from(prepared.image.data.slice(8, 12))).toEqual(hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255));
+    expect(Array.from(prepared.image.data.slice(8, 12))).toEqual(
+      hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[0], 255),
+    );
   });
 
   it("treats missing z rows and empty coordinate grids as transparent finite fallbacks", () => {

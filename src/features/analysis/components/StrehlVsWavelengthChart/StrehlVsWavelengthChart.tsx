@@ -18,7 +18,10 @@ interface StrehlVsWavelengthChartProps {
  * - Uses `buildStrehlVsWavelengthOption(...)` to build chart options from measured dimensions.
  * - In fixed-height mode, chart height is capped by the parent height and otherwise targets 60% of chart width with a 300 px minimum.
  */
-export const StrehlVsWavelengthChart = createAnalysisChartComponent<StrehlVsWavelengthChartProps, StrehlVsWavelengthData>({
+export const StrehlVsWavelengthChart = createAnalysisChartComponent<
+  StrehlVsWavelengthChartProps,
+  StrehlVsWavelengthData
+>({
   displayName: "StrehlVsWavelengthChart",
   testId: "strehl-vs-wavelength-chart",
   ariaLabel: "Strehl vs Wavelength plot",
@@ -27,8 +30,21 @@ export const StrehlVsWavelengthChart = createAnalysisChartComponent<StrehlVsWave
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
     autoHeight
       ? Math.max(Math.round(parentWidth * 0.6), 300)
-      : Math.max(0, Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300))),
+      : Math.max(
+          0,
+          Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 300)),
+        ),
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
-  buildOption: (strehlVsWavelengthData, chartWidth, chartHeight, chartTextColor) =>
-    buildStrehlVsWavelengthOption(strehlVsWavelengthData, chartWidth, chartHeight, chartTextColor),
+  buildOption: (
+    strehlVsWavelengthData,
+    chartWidth,
+    chartHeight,
+    chartTextColor,
+  ) =>
+    buildStrehlVsWavelengthOption(
+      strehlVsWavelengthData,
+      chartWidth,
+      chartHeight,
+      chartTextColor,
+    ),
 });

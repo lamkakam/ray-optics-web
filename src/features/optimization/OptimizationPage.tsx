@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -22,12 +29,29 @@ import {
 import { getOptimizationAlgorithmCapabilities } from "./lib/methodCapabilities";
 import { applyOptimizationModelToEditor } from "./lib/applyOptimizationModelToEditor";
 import { hasNonZeroOptimizationContribution } from "./stores/optimizationStore";
-import { createEvaluationRow, type RadiusRow, type WeightRow } from "./lib/optimizationViewModels";
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
+import {
+  createEvaluationRow,
+  type RadiusRow,
+  type WeightRow,
+} from "./lib/optimizationViewModels";
+import {
+  surfacesToGridRows,
+  gridRowsToSurfaces,
+} from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import {
+  formatMissingGlassMessage,
+  getMissingPrescriptionGlasses,
+} from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { OptimizationConfig, OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
+import type {
+  OpticalModel,
+  OpticalSpecs,
+} from "@/shared/lib/types/opticalModel";
+import type {
+  OptimizationConfig,
+  OptimizationProgressEntry,
+  OptimizationReport,
+} from "./types/optimizationWorkerTypes";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
@@ -42,7 +66,8 @@ interface OptimizationPageProps {
   readonly onApplyToEditor?: (model: OpticalModel) => Promise<void> | void;
 }
 
-const ZERO_WEIGHT_WARNING_MESSAGE = "At least one effective optimization weight must be non-zero.";
+const ZERO_WEIGHT_WARNING_MESSAGE =
+  "At least one effective optimization weight must be non-zero.";
 const LG_EVALUATION_RESERVED_HEIGHT_FALLBACK = 333;
 const PYODIDE_INTERRUPT_SIGNAL = 2;
 
@@ -53,11 +78,18 @@ function buildCurrentEditorModel(
   specs: OpticalSpecs,
 ): OpticalModel {
   const effectiveRows = autoAperture
-    ? rows.map((row) => row.kind === "surface"
-      ? { ...row, semiDiameter: autoSemiDiameters[row.id] ?? row.semiDiameter }
-      : row)
+    ? rows.map((row) =>
+        row.kind === "surface"
+          ? {
+              ...row,
+              semiDiameter: autoSemiDiameters[row.id] ?? row.semiDiameter,
+            }
+          : row,
+      )
     : rows;
-  const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
+  const setAutoAperture = autoAperture
+    ? ("autoAperture" as const)
+    : ("manualAperture" as const);
   const surfaces = gridRowsToSurfaces(effectiveRows);
   return { setAutoAperture, specs, ...surfaces };
 }
@@ -170,9 +202,8 @@ export function OptimizationPage({
   onError,
   onApplyToEditor,
 }: OptimizationPageProps) {
-  const defaultLgDrawerHeight = typeof window === "undefined"
-    ? 300
-    : Math.round(window.innerHeight * 0.4);
+  const defaultLgDrawerHeight =
+    typeof window === "undefined" ? 300 : Math.round(window.innerHeight * 0.4);
   const screenSize = useScreenBreakpoint();
   const { imagePoint } = useImagePoint();
   const { catalogs, lookupMaps } = useGlassCatalogs();
@@ -181,10 +212,19 @@ export function OptimizationPage({
   const specsStore = useSpecsConfiguratorStore();
   const optimizationStore = useOptimizationStore();
   const editorRows = useStore(lensStore, (state) => state.rows);
-  const prescriptionRevision = useStore(lensStore, (state) => state.prescriptionRevision);
-  const optimizationSyncPolicy = useStore(lensStore, (state) => state.optimizationSyncPolicy);
+  const prescriptionRevision = useStore(
+    lensStore,
+    (state) => state.prescriptionRevision,
+  );
+  const optimizationSyncPolicy = useStore(
+    lensStore,
+    (state) => state.optimizationSyncPolicy,
+  );
   const editorAutoAperture = useStore(lensStore, (state) => state.autoAperture);
-  const editorAutoSemiDiameters = useStore(lensStore, (state) => state.autoSemiDiameters);
+  const editorAutoSemiDiameters = useStore(
+    lensStore,
+    (state) => state.autoSemiDiameters,
+  );
   const pupilSpace = useStore(specsStore, (state) => state.pupilSpace);
   const pupilType = useStore(specsStore, (state) => state.pupilType);
   const pupilValue = useStore(specsStore, (state) => state.pupilValue);
@@ -193,13 +233,25 @@ export function OptimizationPage({
   const maxField = useStore(specsStore, (state) => state.maxField);
   const relativeFields = useStore(specsStore, (state) => state.relativeFields);
   const isWideAngle = useStore(specsStore, (state) => state.isWideAngle);
-  const wavelengthWeightsFromEditor = useStore(specsStore, (state) => state.wavelengthWeights);
+  const wavelengthWeightsFromEditor = useStore(
+    specsStore,
+    (state) => state.wavelengthWeights,
+  );
   const referenceIndex = useStore(specsStore, (state) => state.referenceIndex);
 
-  const optimizationModel = useStore(optimizationStore, (state) => state.optimizationModel);
+  const optimizationModel = useStore(
+    optimizationStore,
+    (state) => state.optimizationModel,
+  );
   const optimizer = useStore(optimizationStore, (state) => state.optimizer);
-  const fieldWeights = useStore(optimizationStore, (state) => state.fieldWeights);
-  const wavelengthWeights = useStore(optimizationStore, (state) => state.wavelengthWeights);
+  const fieldWeights = useStore(
+    optimizationStore,
+    (state) => state.fieldWeights,
+  );
+  const wavelengthWeights = useStore(
+    optimizationStore,
+    (state) => state.wavelengthWeights,
+  );
   const radiusModes = useStore(optimizationStore, (state) => state.radiusModes);
   const glassModes = useStore(optimizationStore, (state) => state.glassModes);
   const operands = useStore(optimizationStore, (state) => state.operands);
@@ -216,50 +268,98 @@ export function OptimizationPage({
       state.buildOptimizationConfig(catalogs);
       return undefined;
     } catch (error) {
-      return error instanceof Error ? error.message : "Optimization config is invalid.";
+      return error instanceof Error
+        ? error.message
+        : "Optimization config is invalid.";
     }
   });
   const hasNonZeroContribution = useStore(optimizationStore, (state) => {
     try {
-      return hasNonZeroOptimizationContribution(state.buildOptimizationConfig(catalogs));
+      return hasNonZeroOptimizationContribution(
+        state.buildOptimizationConfig(catalogs),
+      );
     } catch {
       return false;
     }
   });
-  const isOptimizing = useStore(optimizationStore, (state) => state.isOptimizing);
-  const applyConfirmOpen = useStore(optimizationStore, (state) => state.applyConfirmOpen);
+  const isOptimizing = useStore(
+    optimizationStore,
+    (state) => state.isOptimizing,
+  );
+  const applyConfirmOpen = useStore(
+    optimizationStore,
+    (state) => state.applyConfirmOpen,
+  );
   const radiusModal = useStore(optimizationStore, (state) => state.radiusModal);
-  const thicknessModal = useStore(optimizationStore, (state) => state.thicknessModal);
-  const thicknessModes = useStore(optimizationStore, (state) => state.thicknessModes);
-  const asphereStates = useStore(optimizationStore, (state) => state.asphereStates);
-  const decenterStates = useStore(optimizationStore, (state) => state.decenterStates);
-  const asphereModal = useStore(optimizationStore, (state) => state.asphereModal);
+  const thicknessModal = useStore(
+    optimizationStore,
+    (state) => state.thicknessModal,
+  );
+  const thicknessModes = useStore(
+    optimizationStore,
+    (state) => state.thicknessModes,
+  );
+  const asphereStates = useStore(
+    optimizationStore,
+    (state) => state.asphereStates,
+  );
+  const decenterStates = useStore(
+    optimizationStore,
+    (state) => state.decenterStates,
+  );
+  const asphereModal = useStore(
+    optimizationStore,
+    (state) => state.asphereModal,
+  );
   const glassModal = useStore(optimizationStore, (state) => state.glassModal);
-  const decenterVarModal = useStore(optimizationStore, (state) => state.decenterVarModal);
+  const decenterVarModal = useStore(
+    optimizationStore,
+    (state) => state.decenterVarModal,
+  );
   const [mediumModalRow, setMediumModalRow] = useState<GridRow | undefined>();
-  const [asphericalModalRow, setAsphericalModalRow] = useState<GridRow | undefined>();
-  const [apertureModalRow, setApertureModalRow] = useState<GridRow | undefined>();
-  const [decenterModalRow, setDecenterModalRow] = useState<GridRow | undefined>();
-  const [diffractionGratingModalRow, setDiffractionGratingModalRow] = useState<GridRow | undefined>();
-  const [evaluationReport, setEvaluationReport] = useState<OptimizationReport | undefined>();
-  const [optimizationWarningMessage, setOptimizationWarningMessage] = useState<string | undefined>();
+  const [asphericalModalRow, setAsphericalModalRow] = useState<
+    GridRow | undefined
+  >();
+  const [apertureModalRow, setApertureModalRow] = useState<
+    GridRow | undefined
+  >();
+  const [decenterModalRow, setDecenterModalRow] = useState<
+    GridRow | undefined
+  >();
+  const [diffractionGratingModalRow, setDiffractionGratingModalRow] = useState<
+    GridRow | undefined
+  >();
+  const [evaluationReport, setEvaluationReport] = useState<
+    OptimizationReport | undefined
+  >();
+  const [optimizationWarningMessage, setOptimizationWarningMessage] = useState<
+    string | undefined
+  >();
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [activeGridEditCount, setActiveGridEditCount] = useState(0);
-  const [isPostEditEvaluationPending, setIsPostEditEvaluationPending] = useState(false);
+  const [isPostEditEvaluationPending, setIsPostEditEvaluationPending] =
+    useState(false);
   const [gridEditStopRevision, setGridEditStopRevision] = useState(0);
-  const [optimizationProgress, setOptimizationProgress] = useState<ReadonlyArray<OptimizationProgressEntry>>([]);
-  const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
+  const [optimizationProgress, setOptimizationProgress] = useState<
+    ReadonlyArray<OptimizationProgressEntry>
+  >([]);
+  const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] =
+    useState(false);
   const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
   const [canStopOptimization, setCanStopOptimization] = useState(false);
   const [isStoppingOptimization, setIsStoppingOptimization] = useState(false);
-  const [liveDrawerHeight, setLiveDrawerHeight] = useState(defaultLgDrawerHeight);
+  const [liveDrawerHeight, setLiveDrawerHeight] = useState(
+    defaultLgDrawerHeight,
+  );
   const [pageShellHeight, setPageShellHeight] = useState(0);
   const pageShellRef = useRef<HTMLDivElement | null>(null);
   const sharedContentRef = useRef<HTMLDivElement | null>(null);
   const evaluationPanelRef = useRef<HTMLDivElement | null>(null);
   const evaluationRequestIdRef = useRef(0);
   const optimizationRunIdRef = useRef<string | undefined>(undefined);
-  const optimizationInterruptBufferRef = useRef<SharedArrayBuffer | undefined>(undefined);
+  const optimizationInterruptBufferRef = useRef<SharedArrayBuffer | undefined>(
+    undefined,
+  );
 
   useLayoutEffect(() => {
     if (!isLG) {
@@ -293,7 +393,9 @@ export function OptimizationPage({
       specsStore.getState().toOpticalSpecs(),
     );
     if (optimizationStore.getState().optimizationModel === undefined) {
-      optimizationStore.getState().initializeFromOpticalModel(currentEditorModel);
+      optimizationStore
+        .getState()
+        .initializeFromOpticalModel(currentEditorModel);
       return;
     }
 
@@ -301,10 +403,23 @@ export function OptimizationPage({
       prescriptionSyncPolicy: optimizationSyncPolicy,
     });
   }, [
-    editorRows, prescriptionRevision, optimizationSyncPolicy, editorAutoAperture,
-    editorAutoSemiDiameters, pupilSpace, pupilType, pupilValue, fieldSpace, fieldType,
-    maxField, relativeFields, isWideAngle, wavelengthWeightsFromEditor, referenceIndex,
-    optimizationStore, specsStore,
+    editorRows,
+    prescriptionRevision,
+    optimizationSyncPolicy,
+    editorAutoAperture,
+    editorAutoSemiDiameters,
+    pupilSpace,
+    pupilType,
+    pupilValue,
+    fieldSpace,
+    fieldType,
+    maxField,
+    relativeFields,
+    isWideAngle,
+    wavelengthWeightsFromEditor,
+    referenceIndex,
+    optimizationStore,
+    specsStore,
   ]);
 
   useEffect(() => {
@@ -315,10 +430,13 @@ export function OptimizationPage({
       return;
     }
 
-    void proxy.canInterruptOptimization()
+    void proxy
+      .canInterruptOptimization()
       .then((isSupported) => {
         if (!canceled) {
-          setCanStopOptimization(isSupported && typeof SharedArrayBuffer !== "undefined");
+          setCanStopOptimization(
+            isSupported && typeof SharedArrayBuffer !== "undefined",
+          );
         }
       })
       .catch(() => {
@@ -351,12 +469,14 @@ export function OptimizationPage({
       return [];
     }
 
-    return optimizationModel.specs.wavelengths.weights.map(([wavelength], index) => ({
-      id: `wavelength-${index}`,
-      index,
-      label: `${wavelength} nm`,
-      weight: wavelengthWeights[index] ?? 1,
-    }));
+    return optimizationModel.specs.wavelengths.weights.map(
+      ([wavelength], index) => ({
+        id: `wavelength-${index}`,
+        index,
+        label: `${wavelength} nm`,
+        weight: wavelengthWeights[index] ?? 1,
+      }),
+    );
   }, [optimizationModel, wavelengthWeights]);
 
   const radiusRows = useMemo<RadiusRow[]>(() => {
@@ -372,53 +492,79 @@ export function OptimizationPage({
     }));
   }, [optimizationModel]);
 
-  const selectedRadiusMode = radiusModal.surfaceIndex === undefined
-    ? undefined
-    : radiusModes.find((mode) => mode.surfaceIndex === radiusModal.surfaceIndex);
+  const selectedRadiusMode =
+    radiusModal.surfaceIndex === undefined
+      ? undefined
+      : radiusModes.find(
+          (mode) => mode.surfaceIndex === radiusModal.surfaceIndex,
+        );
 
-  const selectedThicknessMode = thicknessModal.surfaceIndex === undefined
-    ? undefined
-    : thicknessModes.find((mode) => mode.surfaceIndex === thicknessModal.surfaceIndex);
+  const selectedThicknessMode =
+    thicknessModal.surfaceIndex === undefined
+      ? undefined
+      : thicknessModes.find(
+          (mode) => mode.surfaceIndex === thicknessModal.surfaceIndex,
+        );
 
-  const selectedAsphereState = asphereModal.surfaceIndex === undefined
-    ? undefined
-    : asphereStates.find((state) => state.surfaceIndex === asphereModal.surfaceIndex);
+  const selectedAsphereState =
+    asphereModal.surfaceIndex === undefined
+      ? undefined
+      : asphereStates.find(
+          (state) => state.surfaceIndex === asphereModal.surfaceIndex,
+        );
 
-  const selectedGlassMode = glassModal.surfaceIndex === undefined
-    ? undefined
-    : glassModes.find((mode) => mode.surfaceIndex === glassModal.surfaceIndex);
-  const selectedDecenterState = decenterVarModal.surfaceIndex === undefined ? undefined : decenterStates.find((state) => state.surfaceIndex === decenterVarModal.surfaceIndex);
+  const selectedGlassMode =
+    glassModal.surfaceIndex === undefined
+      ? undefined
+      : glassModes.find(
+          (mode) => mode.surfaceIndex === glassModal.surfaceIndex,
+        );
+  const selectedDecenterState =
+    decenterVarModal.surfaceIndex === undefined
+      ? undefined
+      : decenterStates.find(
+          (state) => state.surfaceIndex === decenterVarModal.surfaceIndex,
+        );
 
   const evaluationRows = useMemo(
-    () => evaluationReport?.residuals.flatMap((residual, index) => {
-      const row = createEvaluationRow(residual, index);
-      return row === undefined ? [] : [row];
-    }) ?? [],
+    () =>
+      evaluationReport?.residuals.flatMap((residual, index) => {
+        const row = createEvaluationRow(residual, index);
+        return row === undefined ? [] : [row];
+      }) ?? [],
     [evaluationReport],
   );
 
   const evaluationTableRows = useMemo(
-    () => evaluationRows.map((row) => [row.operandType, row.target, row.weight, row.value] as const),
+    () =>
+      evaluationRows.map(
+        (row) => [row.operandType, row.target, row.weight, row.value] as const,
+      ),
     [evaluationRows],
   );
   const missingGlassMessage = useMemo(
-    () => optimizationModel === undefined
-      ? undefined
-      : formatMissingGlassMessage(getMissingPrescriptionGlasses(optimizationModel, lookupMaps)),
+    () =>
+      optimizationModel === undefined
+        ? undefined
+        : formatMissingGlassMessage(
+            getMissingPrescriptionGlasses(optimizationModel, lookupMaps),
+          ),
     [lookupMaps, optimizationModel],
   );
-  const evaluationWarningMessage = invalidConfigMessage ?? missingGlassMessage ?? optimizationWarningMessage;
+  const evaluationWarningMessage =
+    invalidConfigMessage ?? missingGlassMessage ?? optimizationWarningMessage;
 
   const hasActiveGridEdit = activeGridEditCount > 0;
-  const canOptimize = isReady
-    && proxy !== undefined
-    && optimizationModel !== undefined
-    && missingGlassMessage === undefined
-    && canBuildOptimizationConfig
-    && hasNonZeroContribution
-    && !hasActiveGridEdit
-    && !isPostEditEvaluationPending
-    && !isEvaluating;
+  const canOptimize =
+    isReady &&
+    proxy !== undefined &&
+    optimizationModel !== undefined &&
+    missingGlassMessage === undefined &&
+    canBuildOptimizationConfig &&
+    hasNonZeroContribution &&
+    !hasActiveGridEdit &&
+    !isPostEditEvaluationPending &&
+    !isEvaluating;
   const { canUseBounds } = getOptimizationAlgorithmCapabilities(
     optimizer.kind === "least_squares"
       ? { kind: optimizer.kind, method: optimizer.method }
@@ -428,80 +574,100 @@ export function OptimizationPage({
   const evaluationReservedHeight = !isLG
     ? undefined
     : (() => {
-      const sharedContentHeight = sharedContentRef.current?.getBoundingClientRect().height ?? 0;
-      const evaluationPanelHeight = evaluationPanelRef.current?.getBoundingClientRect().height ?? 0;
-      const measuredReservedHeight = sharedContentHeight > 0 && evaluationPanelHeight > 0
-        ? Math.round(sharedContentHeight - evaluationPanelHeight)
-        : 0;
+        const sharedContentHeight =
+          sharedContentRef.current?.getBoundingClientRect().height ?? 0;
+        const evaluationPanelHeight =
+          evaluationPanelRef.current?.getBoundingClientRect().height ?? 0;
+        const measuredReservedHeight =
+          sharedContentHeight > 0 && evaluationPanelHeight > 0
+            ? Math.round(sharedContentHeight - evaluationPanelHeight)
+            : 0;
 
-      return measuredReservedHeight > 0
-        ? measuredReservedHeight
-        : LG_EVALUATION_RESERVED_HEIGHT_FALLBACK;
-    })();
+        return measuredReservedHeight > 0
+          ? measuredReservedHeight
+          : LG_EVALUATION_RESERVED_HEIGHT_FALLBACK;
+      })();
 
   const evaluationMaxBodyHeight = useMemo(() => {
-    if (!isLG || pageShellHeight <= 0 || evaluationReservedHeight === undefined) {
+    if (
+      !isLG ||
+      pageShellHeight <= 0 ||
+      evaluationReservedHeight === undefined
+    ) {
       return undefined;
     }
 
-    return Math.max(120, pageShellHeight - liveDrawerHeight - evaluationReservedHeight);
+    return Math.max(
+      120,
+      pageShellHeight - liveDrawerHeight - evaluationReservedHeight,
+    );
   }, [evaluationReservedHeight, isLG, liveDrawerHeight, pageShellHeight]);
 
-  const {
-    run: runDebouncedEvaluation,
-    cancel: cancelDebouncedEvaluation,
-  } = useDebouncedCallback((
-    requestId: number,
-    model: OpticalModel,
-    currentImagePoint: typeof imagePoint,
-    catalogSnapshot: AllGlassCatalogsData | undefined,
-  ) => {
-    let config: OptimizationConfig;
-    try {
-      config = optimizationStore.getState().buildOptimizationEvaluationConfig(catalogSnapshot);
-    } catch {
-      if (evaluationRequestIdRef.current === requestId) {
-        setEvaluationReport(undefined);
-        setIsEvaluating(false);
-        setIsPostEditEvaluationPending(false);
-      }
-      return;
-    }
-
-    if (proxy === undefined) {
-      if (evaluationRequestIdRef.current === requestId) {
-        setEvaluationReport(undefined);
-        setIsEvaluating(false);
-        setIsPostEditEvaluationPending(false);
-      }
-      return;
-    }
-
-    setIsEvaluating(true);
-    void proxy.evaluateOptimizationProblem(model, config, currentImagePoint)
-      .then((report) => {
-        if (evaluationRequestIdRef.current !== requestId) {
+  const { run: runDebouncedEvaluation, cancel: cancelDebouncedEvaluation } =
+    useDebouncedCallback(
+      (
+        requestId: number,
+        model: OpticalModel,
+        currentImagePoint: typeof imagePoint,
+        catalogSnapshot: AllGlassCatalogsData | undefined,
+      ) => {
+        let config: OptimizationConfig;
+        try {
+          config = optimizationStore
+            .getState()
+            .buildOptimizationEvaluationConfig(catalogSnapshot);
+        } catch {
+          if (evaluationRequestIdRef.current === requestId) {
+            setEvaluationReport(undefined);
+            setIsEvaluating(false);
+            setIsPostEditEvaluationPending(false);
+          }
           return;
         }
-        setOptimizationWarningMessage(undefined);
-        setEvaluationReport(report);
-      })
-      .catch(() => {
-        if (evaluationRequestIdRef.current !== requestId) {
+
+        if (proxy === undefined) {
+          if (evaluationRequestIdRef.current === requestId) {
+            setEvaluationReport(undefined);
+            setIsEvaluating(false);
+            setIsPostEditEvaluationPending(false);
+          }
           return;
         }
-        setEvaluationReport(undefined);
-      })
-      .finally(() => {
-        if (evaluationRequestIdRef.current === requestId) {
-          setIsEvaluating(false);
-          setIsPostEditEvaluationPending(false);
-        }
-      });
-  }, 200);
+
+        setIsEvaluating(true);
+        void proxy
+          .evaluateOptimizationProblem(model, config, currentImagePoint)
+          .then((report) => {
+            if (evaluationRequestIdRef.current !== requestId) {
+              return;
+            }
+            setOptimizationWarningMessage(undefined);
+            setEvaluationReport(report);
+          })
+          .catch(() => {
+            if (evaluationRequestIdRef.current !== requestId) {
+              return;
+            }
+            setEvaluationReport(undefined);
+          })
+          .finally(() => {
+            if (evaluationRequestIdRef.current === requestId) {
+              setIsEvaluating(false);
+              setIsPostEditEvaluationPending(false);
+            }
+          });
+      },
+      200,
+    );
 
   useEffect(() => {
-    if (!isReady || proxy === undefined || optimizationModel === undefined || !canBuildOptimizationConfig || missingGlassMessage !== undefined) {
+    if (
+      !isReady ||
+      proxy === undefined ||
+      optimizationModel === undefined ||
+      !canBuildOptimizationConfig ||
+      missingGlassMessage !== undefined
+    ) {
       cancelDebouncedEvaluation();
       setEvaluationReport(undefined);
       setIsEvaluating(false);
@@ -517,10 +683,26 @@ export function OptimizationPage({
       cancelDebouncedEvaluation();
     };
   }, [
-    isReady, proxy, optimizationModel, optimizationStore, canBuildOptimizationConfig,
-    missingGlassMessage, catalogs, optimizer, fieldWeights, wavelengthWeights,
-    radiusModes, thicknessModes, glassModes, asphereStates, decenterStates, operands,
-    gridEditStopRevision, imagePoint, runDebouncedEvaluation, cancelDebouncedEvaluation,
+    isReady,
+    proxy,
+    optimizationModel,
+    optimizationStore,
+    canBuildOptimizationConfig,
+    missingGlassMessage,
+    catalogs,
+    optimizer,
+    fieldWeights,
+    wavelengthWeights,
+    radiusModes,
+    thicknessModes,
+    glassModes,
+    asphereStates,
+    decenterStates,
+    operands,
+    gridEditStopRevision,
+    imagePoint,
+    runDebouncedEvaluation,
+    cancelDebouncedEvaluation,
   ]);
 
   const handleGridCellEditingStarted = useCallback(() => {
@@ -534,16 +716,23 @@ export function OptimizationPage({
   }, []);
 
   const handleOptimize = async () => {
-    if (!canOptimize || proxy === undefined || optimizationModel === undefined || missingGlassMessage !== undefined) {
+    if (
+      !canOptimize ||
+      proxy === undefined ||
+      optimizationModel === undefined ||
+      missingGlassMessage !== undefined
+    ) {
       return;
     }
 
-    const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `optimization-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const interruptBuffer = canStopOptimization && typeof SharedArrayBuffer !== "undefined"
-      ? new SharedArrayBuffer(4)
-      : undefined;
+    const runId =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `optimization-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const interruptBuffer =
+      canStopOptimization && typeof SharedArrayBuffer !== "undefined"
+        ? new SharedArrayBuffer(4)
+        : undefined;
     optimizationRunIdRef.current = runId;
     optimizationInterruptBufferRef.current = interruptBuffer;
     setOptimizationWarningMessage(undefined);
@@ -553,31 +742,36 @@ export function OptimizationPage({
     setIsStoppingOptimization(false);
     optimizationStore.getState().setIsOptimizing(true);
     try {
-      const config = optimizationStore.getState().buildOptimizationConfig(catalogs);
+      const config = optimizationStore
+        .getState()
+        .buildOptimizationConfig(catalogs);
       if (!hasNonZeroOptimizationContribution(config)) {
         setOptimizationWarningMessage(ZERO_WEIGHT_WARNING_MESSAGE);
         return;
       }
-      const progressCallback = comlinkProxy((progress: ReadonlyArray<OptimizationProgressEntry>) => {
-        setOptimizationProgress(progress);
-      });
-      const report = "glass_variables" in config
-        ? await proxy.optimizeGlasses(
-            optimizationModel,
-            config,
-            imagePoint,
-            progressCallback,
-            runId,
-            interruptBuffer,
-          )
-        : await proxy.optimizeOpm(
-            optimizationModel,
-            config,
-            imagePoint,
-            progressCallback,
-            runId,
-            interruptBuffer,
-          );
+      const progressCallback = comlinkProxy(
+        (progress: ReadonlyArray<OptimizationProgressEntry>) => {
+          setOptimizationProgress(progress);
+        },
+      );
+      const report =
+        "glass_variables" in config
+          ? await proxy.optimizeGlasses(
+              optimizationModel,
+              config,
+              imagePoint,
+              progressCallback,
+              runId,
+              interruptBuffer,
+            )
+          : await proxy.optimizeOpm(
+              optimizationModel,
+              config,
+              imagePoint,
+              progressCallback,
+              runId,
+              interruptBuffer,
+            );
       setOptimizationProgress(report.optimization_progress ?? []);
       if (report.status === "error") {
         setOptimizationWarningMessage(report.message);
@@ -589,7 +783,8 @@ export function OptimizationPage({
         return;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Optimization failed.";
+      const message =
+        error instanceof Error ? error.message : "Optimization failed.";
       setOptimizationWarningMessage(message);
       onError();
     } finally {
@@ -613,7 +808,11 @@ export function OptimizationPage({
 
     const interruptBuffer = optimizationInterruptBufferRef.current;
     if (interruptBuffer !== undefined) {
-      Atomics.store(new Int32Array(interruptBuffer), 0, PYODIDE_INTERRUPT_SIGNAL);
+      Atomics.store(
+        new Int32Array(interruptBuffer),
+        0,
+        PYODIDE_INTERRUPT_SIGNAL,
+      );
     }
 
     setIsStoppingOptimization(true);
@@ -630,7 +829,12 @@ export function OptimizationPage({
 
     if (proxy === undefined) return;
     try {
-      await applyOptimizationModelToEditor({ model, lensStore, specsStore, proxy });
+      await applyOptimizationModelToEditor({
+        model,
+        lensStore,
+        specsStore,
+        proxy,
+      });
       optimizationStore.getState().closeApplyConfirm();
       optimizationStore.getState().markOptimizationResultAppliedToEditor();
       await onApplyToEditor?.(model);
@@ -639,38 +843,52 @@ export function OptimizationPage({
     }
   };
 
-  const bottomDrawerFields = useMemo(() => ({
-    rows: fieldRows,
-  }), [fieldRows]);
+  const bottomDrawerFields = useMemo(
+    () => ({
+      rows: fieldRows,
+    }),
+    [fieldRows],
+  );
 
-  const bottomDrawerWavelengths = useMemo(() => ({
-    rows: wavelengthRows,
-  }), [wavelengthRows]);
+  const bottomDrawerWavelengths = useMemo(
+    () => ({
+      rows: wavelengthRows,
+    }),
+    [wavelengthRows],
+  );
 
-  const bottomDrawerPrescription = useMemo(() => ({
-    autoAperture: optimizationModel?.setAutoAperture === "autoAperture",
-    rows: radiusRows,
-    onOpenMediumModal: setMediumModalRow,
-    onOpenAsphericalModal: setAsphericalModalRow,
-    onOpenApertureModal: setApertureModalRow,
-    onOpenDecenterModal: setDecenterModalRow,
-    onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
-  }), [optimizationModel?.setAutoAperture, radiusRows]);
+  const bottomDrawerPrescription = useMemo(
+    () => ({
+      autoAperture: optimizationModel?.setAutoAperture === "autoAperture",
+      rows: radiusRows,
+      onOpenMediumModal: setMediumModalRow,
+      onOpenAsphericalModal: setAsphericalModalRow,
+      onOpenApertureModal: setApertureModalRow,
+      onOpenDecenterModal: setDecenterModalRow,
+      onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
+    }),
+    [optimizationModel?.setAutoAperture, radiusRows],
+  );
 
   const bottomDrawerLayout = useMemo(
-    () => isLG
-      ? { isLG, onHeightChange: setLiveDrawerHeight }
-      : { isLG },
+    () => (isLG ? { isLG, onHeightChange: setLiveDrawerHeight } : { isLG }),
     [isLG],
   );
 
-  const gridEditLifecycle = useMemo(() => ({
-    onCellEditingStarted: handleGridCellEditingStarted,
-    onCellEditingStopped: handleGridCellEditingStopped,
-  }), [handleGridCellEditingStarted, handleGridCellEditingStopped]);
+  const gridEditLifecycle = useMemo(
+    () => ({
+      onCellEditingStarted: handleGridCellEditingStarted,
+      onCellEditingStopped: handleGridCellEditingStopped,
+    }),
+    [handleGridCellEditingStarted, handleGridCellEditingStopped],
+  );
 
   const sharedContent = (
-    <div ref={sharedContentRef} data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
+    <div
+      ref={sharedContentRef}
+      data-testid="optimization-shared-content-wrapper"
+      className="p-4 pb-0"
+    >
       <OptimizationProgressModal
         isOpen={optimizationProgressModalOpen}
         isOptimizing={isOptimizing}
@@ -711,7 +929,9 @@ export function OptimizationPage({
         surfaceIndex={radiusModal.surfaceIndex}
         selectedMode={selectedRadiusMode}
         canUseBounds={canUseBounds}
-        onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setRadiusMode(surfaceIndex, mode)}
+        onSetMode={(surfaceIndex, mode) =>
+          optimizationStore.getState().setRadiusMode(surfaceIndex, mode)
+        }
         onClose={() => optimizationStore.getState().closeRadiusModal()}
       />
 
@@ -721,7 +941,9 @@ export function OptimizationPage({
         surfaceIndex={thicknessModal.surfaceIndex}
         selectedMode={selectedThicknessMode}
         canUseBounds={canUseBounds}
-        onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setThicknessMode(surfaceIndex, mode)}
+        onSetMode={(surfaceIndex, mode) =>
+          optimizationStore.getState().setThicknessMode(surfaceIndex, mode)
+        }
         onClose={() => optimizationStore.getState().closeThicknessModal()}
       />
 
@@ -731,7 +953,9 @@ export function OptimizationPage({
         surfaceIndex={asphereModal.surfaceIndex}
         asphereState={selectedAsphereState}
         canUseBounds={canUseBounds}
-        onSave={(surfaceIndex, state) => optimizationStore.getState().replaceAsphereState(surfaceIndex, state)}
+        onSave={(surfaceIndex, state) =>
+          optimizationStore.getState().replaceAsphereState(surfaceIndex, state)
+        }
         onClose={() => optimizationStore.getState().closeAsphereModal()}
       />
 
@@ -741,7 +965,9 @@ export function OptimizationPage({
         surfaceIndex={glassModal.surfaceIndex}
         selectedMode={selectedGlassMode}
         catalogs={catalogs}
-        onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setGlassMode(surfaceIndex, mode)}
+        onSetMode={(surfaceIndex, mode) =>
+          optimizationStore.getState().setGlassMode(surfaceIndex, mode)
+        }
         onClose={() => optimizationStore.getState().closeGlassModal()}
       />
 
@@ -751,7 +977,9 @@ export function OptimizationPage({
         surfaceIndex={decenterVarModal.surfaceIndex}
         decenterState={selectedDecenterState}
         canUseBounds={canUseBounds}
-        onSave={(surfaceIndex, state) => optimizationStore.getState().replaceDecenterState(surfaceIndex, state)}
+        onSave={(surfaceIndex, state) =>
+          optimizationStore.getState().replaceDecenterState(surfaceIndex, state)
+        }
         onClose={() => optimizationStore.getState().closeDecenterVarModal()}
       />
 
@@ -771,14 +999,19 @@ export function OptimizationPage({
         onCloseAsphericalModal={() => setAsphericalModalRow(undefined)}
         onCloseApertureModal={() => setApertureModalRow(undefined)}
         onCloseDecenterModal={() => setDecenterModalRow(undefined)}
-        onCloseDiffractionGratingModal={() => setDiffractionGratingModalRow(undefined)}
+        onCloseDiffractionGratingModal={() =>
+          setDiffractionGratingModalRow(undefined)
+        }
       />
     </div>
   );
 
   if (isLG) {
     return (
-      <div ref={pageShellRef} className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
+      <div
+        ref={pageShellRef}
+        className="relative flex flex-1 min-h-0 flex-col overflow-hidden"
+      >
         {sharedContent}
         <BottomDrawerContainer
           fields={bottomDrawerFields}

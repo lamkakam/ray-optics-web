@@ -9,8 +9,12 @@ describe("EditableAgGridReact", () => {
     render(
       <EditableAgGridReact<{ readonly value: number }>
         rowData={[{ value: 1 }]}
-        columnDefs={[{ field: "value", editable: true } satisfies ColDef<{ readonly value: number }>]}
-      />
+        columnDefs={[
+          { field: "value", editable: true } satisfies ColDef<{
+            readonly value: number;
+          }>,
+        ]}
+      />,
     );
 
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
@@ -23,9 +27,13 @@ describe("EditableAgGridReact", () => {
     render(
       <EditableAgGridReact<{ readonly value: number }>
         rowData={[{ value: 1 }]}
-        columnDefs={[{ field: "value", editable: true } satisfies ColDef<{ readonly value: number }>]}
+        columnDefs={[
+          { field: "value", editable: true } satisfies ColDef<{
+            readonly value: number;
+          }>,
+        ]}
         stopEditingWhenCellsLoseFocus={false}
-      />
+      />,
     );
 
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
@@ -38,11 +46,18 @@ describe("EditableAgGridReact", () => {
     render(
       <EditableAgGridReact<{ readonly value: number }>
         rowData={[{ value: 1 }]}
-        columnDefs={[{ field: "value", editable: true } satisfies ColDef<{ readonly value: number }>]}
-      />
+        columnDefs={[
+          { field: "value", editable: true } satisfies ColDef<{
+            readonly value: number;
+          }>,
+        ]}
+      />,
     );
 
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "false");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute(
+      "data-suppress-touch",
+      "false",
+    );
   });
 
   it("commits an Enter edit only once when column definitions rerender", async () => {
@@ -51,7 +66,8 @@ describe("EditableAgGridReact", () => {
     const rowData = [{ value: "initial" }];
 
     function StatefulEditableGrid() {
-      const [columnDefinitionsVersion, setColumnDefinitionsVersion] = useState(0);
+      const [columnDefinitionsVersion, setColumnDefinitionsVersion] =
+        useState(0);
       const columnDefs = [
         {
           headerName: `Value ${columnDefinitionsVersion}`,
@@ -66,7 +82,9 @@ describe("EditableAgGridReact", () => {
           <button
             type="button"
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => setColumnDefinitionsVersion((current) => current + 1)}
+            onClick={() =>
+              setColumnDefinitionsVersion((current) => current + 1)
+            }
           >
             Rerender columns
           </button>
@@ -94,18 +112,23 @@ describe("EditableAgGridReact", () => {
     const user = userEvent.setup();
 
     function ControlledEditableGrid() {
-      const [rowData, setRowData] = useState([{ id: "row-1", value: "initial" }]);
+      const [rowData, setRowData] = useState([
+        { id: "row-1", value: "initial" },
+      ]);
       const columnDefs = useMemo(
-        () => [
-          {
-            field: "value",
-            editable: true,
-            valueSetter: ({ newValue }: { newValue: unknown }) => {
-              setRowData([{ id: "row-1", value: String(newValue).toUpperCase() }]);
-              return true;
+        () =>
+          [
+            {
+              field: "value",
+              editable: true,
+              valueSetter: ({ newValue }: { newValue: unknown }) => {
+                setRowData([
+                  { id: "row-1", value: String(newValue).toUpperCase() },
+                ]);
+                return true;
+              },
             },
-          },
-        ] satisfies ColDef<{ readonly id: string; readonly value: string }>[],
+          ] satisfies ColDef<{ readonly id: string; readonly value: string }>[],
         [],
       );
 

@@ -37,18 +37,73 @@ const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20.0, fields: [0, 0.707, 1], isRelative: true },
-    wavelengths: { weights: [[656.3, 1], [587, 2], [486.1, 1]], referenceIndex: 1 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 20.0,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [656.3, 1],
+        [587, 2],
+        [486.1, 1],
+      ],
+      referenceIndex: 1,
+    },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -42 },
   surfaces: [
-    { label: "Default", curvatureRadius: 23.713, thickness: 4.831, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 10.009 },
-    { label: "Default", curvatureRadius: 7331.288, thickness: 5.86, medium: "air", manufacturer: "", semiDiameter: 8.9483 },
-    { label: "Stop", curvatureRadius: -24.456, thickness: 0.975, medium: "N-SF5", manufacturer: "Schott", semiDiameter: 4.7918 },
-    { label: "Default", curvatureRadius: 21.896, thickness: 4.822, medium: "air", manufacturer: "", semiDiameter: 4.776 },
-    { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 8.0218 },
-    { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "", semiDiameter: 8.3321 },
+    {
+      label: "Default",
+      curvatureRadius: 23.713,
+      thickness: 4.831,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      semiDiameter: 10.009,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 7331.288,
+      thickness: 5.86,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 8.9483,
+    },
+    {
+      label: "Stop",
+      curvatureRadius: -24.456,
+      thickness: 0.975,
+      medium: "N-SF5",
+      manufacturer: "Schott",
+      semiDiameter: 4.7918,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 21.896,
+      thickness: 4.822,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 4.776,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 86.759,
+      thickness: 3.127,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      semiDiameter: 8.0218,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -20.4942,
+      thickness: 41.2365,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 8.3321,
+    },
   ],
 };
 
@@ -80,7 +135,9 @@ describe("buildOpticalModelScript", () => {
     };
 
     expect(buildOpticalModelScript(model)).not.toContain(marker);
-    expect(buildScript(model, (opm) => `analyze(${opm})`)).not.toContain(marker);
+    expect(buildScript(model, (opm) => `analyze(${opm})`)).not.toContain(
+      marker,
+    );
     expect(buildExportScript(model)).not.toContain(marker);
   });
 
@@ -96,13 +153,21 @@ describe("buildOpticalModelScript", () => {
       ],
     });
 
-    expect(script).toContain("sm.add_surface([23.713, 4.831, user_defined_materials[\"CUSTOM_A\"]])");
+    expect(script).toContain(
+      'sm.add_surface([23.713, 4.831, user_defined_materials["CUSTOM_A"]])',
+    );
   });
   it("should set optical specs by calling PupilSpec, FieldSpec, and WvlSpec correctly", () => {
     const script = buildOpticalModelScript(baseModel);
-    expect(script).toContain("osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)");
-    expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True)");
-    expect(script).toContain("osp['wvls'] = WvlSpec([(656.3, 1),(587, 2),(486.1, 1)], ref_wl=1)");
+    expect(script).toContain(
+      "osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)",
+    );
+    expect(script).toContain(
+      "osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True)",
+    );
+    expect(script).toContain(
+      "osp['wvls'] = WvlSpec([(656.3, 1),(587, 2),(486.1, 1)], ref_wl=1)",
+    );
   });
 
   it("uses the exact model and image-height field class when wide angle is enabled", () => {
@@ -200,19 +265,34 @@ describe("buildOpticalModelScript", () => {
   });
 
   it("should set sm.do_apertures = True when setAutoAperture is autoAperture", () => {
-    const script = buildOpticalModelScript({ ...baseModel, setAutoAperture: "autoAperture" });
+    const script = buildOpticalModelScript({
+      ...baseModel,
+      setAutoAperture: "autoAperture",
+    });
     expect(script).toContain("sm.do_apertures = True");
   });
 
   it("should add surfaces including stop", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).not.toContain("sd=");
-    expect(script).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10.009, x_offset=0, y_offset=0)]");
-    expect(script).toContain("sm.add_surface([7331.288, 5.86, \"air\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.9483, x_offset=0, y_offset=0)]");
-    expect(script).toContain("sm.add_surface([-24.456, 0.975, \"N-SF5\", \"Schott\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=4.7918, x_offset=0, y_offset=0)]\nsm.set_stop()");
-    expect(script).toContain("sm.add_surface([21.896, 4.822, \"air\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=4.776, x_offset=0, y_offset=0)]");
-    expect(script).toContain("sm.add_surface([86.759, 3.127, \"N-LAK9\", \"Schott\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.0218, x_offset=0, y_offset=0)]");
-    expect(script).toContain("sm.add_surface([-20.4942, 41.2365, \"air\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.3321, x_offset=0, y_offset=0)]");
+    expect(script).toContain(
+      'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10.009, x_offset=0, y_offset=0)]',
+    );
+    expect(script).toContain(
+      'sm.add_surface([7331.288, 5.86, "air"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.9483, x_offset=0, y_offset=0)]',
+    );
+    expect(script).toContain(
+      'sm.add_surface([-24.456, 0.975, "N-SF5", "Schott"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=4.7918, x_offset=0, y_offset=0)]\nsm.set_stop()',
+    );
+    expect(script).toContain(
+      'sm.add_surface([21.896, 4.822, "air"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=4.776, x_offset=0, y_offset=0)]',
+    );
+    expect(script).toContain(
+      'sm.add_surface([86.759, 3.127, "N-LAK9", "Schott"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.0218, x_offset=0, y_offset=0)]',
+    );
+    expect(script).toContain(
+      'sm.add_surface([-20.4942, 41.2365, "air"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.3321, x_offset=0, y_offset=0)]',
+    );
   });
 
   it("should set the object distance correctly", () => {
@@ -235,12 +315,19 @@ describe("buildOpticalModelScript", () => {
       ...baseModel,
       image: {
         curvatureRadius: -42,
-        decenter: { coordinateSystemStrategy: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
+        decenter: {
+          coordinateSystemStrategy: "decenter",
+          alpha: 1.5,
+          beta: 0,
+          gamma: 0,
+          offsetX: 0.1,
+          offsetY: 0.2,
+        },
       },
     };
     const script = buildOpticalModelScript(model);
     expect(script).toContain(
-      `sm.ifcs[-1].decenter = DecenterData("decenter", alpha=1.5, beta=0, gamma=0, x=0.1, y=0.2)`
+      `sm.ifcs[-1].decenter = DecenterData("decenter", alpha=1.5, beta=0, gamma=0, x=0.1, y=0.2)`,
     );
   });
 
@@ -250,14 +337,21 @@ describe("buildOpticalModelScript", () => {
       surfaces: [
         {
           ...baseModel.surfaces[0],
-          decenter: { coordinateSystemStrategy: "bend", alpha: 0, beta: 2.0, gamma: 0, offsetX: 0.5, offsetY: -0.5 },
+          decenter: {
+            coordinateSystemStrategy: "bend",
+            alpha: 0,
+            beta: 2.0,
+            gamma: 0,
+            offsetX: 0.5,
+            offsetY: -0.5,
+          },
         },
         ...baseModel.surfaces.slice(1),
       ],
     };
     const script = buildOpticalModelScript(model);
     expect(script).toContain(
-      `sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=0, beta=2, gamma=0, x=0.5, y=-0.5)`
+      `sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=0, beta=2, gamma=0, x=0.5, y=-0.5)`,
     );
   });
 
@@ -269,10 +363,10 @@ describe("buildOpticalModelScript", () => {
         "sm.do_apertures = False",
         "",
         "sm.gaps[0].thi=10000000000",
-        "sm.gaps[0].medium = decode_medium(\"air\")",
-        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        'sm.gaps[0].medium = decode_medium("air")',
+        'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])',
         "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10.009, x_offset=0, y_offset=0)]",
-      ].join("\n")
+      ].join("\n"),
     );
   });
 
@@ -283,7 +377,9 @@ describe("buildOpticalModelScript", () => {
 
   it("should call the OpticalModel constructor correctly", () => {
     const script = buildOpticalModelScript(baseModel);
-    expect(script).toContain("opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
+    expect(script).toContain(
+      "opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']",
+    );
   });
 
   it("should set an aspherical surface correctly", () => {
@@ -304,7 +400,9 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
+    expect(script).toContain(
+      "sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])",
+    );
   });
 
   it("should set a conic surface correctly", () => {
@@ -321,7 +419,9 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1)");
+    expect(script).toContain(
+      "sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1)",
+    );
   });
 
   it("should set a radial polynomial surface correctly", () => {
@@ -342,7 +442,9 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02])");
+    expect(script).toContain(
+      "sm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02])",
+    );
   });
 
   it("should set an x toroid surface correctly", () => {
@@ -364,7 +466,9 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = XToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])");
+    expect(script).toContain(
+      "sm.ifcs[sm.cur_surface].profile = XToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])",
+    );
   });
 
   it("should set a y toroid surface correctly", () => {
@@ -386,7 +490,9 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])");
+    expect(script).toContain(
+      "sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])",
+    );
   });
 
   it("should preserve the mutation order for a stop surface with asphere and decenter", () => {
@@ -421,12 +527,12 @@ describe("buildOpticalModelScript", () => {
 
     expect(script).toContain(
       [
-        "sm.add_surface([23.713, 1.2, \"air\"])",
+        'sm.add_surface([23.713, 1.2, "air"])',
         "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=5.5, x_offset=0, y_offset=0)]",
         "sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=-1, coefs=[0,0.02])",
-        "sm.ifcs[sm.cur_surface].decenter = DecenterData(\"decenter\", alpha=1, beta=2, gamma=3, x=0.1, y=0.2)",
+        'sm.ifcs[sm.cur_surface].decenter = DecenterData("decenter", alpha=1, beta=2, gamma=3, x=0.1, y=0.2)',
         "sm.set_stop()",
-      ].join("\n")
+      ].join("\n"),
     );
   });
 
@@ -450,7 +556,7 @@ describe("buildOpticalModelScript", () => {
     const script = buildOpticalModelScript(model);
 
     expect(script).toContain(
-      "sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(grating_lpmm=1000, order=1)"
+      "sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(grating_lpmm=1000, order=1)",
     );
   });
 
@@ -462,7 +568,12 @@ describe("buildOpticalModelScript", () => {
           ...baseModel.surfaces[0],
           semiDiameter: 3,
           clear_aperture: { shape: "circular", offsetX: -0.5, offsetY: 1.25 },
-          edge_aperture: { shape: "circular", radius: 2.5, offsetX: 0.75, offsetY: -1.5 },
+          edge_aperture: {
+            shape: "circular",
+            radius: 2.5,
+            offsetX: 0.75,
+            offsetY: -1.5,
+          },
         },
       ],
     };
@@ -471,7 +582,7 @@ describe("buildOpticalModelScript", () => {
 
     expect(script).toContain(
       [
-        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])',
         "sm.ifcs[sm.cur_surface].clear_apertures = [OffsetCircular(radius=3, x_offset=-0.5, y_offset=1.25)]",
         "sm.ifcs[sm.cur_surface].edge_apertures = [OffsetCircular(radius=2.5, x_offset=0.75, y_offset=-1.5)]",
       ].join("\n"),
@@ -486,7 +597,12 @@ describe("buildOpticalModelScript", () => {
           ...baseModel.surfaces[0],
           semiDiameter: 3,
           clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 },
-          edge_aperture: { shape: "circular", radius: 2.5, offsetX: 0, offsetY: 0 },
+          edge_aperture: {
+            shape: "circular",
+            radius: 2.5,
+            offsetX: 0,
+            offsetY: 0,
+          },
         },
       ],
     };
@@ -495,7 +611,7 @@ describe("buildOpticalModelScript", () => {
 
     expect(script).toContain(
       [
-        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])',
         "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=3, x_offset=0, y_offset=0)]",
         "sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=2.5, x_offset=0, y_offset=0)]",
       ].join("\n"),
@@ -510,8 +626,18 @@ describe("buildOpticalModelScript", () => {
         {
           ...baseModel.surfaces[0],
           semiDiameter: 6,
-          clear_aperture: { shape: "annular", obstructionRadius: 2.25, offsetX: -0.5, offsetY: 1.25 },
-          edge_aperture: { shape: "circular", radius: 5, offsetX: 0, offsetY: 0 },
+          clear_aperture: {
+            shape: "annular",
+            obstructionRadius: 2.25,
+            offsetX: -0.5,
+            offsetY: 1.25,
+          },
+          edge_aperture: {
+            shape: "circular",
+            radius: 5,
+            offsetX: 0,
+            offsetY: 0,
+          },
         },
       ],
     };
@@ -520,7 +646,7 @@ describe("buildOpticalModelScript", () => {
 
     expect(script).toContain(
       [
-        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])',
         "sm.ifcs[sm.cur_surface].clear_apertures = [Annular(radius=6, obstruction_radius=2.25, x_offset=-0.5, y_offset=1.25)]",
         "sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=5, x_offset=0, y_offset=0)]",
       ].join("\n"),
@@ -558,7 +684,7 @@ describe("buildOpticalModelScript", () => {
 
     expect(script).toContain(
       [
-        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])',
         "sm.ifcs[sm.cur_surface].clear_apertures = [OffsetRotatedRectangular(x_half_width=4.5, y_half_width=2.25, x_offset=-1, y_offset=2, rotation=15)]",
         "sm.ifcs[sm.cur_surface].edge_apertures = [OffsetRotatedRectangular(x_half_width=5, y_half_width=3, x_offset=0.5, y_offset=-0.75, rotation=-30)]",
       ].join("\n"),
@@ -587,7 +713,7 @@ describe("buildOpticalModelScript", () => {
 
     expect(script).toContain(
       [
-        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])',
         "sm.ifcs[sm.cur_surface].clear_apertures = [RonchiRuling(radius=6, lpmm=12.5, rotation=15, x_offset=-1, y_offset=2)]",
       ].join("\n"),
     );
@@ -609,7 +735,9 @@ describe("buildOpticalModelScript", () => {
 
     const script = buildOpticalModelScript(model);
 
-    expect(script).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])");
+    expect(script).toContain(
+      'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])',
+    );
     expect(script).not.toContain("clear_apertures");
     expect(script).not.toContain("edge_apertures");
   });
@@ -618,60 +746,140 @@ describe("buildOpticalModelScript", () => {
     const model: OpticalModel = {
       ...baseModel,
       surfaces: [
-        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "CaF2", manufacturer: "", semiDiameter: 10 },
-        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+        {
+          label: "Default",
+          curvatureRadius: 30,
+          thickness: 1.1,
+          medium: "CaF2",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 70,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, caf2])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
+    expect(script).toContain(
+      "sm.add_surface([30, 1.1, caf2])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]",
+    );
   });
 
   it("should set a surface with water correctly", () => {
     const model: OpticalModel = {
       ...baseModel,
       surfaces: [
-        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "Water", manufacturer: "", semiDiameter: 10 },
-        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+        {
+          label: "Default",
+          curvatureRadius: 30,
+          thickness: 1.1,
+          medium: "Water",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 70,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, water])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
+    expect(script).toContain(
+      "sm.add_surface([30, 1.1, water])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]",
+    );
   });
 
   it("should set a surface with D263TECO correctly", () => {
     const model: OpticalModel = {
       ...baseModel,
       surfaces: [
-        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "D263TECO", manufacturer: "", semiDiameter: 10 },
-        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+        {
+          label: "Default",
+          curvatureRadius: 30,
+          thickness: 1.1,
+          medium: "D263TECO",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 70,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, d263teco])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
+    expect(script).toContain(
+      "sm.add_surface([30, 1.1, d263teco])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]",
+    );
   });
 
   it("should set a model glass surface without manufacturer when medium is numeric and manufacturer is empty", () => {
     const model: OpticalModel = {
       ...baseModel,
       surfaces: [
-        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "1.42", manufacturer: "", semiDiameter: 10 },
-        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+        {
+          label: "Default",
+          curvatureRadius: 30,
+          thickness: 1.1,
+          medium: "1.42",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 70,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, 1.42])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
+    expect(script).toContain(
+      "sm.add_surface([30, 1.1, 1.42])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]",
+    );
   });
 
   it("should set a model glass surface with abbe number when medium and manufacturer are numeric", () => {
     const model: OpticalModel = {
       ...baseModel,
       surfaces: [
-        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "1.42", manufacturer: "84.1", semiDiameter: 10 },
-        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+        {
+          label: "Default",
+          curvatureRadius: 30,
+          thickness: 1.1,
+          medium: "1.42",
+          manufacturer: "84.1",
+          semiDiameter: 10,
+        },
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 70,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, 1.42, 84.1])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
+    expect(script).toContain(
+      "sm.add_surface([30, 1.1, 1.42, 84.1])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]",
+    );
   });
 
   it("should call opm.update_model()", () => {
@@ -697,29 +905,44 @@ describe("buildOpticalModelScript", () => {
   it("should set the flag `is_wide_angle` to be True if the attribute of isWideAngle is true in field", () => {
     const script = buildOpticalModelScript(wideAngleModel);
     expect(script).toContain("opm = ExactOpticalModel()");
-    expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True, is_wide_angle=True)");
+    expect(script).toContain(
+      "osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True, is_wide_angle=True)",
+    );
   });
 
   it("omits the wide-angle flag when exact real-ray mode is not selected", () => {
     const script = buildOpticalModelScript(baseModel);
 
-    expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle']");
+    expect(script).toContain(
+      "osp['fov'] = FieldSpec(osp, key=['object', 'angle']",
+    );
     expect(script).not.toContain("is_wide_angle=True");
   });
 
   it("uses OffsetCircular when exactly one circular-aperture offset is nonzero", () => {
     const script = buildOpticalModelScript({
       ...baseModel,
-      surfaces: [{
-        ...baseModel.surfaces[0],
-        semiDiameter: 3,
-        clear_aperture: { shape: "circular", offsetX: 0, offsetY: 1 },
-        edge_aperture: { shape: "circular", radius: 2.5, offsetX: 1, offsetY: 0 },
-      }],
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 3,
+          clear_aperture: { shape: "circular", offsetX: 0, offsetY: 1 },
+          edge_aperture: {
+            shape: "circular",
+            radius: 2.5,
+            offsetX: 1,
+            offsetY: 0,
+          },
+        },
+      ],
     });
 
-    expect(script).toContain("clear_apertures = [OffsetCircular(radius=3, x_offset=0, y_offset=1)]");
-    expect(script).toContain("edge_apertures = [OffsetCircular(radius=2.5, x_offset=1, y_offset=0)]");
+    expect(script).toContain(
+      "clear_apertures = [OffsetCircular(radius=3, x_offset=0, y_offset=1)]",
+    );
+    expect(script).toContain(
+      "edge_apertures = [OffsetCircular(radius=2.5, x_offset=1, y_offset=0)]",
+    );
     expect(script).not.toContain("clear_apertures = [Circular(radius=3");
     expect(script).not.toContain("edge_apertures = [Circular(radius=2.5");
   });
@@ -731,17 +954,17 @@ describe("buildOpticalModelScript", () => {
     });
 
     expect(script).toContain(
-      "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])\nsm.ifcs[-1].profile.r = -42",
+      'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])\nsm.ifcs[-1].profile.r = -42',
     );
     expect(script).not.toContain(
-      "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])\n\nsm.ifcs[-1].profile.r = -42",
+      'sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"])\n\nsm.ifcs[-1].profile.r = -42',
     );
   });
 
   it("emits the stop command only for surfaces labelled Stop", () => {
     const script = buildOpticalModelScript(baseModel);
 
-    expect((script.match(/sm\.set_stop\(\)/g) ?? [])).toHaveLength(1);
+    expect(script.match(/sm\.set_stop\(\)/g) ?? []).toHaveLength(1);
   });
 
   it("handles reflected and ordinary object media independently", () => {
@@ -754,9 +977,13 @@ describe("buildOpticalModelScript", () => {
       object: { ...baseModel.object, medium: "N-BK7", manufacturer: "Schott" },
     });
 
-    expect(reflectedScript).toContain('sm.gaps[0].medium = decode_medium("air")');
+    expect(reflectedScript).toContain(
+      'sm.gaps[0].medium = decode_medium("air")',
+    );
     expect(reflectedScript).not.toContain('decode_medium("REFL", "Schott")');
-    expect(ordinaryScript).toContain('sm.gaps[0].medium = decode_medium("N-BK7", "Schott")');
+    expect(ordinaryScript).toContain(
+      'sm.gaps[0].medium = decode_medium("N-BK7", "Schott")',
+    );
     expect(ordinaryScript).not.toContain('decode_medium("air")');
   });
 
@@ -794,37 +1021,65 @@ describe("buildExportScript", () => {
     ["regular", baseModel],
     ["wide-angle", wideAngleModel],
     ["custom-material", customMaterialModel],
-  ] as const)("splits every %s export into a custom-material loader and remaining script", (_name, model) => {
-    const sections = buildExportScriptSections(model);
+  ] as const)(
+    "splits every %s export into a custom-material loader and remaining script",
+    (_name, model) => {
+      const sections = buildExportScriptSections(model);
 
-    expect(sections.userDefinedMaterials).toContain("import json");
-    expect(sections.userDefinedMaterials).toContain("from opticalglass.opticalmedium import InterpolatedMedium");
-    expect(sections.userDefinedMaterials).toContain(
-      'custom_glass_json_path = "<PATH TO CUSTOM GLASS JSON FILE>"',
-    );
-    expect(sections.userDefinedMaterials).toContain("custom_glass_data = json.load(custom_glass_file)");
-    expect(sections.userDefinedMaterials).toContain("user_defined_materials = {");
-    expect(sections.remainingScript).toContain("from rayoptics.environment import *");
-    expect(sections.remainingScript).toContain("opm = ");
-    expect(sections.remainingScript).toContain("sm.list_model()");
-    expect(sections.remainingScript).not.toContain("import json");
-    expect(sections.remainingScript).not.toContain("from opticalglass.opticalmedium import InterpolatedMedium");
-    expect(sections.remainingScript).not.toContain("custom_glass_json_path");
-    expect(sections.remainingScript).not.toContain("custom_glass_file");
-    expect(sections.remainingScript).not.toContain("custom_glass_data");
-    expect(sections.remainingScript).not.toContain("user_defined_materials = {");
-  });
+      expect(sections.userDefinedMaterials).toContain("import json");
+      expect(sections.userDefinedMaterials).toContain(
+        "from opticalglass.opticalmedium import InterpolatedMedium",
+      );
+      expect(sections.userDefinedMaterials).toContain(
+        'custom_glass_json_path = "<PATH TO CUSTOM GLASS JSON FILE>"',
+      );
+      expect(sections.userDefinedMaterials).toContain(
+        "custom_glass_data = json.load(custom_glass_file)",
+      );
+      expect(sections.userDefinedMaterials).toContain(
+        "user_defined_materials = {",
+      );
+      expect(sections.remainingScript).toContain(
+        "from rayoptics.environment import *",
+      );
+      expect(sections.remainingScript).toContain("opm = ");
+      expect(sections.remainingScript).toContain("sm.list_model()");
+      expect(sections.remainingScript).not.toContain("import json");
+      expect(sections.remainingScript).not.toContain(
+        "from opticalglass.opticalmedium import InterpolatedMedium",
+      );
+      expect(sections.remainingScript).not.toContain("custom_glass_json_path");
+      expect(sections.remainingScript).not.toContain("custom_glass_file");
+      expect(sections.remainingScript).not.toContain("custom_glass_data");
+      expect(sections.remainingScript).not.toContain(
+        "user_defined_materials = {",
+      );
+    },
+  );
 
   it("orders the custom-material loader before its registry construction", () => {
-    const { userDefinedMaterials } = buildExportScriptSections(customMaterialModel);
+    const { userDefinedMaterials } =
+      buildExportScriptSections(customMaterialModel);
     const importJsonIdx = userDefinedMaterials.indexOf("import json");
-    const mediumImportIdx = userDefinedMaterials.indexOf("from opticalglass.opticalmedium import InterpolatedMedium");
-    const placeholderIdx = userDefinedMaterials.indexOf("custom_glass_json_path =");
-    const loadIdx = userDefinedMaterials.indexOf("custom_glass_data = json.load(custom_glass_file)");
-    const registryIdx = userDefinedMaterials.indexOf("user_defined_materials = {");
+    const mediumImportIdx = userDefinedMaterials.indexOf(
+      "from opticalglass.opticalmedium import InterpolatedMedium",
+    );
+    const placeholderIdx = userDefinedMaterials.indexOf(
+      "custom_glass_json_path =",
+    );
+    const loadIdx = userDefinedMaterials.indexOf(
+      "custom_glass_data = json.load(custom_glass_file)",
+    );
+    const registryIdx = userDefinedMaterials.indexOf(
+      "user_defined_materials = {",
+    );
 
-    expect(userDefinedMaterials).toContain('for label, material in custom_glass_data["Custom"].items()');
-    expect(userDefinedMaterials).toContain('InterpolatedMedium(label, pairs=material["data"], cat="custom")');
+    expect(userDefinedMaterials).toContain(
+      'for label, material in custom_glass_data["Custom"].items()',
+    );
+    expect(userDefinedMaterials).toContain(
+      'InterpolatedMedium(label, pairs=material["data"], cat="custom")',
+    );
     expect(importJsonIdx).toBeGreaterThanOrEqual(0);
     expect(mediumImportIdx).toBeGreaterThan(importJsonIdx);
     expect(placeholderIdx).toBeGreaterThan(mediumImportIdx);
@@ -839,7 +1094,9 @@ describe("buildExportScript", () => {
     const lookupIdx = script.indexOf('user_defined_materials["CUSTOM_A"]');
     const modelIdx = script.indexOf("opm = OpticalModel()");
 
-    expect(script).toBe([sections.userDefinedMaterials, sections.remainingScript].join("\n\n"));
+    expect(script).toBe(
+      [sections.userDefinedMaterials, sections.remainingScript].join("\n\n"),
+    );
     expect(registryIdx).toBeGreaterThanOrEqual(0);
     expect(lookupIdx).toBeGreaterThan(registryIdx);
     expect(modelIdx).toBeGreaterThan(registryIdx);
@@ -857,11 +1114,16 @@ describe("buildExportScript", () => {
 
   it("keeps the custom-glass file loader out of worker-oriented scripts", () => {
     const opticalModelScript = buildOpticalModelScript(customMaterialModel);
-    const workerScript = buildScript(customMaterialModel, (opm) => `analyze(${opm})`);
+    const workerScript = buildScript(
+      customMaterialModel,
+      (opm) => `analyze(${opm})`,
+    );
 
     for (const script of [opticalModelScript, workerScript]) {
       expect(script).not.toContain("custom_glass_json_path");
-      expect(script).not.toContain("from opticalglass.opticalmedium import InterpolatedMedium");
+      expect(script).not.toContain(
+        "from opticalglass.opticalmedium import InterpolatedMedium",
+      );
       expect(script).not.toContain("json.load(custom_glass_file)");
     }
   });
@@ -887,9 +1149,7 @@ describe("buildExportScript", () => {
 
   it("defines the exact model and field classes inline before construction", () => {
     const script = buildExportScript(wideAngleModel);
-    const helpersIdx = script.indexOf(
-      "class ExactOpticalModel(OpticalModel):",
-    );
+    const helpersIdx = script.indexOf("class ExactOpticalModel(OpticalModel):");
     const fieldIdx = script.indexOf(
       "class ExactImageHeightFieldSpec(FieldSpec):",
     );
@@ -912,14 +1172,18 @@ describe("buildExportScript", () => {
 
     expect(script).not.toContain("class ExactOpticalModel(OpticalModel):");
     expect(script).not.toContain("class ExactImageHeightFieldSpec(FieldSpec):");
-    expect(script).not.toContain("class ExactObjectHeightFieldSpec(FieldSpec):");
+    expect(script).not.toContain(
+      "class ExactObjectHeightFieldSpec(FieldSpec):",
+    );
     expect(script).not.toContain("Stryker was here!");
     expect(script).toContain("opm = OpticalModel()");
   });
 
   it("imports Circular and Rectangular in the export preamble", () => {
     const script = buildExportScript(baseModel);
-    expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular");
+    expect(script).toContain(
+      "from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular",
+    );
   });
 
   it("defines OffsetCircular and Annular inline in the export preamble", () => {
@@ -930,14 +1194,18 @@ describe("buildExportScript", () => {
     expect(script).toContain("self.y_offset + self.radius * rel_dir[1]");
     expect(script).toContain("class Annular(Aperture):");
     expect(script).toContain("obstruction_radius");
-    expect(script).toContain("return self.obstruction_radius - fuzz <= radius <= self.radius + fuzz");
+    expect(script).toContain(
+      "return self.obstruction_radius - fuzz <= radius <= self.radius + fuzz",
+    );
   });
 
   it("defines OffsetRotatedRectangular inline in the export preamble", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("class OffsetRotatedRectangular(Rectangular):");
     expect(script).toContain("angle = radians(self.rotation)");
-    expect(script).toContain("def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:");
+    expect(script).toContain(
+      "def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:",
+    );
     expect(script).toContain("def edge_pt_target(self, rel_dir):");
     expect(script).toMatch(
       /class OffsetRotatedRectangular\(Rectangular\):[\s\S]*def set_dimension\(self, x, y\):[\s\S]*target = abs\(x\)[\s\S]*max_projection = max\(/,
@@ -948,27 +1216,40 @@ describe("buildExportScript", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("class RonchiRuling(Aperture):");
     expect(script).toContain("pitch = 1 / self.lpmm");
-    expect(script).toContain("def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:");
+    expect(script).toContain(
+      "def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:",
+    );
     expect(script).toContain("def apply_scale_factor(self, scale_factor):");
-    expect(script).toContain("def set_vig_with_ronchi_envelopes(opm, set_vig_fn=None):");
+    expect(script).toContain(
+      "def set_vig_with_ronchi_envelopes(opm, set_vig_fn=None):",
+    );
   });
 
   it("defines the water material in the export preamble", () => {
     const script = buildExportScript(baseModel);
-    expect(script).toContain("water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'");
+    expect(script).toContain(
+      "water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'",
+    );
     expect(script).toContain('water = create_glass(water_url, "rindexinfo")');
   });
 
   it("defines the D263TECO material in the export preamble", () => {
     const script = buildExportScript(baseModel);
-    expect(script).toContain("d263teco_url = 'https://refractiveindex.info/database/data/specs/schott/misc/D263TECO.yml'");
-    expect(script).toContain('d263teco = create_glass(d263teco_url, "rindexinfo")');
+    expect(script).toContain(
+      "d263teco_url = 'https://refractiveindex.info/database/data/specs/schott/misc/D263TECO.yml'",
+    );
+    expect(script).toContain(
+      'd263teco = create_glass(d263teco_url, "rindexinfo")',
+    );
   });
 });
 
 describe("buildScript", () => {
   it("should wrap model build in def _build_opm() and inject the opm expression into the callback", () => {
-    const script = buildScript(baseModel, (opm) => `json.dumps(get_first_order_data(${opm}))`);
+    const script = buildScript(
+      baseModel,
+      (opm) => `json.dumps(get_first_order_data(${opm}))`,
+    );
     expect(script).toContain("def _build_opm():");
     expect(script).toContain("    return opm");
     expect(script).toContain("    opm = OpticalModel()");
@@ -984,8 +1265,8 @@ describe("buildScript", () => {
 
   it("should not have a bare opm assignment in global scope", () => {
     const script = buildScript(baseModel, (opm) => `compute(${opm})`);
-    const lines = script.split('\n');
-    const bareOpmAssignment = lines.filter(line => /^opm\s*=/.test(line));
+    const lines = script.split("\n");
+    const bareOpmAssignment = lines.filter((line) => /^opm\s*=/.test(line));
     expect(bareOpmAssignment).toHaveLength(0);
   });
 

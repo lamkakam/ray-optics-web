@@ -1,6 +1,10 @@
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
-import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
+import {
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import {
   buildFieldCategoryLineAxesAndGrid,
@@ -8,7 +12,13 @@ import {
 } from "@/features/analysis/components/fieldCategoryLineChartOption";
 import type { FieldCurveData } from "@/features/analysis/types/plotData";
 
-echarts.use([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([
+  LineChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 function buildFieldCurveSeriesDefinitions(fieldCurveData: FieldCurveData) {
   return [
@@ -36,7 +46,12 @@ export function buildFieldCurveOption(
   chartHeight: number,
   textColor: string,
 ) {
-  const axesAndGrid = buildFieldCategoryLineAxesAndGrid(fieldCurveData, chartWidth, chartHeight, textColor);
+  const axesAndGrid = buildFieldCategoryLineAxesAndGrid(
+    fieldCurveData,
+    chartWidth,
+    chartHeight,
+    textColor,
+  );
 
   return {
     animation: false,
@@ -53,6 +68,8 @@ export function buildFieldCurveOption(
       },
     },
     ...axesAndGrid,
-    series: buildFieldCategoryLineSeries(buildFieldCurveSeriesDefinitions(fieldCurveData)),
+    series: buildFieldCategoryLineSeries(
+      buildFieldCurveSeriesDefinitions(fieldCurveData),
+    ),
   };
 }

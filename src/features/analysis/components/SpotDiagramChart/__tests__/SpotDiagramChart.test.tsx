@@ -8,18 +8,26 @@ const mockSetOption = jest.fn();
 const mockResize = jest.fn();
 const mockDispose = jest.fn();
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-  init: jest.fn(() => ({
-    setOption: mockSetOption,
-    resize: mockResize,
-    dispose: mockDispose,
-  })),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+    init: jest.fn(() => ({
+      setOption: mockSetOption,
+      resize: mockResize,
+      dispose: mockDispose,
+    })),
+  }),
+  { virtual: true },
+);
 
-jest.mock("@/features/analysis/components/SpotDiagramChart/spotDiagramChartOption", () => ({
-  buildSpotDiagramOption: (...args: unknown[]) => mockBuildSpotDiagramOption(...args),
-}));
+jest.mock(
+  "@/features/analysis/components/SpotDiagramChart/spotDiagramChartOption",
+  () => ({
+    buildSpotDiagramOption: (...args: unknown[]) =>
+      mockBuildSpotDiagramOption(...args),
+  }),
+);
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -57,7 +65,8 @@ describe("SpotDiagramChart", () => {
         return 400;
       },
     });
-    global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
+    global.ResizeObserver =
+      ResizeObserverMock as unknown as typeof ResizeObserver;
     jest.useFakeTimers();
   });
 
@@ -70,7 +79,7 @@ describe("SpotDiagramChart", () => {
       <SpotDiagramChart
         spotDiagramData={spotDiagramData}
         wavelengthLabels={["486.1 nm", "587.6 nm", "656.3 nm"]}
-      />
+      />,
     );
 
     jest.runAllTimers();

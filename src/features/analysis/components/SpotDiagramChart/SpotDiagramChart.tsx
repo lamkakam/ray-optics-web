@@ -23,15 +23,32 @@ interface SpotDiagramChartProps {
  */
 export const SpotDiagramChart = createAnalysisChartComponent<
   SpotDiagramChartProps,
-  { readonly spotDiagramData: SpotDiagramData; readonly wavelengthLabels: readonly string[] }
+  {
+    readonly spotDiagramData: SpotDiagramData;
+    readonly wavelengthLabels: readonly string[];
+  }
 >({
   displayName: "SpotDiagramChart",
   testId: "spot-diagram-chart",
   ariaLabel: "Spot diagram plot",
   debounceMs: 500,
-  getBuilderArgs: ({ spotDiagramData, wavelengthLabels }) => ({ spotDiagramData, wavelengthLabels }),
+  getBuilderArgs: ({ spotDiagramData, wavelengthLabels }) => ({
+    spotDiagramData,
+    wavelengthLabels,
+  }),
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
     autoHeight ? parentWidth : Math.max(0, Math.min(parentWidth, parentHeight)),
-  buildOption: ({ spotDiagramData, wavelengthLabels }, chartWidth, chartHeight, chartTextColor) =>
-    buildSpotDiagramOption(spotDiagramData, wavelengthLabels, chartWidth, chartHeight, chartTextColor),
+  buildOption: (
+    { spotDiagramData, wavelengthLabels },
+    chartWidth,
+    chartHeight,
+    chartTextColor,
+  ) =>
+    buildSpotDiagramOption(
+      spotDiagramData,
+      wavelengthLabels,
+      chartWidth,
+      chartHeight,
+      chartTextColor,
+    ),
 });

@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from 'react';
-import { createStore, type StoreApi } from 'zustand';
+import { createContext, type ReactNode, useContext, useState } from "react";
+import { createStore, type StoreApi } from "zustand";
 import {
   createGlassMapSlice,
   type GlassMapStore,
-} from '@/features/glass-map/stores/glassMapStore';
+} from "@/features/glass-map/stores/glassMapStore";
 
 type ContextValue = StoreApi<GlassMapStore> | undefined;
 
@@ -22,7 +22,7 @@ export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
   children,
 }) => {
   const [store] = useState(() =>
-    createStore<GlassMapStore>(createGlassMapSlice)
+    createStore<GlassMapStore>(createGlassMapSlice),
   );
 
   return (
@@ -36,7 +36,9 @@ export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
 export const useGlassMapStore = (): StoreApi<GlassMapStore> => {
   const store = useContext(GlassMapStoreContext);
   if (store === undefined) {
-    throw new Error('`useGlassMapStore` must be used within `GlassMapStoreProvider`');
+    throw new Error(
+      "`useGlassMapStore` must be used within `GlassMapStoreProvider`",
+    );
   }
   return store;
 };

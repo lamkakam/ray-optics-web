@@ -2,7 +2,13 @@ import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/auto
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 const rows: GridRow[] = [
-  { id: "row-object", kind: "object", objectDistance: 1e10, medium: "air", manufacturer: "" },
+  {
+    id: "row-object",
+    kind: "object",
+    objectDistance: 1e10,
+    medium: "air",
+    manufacturer: "",
+  },
   {
     id: "surface-1",
     kind: "surface",

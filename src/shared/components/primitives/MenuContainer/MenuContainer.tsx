@@ -23,68 +23,74 @@ interface MenuContainerProps extends React.MenuHTMLAttributes<HTMLMenuElement> {
  * - Calls a consumer `onKeyDown` before internal navigation and skips internal behavior when that handler prevents default.
  * - Uses `componentTokens.menuContainer` for surface, border, text, sizing, and radius classes.
  */
-export const MenuContainer = React.forwardRef<HTMLMenuElement, MenuContainerProps>(
-  function MenuContainer({ className, children, onKeyDown, ...rest }, ref) {
-    const { color, size, style } = cx.menuContainer;
+export const MenuContainer = React.forwardRef<
+  HTMLMenuElement,
+  MenuContainerProps
+>(function MenuContainer({ className, children, onKeyDown, ...rest }, ref) {
+  const { color, size, style } = cx.menuContainer;
 
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLMenuElement>) => {
-      onKeyDown?.(event);
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLMenuElement>) => {
+    onKeyDown?.(event);
 
-      if (event.defaultPrevented || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) {
-        return;
-      }
+    if (
+      event.defaultPrevented ||
+      (event.key !== "ArrowDown" && event.key !== "ArrowUp")
+    ) {
+      return;
+    }
 
-      const menuButtons = Array.from(
-        event.currentTarget.querySelectorAll<HTMLButtonElement>(
-          ":scope > li > button:not(:disabled)",
-        ),
-      );
+    const menuButtons = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>(
+        ":scope > li > button:not(:disabled)",
+      ),
+    );
 
-      if (menuButtons.length === 0) {
-        return;
-      }
+    if (menuButtons.length === 0) {
+      return;
+    }
 
-      event.preventDefault();
+    event.preventDefault();
 
-      const activeIndex = document.activeElement instanceof HTMLButtonElement
+    const activeIndex =
+      document.activeElement instanceof HTMLButtonElement
         ? menuButtons.indexOf(document.activeElement)
         : -1;
-      const targetIndex = event.key === "ArrowDown"
+    const targetIndex =
+      event.key === "ArrowDown"
         ? activeIndex === -1
           ? 0
           : (activeIndex + 1) % menuButtons.length
         : activeIndex === -1
           ? menuButtons.length - 1
           : (activeIndex - 1 + menuButtons.length) % menuButtons.length;
-      const targetButton = menuButtons[targetIndex];
-      if (targetButton === undefined) {
-        return;
-      }
+    const targetButton = menuButtons[targetIndex];
+    if (targetButton === undefined) {
+      return;
+    }
 
-      targetButton.focus();
-      targetButton.click();
-    };
+    targetButton.focus();
+    targetButton.click();
+  };
 
-    return (
-      <menu
-        ref={ref}
-        className={clsx(
-          style.borderStyle,
-          style.borderRadius,
-          style.overflow,
-          color.borderColor,
-          color.bgColor,
-          color.textColor,
-          size.padding,
-          size.gap,
-          size.maxHeight,
-          className,
-        )}
-        onKeyDown={handleKeyDown}
-        {...rest}
-      >
-        {children}
-      </menu>
-    );
-  },
-);
+  return (
+    <menu
+      ref={ref}
+      className={clsx(
+        style.borderStyle,
+        style.borderRadius,
+        style.overflow,
+        color.borderColor,
+        color.bgColor,
+        color.textColor,
+        size.padding,
+        size.gap,
+        size.maxHeight,
+        className,
+      )}
+      onKeyDown={handleKeyDown}
+      {...rest}
+    >
+      {children}
+    </menu>
+  );
+});

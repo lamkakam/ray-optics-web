@@ -39,22 +39,61 @@ export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
   }
 
   const { catalogName, glassName, data } = selectedGlass;
-  const { refractiveIndexD, refractiveIndexE, abbeNumberD, abbeNumberE, partialDispersions } = data;
+  const {
+    refractiveIndexD,
+    refractiveIndexE,
+    abbeNumberD,
+    abbeNumberE,
+    partialDispersions,
+  } = data;
 
   const rows: Row[] = [
-    { key: "Nd", label: <MathJax inline>{`\\(n_d\\)`}</MathJax>, value: refractiveIndexD.toFixed(5) },
-    { key: "Ne", label: <MathJax inline>{`\\(n_e\\)`}</MathJax>, value: refractiveIndexE.toFixed(5) },
-    { key: "Vd", label: <MathJax inline>{`\\(V_d\\)`}</MathJax>, value: abbeNumberD.toFixed(2) },
-    { key: "Ve", label: <MathJax inline>{`\\(V_e\\)`}</MathJax>, value: abbeNumberE.toFixed(2) },
-    { key: "P_gF", label: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax>, value: partialDispersions.P_gF.toFixed(4) },
-    { key: "P_Fd", label: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax>, value: partialDispersions.P_Fd.toFixed(4) },
-    { key: "P_fe", label: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax>, value: partialDispersions.P_fe.toFixed(4) },
+    {
+      key: "Nd",
+      label: <MathJax inline>{`\\(n_d\\)`}</MathJax>,
+      value: refractiveIndexD.toFixed(5),
+    },
+    {
+      key: "Ne",
+      label: <MathJax inline>{`\\(n_e\\)`}</MathJax>,
+      value: refractiveIndexE.toFixed(5),
+    },
+    {
+      key: "Vd",
+      label: <MathJax inline>{`\\(V_d\\)`}</MathJax>,
+      value: abbeNumberD.toFixed(2),
+    },
+    {
+      key: "Ve",
+      label: <MathJax inline>{`\\(V_e\\)`}</MathJax>,
+      value: abbeNumberE.toFixed(2),
+    },
+    {
+      key: "P_gF",
+      label: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax>,
+      value: partialDispersions.P_gF.toFixed(4),
+    },
+    {
+      key: "P_Fd",
+      label: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax>,
+      value: partialDispersions.P_Fd.toFixed(4),
+    },
+    {
+      key: "P_fe",
+      label: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax>,
+      value: partialDispersions.P_fe.toFixed(4),
+    },
   ];
 
-  const tableRows = rows.map(({ key, label, value }) => [
-    <span key="label" data-testid={`label-${key}`}>{label}</span>,
-    value,
-  ] as const);
+  const tableRows = rows.map(
+    ({ key, label, value }) =>
+      [
+        <span key="label" data-testid={`label-${key}`}>
+          {label}
+        </span>,
+        value,
+      ] as const,
+  );
 
   return (
     <div className="p-4">
@@ -62,7 +101,9 @@ export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
         <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           {catalogName}
         </span>
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{glassName}</h3>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          {glassName}
+        </h3>
       </div>
       <Table headers={[]} rows={tableRows} />
     </div>

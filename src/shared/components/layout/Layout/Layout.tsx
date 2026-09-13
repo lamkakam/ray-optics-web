@@ -11,7 +11,10 @@ interface LayoutProps {
   /** Active view content */
   readonly children: React.ReactNode;
   /** Optional SideNav navigation interceptor supplied by the app shell */
-  readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
+  readonly onNavigate?: (
+    href: string,
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => boolean;
 }
 
 /**
@@ -78,7 +81,10 @@ export function Layout({ children, onNavigate }: LayoutProps) {
         return;
       }
 
-      if (sideNavRef.current?.contains(target) || hamburgerRef.current?.contains(target)) {
+      if (
+        sideNavRef.current?.contains(target) ||
+        hamburgerRef.current?.contains(target)
+      ) {
         return;
       }
 
@@ -141,7 +147,9 @@ export function Layout({ children, onNavigate }: LayoutProps) {
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
         <div className="flex items-center">
           {hamburgerButton}
-          <Header level={1} className="ml-2">Ray Optics Web</Header>
+          <Header level={1} className="ml-2">
+            Ray Optics Web
+          </Header>
         </div>
       </header>
 

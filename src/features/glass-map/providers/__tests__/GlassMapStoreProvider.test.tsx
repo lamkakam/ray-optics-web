@@ -5,7 +5,10 @@ import {
   GlassMapStoreContext,
   useGlassMapStore,
 } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
+import {
+  createGlassMapSlice,
+  type GlassMapStore,
+} from "@/features/glass-map/stores/glassMapStore";
 
 describe("GlassMapStoreProvider", () => {
   it("useGlassMapStore returns the store when inside GlassMapStoreProvider", () => {
@@ -19,22 +22,23 @@ describe("GlassMapStoreProvider", () => {
   });
 
   it("useGlassMapStore throws when called outside GlassMapStoreProvider", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     expect(() => {
       renderHook(() => useGlassMapStore());
-    }).toThrow("`useGlassMapStore` must be used within `GlassMapStoreProvider`");
+    }).toThrow(
+      "`useGlassMapStore` must be used within `GlassMapStoreProvider`",
+    );
     consoleSpy.mockRestore();
   });
 
   it("store returned is a singleton (same reference across two calls within the same provider)", () => {
-    const { result, rerender } = renderHook(
-      () => useGlassMapStore(),
-      {
-        wrapper: ({ children }) => (
-          <GlassMapStoreProvider>{children}</GlassMapStoreProvider>
-        ),
-      }
-    );
+    const { result, rerender } = renderHook(() => useGlassMapStore(), {
+      wrapper: ({ children }) => (
+        <GlassMapStoreProvider>{children}</GlassMapStoreProvider>
+      ),
+    });
     const first = result.current;
     rerender();
     expect(result.current).toBe(first);
@@ -61,7 +65,10 @@ describe("GlassMapStoreProvider", () => {
     expect(result.current.getState().setPlotType).toBeDefined();
     expect(result.current.getState().toggleCatalog).toBeDefined();
     expect(result.current.getState().setSelectedGlass).toBeDefined();
-    expect((result.current.getState() as unknown as Record<string, unknown>).setRouteIntent).toBeUndefined();
+    expect(
+      (result.current.getState() as unknown as Record<string, unknown>)
+        .setRouteIntent,
+    ).toBeUndefined();
     expect(typeof result.current.getState().setCatalogsData).toBe("function");
   });
 });

@@ -91,53 +91,71 @@ export function LensPrescriptionGrid({
     return indexByRowId;
   }, [rows]);
 
-  const columnDefs = useMemo<ColDef<GridRow>[]>(() => [
-    {
-      headerName: "",
-      field: "kind",
-      width: 100,
-      cellRenderer: (params: { data: GridRow }) => {
-        const { kind, id } = params.data;
-        return (
-          <GridRowButtons
-            onAdd={kind !== "image" ? () => onAddRowAfter(id) : undefined}
-            onDelete={kind === "surface" ? () => onDeleteRow(id) : undefined}
-          />
-        );
+  const columnDefs = useMemo<ColDef<GridRow>[]>(
+    () => [
+      {
+        headerName: "",
+        field: "kind",
+        width: 100,
+        cellRenderer: (params: { data: GridRow }) => {
+          const { kind, id } = params.data;
+          return (
+            <GridRowButtons
+              onAdd={kind !== "image" ? () => onAddRowAfter(id) : undefined}
+              onDelete={kind === "surface" ? () => onDeleteRow(id) : undefined}
+            />
+          );
+        },
       },
-    },
-    {
-      ...lensPrescriptionGridIndexColumnDef,
-      valueGetter: (params) => {
-        if (params.data?.kind !== "surface") {
-          return undefined;
-        }
+      {
+        ...lensPrescriptionGridIndexColumnDef,
+        valueGetter: (params) => {
+          if (params.data?.kind !== "surface") {
+            return undefined;
+          }
 
-        return surfaceIndexByRowId.get(params.data.id);
+          return surfaceIndexByRowId.get(params.data.id);
+        },
       },
-    },
-    ...createLensPrescriptionCommonColumns<GridRow>({
-      getGridRow: (row) => row,
-      onSurfaceLabelChange: (row, label) => onRowChange(row.id, { label }),
-      onCommentChange: (row, comment) => onRowChange(row.id, { comment }),
-      onRadiusChange: (row, curvatureRadius) => onRowChange(row.id, { curvatureRadius }),
-      onThicknessChange: (row, thickness) => {
-        if (row.kind === "object") {
-          onRowChange(row.id, { objectDistance: thickness });
-        } else {
-          onRowChange(row.id, { thickness });
-        }
-      },
-      onOpenMediumModal: (row) => onOpenMediumModal(row.id),
-      onSemiDiameterChange: (row, semiDiameter) => onRowChange(row.id, { semiDiameter }),
+      ...createLensPrescriptionCommonColumns<GridRow>({
+        getGridRow: (row) => row,
+        onSurfaceLabelChange: (row, label) => onRowChange(row.id, { label }),
+        onCommentChange: (row, comment) => onRowChange(row.id, { comment }),
+        onRadiusChange: (row, curvatureRadius) =>
+          onRowChange(row.id, { curvatureRadius }),
+        onThicknessChange: (row, thickness) => {
+          if (row.kind === "object") {
+            onRowChange(row.id, { objectDistance: thickness });
+          } else {
+            onRowChange(row.id, { thickness });
+          }
+        },
+        onOpenMediumModal: (row) => onOpenMediumModal(row.id),
+        onSemiDiameterChange: (row, semiDiameter) =>
+          onRowChange(row.id, { semiDiameter }),
+        semiDiameterReadonly,
+        computedSemiDiameters,
+        onOpenApertureModal: (row) => onOpenApertureModal(row.id),
+        onOpenAsphericalModal: (row) => onOpenAsphericalModal(row.id),
+        onOpenDecenterModal: (row) => onOpenDecenterModal(row.id),
+        onOpenDiffractionGratingModal: (row) =>
+          onOpenDiffractionGratingModal(row.id),
+      }),
+    ],
+    [
+      surfaceIndexByRowId,
       semiDiameterReadonly,
       computedSemiDiameters,
-      onOpenApertureModal: (row) => onOpenApertureModal(row.id),
-      onOpenAsphericalModal: (row) => onOpenAsphericalModal(row.id),
-      onOpenDecenterModal: (row) => onOpenDecenterModal(row.id),
-      onOpenDiffractionGratingModal: (row) => onOpenDiffractionGratingModal(row.id),
-    }),
-  ], [surfaceIndexByRowId, semiDiameterReadonly, computedSemiDiameters, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenApertureModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
+      onRowChange,
+      onOpenMediumModal,
+      onOpenAsphericalModal,
+      onOpenApertureModal,
+      onOpenDecenterModal,
+      onOpenDiffractionGratingModal,
+      onAddRowAfter,
+      onDeleteRow,
+    ],
+  );
 
   return (
     <section

@@ -8,27 +8,43 @@ const mockSetOption = jest.fn();
 const mockResize = jest.fn();
 const mockDispose = jest.fn();
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-  init: jest.fn(() => ({
-    setOption: mockSetOption,
-    resize: mockResize,
-    dispose: mockDispose,
-  })),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+    init: jest.fn(() => ({
+      setOption: mockSetOption,
+      resize: mockResize,
+      dispose: mockDispose,
+    })),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  LineChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    LineChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  TooltipComponent: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: {},
+    TooltipComponent: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -57,7 +73,9 @@ describe("OptimizationProgressModal", () => {
       />,
     );
 
-    expect(screen.getByTestId("optimization-progress-chart")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("optimization-progress-chart"),
+    ).toBeInTheDocument();
     expect(echarts.init).toHaveBeenCalled();
 
     const option = mockSetOption.mock.calls[0]?.[0];
@@ -74,7 +92,13 @@ describe("OptimizationProgressModal", () => {
       <OptimizationProgressModal
         isOpen={true}
         isOptimizing={true}
-        progress={[{ iteration: 4, merit_function_value: 0, log10_merit_function_value: 0 }]}
+        progress={[
+          {
+            iteration: 4,
+            merit_function_value: 0,
+            log10_merit_function_value: 0,
+          },
+        ]}
         onClose={jest.fn()}
       />,
     );
@@ -88,8 +112,16 @@ describe("OptimizationProgressModal", () => {
         isOpen={true}
         isOptimizing={true}
         progress={[
-          { iteration: 4, merit_function_value: 0, log10_merit_function_value: 0 },
-          { iteration: 5, merit_function_value: 2, log10_merit_function_value: Math.log10(2) },
+          {
+            iteration: 4,
+            merit_function_value: 0,
+            log10_merit_function_value: 0,
+          },
+          {
+            iteration: 5,
+            merit_function_value: 2,
+            log10_merit_function_value: Math.log10(2),
+          },
         ]}
         onClose={jest.fn()}
       />,
@@ -97,7 +129,10 @@ describe("OptimizationProgressModal", () => {
 
     const twoPointOption = mockSetOption.mock.calls.at(-1)?.[0];
     expect(twoPointOption.series[0].showSymbol).toBe(false);
-    expect(twoPointOption.series[0].data).toEqual([[4, 1e-9], [5, 2]]);
+    expect(twoPointOption.series[0].data).toEqual([
+      [4, 1e-9],
+      [5, 2],
+    ]);
   });
 
   it("renders a danger Stop button while running and hides OK", () => {
@@ -113,8 +148,12 @@ describe("OptimizationProgressModal", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Stop optimization" })).toHaveTextContent("Stop");
-    expect(screen.queryByRole("button", { name: "OK" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Stop optimization" }),
+    ).toHaveTextContent("Stop");
+    expect(
+      screen.queryByRole("button", { name: "OK" }),
+    ).not.toBeInTheDocument();
   });
 
   it("calls onStop and disables Stop while the stop request is pending", async () => {
@@ -148,7 +187,9 @@ describe("OptimizationProgressModal", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Stopping optimization" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Stopping optimization" }),
+    ).toBeDisabled();
   });
 
   it("disables stopping and reports unsupported interrupts", async () => {
@@ -209,7 +250,11 @@ describe("OptimizationProgressModal", () => {
     );
 
     expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Stop optimization|Stopping optimization/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: /Stop optimization|Stopping optimization/,
+      }),
+    ).not.toBeInTheDocument();
 
     await userEvent.setup().click(screen.getByRole("button", { name: "OK" }));
     expect(onClose).toHaveBeenCalledTimes(1);

@@ -2,23 +2,39 @@ import { buildFieldCurveOption } from "@/features/analysis/components/FieldCurve
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { FieldCurveData } from "@/features/analysis/types/plotData";
 
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  "echarts/core",
+  () => ({
+    use: jest.fn(),
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/charts", () => ({
-  LineChart: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/charts",
+  () => ({
+    LineChart: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  LegendComponent: {},
-  TooltipComponent: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/components",
+  () => ({
+    GridComponent: {},
+    LegendComponent: {},
+    TooltipComponent: {},
+  }),
+  { virtual: true },
+);
 
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
+jest.mock(
+  "echarts/renderers",
+  () => ({
+    CanvasRenderer: {},
+  }),
+  { virtual: true },
+);
 
 describe("fieldCurveChartOption", () => {
   const fieldCurveData: FieldCurveData = {
@@ -42,13 +58,17 @@ describe("fieldCurveChartOption", () => {
     expect(Array.isArray(option.xAxis)).toBe(false);
     expect(Array.isArray(option.yAxis)).toBe(false);
     expect(option.xAxis.type).toBe("value");
-    expect(option.xAxis.splitLine).toEqual(expect.objectContaining({ show: true }));
+    expect(option.xAxis.splitLine).toEqual(
+      expect.objectContaining({ show: true }),
+    );
     expect(option.yAxis.type).toBe("category");
     expect(option.yAxis.data).toEqual(fieldCurveData.fieldLabels);
-    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({
-      show: true,
-      interval: option.yAxis.axisLabel.interval,
-    }));
+    expect(option.yAxis.splitLine).toEqual(
+      expect.objectContaining({
+        show: true,
+        interval: option.yAxis.axisLabel.interval,
+      }),
+    );
     expect(option.tooltip.axisPointer).toEqual({ type: "cross" });
     expect(option.series).toHaveLength(2);
     expect(option.series).toEqual([
@@ -56,19 +76,32 @@ describe("fieldCurveChartOption", () => {
         name: "Sagittal",
         type: "line",
         showSymbol: false,
-        data: [[-0.1, 0], [0, 1], [0.1, 2]],
+        data: [
+          [-0.1, 0],
+          [0, 1],
+          [0.1, 2],
+        ],
       }),
       expect.objectContaining({
         name: "Tangential",
         type: "line",
         showSymbol: false,
-        data: [[-0.2, 0], [0, 1], [0.2, 2]],
+        data: [
+          [-0.2, 0],
+          [0, 1],
+          [0.2, 2],
+        ],
       }),
     ]);
   });
 
   it("labels afocal field curves as output vergence", () => {
-    const option = buildFieldCurveOption({ ...fieldCurveData, unitX: "D" }, 480, 320, "#000");
+    const option = buildFieldCurveOption(
+      { ...fieldCurveData, unitX: "D" },
+      480,
+      320,
+      "#000",
+    );
     expect(option.xAxis.name).toBe("Output Vergence (D)");
   });
 
@@ -94,10 +127,12 @@ describe("fieldCurveChartOption", () => {
 
     expect(visibleIndices).toEqual([0, 2, 4, 6, 8]);
     expect(option.yAxis.axisTick).toEqual({ interval: isVisibleCategory });
-    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({
-      show: true,
-      interval: isVisibleCategory,
-    }));
+    expect(option.yAxis.splitLine).toEqual(
+      expect.objectContaining({
+        show: true,
+        interval: isVisibleCategory,
+      }),
+    );
   });
 
   it("shows every y-axis category when fewer than five field labels exist", () => {
@@ -115,12 +150,18 @@ describe("fieldCurveChartOption", () => {
 
     const isVisibleCategory = option.yAxis.axisLabel.interval;
 
-    expect(sparseFieldCurveData.fieldLabels.every((_, index) => isVisibleCategory(index))).toBe(true);
+    expect(
+      sparseFieldCurveData.fieldLabels.every((_, index) =>
+        isVisibleCategory(index),
+      ),
+    ).toBe(true);
     expect(option.yAxis.axisTick).toEqual({ interval: isVisibleCategory });
-    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({
-      show: true,
-      interval: isVisibleCategory,
-    }));
+    expect(option.yAxis.splitLine).toEqual(
+      expect.objectContaining({
+        show: true,
+        interval: isVisibleCategory,
+      }),
+    );
   });
 
   it("pairs each field-curve series to its shorter axis", () => {
@@ -134,6 +175,9 @@ describe("fieldCurveChartOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.series[0].data).toEqual([[-0.1, 0], [0, 1]]);
+    expect(option.series[0].data).toEqual([
+      [-0.1, 0],
+      [0, 1],
+    ]);
   });
 });

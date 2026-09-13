@@ -1,4 +1,8 @@
-import { generateRowId, gridRowsToSurfaces, surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import {
+  generateRowId,
+  gridRowsToSurfaces,
+  surfacesToGridRows,
+} from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Surfaces } from "@/shared/lib/types/opticalModel";
 
@@ -37,7 +41,10 @@ describe("gridTransform", () => {
 
     const rows = surfacesToGridRows(surfaces);
 
-    expect(rows[1]).toMatchObject({ kind: "surface", comment: "Front element" });
+    expect(rows[1]).toMatchObject({
+      kind: "surface",
+      comment: "Front element",
+    });
     expect(rows[2]).not.toHaveProperty("comment");
     expect(gridRowsToSurfaces(rows).surfaces).toEqual(surfaces.surfaces);
   });
@@ -55,7 +62,12 @@ describe("gridTransform", () => {
           manufacturer: "",
           semiDiameter: 5,
           clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
-          edge_aperture: { shape: "circular", radius: 4.5, offsetX: 3, offsetY: -4 },
+          edge_aperture: {
+            shape: "circular",
+            radius: 4.5,
+            offsetX: 3,
+            offsetY: -4,
+          },
         },
       ],
     };
@@ -65,11 +77,21 @@ describe("gridTransform", () => {
 
     expect(surfaceRow).toMatchObject({
       clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
-      edge_aperture: { shape: "circular", radius: 4.5, offsetX: 3, offsetY: -4 },
+      edge_aperture: {
+        shape: "circular",
+        radius: 4.5,
+        offsetX: 3,
+        offsetY: -4,
+      },
     });
     expect(gridRowsToSurfaces(rows).surfaces[0]).toMatchObject({
       clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
-      edge_aperture: { shape: "circular", radius: 4.5, offsetX: 3, offsetY: -4 },
+      edge_aperture: {
+        shape: "circular",
+        radius: 4.5,
+        offsetX: 3,
+        offsetY: -4,
+      },
     });
   });
 
@@ -78,22 +100,48 @@ describe("gridTransform", () => {
       object: { distance: 20, medium: "air", manufacturer: "" },
       image: {
         curvatureRadius: -4,
-        decenter: { coordinateSystemStrategy: "reverse", alpha: 1, beta: 2, gamma: 3, offsetX: 4, offsetY: 5 },
+        decenter: {
+          coordinateSystemStrategy: "reverse",
+          alpha: 1,
+          beta: 2,
+          gamma: 3,
+          offsetX: 4,
+          offsetY: 5,
+        },
       },
-      surfaces: [{
-        label: "Stop",
-        comment: "all optional fields",
-        curvatureRadius: 12,
-        thickness: 3,
-        medium: "N-BK7",
-        manufacturer: "Schott",
-        semiDiameter: 5,
-        clear_aperture: { shape: "annular", obstructionRadius: 2, offsetX: 1, offsetY: -1 },
-        edge_aperture: { shape: "circular", radius: 4, offsetX: 2, offsetY: -2 },
-        aspherical: { kind: "Conic", conicConstant: -1 },
-        decenter: { coordinateSystemStrategy: "bend", alpha: 1, beta: 2, gamma: 3, offsetX: 4, offsetY: 5 },
-        diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
-      }],
+      surfaces: [
+        {
+          label: "Stop",
+          comment: "all optional fields",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "N-BK7",
+          manufacturer: "Schott",
+          semiDiameter: 5,
+          clear_aperture: {
+            shape: "annular",
+            obstructionRadius: 2,
+            offsetX: 1,
+            offsetY: -1,
+          },
+          edge_aperture: {
+            shape: "circular",
+            radius: 4,
+            offsetX: 2,
+            offsetY: -2,
+          },
+          aspherical: { kind: "Conic", conicConstant: -1 },
+          decenter: {
+            coordinateSystemStrategy: "bend",
+            alpha: 1,
+            beta: 2,
+            gamma: 3,
+            offsetX: 4,
+            offsetY: 5,
+          },
+          diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
+        },
+      ],
     };
 
     const rows = surfacesToGridRows(surfaces);
@@ -130,14 +178,16 @@ describe("gridTransform", () => {
     expect(converted).toEqual({
       object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
-      surfaces: [{
-        label: "Default",
-        curvatureRadius: 0,
-        thickness: 0,
-        medium: "air",
-        manufacturer: "",
-        semiDiameter: 1,
-      }],
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 0,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 1,
+        },
+      ],
     });
     expect(converted.surfaces[0]).not.toHaveProperty("comment");
     expect(converted.surfaces[0]).not.toHaveProperty("clear_aperture");
@@ -176,14 +226,16 @@ describe("gridTransform", () => {
     const rows = surfacesToGridRows({
       object: { distance: 20, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 4 },
-      surfaces: [{
-        label: "Default",
-        curvatureRadius: 10,
-        thickness: 2,
-        medium: "air",
-        manufacturer: "",
-        semiDiameter: 5,
-      }],
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 10,
+          thickness: 2,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+        },
+      ],
     });
 
     expect(rows[1]).not.toHaveProperty("comment");

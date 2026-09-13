@@ -37,7 +37,7 @@ test("import transmissive diffraction grating config and verify grating plus til
     page.locator('button[aria-label="Load Config"]').click(),
   ]);
   await fileChooser.setFiles(
-    path.join(__dirname, "jsons", "transmissive-diffraction-grating.json")
+    path.join(__dirname, "jsons", "transmissive-diffraction-grating.json"),
   );
 
   const importDialog = page.getByRole("dialog");
@@ -48,7 +48,12 @@ test("import transmissive diffraction grating config and verify grating plus til
   const prescriptionGrid = '[aria-label="Lens prescription editor"]';
 
   await expect(
-    await getPrescriptionSpecialCell(page, prescriptionGrid, "Object", "Medium")
+    await getPrescriptionSpecialCell(
+      page,
+      prescriptionGrid,
+      "Object",
+      "Medium",
+    ),
   ).toContainText("air");
 
   const decenterButtonRow4 = await getPrescriptionActionButton(
@@ -56,54 +61,54 @@ test("import transmissive diffraction grating config and verify grating plus til
     prescriptionGrid,
     4,
     "Tilt & Decenter",
-    "Edit decenter and tilt"
+    "Edit decenter and tilt",
   );
   const diffractionGratingButtonRow6 = await getPrescriptionActionButton(
     page,
     prescriptionGrid,
     6,
     "Diffraction Grating",
-    "Edit diffraction grating"
+    "Edit diffraction grating",
   );
   const decenterButtonRow9 = await getPrescriptionActionButton(
     page,
     prescriptionGrid,
     9,
     "Tilt & Decenter",
-    "Edit decenter and tilt"
+    "Edit decenter and tilt",
   );
   const decenterCellRow4 = await getPrescriptionCell(
     page,
     prescriptionGrid,
     4,
-    "Tilt & Decenter"
+    "Tilt & Decenter",
   );
   const diffractionGratingCellRow6 = await getPrescriptionCell(
     page,
     prescriptionGrid,
     6,
-    "Diffraction Grating"
+    "Diffraction Grating",
   );
 
   await expect(
-    await getPrescriptionCell(page, prescriptionGrid, 4, "Surface")
+    await getPrescriptionCell(page, prescriptionGrid, 4, "Surface"),
   ).toContainText("Default");
   await expect(decenterButtonRow4).toHaveText("dec and return");
 
   await expect(
-    await getPrescriptionCell(page, prescriptionGrid, 6, "Medium")
+    await getPrescriptionCell(page, prescriptionGrid, 6, "Medium"),
   ).toContainText("SF10");
   await expect(diffractionGratingButtonRow6).toHaveText("600 lp/mm");
 
   await expect(
-    await getPrescriptionCell(page, prescriptionGrid, 9, "Surface")
+    await getPrescriptionCell(page, prescriptionGrid, 9, "Surface"),
   ).toContainText("Default");
   await expect(decenterButtonRow9).toHaveText("dec and return");
 
   await diffractionGratingCellRow6.hover();
   await diffractionGratingCellRow6.click();
   const gratingModal = page.locator(
-    '[role="dialog"][aria-labelledby="diffraction-grating-modal-title"]'
+    '[role="dialog"][aria-labelledby="diffraction-grating-modal-title"]',
   );
   await gratingModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(gratingModal.getByLabel("lp/mm")).toHaveValue("600");
@@ -112,14 +117,16 @@ test("import transmissive diffraction grating config and verify grating plus til
   await gratingModal.waitFor({ state: "hidden", timeout: 5_000 });
 
   const decenterModal = page.locator(
-    '[role="dialog"][aria-labelledby="decenter-modal-title"]'
+    '[role="dialog"][aria-labelledby="decenter-modal-title"]',
   );
 
   await decenterCellRow4.hover();
   await decenterCellRow4.click();
   await decenterModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(
-    decenterModal.getByLabel("Coordinate system for this and following surfaces")
+    decenterModal.getByLabel(
+      "Coordinate system for this and following surfaces",
+    ),
   ).toHaveValue("dec and return");
   await expect(decenterModal.getByLabel("Alpha (°)")).toHaveValue("15");
   await expect(decenterModal.getByLabel("Beta (°)")).toHaveValue("0");
@@ -133,7 +140,9 @@ test("import transmissive diffraction grating config and verify grating plus til
   await decenterButtonRow9.click();
   await decenterModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(
-    decenterModal.getByLabel("Coordinate system for this and following surfaces")
+    decenterModal.getByLabel(
+      "Coordinate system for this and following surfaces",
+    ),
   ).toHaveValue("dec and return");
   await expect(decenterModal.getByLabel("Alpha (°)")).toHaveValue("-15");
   await expect(decenterModal.getByLabel("Beta (°)")).toHaveValue("0");

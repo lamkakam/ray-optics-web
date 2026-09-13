@@ -8,7 +8,8 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
 import type { DecenterConfig } from "@/shared/lib/types/opticalModel";
 
-type DecenterCoordinateSystemStrategy = DecenterConfig["coordinateSystemStrategy"];
+type DecenterCoordinateSystemStrategy =
+  DecenterConfig["coordinateSystemStrategy"];
 /** Editable optical-surface decenter configuration. */
 export type DecenterType = DecenterConfig;
 
@@ -35,10 +36,25 @@ function parseNumericString(s: string, fallback: number): number {
 }
 
 const POS_AND_ORIENTATION_OPTIONS = [
-  { value: "bend", label: "Tilt & decenter for this surface; double tilt for following surfaces" },
-  { value: "dec and return", label: "Apply to this surface only; restore previous coordinate system for following surfaces" },
-  { value: "decenter", label: "New coordinate system for this and following surfaces" },
-  { value: "reverse", label: "No change to this surface; reversed coordinate system for following surfaces" },
+  {
+    value: "bend",
+    label:
+      "Tilt & decenter for this surface; double tilt for following surfaces",
+  },
+  {
+    value: "dec and return",
+    label:
+      "Apply to this surface only; restore previous coordinate system for following surfaces",
+  },
+  {
+    value: "decenter",
+    label: "New coordinate system for this and following surfaces",
+  },
+  {
+    value: "reverse",
+    label:
+      "No change to this surface; reversed coordinate system for following surfaces",
+  },
 ];
 
 /**
@@ -75,7 +91,8 @@ export function DecenterModal({
   };
 
   /** Selected coordinate-system strategy. */
-  const [posAndOrientation, setPosAndOrientation] = useState<DecenterCoordinateSystemStrategy>(init.coordinateSystemStrategy);
+  const [posAndOrientation, setPosAndOrientation] =
+    useState<DecenterCoordinateSystemStrategy>(init.coordinateSystemStrategy);
   /** String drafts for the three angular and two positional coordinates. */
   const [alphaStr, setAlphaStr] = useState(String(init.alpha));
   const [betaStr, setBetaStr] = useState(String(init.beta));
@@ -100,32 +117,46 @@ export function DecenterModal({
       title="Tilt & Decenter"
       titleId="decenter-modal-title"
       size="md"
-      footer={(
+      footer={
         <div className="flex items-center gap-3">
           {readOnly ? (
             <div className="flex justify-end w-full">
-              <Button variant="secondary" onClick={onClose}>Close</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Close
+              </Button>
             </div>
           ) : (
             <>
-              <Button variant="danger" onClick={onRemove}>Remove Decenter</Button>
+              <Button variant="danger" onClick={onRemove}>
+                Remove Decenter
+              </Button>
               <span className="flex-1" />
-              <Button variant="secondary" onClick={onClose}>Cancel</Button>
-              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleConfirm}>
+                Confirm
+              </Button>
             </>
           )}
         </div>
-      )}
+      }
     >
       {/* Position & Orientation */}
       <div className="mb-4">
-        <Label htmlFor="pos-and-orientation">Coordinate system for this and following surfaces</Label>
+        <Label htmlFor="pos-and-orientation">
+          Coordinate system for this and following surfaces
+        </Label>
         <Select
           id="pos-and-orientation"
           aria-label="Coordinate system for this and following surfaces"
           value={posAndOrientation}
           disabled={readOnly}
-          onChange={(e) => setPosAndOrientation(e.target.value as DecenterCoordinateSystemStrategy)}
+          onChange={(e) =>
+            setPosAndOrientation(
+              e.target.value as DecenterCoordinateSystemStrategy,
+            )
+          }
           options={POS_AND_ORIENTATION_OPTIONS}
         />
       </div>

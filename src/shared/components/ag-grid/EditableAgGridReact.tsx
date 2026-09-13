@@ -12,11 +12,8 @@ import type { AgGridReactProps } from "ag-grid-react";
  * - Lets callers explicitly override `stopEditingWhenCellsLoseFocus` by passing the prop.
  * - Does not override `suppressTouch`, leaving AG Grid's native touch handling enabled for touchscreen column resizing. Callers can combine it with viewport-specific native touch-scroll styles.
  */
-export function EditableAgGridReact<TData>(props: Readonly<AgGridReactProps<TData>>) {
-  return (
-    <AgGridReact<TData>
-      stopEditingWhenCellsLoseFocus={true}
-      {...props}
-    />
-  );
+export function EditableAgGridReact<TData>(
+  props: Readonly<AgGridReactProps<TData>>,
+) {
+  return <AgGridReact<TData> stopEditingWhenCellsLoseFocus={true} {...props} />;
 }

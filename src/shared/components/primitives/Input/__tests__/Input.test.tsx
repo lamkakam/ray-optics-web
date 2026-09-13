@@ -21,11 +21,15 @@ describe("Input", () => {
 
   it("renders an <input> element", () => {
     render(<Input aria-label="test-input" />);
-    expect(screen.getByRole("textbox", { name: "test-input" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "test-input" }),
+    ).toBeInTheDocument();
   });
 
   it("forwards value", () => {
-    render(<Input aria-label="test" value="hello" onChange={() => undefined} />);
+    render(
+      <Input aria-label="test" value="hello" onChange={() => undefined} />,
+    );
     expect(screen.getByRole("textbox")).toHaveValue("hello");
   });
 
@@ -43,7 +47,9 @@ describe("Input", () => {
 
   it("forwards aria-label", () => {
     render(<Input aria-label="my label" />);
-    expect(screen.getByRole("textbox", { name: "my label" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "my label" }),
+    ).toBeInTheDocument();
   });
 
   it("forwards disabled", () => {
@@ -55,7 +61,10 @@ describe("Input", () => {
 
   it("forwards placeholder", () => {
     render(<Input aria-label="test" placeholder="Enter value" />);
-    expect(screen.getByRole("textbox")).toHaveAttribute("placeholder", "Enter value");
+    expect(screen.getByRole("textbox")).toHaveAttribute(
+      "placeholder",
+      "Enter value",
+    );
   });
 
   it("forwards type", () => {
@@ -70,7 +79,10 @@ describe("Input", () => {
 
   it("allows callers to override autocomplete", () => {
     render(<Input aria-label="test" autoComplete="email" />);
-    expect(screen.getByRole("textbox")).toHaveAttribute("autocomplete", "email");
+    expect(screen.getByRole("textbox")).toHaveAttribute(
+      "autocomplete",
+      "email",
+    );
   });
 
   it("ref forwarding gives an HTMLInputElement instance", () => {
@@ -91,9 +103,6 @@ describe("Input", () => {
   it("uses a mobile-safe input font size to prevent browser zoom", () => {
     render(<Input aria-label="test" />);
     const el = screen.getByRole("textbox");
-    expectClasses(
-      el,
-      responsiveInputFontSize,
-    );
+    expectClasses(el, responsiveInputFontSize);
   });
 });

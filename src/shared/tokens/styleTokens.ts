@@ -454,7 +454,8 @@ export const componentTokens = {
       outline: "focus-visible:outline-none",
       focusRing: "focus-visible:ring-2",
       focusRingOffset: "focus-visible:ring-offset-2",
-      focusRingOffsetColor: "focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900",
+      focusRingOffsetColor:
+        "focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900",
     },
   },
 

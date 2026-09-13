@@ -38,7 +38,8 @@ function getDefaultOpenHeight(): number {
 
 /** Returns the keyboard/ARIA resize ceiling, including a deterministic server-render fallback. */
 function getMaximumHeight(): number {
-  const viewportHeight = typeof window === "undefined" ? SERVER_VIEWPORT_HEIGHT : window.innerHeight;
+  const viewportHeight =
+    typeof window === "undefined" ? SERVER_VIEWPORT_HEIGHT : window.innerHeight;
   return Math.round(viewportHeight * MAX_HEIGHT_RATIO);
 }
 
@@ -114,31 +115,36 @@ export function BottomDrawer({
     };
   }, [initialHeight]);
 
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      dragging.current = true;
-      startY.current = e.clientY;
-      startHeight.current = collapsedRef.current ? SNAP_COLLAPSED : heightRef.current;
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    },
-    []
-  );
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    dragging.current = true;
+    startY.current = e.clientY;
+    startHeight.current = collapsedRef.current
+      ? SNAP_COLLAPSED
+      : heightRef.current;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    const delta = startY.current - e.clientY;
-    const newHeight = Math.max(
-      SNAP_COLLAPSED,
-      Math.min(startHeight.current + delta, window.innerHeight * MAX_HEIGHT_RATIO)
-    );
-    const roundedHeight = Math.round(newHeight);
-    const nextCollapsed = isCollapsedHeight(newHeight);
-    heightRef.current = roundedHeight;
-    collapsedRef.current = nextCollapsed;
-    setHeight(roundedHeight);
-    setCollapsed(nextCollapsed);
-    onHeightChange?.(nextCollapsed ? SNAP_COLLAPSED : roundedHeight);
-  }, [onHeightChange]);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragging.current) return;
+      const delta = startY.current - e.clientY;
+      const newHeight = Math.max(
+        SNAP_COLLAPSED,
+        Math.min(
+          startHeight.current + delta,
+          window.innerHeight * MAX_HEIGHT_RATIO,
+        ),
+      );
+      const roundedHeight = Math.round(newHeight);
+      const nextCollapsed = isCollapsedHeight(newHeight);
+      heightRef.current = roundedHeight;
+      collapsedRef.current = nextCollapsed;
+      setHeight(roundedHeight);
+      setCollapsed(nextCollapsed);
+      onHeightChange?.(nextCollapsed ? SNAP_COLLAPSED : roundedHeight);
+    },
+    [onHeightChange],
+  );
 
   const handlePointerUp = useCallback(() => {
     if (!dragging.current) return;
@@ -146,30 +152,43 @@ export function BottomDrawer({
     onHeightCommit?.(collapsedRef.current ? SNAP_COLLAPSED : heightRef.current);
   }, [onHeightCommit]);
 
-  const commitKeyboardHeight = useCallback((nextHeight: number) => {
-    const roundedHeight = Math.round(nextHeight);
-    const nextCollapsed = isCollapsedHeight(roundedHeight);
-    heightRef.current = roundedHeight;
-    collapsedRef.current = nextCollapsed;
-    setHeight(roundedHeight);
-    setCollapsed(nextCollapsed);
-    const committedHeight = nextCollapsed ? SNAP_COLLAPSED : roundedHeight;
-    onHeightChange?.(committedHeight);
-    onHeightCommit?.(committedHeight);
-  }, [onHeightChange, onHeightCommit]);
+  const commitKeyboardHeight = useCallback(
+    (nextHeight: number) => {
+      const roundedHeight = Math.round(nextHeight);
+      const nextCollapsed = isCollapsedHeight(roundedHeight);
+      heightRef.current = roundedHeight;
+      collapsedRef.current = nextCollapsed;
+      setHeight(roundedHeight);
+      setCollapsed(nextCollapsed);
+      const committedHeight = nextCollapsed ? SNAP_COLLAPSED : roundedHeight;
+      onHeightChange?.(committedHeight);
+      onHeightCommit?.(committedHeight);
+    },
+    [onHeightChange, onHeightCommit],
+  );
 
-  const handleResizeKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    const maximumHeight = getMaximumHeight();
-    const currentHeight = collapsedRef.current ? SNAP_COLLAPSED : heightRef.current;
-    const nextHeight = event.key === "ArrowUp" ? Math.min(maximumHeight, currentHeight + 10)
-      : event.key === "ArrowDown" ? Math.max(SNAP_COLLAPSED, currentHeight - 10)
-        : event.key === "Home" ? SNAP_COLLAPSED
-          : event.key === "End" ? maximumHeight
-            : undefined;
-    if (nextHeight === undefined) return;
-    event.preventDefault();
-    commitKeyboardHeight(nextHeight);
-  }, [commitKeyboardHeight]);
+  const handleResizeKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const maximumHeight = getMaximumHeight();
+      const currentHeight = collapsedRef.current
+        ? SNAP_COLLAPSED
+        : heightRef.current;
+      const nextHeight =
+        event.key === "ArrowUp"
+          ? Math.min(maximumHeight, currentHeight + 10)
+          : event.key === "ArrowDown"
+            ? Math.max(SNAP_COLLAPSED, currentHeight - 10)
+            : event.key === "Home"
+              ? SNAP_COLLAPSED
+              : event.key === "End"
+                ? maximumHeight
+                : undefined;
+      if (nextHeight === undefined) return;
+      event.preventDefault();
+      commitKeyboardHeight(nextHeight);
+    },
+    [commitKeyboardHeight],
+  );
 
   const toggleCollapse = useCallback(() => {
     if (collapsed) {

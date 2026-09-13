@@ -5,7 +5,10 @@ import { parsePhotonsToPhotosText } from "@/features/lens-editor/lib/photonsToPh
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 import { buildOpticalModelScript } from "@/shared/lib/utils/pythonScript";
 
-const dataDir = path.join(process.cwd(), "src/__tests__/data/photons-to-photos");
+const dataDir = path.join(
+  process.cwd(),
+  "src/__tests__/data/photons-to-photos",
+);
 
 function readFixture(name: string): string {
   return readFileSync(path.join(dataDir, name), "utf8");
@@ -78,7 +81,10 @@ function parseSingleSurfaceMaterial(
   row: Parameters<typeof makeSingleSurfaceText>[0],
   lookupMaps?: GlassLookupMaps,
 ) {
-  const result = parsePhotonsToPhotosText(makeSingleSurfaceText(row), lookupMaps);
+  const result = parsePhotonsToPhotosText(
+    makeSingleSurfaceText(row),
+    lookupMaps,
+  );
   expect(result.kind).toBe("prime");
   if (result.kind !== "prime") throw new Error("Expected prime result");
   return result.model.surfaces[0];
@@ -86,7 +92,9 @@ function parseSingleSurfaceMaterial(
 
 const lookupMaps: GlassLookupMaps = {
   manufacturerMap: new Map([["hoya", "Hoya"]]),
-  customMediumMap: new Map([["custom_a", { medium: "CUSTOM_A", manufacturer: "Custom" }]]),
+  customMediumMap: new Map([
+    ["custom_a", { medium: "CUSTOM_A", manufacturer: "Custom" }],
+  ]),
   mediumMap: new Map([
     ["hoya:h-lak52", { medium: "H-LaK52", manufacturer: "Hoya" }],
     ["caf2", { medium: "CaF2", manufacturer: "" }],
@@ -99,7 +107,9 @@ const lookupMaps: GlassLookupMaps = {
 
 describe("parsePhotonsToPhotosText", () => {
   it("parses a prime file without glass names", () => {
-    const result = parsePhotonsToPhotosText(readFixture("prime-no-glass-type.txt"));
+    const result = parsePhotonsToPhotosText(
+      readFixture("prime-no-glass-type.txt"),
+    );
 
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
@@ -107,7 +117,11 @@ describe("parsePhotonsToPhotosText", () => {
     expect(validateImportedLensData(result.model)).toBe(true);
     expect(result.model.setAutoAperture).toBe("manualAperture");
     expect(result.model.object.distance).toBe(1e10);
-    expect(result.model.specs.pupil).toEqual({ space: "image", type: "f/#", value: 4 });
+    expect(result.model.specs.pupil).toEqual({
+      space: "image",
+      type: "f/#",
+      value: 4,
+    });
     expect(result.model.specs.field).toEqual({
       space: "object",
       type: "angle",
@@ -133,7 +147,9 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("parses a prime file with glass names and catalogs", () => {
-    const result = parsePhotonsToPhotosText(readFixture("prime-with-glass-type.txt"));
+    const result = parsePhotonsToPhotosText(
+      readFixture("prime-with-glass-type.txt"),
+    );
 
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
@@ -175,14 +191,20 @@ describe("parsePhotonsToPhotosText", () => {
     ["CaF2", "CaF2"],
     ["Fused silica", "Fused silica"],
     ["Water", "Water"],
-  ])("parses special medium %s without a manufacturer", (glassName, expectedMedium) => {
-    const surface = parseSingleSurfaceMaterial(
-      { nd: "1.433", vd: "95.2", glassName, catalog: "" },
-      lookupMaps,
-    );
+  ])(
+    "parses special medium %s without a manufacturer",
+    (glassName, expectedMedium) => {
+      const surface = parseSingleSurfaceMaterial(
+        { nd: "1.433", vd: "95.2", glassName, catalog: "" },
+        lookupMaps,
+      );
 
-    expect(surface).toMatchObject({ medium: expectedMedium, manufacturer: "" });
-  });
+      expect(surface).toMatchObject({
+        medium: expectedMedium,
+        manufacturer: "",
+      });
+    },
+  );
 
   it("resolves custom glass by the glass-name cell when the catalog cell is blank", () => {
     const surface = parseSingleSurfaceMaterial(
@@ -190,7 +212,10 @@ describe("parsePhotonsToPhotosText", () => {
       lookupMaps,
     );
 
-    expect(surface).toMatchObject({ medium: "CUSTOM_A", manufacturer: "Custom" });
+    expect(surface).toMatchObject({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    });
   });
 
   it("resolves custom glass by the glass-name cell when the catalog cell is wrong", () => {
@@ -199,7 +224,10 @@ describe("parsePhotonsToPhotosText", () => {
       lookupMaps,
     );
 
-    expect(surface).toMatchObject({ medium: "CUSTOM_A", manufacturer: "Custom" });
+    expect(surface).toMatchObject({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    });
   });
 
   it("resolves case-mismatched custom glass to the canonical stored label", () => {
@@ -208,12 +236,20 @@ describe("parsePhotonsToPhotosText", () => {
       lookupMaps,
     );
 
-    expect(surface).toMatchObject({ medium: "CUSTOM_A", manufacturer: "Custom" });
+    expect(surface).toMatchObject({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    });
   });
 
   it("exports imported custom glass through the user-defined materials table", () => {
     const result = parsePhotonsToPhotosText(
-      makeSingleSurfaceText({ nd: "1.620", vd: "42.0", glassName: "CUSTOM_A", catalog: "" }),
+      makeSingleSurfaceText({
+        nd: "1.620",
+        vd: "42.0",
+        glassName: "CUSTOM_A",
+        catalog: "",
+      }),
       lookupMaps,
     );
 
@@ -252,12 +288,50 @@ describe("parsePhotonsToPhotosText", () => {
       "d0\tInfinity",
       "Bf\t121.338",
       "[lens data]",
-      ["1", "51.2500", "4.55325", "1.735197", "45.24", "41.5909", "LaFN8", ""].join("\t"),
+      [
+        "1",
+        "51.2500",
+        "4.55325",
+        "1.735197",
+        "45.24",
+        "41.5909",
+        "LaFN8",
+        "",
+      ].join("\t"),
       ["2", "41.8975", "1.70125", "", "42.78", "", "", ""].join("\t"),
-      ["3", "43.1225", "11.05800", "1.43493", "43.24", "95.23", "Fluorspar", ""].join("\t"),
-      ["4", "-73.9700", "3.35250", "1.682476", "43.90", "48.200977", "LaF20", ""].join("\t"),
-      ["5", "-453.4700", "7.70550", "1.6205", "37.19", "38.081", "F9", ""].join("\t"),
-      ["6", "-52.3700", "2.05150", "1.564435", "24.44", "43.75028", "LF8", ""].join("\t"),
+      [
+        "3",
+        "43.1225",
+        "11.05800",
+        "1.43493",
+        "43.24",
+        "95.23",
+        "Fluorspar",
+        "",
+      ].join("\t"),
+      [
+        "4",
+        "-73.9700",
+        "3.35250",
+        "1.682476",
+        "43.90",
+        "48.200977",
+        "LaF20",
+        "",
+      ].join("\t"),
+      ["5", "-453.4700", "7.70550", "1.6205", "37.19", "38.081", "F9", ""].join(
+        "\t",
+      ),
+      [
+        "6",
+        "-52.3700",
+        "2.05150",
+        "1.564435",
+        "24.44",
+        "43.75028",
+        "LF8",
+        "",
+      ].join("\t"),
       ["7", "208.4625", "Bf", "", "24.44", "", "", ""].join("\t"),
     ].join("\n");
 
@@ -266,7 +340,12 @@ describe("parsePhotonsToPhotosText", () => {
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
 
-    expect(result.model.surfaces.map(({ medium, manufacturer }) => [medium, manufacturer])).toEqual([
+    expect(
+      result.model.surfaces.map(({ medium, manufacturer }) => [
+        medium,
+        manufacturer,
+      ]),
+    ).toEqual([
       ["LAFN8", "Custom"],
       ["air", ""],
       ["CaF2", ""],
@@ -292,25 +371,34 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("falls back to model glass when unsupported named glass has model-glass values without lookup maps", () => {
-    const surface = parseSingleSurfaceMaterial(
-      { nd: "1.654", vd: "39.1", glassName: "UNKNOWN", catalog: "HOYA" },
-    );
+    const surface = parseSingleSurfaceMaterial({
+      nd: "1.654",
+      vd: "39.1",
+      glassName: "UNKNOWN",
+      catalog: "HOYA",
+    });
 
     expect(surface).toMatchObject({ medium: "1.654", manufacturer: "39.1" });
   });
 
   it("falls back to blank manufacturer when unsupported named glass has nd but no vd", () => {
-    const surface = parseSingleSurfaceMaterial(
-      { nd: "1.654", vd: "", glassName: "UNKNOWN", catalog: "HOYA" },
-    );
+    const surface = parseSingleSurfaceMaterial({
+      nd: "1.654",
+      vd: "",
+      glassName: "UNKNOWN",
+      catalog: "HOYA",
+    });
 
     expect(surface).toMatchObject({ medium: "1.654", manufacturer: "" });
   });
 
   it("falls back to air when unsupported named glass has no model-glass values", () => {
-    const surface = parseSingleSurfaceMaterial(
-      { nd: "", vd: "", glassName: "sample", catalog: "" },
-    );
+    const surface = parseSingleSurfaceMaterial({
+      nd: "",
+      vd: "",
+      glassName: "sample",
+      catalog: "",
+    });
 
     expect(surface).toMatchObject({ medium: "air", manufacturer: "" });
   });
@@ -330,7 +418,9 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("parses inline aspherical stop rows in fisheye prime data", () => {
-    const result = parsePhotonsToPhotosText(readFixture("prime-fisheye-aspherical-no-glass-type.txt"));
+    const result = parsePhotonsToPhotosText(
+      readFixture("prime-fisheye-aspherical-no-glass-type.txt"),
+    );
 
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
@@ -347,7 +437,9 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("parses finite microscope objectives with NA and image-height specs", () => {
-    const result = parsePhotonsToPhotosText(readFixture("microscope-objective-finite.txt"));
+    const result = parsePhotonsToPhotosText(
+      readFixture("microscope-objective-finite.txt"),
+    );
 
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
@@ -364,7 +456,11 @@ describe("parsePhotonsToPhotosText", () => {
       manufacturer: "",
       semiDiameter: 1.5,
     });
-    expect(result.model.specs.pupil).toEqual({ space: "object", type: "NA", value: 1.35 });
+    expect(result.model.specs.pupil).toEqual({
+      space: "object",
+      type: "NA",
+      value: 1.35,
+    });
     expect(result.model.specs.field).toEqual({
       space: "image",
       type: "height",
@@ -376,7 +472,9 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("parses imaging microscope objectives with flat FS rows", () => {
-    const result = parsePhotonsToPhotosText(readFixture("microscope-objective-imaging.txt"));
+    const result = parsePhotonsToPhotosText(
+      readFixture("microscope-objective-imaging.txt"),
+    );
 
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
@@ -393,7 +491,11 @@ describe("parsePhotonsToPhotosText", () => {
       manufacturer: "",
       semiDiameter: 1.8,
     });
-    expect(result.model.specs.pupil).toEqual({ space: "object", type: "NA", value: 0.8 });
+    expect(result.model.specs.pupil).toEqual({
+      space: "object",
+      type: "NA",
+      value: 0.8,
+    });
     expect(result.model.specs.field).toEqual({
       space: "image",
       type: "height",
@@ -413,7 +515,9 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("parses zoom files and resolves selected variable-distance columns", () => {
-    const result = parsePhotonsToPhotosText(readFixture("zoom-wide-angle-aspherical-no-glass-type.txt"));
+    const result = parsePhotonsToPhotosText(
+      readFixture("zoom-wide-angle-aspherical-no-glass-type.txt"),
+    );
 
     expect(result.kind).toBe("zoom");
     if (result.kind !== "zoom") throw new Error("Expected zoom result");
@@ -451,29 +555,40 @@ describe("parsePhotonsToPhotosText", () => {
       manufacturer: "64.166",
     });
 
-    expect(() => result.resolve(3)).toThrow(/no value for focal-length column 4/i);
+    expect(() => result.resolve(3)).toThrow(
+      /no value for focal-length column 4/i,
+    );
   });
 
   it("rejects missing required sections", () => {
-    expect(() => parsePhotonsToPhotosText("[descriptive data]\ntitle\tBad")).toThrow(
-      /missing required section/i,
-    );
+    expect(() =>
+      parsePhotonsToPhotosText("[descriptive data]\ntitle\tBad"),
+    ).toThrow(/missing required section/i);
   });
 
-  it.each([
-    "prefix [descriptive data]",
-    "[descriptive data] suffix",
-  ])("does not treat embedded section markers as sections: %s", (marker) => {
-    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" }).replace(
-      "[descriptive data]",
-      marker,
-    );
+  it.each(["prefix [descriptive data]", "[descriptive data] suffix"])(
+    "does not treat embedded section markers as sections: %s",
+    (marker) => {
+      const text = makeSingleSurfaceText({
+        nd: "",
+        vd: "",
+        glassName: "",
+        catalog: "",
+      }).replace("[descriptive data]", marker);
 
-    expect(() => parsePhotonsToPhotosText(text)).toThrow(/missing required section/i);
-  });
+      expect(() => parsePhotonsToPhotosText(text)).toThrow(
+        /missing required section/i,
+      );
+    },
+  );
 
   it("ignores rows without a variable or surface key and preserves non-empty variable cells", () => {
-    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" })
+    const text = makeSingleSurfaceText({
+      nd: "",
+      vd: "",
+      glassName: "",
+      catalog: "",
+    })
       .replace("[variable distances]", "[variable distances]\n\tignored")
       .replace("F-Number\t4", "F-Number\t\t4")
       .replace("[lens data]", "[lens data]\n\tignored");
@@ -482,7 +597,11 @@ describe("parsePhotonsToPhotosText", () => {
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
 
-    expect(result.model.specs.pupil).toEqual({ space: "image", type: "f/#", value: 4 });
+    expect(result.model.specs.pupil).toEqual({
+      space: "image",
+      type: "f/#",
+      value: 4,
+    });
     expect(result.model.surfaces).toHaveLength(1);
   });
 
@@ -577,15 +696,20 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("uses the inclusive full-angle wide-angle boundary", () => {
-    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" }).replace(
-      "Angle of View\t20",
-      "Angle of View\t80",
-    );
+    const text = makeSingleSurfaceText({
+      nd: "",
+      vd: "",
+      glassName: "",
+      catalog: "",
+    }).replace("Angle of View\t20", "Angle of View\t80");
     const result = parsePhotonsToPhotosText(text);
 
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
-    expect(result.model.specs.field).toMatchObject({ maxField: 40, isWideAngle: true });
+    expect(result.model.specs.field).toMatchObject({
+      maxField: 40,
+      isWideAngle: true,
+    });
   });
 
   it("uses the inclusive NA boundary for image-height field fallback", () => {
@@ -600,26 +724,41 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("does not mark an image-height field wide-angle for an image-space f-number pupil", () => {
-    const result = parsePhotonsToPhotosText(makeNaImageHeightText("0.4").replace(
-      "NA\t0.4",
-      "F-Number\t4",
-    ));
+    const result = parsePhotonsToPhotosText(
+      makeNaImageHeightText("0.4").replace("NA\t0.4", "F-Number\t4"),
+    );
 
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
-    expect(result.model.specs.pupil).toEqual({ space: "image", type: "f/#", value: 4 });
-    expect(result.model.specs.field).toMatchObject({ type: "height", isWideAngle: false });
+    expect(result.model.specs.pupil).toEqual({
+      space: "image",
+      type: "f/#",
+      value: 4,
+    });
+    expect(result.model.specs.field).toMatchObject({
+      type: "height",
+      isWideAngle: false,
+    });
   });
 
   it("falls back to an empty object side without removing all-zero-thickness surfaces", () => {
-    const text = makeObjectSideText({ nd: "", vd: "", glassName: "", catalog: "" })
+    const text = makeObjectSideText({
+      nd: "",
+      vd: "",
+      glassName: "",
+      catalog: "",
+    })
       .replace("\n1\tInfinity\t5\t", "\n1\tInfinity\t0\t")
       .replace("\n2\t100\t5\t", "\n2\t100\t0\t");
 
     const result = parsePhotonsToPhotosText(text);
     expect(result.kind).toBe("prime");
     if (result.kind !== "prime") throw new Error("Expected prime result");
-    expect(result.model.object).toEqual({ distance: 0, medium: "air", manufacturer: "" });
+    expect(result.model.object).toEqual({
+      distance: 0,
+      medium: "air",
+      manufacturer: "",
+    });
     expect(result.model.surfaces).toHaveLength(2);
   });
 
@@ -639,7 +778,12 @@ describe("parsePhotonsToPhotosText", () => {
     ] as const;
 
     for (const [kind, token] of variants) {
-      let text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" });
+      let text = makeSingleSurfaceText({
+        nd: "",
+        vd: "",
+        glassName: "",
+        catalog: "",
+      });
       if (kind === "surface number") {
         text = text.replace("\n1\t100\t", `\n${token}\t100\t`);
       } else if (kind === "radius") {
@@ -655,30 +799,46 @@ describe("parsePhotonsToPhotosText", () => {
   });
 
   it("rejects unresolved variable distances", () => {
-    const text = readFixture("prime-no-glass-type.txt").replace("\tBf\t", "\tUnknownDistance\t");
+    const text = readFixture("prime-no-glass-type.txt").replace(
+      "\tBf\t",
+      "\tUnknownDistance\t",
+    );
 
-    expect(() => parsePhotonsToPhotosText(text)).toThrow(/unresolved variable distance/i);
+    expect(() => parsePhotonsToPhotosText(text)).toThrow(
+      /unresolved variable distance/i,
+    );
   });
 
   it("rejects a required variable with no numeric values", () => {
-    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" })
-      .replace("Focal Length\t50", "Focal Length\t");
+    const text = makeSingleSurfaceText({
+      nd: "",
+      vd: "",
+      glassName: "",
+      catalog: "",
+    }).replace("Focal Length\t50", "Focal Length\t");
 
-    expect(() => parsePhotonsToPhotosText(text)).toThrow(/missing variable distance.*Focal Length/i);
+    expect(() => parsePhotonsToPhotosText(text)).toThrow(
+      /missing variable distance.*Focal Length/i,
+    );
   });
 
   it("rejects missing required lens-data cells", () => {
-    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" })
-      .replace("\t100\t5\t\t20\t\t\t", "\t100\t5\t\t\t\t\t");
+    const text = makeSingleSurfaceText({
+      nd: "",
+      vd: "",
+      glassName: "",
+      catalog: "",
+    }).replace("\t100\t5\t\t20\t\t\t", "\t100\t5\t\t\t\t\t");
 
-    expect(() => parsePhotonsToPhotosText(text)).toThrow(/missing lens aperture/i);
+    expect(() => parsePhotonsToPhotosText(text)).toThrow(
+      /missing lens aperture/i,
+    );
   });
 
   it("rejects aspherical radius disagreement", () => {
-    const text = readFixture("zoom-wide-angle-aspherical-no-glass-type.txt").replace(
-      "6\t300\t0\t-3.93629E-05",
-      "6\t301\t0\t-3.93629E-05",
-    );
+    const text = readFixture(
+      "zoom-wide-angle-aspherical-no-glass-type.txt",
+    ).replace("6\t300\t0\t-3.93629E-05", "6\t301\t0\t-3.93629E-05");
 
     const result = parsePhotonsToPhotosText(text);
     expect(result.kind).toBe("zoom");

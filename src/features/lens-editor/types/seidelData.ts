@@ -2,17 +2,17 @@ import type { ReactNode } from "react";
 
 /** Surface labels, aberration names, and per-surface Seidel contributions. */
 export interface SeidelSurfaceBySurfaceData {
-  aberrTypes: string[];    // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
-  surfaceLabels: string[];  // surface labels + 'sum'
-  data: number[][];   // 5 x N matrix (row = aberration type, col = surface)
+  aberrTypes: string[]; // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
+  surfaceLabels: string[]; // surface labels + 'sum'
+  data: number[][]; // 5 x N matrix (row = aberration type, col = surface)
 }
 
 /** Defines Seidel aberration payload types used by the lens editor modal and analysis third-order chart. */
 export interface SeidelData {
   surfaceBySurface: SeidelSurfaceBySurfaceData;
-  transverse: Record<string, number>;  // TSA, TCO, TAS, SAS, PTB, DST
-  wavefront: Record<string, number>;   // W040, W131, W222, W220, W311
-  curvature: Record<string, number>;   // TCV, SCV, PCV
+  transverse: Record<string, number>; // TSA, TCO, TAS, SAS, PTB, DST
+  wavefront: Record<string, number>; // W040, W131, W222, W220, W311
+  curvature: Record<string, number>; // TCV, SCV, PCV
 }
 
 /** Display labels keyed by Seidel aberration type. */

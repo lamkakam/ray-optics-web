@@ -69,7 +69,10 @@ export function fringeToNm(j: number): [number, number] {
 }
 
 /** Returns the requested number of explicit `(n, m)` terms in Noll or Fringe order. */
-export function zernikeTermsForOrdering(ordering: ZernikeOrdering, numTerms: number): readonly ZernikeTerm[] {
+export function zernikeTermsForOrdering(
+  ordering: ZernikeOrdering,
+  numTerms: number,
+): readonly ZernikeTerm[] {
   const indexToNm = ordering === "fringe" ? fringeToNm : nollToNm;
   return Array.from({ length: numTerms }, (_, index) => indexToNm(index + 1));
 }

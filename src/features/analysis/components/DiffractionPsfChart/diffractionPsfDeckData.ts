@@ -39,7 +39,9 @@ export interface DiffractionPsfPreparedData {
   readonly maxLogFlux: number;
 }
 
-function getMedianPositiveSpacing(values: readonly number[]): number | undefined {
+function getMedianPositiveSpacing(
+  values: readonly number[],
+): number | undefined {
   const spacings: number[] = [];
   for (let index = 1; index < values.length; index += 1) {
     const spacing = Math.abs(values[index] - values[index - 1]);
@@ -71,8 +73,8 @@ function getAxisBounds(values: readonly number[]): readonly [number, number] {
   const last = values[values.length - 1];
 
   return [
-    Math.min(first, last) - (spacing / 2),
-    Math.max(first, last) + (spacing / 2),
+    Math.min(first, last) - spacing / 2,
+    Math.max(first, last) + spacing / 2,
   ];
 }
 
@@ -118,7 +120,9 @@ export function buildDiffractionPsfBitmap(
     }
   }
 
-  const normalizedMinLogFlux = Number.isFinite(minLogFlux) ? minLogFlux : DIFFRACTION_PSF_LOG_FLOOR;
+  const normalizedMinLogFlux = Number.isFinite(minLogFlux)
+    ? minLogFlux
+    : DIFFRACTION_PSF_LOG_FLOOR;
   const normalizedMaxLogFlux = Number.isFinite(maxLogFlux)
     ? Math.max(normalizedMinLogFlux, maxLogFlux)
     : normalizedMinLogFlux;
@@ -127,12 +131,15 @@ export function buildDiffractionPsfBitmap(
   for (let rowIndex = 0; rowIndex < height; rowIndex += 1) {
     const yIndex = height - 1 - rowIndex;
     for (let xIndex = 0; xIndex < width; xIndex += 1) {
-      const logScaledFlux = logScaledFluxes[xIndex]?.[yIndex] ?? DIFFRACTION_PSF_LOG_FLOOR;
-      const normalizedColorValue = logFluxRange > 0
-        ? (logScaledFlux - normalizedMinLogFlux) / logFluxRange
-        : 0;
-      const [red, green, blue, alpha] = interpolateAnalysisHeatmapColor(normalizedColorValue);
-      const pixelOffset = ((rowIndex * width) + xIndex) * 4;
+      const logScaledFlux =
+        logScaledFluxes[xIndex]?.[yIndex] ?? DIFFRACTION_PSF_LOG_FLOOR;
+      const normalizedColorValue =
+        logFluxRange > 0
+          ? (logScaledFlux - normalizedMinLogFlux) / logFluxRange
+          : 0;
+      const [red, green, blue, alpha] =
+        interpolateAnalysisHeatmapColor(normalizedColorValue);
+      const pixelOffset = (rowIndex * width + xIndex) * 4;
       imageData[pixelOffset] = red;
       imageData[pixelOffset + 1] = green;
       imageData[pixelOffset + 2] = blue;

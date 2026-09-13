@@ -66,7 +66,10 @@ import { Zoom } from "@visx/zoom";
 import { Group } from "@visx/group";
 import { useTooltip, Tooltip } from "@visx/tooltip";
 import { CATALOG_COLOR_MAP } from "@/features/glass-map/lib/glassMap";
-import type { PlotPoint, SelectedGlass } from "@/features/glass-map/types/glassMap";
+import type {
+  PlotPoint,
+  SelectedGlass,
+} from "@/features/glass-map/types/glassMap";
 
 interface GlassScatterPlotProps {
   /** Data points to render */
@@ -174,15 +177,27 @@ function InnerPlot({
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom);
 
-  const { tooltipData, tooltipLeft, tooltipTop, tooltipOpen, showTooltip, hideTooltip } =
-    useTooltip<PlotPoint>();
+  const {
+    tooltipData,
+    tooltipLeft,
+    tooltipTop,
+    tooltipOpen,
+    showTooltip,
+    hideTooltip,
+  } = useTooltip<PlotPoint>();
 
   const xValues = points.map((p) => p.x);
   const yValues = points.map((p) => p.y);
   const xMin = Math.min(...xValues, 0);
   const xMax = Math.max(...xValues, 100);
-  const yMin = yDomainMin !== undefined ? Math.min(...yValues, yDomainMin) : Math.min(...yValues);
-  const yMax = yDomainMax !== undefined ? Math.max(...yValues, yDomainMax) : Math.max(...yValues);
+  const yMin =
+    yDomainMin !== undefined
+      ? Math.min(...yValues, yDomainMin)
+      : Math.min(...yValues);
+  const yMax =
+    yDomainMax !== undefined
+      ? Math.max(...yValues, yDomainMax)
+      : Math.max(...yValues);
   const xPad = (xMax - xMin) * 0.05;
   const yPad = (yMax - yMin) * 0.05;
 
@@ -207,9 +222,13 @@ function InnerPlot({
 
   const handlePointClick = useCallback(
     (point: PlotPoint) => {
-      onPointClick({ catalogName: point.catalogName, glassName: point.glassName, data: point.data });
+      onPointClick({
+        catalogName: point.catalogName,
+        glassName: point.glassName,
+        data: point.data,
+      });
     },
-    [onPointClick]
+    [onPointClick],
   );
 
   const clipId = "glass-scatter-clip";
@@ -237,13 +256,16 @@ function InnerPlot({
 
           const xDomainReversed = [xMax + xPad, xMin - xPad];
           const xRange = xDomainReversed[1] - xDomainReversed[0]; // negative for reversed
-          const visXMin = xDomainReversed[0] - tx / sx / innerWidth * xRange;
-          const visXMax = xDomainReversed[0] - (tx / sx - innerWidth / sx) / innerWidth * xRange;
+          const visXMin = xDomainReversed[0] - (tx / sx / innerWidth) * xRange;
+          const visXMax =
+            xDomainReversed[0] -
+            ((tx / sx - innerWidth / sx) / innerWidth) * xRange;
 
           const yDomain = [yMin - yPad, yMax + yPad];
           const yRange = yDomain[1] - yDomain[0];
-          const visYMax = yDomain[1] + ty / sy / innerHeight * yRange;
-          const visYMin = yDomain[1] - (innerHeight / sy - ty / sy) / innerHeight * yRange;
+          const visYMax = yDomain[1] + (ty / sy / innerHeight) * yRange;
+          const visYMin =
+            yDomain[1] - ((innerHeight / sy - ty / sy) / innerHeight) * yRange;
 
           const axisXScale = scaleLinear<number>({
             domain: [visXMin, visXMax],
@@ -259,13 +281,21 @@ function InnerPlot({
             ? points.find(
                 (p) =>
                   p.glassName === selectedGlass.glassName &&
-                  p.catalogName === selectedGlass.catalogName
+                  p.catalogName === selectedGlass.catalogName,
               )
             : undefined;
-          const crosshairX = selectedPoint !== undefined ? axisXScale(selectedPoint.x) : undefined;
-          const crosshairY = selectedPoint !== undefined ? axisYScale(selectedPoint.y) : undefined;
+          const crosshairX =
+            selectedPoint !== undefined
+              ? axisXScale(selectedPoint.x)
+              : undefined;
+          const crosshairY =
+            selectedPoint !== undefined
+              ? axisYScale(selectedPoint.y)
+              : undefined;
 
-          const handlePlotTouchStart = (event: React.TouchEvent<SVGRectElement>) => {
+          const handlePlotTouchStart = (
+            event: React.TouchEvent<SVGRectElement>,
+          ) => {
             if (isSingleTouchGesture(event.touches.length)) {
               zoom.dragStart(event);
               return;
@@ -276,7 +306,9 @@ function InnerPlot({
             }
           };
 
-          const handlePlotTouchMove = (event: React.TouchEvent<SVGRectElement>) => {
+          const handlePlotTouchMove = (
+            event: React.TouchEvent<SVGRectElement>,
+          ) => {
             if (isSingleTouchGesture(event.touches.length)) {
               zoom.dragMove(event);
               return;
@@ -395,7 +427,9 @@ function InnerPlot({
                         style={{ cursor: "pointer" }}
                         onClick={() => handlePointClick(point)}
                         onMouseEnter={(e) => {
-                          const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
+                          const rect = (
+                            e.currentTarget as SVGCircleElement
+                          ).getBoundingClientRect();
                           showTooltip({
                             tooltipData: point,
                             tooltipLeft: rect.right + 8,
@@ -407,7 +441,9 @@ function InnerPlot({
                           if (!isSingleTouchGesture(e.touches.length)) {
                             return;
                           }
-                          const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
+                          const rect = (
+                            e.currentTarget as SVGCircleElement
+                          ).getBoundingClientRect();
                           showTooltip({
                             tooltipData: point,
                             tooltipLeft: rect.right + 8,
@@ -455,14 +491,22 @@ function InnerPlot({
                   numTicks={8}
                   stroke="currentColor"
                   tickStroke="currentColor"
-                  tickLabelProps={{ fill: "currentColor", fontSize: 10, textAnchor: "middle" }}
+                  tickLabelProps={{
+                    fill: "currentColor",
+                    fontSize: 10,
+                    textAnchor: "middle",
+                  }}
                 />
                 <AxisLeft
                   scale={axisYScale}
                   numTicks={6}
                   stroke="currentColor"
                   tickStroke="currentColor"
-                  tickLabelProps={{ fill: "currentColor", fontSize: 10, textAnchor: "end" }}
+                  tickLabelProps={{
+                    fill: "currentColor",
+                    fontSize: 10,
+                    textAnchor: "end",
+                  }}
                 />
               </Group>
             </svg>
@@ -488,7 +532,9 @@ function InnerPlot({
           }}
         >
           <div className="font-semibold">{tooltipData.glassName}</div>
-          <div style={{ color: "var(--tooltip-fg)", opacity: 0.6 }}>{tooltipData.catalogName}</div>
+          <div style={{ color: "var(--tooltip-fg)", opacity: 0.6 }}>
+            {tooltipData.catalogName}
+          </div>
         </Tooltip>
       )}
     </div>

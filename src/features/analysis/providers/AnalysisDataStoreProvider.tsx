@@ -1,8 +1,11 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useState } from 'react';
-import { createStore, type StoreApi } from 'zustand';
-import { createAnalysisDataSlice, type AnalysisDataState } from '@/features/analysis/stores/analysisDataStore';
+import { createContext, type ReactNode, useContext, useState } from "react";
+import { createStore, type StoreApi } from "zustand";
+import {
+  createAnalysisDataSlice,
+  type AnalysisDataState,
+} from "@/features/analysis/stores/analysisDataStore";
 
 type ContextValue = StoreApi<AnalysisDataState> | undefined;
 
@@ -15,7 +18,9 @@ export interface AnalysisDataStoreProviderProps {
 }
 
 /** Provides a single `StoreApi<AnalysisDataState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes. */
-export const AnalysisDataStoreProvider: React.FC<AnalysisDataStoreProviderProps> = ({ children }) => {
+export const AnalysisDataStoreProvider: React.FC<
+  AnalysisDataStoreProviderProps
+> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 
   if (store === undefined) {
@@ -33,7 +38,9 @@ export const AnalysisDataStoreProvider: React.FC<AnalysisDataStoreProviderProps>
 export const useAnalysisDataStore = (): StoreApi<AnalysisDataState> => {
   const store = useContext(AnalysisDataStoreContext);
   if (store === undefined) {
-    throw new Error('`useAnalysisDataStore` must be used within `AnalysisDataStoreProvider`');
+    throw new Error(
+      "`useAnalysisDataStore` must be used within `AnalysisDataStoreProvider`",
+    );
   }
   return store;
 };

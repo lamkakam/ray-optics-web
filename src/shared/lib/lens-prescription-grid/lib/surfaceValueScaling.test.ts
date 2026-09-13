@@ -57,7 +57,9 @@ describe("surfaceValueScaling", () => {
     expect(scaleObjectDistance(OBJECT_DISTANCE_INFINITY_THRESHOLD - 1, 2)).toBe(
       (OBJECT_DISTANCE_INFINITY_THRESHOLD - 1) * 2,
     );
-    expect(scaleObjectDistance(OBJECT_DISTANCE_INFINITY_THRESHOLD, 2)).toBe(OBJECT_DISTANCE_INFINITY_THRESHOLD);
+    expect(scaleObjectDistance(OBJECT_DISTANCE_INFINITY_THRESHOLD, 2)).toBe(
+      OBJECT_DISTANCE_INFINITY_THRESHOLD,
+    );
     expect(scaleObjectDistance(OBJECT_DISTANCE_INFINITY_THRESHOLD + 1, 2)).toBe(
       OBJECT_DISTANCE_INFINITY_THRESHOLD + 1,
     );
@@ -75,11 +77,21 @@ describe("surfaceValueScaling", () => {
       kind: "image",
       id: "row-image",
       curvatureRadius: -8,
-      decenter: { coordinateSystemStrategy: "decenter", alpha: 1, beta: 2, gamma: 3, offsetX: 4, offsetY: 5 },
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 1,
+        beta: 2,
+        gamma: 3,
+        offsetX: 4,
+        offsetY: 5,
+      },
     };
     const surface = createSurfaceRow();
 
-    expect(scaleSurfaceValueRow(object, 2)).toMatchObject({ objectDistance: 200, medium: "air" });
+    expect(scaleSurfaceValueRow(object, 2)).toMatchObject({
+      objectDistance: 200,
+      medium: "air",
+    });
     expect(scaleSurfaceValueRow(image, 2)).toStrictEqual({
       kind: "image",
       id: "row-image",
@@ -93,30 +105,46 @@ describe("surfaceValueScaling", () => {
         offsetY: 10,
       },
     });
-    expect(scaleSurfaceValueRow(surface, 2)).toMatchObject({ curvatureRadius: 20, thickness: 4, semiDiameter: 10 });
+    expect(scaleSurfaceValueRow(surface, 2)).toMatchObject({
+      curvatureRadius: 20,
+      thickness: 4,
+      semiDiameter: 10,
+    });
   });
 
   it("scales clear and edge apertures by shape while preserving non-dimensional fields", () => {
     expect(scaleClearAperture(undefined, 2)).toBeUndefined();
-    expect(scaleClearAperture({ shape: "circular", offsetX: -1, offsetY: 2 }, 2)).toEqual({
+    expect(
+      scaleClearAperture({ shape: "circular", offsetX: -1, offsetY: 2 }, 2),
+    ).toEqual({
       shape: "circular",
       offsetX: -2,
       offsetY: 4,
     });
-    expect(scaleClearAperture({ shape: "annular", obstructionRadius: 3, offsetX: -1, offsetY: 2 }, 2)).toEqual({
+    expect(
+      scaleClearAperture(
+        { shape: "annular", obstructionRadius: 3, offsetX: -1, offsetY: 2 },
+        2,
+      ),
+    ).toEqual({
       shape: "annular",
       obstructionRadius: 6,
       offsetX: -2,
       offsetY: 4,
     });
-    expect(scaleClearAperture({
-      shape: "rectangular",
-      xHalfWidth: 4,
-      yHalfWidth: 2,
-      rotation: 15,
-      offsetX: -1,
-      offsetY: 2,
-    }, 2)).toEqual({
+    expect(
+      scaleClearAperture(
+        {
+          shape: "rectangular",
+          xHalfWidth: 4,
+          yHalfWidth: 2,
+          rotation: 15,
+          offsetX: -1,
+          offsetY: 2,
+        },
+        2,
+      ),
+    ).toEqual({
       shape: "rectangular",
       xHalfWidth: 8,
       yHalfWidth: 4,
@@ -124,7 +152,12 @@ describe("surfaceValueScaling", () => {
       offsetX: -2,
       offsetY: 4,
     });
-    expect(scaleClearAperture({ shape: "ronchi", lpmm: 12, rotation: 15, offsetX: -1, offsetY: 2 }, 2)).toEqual({
+    expect(
+      scaleClearAperture(
+        { shape: "ronchi", lpmm: 12, rotation: 15, offsetX: -1, offsetY: 2 },
+        2,
+      ),
+    ).toEqual({
       shape: "ronchi",
       lpmm: 12,
       rotation: 15,
@@ -133,20 +166,30 @@ describe("surfaceValueScaling", () => {
     });
 
     expect(scaleEdgeAperture(undefined, 2)).toBeUndefined();
-    expect(scaleEdgeAperture({ shape: "circular", radius: 4, offsetX: 0.5, offsetY: -0.75 }, 2)).toEqual({
+    expect(
+      scaleEdgeAperture(
+        { shape: "circular", radius: 4, offsetX: 0.5, offsetY: -0.75 },
+        2,
+      ),
+    ).toEqual({
       shape: "circular",
       radius: 8,
       offsetX: 1,
       offsetY: -1.5,
     });
-    expect(scaleEdgeAperture({
-      shape: "rectangular",
-      xHalfWidth: 5,
-      yHalfWidth: 3,
-      rotation: -30,
-      offsetX: 0.5,
-      offsetY: -0.75,
-    }, 2)).toEqual({
+    expect(
+      scaleEdgeAperture(
+        {
+          shape: "rectangular",
+          xHalfWidth: 5,
+          yHalfWidth: 3,
+          rotation: -30,
+          offsetX: 0.5,
+          offsetY: -0.75,
+        },
+        2,
+      ),
+    ).toEqual({
       shape: "rectangular",
       xHalfWidth: 10,
       yHalfWidth: 6,
@@ -161,33 +204,61 @@ describe("surfaceValueScaling", () => {
       kind: "Conic",
       conicConstant: -1,
     });
-    expect(scaleAspherical({ kind: "EvenAspherical", conicConstant: 0, polynomialCoefficients: [8, 12] }, 2)).toEqual({
+    expect(
+      scaleAspherical(
+        {
+          kind: "EvenAspherical",
+          conicConstant: 0,
+          polynomialCoefficients: [8, 12],
+        },
+        2,
+      ),
+    ).toEqual({
       kind: "EvenAspherical",
       conicConstant: 0,
       polynomialCoefficients: [4, 1.5],
     });
-    expect(scaleAspherical({ kind: "RadialPolynomial", conicConstant: 0, polynomialCoefficients: [8, 12] }, 2)).toEqual({
+    expect(
+      scaleAspherical(
+        {
+          kind: "RadialPolynomial",
+          conicConstant: 0,
+          polynomialCoefficients: [8, 12],
+        },
+        2,
+      ),
+    ).toEqual({
       kind: "RadialPolynomial",
       conicConstant: 0,
       polynomialCoefficients: [8, 6],
     });
-    expect(scaleAspherical({
-      kind: "XToroid",
-      conicConstant: 0,
-      toricSweepRadiusOfCurvature: 20,
-      polynomialCoefficients: [8, 12],
-    }, 2)).toEqual({
+    expect(
+      scaleAspherical(
+        {
+          kind: "XToroid",
+          conicConstant: 0,
+          toricSweepRadiusOfCurvature: 20,
+          polynomialCoefficients: [8, 12],
+        },
+        2,
+      ),
+    ).toEqual({
       kind: "XToroid",
       conicConstant: 0,
       toricSweepRadiusOfCurvature: 40,
       polynomialCoefficients: [4, 1.5],
     });
-    expect(scaleAspherical({
-      kind: "YToroid",
-      conicConstant: 0,
-      toricSweepRadiusOfCurvature: 20,
-      polynomialCoefficients: [8, 12],
-    }, 2)).toEqual({
+    expect(
+      scaleAspherical(
+        {
+          kind: "YToroid",
+          conicConstant: 0,
+          toricSweepRadiusOfCurvature: 20,
+          polynomialCoefficients: [8, 12],
+        },
+        2,
+      ),
+    ).toEqual({
       kind: "YToroid",
       conicConstant: 0,
       toricSweepRadiusOfCurvature: 40,
@@ -199,26 +270,7 @@ describe("surfaceValueScaling", () => {
     const values = collectSurfaceScalingNumericValues(createSurfaceRow());
 
     expect(values).toEqual([
-      10,
-      2,
-      5,
-      -1,
-      2,
-      12,
-      15,
-      4,
-      0.5,
-      -0.75,
-      -1,
-      20,
-      8,
-      12,
-      1,
-      2,
-      3,
-      4,
-      5,
-      600,
+      10, 2, 5, -1, 2, 12, 15, 4, 0.5, -0.75, -1, 20, 8, 12, 1, 2, 3, 4, 5, 600,
       1,
     ]);
   });
@@ -243,7 +295,10 @@ describe("surfaceValueScaling", () => {
       thickness: 4,
       semiDiameter: 10,
     });
-    expect(scaleSurfaceValueRow(image, 2)).toMatchObject({ curvatureRadius: 8, decenter: undefined });
+    expect(scaleSurfaceValueRow(image, 2)).toMatchObject({
+      curvatureRadius: 8,
+      decenter: undefined,
+    });
     expect(collectSurfaceScalingNumericValues(surface)).toEqual([10, 2, 5]);
   });
 
@@ -253,16 +308,20 @@ describe("surfaceValueScaling", () => {
       futureNumericField: 999,
     } as GridRow;
 
-    expect(collectSurfaceScalingNumericValues(rowWithUnknownNumericField)).not.toContain(999);
+    expect(
+      collectSurfaceScalingNumericValues(rowWithUnknownNumericField),
+    ).not.toContain(999);
   });
 
   it("collects Object distance through the object policy", () => {
-    expect(collectSurfaceScalingNumericValues({
-      kind: "object",
-      id: "row-object",
-      objectDistance: 123,
-      medium: "air",
-      manufacturer: "",
-    })).toEqual([123]);
+    expect(
+      collectSurfaceScalingNumericValues({
+        kind: "object",
+        id: "row-object",
+        objectDistance: 123,
+        medium: "air",
+        manufacturer: "",
+      }),
+    ).toEqual([123]);
   });
 });

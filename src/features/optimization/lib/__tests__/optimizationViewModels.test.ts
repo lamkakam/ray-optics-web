@@ -11,13 +11,33 @@ const model: OpticalModel = {
   setAutoAperture: "manualAperture",
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   surfaces: [
-    { label: "Default", curvatureRadius: 25, thickness: 4, medium: "air", manufacturer: "", semiDiameter: 5 },
-    { label: "Stop", curvatureRadius: -30, thickness: 2, medium: "air", manufacturer: "", semiDiameter: 5 },
+    {
+      label: "Default",
+      curvatureRadius: 25,
+      thickness: 4,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+    },
+    {
+      label: "Stop",
+      curvatureRadius: -30,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+    },
   ],
   image: { curvatureRadius: 100 },
   specs: {
     pupil: { space: "object", type: "epd", value: 1 },
-    field: { space: "object", type: "angle", maxField: 1, fields: [0], isRelative: true },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 1,
+      fields: [0],
+      isRelative: true,
+    },
     wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
   },
 };
@@ -107,43 +127,56 @@ describe("createEvaluationRow", () => {
   });
 
   it("keeps a missing target empty while formatting a visible residual", () => {
-    const row = createEvaluationRow({
-      kind: "ray_fan_tangential",
-      value: 0,
-      operand_weight: 1,
-      total_weight: 1,
-      weighted_residual: 0,
-    }, 0);
+    const row = createEvaluationRow(
+      {
+        kind: "ray_fan_tangential",
+        value: 0,
+        operand_weight: 1,
+        total_weight: 1,
+        weighted_residual: 0,
+      },
+      0,
+    );
 
     expect(row?.target).toBe("N/A");
     expect(row?.weight).toBe("1.000000");
   });
 
   it("resolves labels for axis-specific operands", () => {
-    expect(createEvaluationRow({
-      kind: "opd_difference_tangential",
-      target: 0,
-      value: 0.25,
-      field_index: 1,
-      wavelength_index: 2,
-      operand_weight: 1,
-      field_weight: 1,
-      wavelength_weight: 1,
-      total_weight: 1,
-      weighted_residual: 0.25,
-    }, 0)?.operandType).toBe("OPD Difference (Tangential)");
+    expect(
+      createEvaluationRow(
+        {
+          kind: "opd_difference_tangential",
+          target: 0,
+          value: 0.25,
+          field_index: 1,
+          wavelength_index: 2,
+          operand_weight: 1,
+          field_weight: 1,
+          wavelength_weight: 1,
+          total_weight: 1,
+          weighted_residual: 0.25,
+        },
+        0,
+      )?.operandType,
+    ).toBe("OPD Difference (Tangential)");
 
-    expect(createEvaluationRow({
-      kind: "ray_fan_sagittal",
-      value: 0.5,
-      field_index: 1,
-      wavelength_index: 2,
-      operand_weight: 1,
-      field_weight: 1,
-      wavelength_weight: 1,
-      total_weight: 1,
-      weighted_residual: 0.5,
-    }, 1)?.operandType).toBe("Ray Fan (Sagittal)");
+    expect(
+      createEvaluationRow(
+        {
+          kind: "ray_fan_sagittal",
+          value: 0.5,
+          field_index: 1,
+          wavelength_index: 2,
+          operand_weight: 1,
+          field_weight: 1,
+          wavelength_weight: 1,
+          total_weight: 1,
+          weighted_residual: 0.5,
+        },
+        1,
+      )?.operandType,
+    ).toBe("Ray Fan (Sagittal)");
   });
 });
 

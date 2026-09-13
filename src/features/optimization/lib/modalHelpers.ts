@@ -1,5 +1,8 @@
 /** Pure draft, validation, and source-option helpers shared by optimization variable and pickup modals. */
-import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
+import type {
+  RadiusMode,
+  RadiusModeDraft,
+} from "@/features/optimization/stores/optimizationStore";
 import type { SourceSurfaceSelectOption } from "@/features/optimization/types/optimizationModalTypes";
 
 /** Ordered constant, variable, and pickup choices used by optimization mode controls. */
@@ -23,7 +26,11 @@ export type VariableBoundsValidationRule = (
 ) => string | undefined;
 
 /** Rejects non-finite bounds or a minimum that is not strictly less than the maximum. */
-export const minLessThanMaxRule: VariableBoundsValidationRule = (label, minValue, maxValue) => {
+export const minLessThanMaxRule: VariableBoundsValidationRule = (
+  label,
+  minValue,
+  maxValue,
+) => {
   const min = Number(minValue);
   const max = Number(maxValue);
 
@@ -35,7 +42,10 @@ export const minLessThanMaxRule: VariableBoundsValidationRule = (label, minValue
 };
 
 /** Reports whether finite curvature-radius bounds span zero, where zero represents an infinite-radius flat surface. */
-export function curvatureRadiusCrossesZero(minValue: string, maxValue: string): boolean {
+export function curvatureRadiusCrossesZero(
+  minValue: string,
+  maxValue: string,
+): boolean {
   const min = Number(minValue);
   const max = Number(maxValue);
 
@@ -52,7 +62,11 @@ export function getCurvatureRadiusBoundsErrorText(label: string): string {
 }
 
 /** Rejects curvature-radius bounds that span zero. */
-export const curvatureRadiusNoZeroStraddleRule: VariableBoundsValidationRule = (label, minValue, maxValue) => {
+export const curvatureRadiusNoZeroStraddleRule: VariableBoundsValidationRule = (
+  label,
+  minValue,
+  maxValue,
+) => {
   if (curvatureRadiusCrossesZero(minValue, maxValue)) {
     return getCurvatureRadiusBoundsErrorText(label);
   }
@@ -105,7 +119,8 @@ export function getRadiusPickupSourceSurfaceOptions(
     const surfaceIndex = index + 1;
     return {
       value: surfaceIndex,
-      label: surfaceIndex === realSurfaceCount + 1 ? "Image" : String(surfaceIndex),
+      label:
+        surfaceIndex === realSurfaceCount + 1 ? "Image" : String(surfaceIndex),
     };
   }).filter((option) => option.value !== targetSurfaceIndex);
 }

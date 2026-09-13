@@ -19,7 +19,9 @@ export interface LensLayoutImageState {
   setLayoutLoading: (loading: boolean) => void;
 }
 
-export const createLensLayoutImageSlice: StateCreator<LensLayoutImageState> = (set) => ({
+export const createLensLayoutImageSlice: StateCreator<LensLayoutImageState> = (
+  set,
+) => ({
   layoutImage: undefined,
   layoutLoading: false,
   setLayoutImage: (image) => set({ layoutImage: image }),

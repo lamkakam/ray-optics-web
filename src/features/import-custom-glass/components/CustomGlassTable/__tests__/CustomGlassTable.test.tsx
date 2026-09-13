@@ -3,9 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { createStore } from "zustand/vanilla";
 import { CustomGlassTable } from "@/features/import-custom-glass/components/CustomGlassTable/CustomGlassTable";
-import {
-  ImportCustomGlassStoreContext,
-} from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
+import { ImportCustomGlassStoreContext } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
 import {
   createImportCustomGlassSlice,
   type ImportCustomGlassStore,
@@ -40,7 +38,11 @@ function makeRow(label: string, nd: number): CustomGlassRow {
   };
 }
 
-const rows = [makeRow("ALPHA", 1.5), makeRow("BETA", 1.6), makeRow("GAMMA", 1.7)];
+const rows = [
+  makeRow("ALPHA", 1.5),
+  makeRow("BETA", 1.6),
+  makeRow("GAMMA", 1.7),
+];
 
 function renderTable(
   tableRows: readonly CustomGlassRow[] = rows,
@@ -53,7 +55,11 @@ function renderTable(
     ...render(
       <ThemeProvider>
         <ImportCustomGlassStoreContext.Provider value={store}>
-          <CustomGlassTable rows={tableRows} checked={checked} onCheckedChange={onCheckedChange} />
+          <CustomGlassTable
+            rows={tableRows}
+            checked={checked}
+            onCheckedChange={onCheckedChange}
+          />
         </ImportCustomGlassStoreContext.Provider>
       </ThemeProvider>,
     ),
@@ -69,10 +75,18 @@ describe("CustomGlassTable", () => {
     const user = userEvent.setup();
     function SelectionHarness() {
       const [checked, setChecked] = useState<ReadonlySet<string>>(new Set());
-      return <CustomGlassTable rows={rows} checked={checked} onCheckedChange={setChecked} />;
+      return (
+        <CustomGlassTable
+          rows={rows}
+          checked={checked}
+          onCheckedChange={setChecked}
+        />
+      );
     }
 
-    const store = createStore<ImportCustomGlassStore>(createImportCustomGlassSlice);
+    const store = createStore<ImportCustomGlassStore>(
+      createImportCustomGlassSlice,
+    );
     render(
       <ThemeProvider>
         <ImportCustomGlassStoreContext.Provider value={store}>
@@ -104,7 +118,9 @@ describe("CustomGlassTable", () => {
   it("renders the complete user-facing optical-property header set", () => {
     renderTable();
 
-    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("thead th");
+    const headers = screen
+      .getByTestId("ag-grid-mock")
+      .querySelectorAll("thead th");
     expect([...headers].slice(1).map((header) => header.textContent)).toEqual([
       "Label",
       "nd",
@@ -126,7 +142,11 @@ describe("CustomGlassTable", () => {
     rerender(
       <ThemeProvider>
         <ImportCustomGlassStoreContext.Provider value={store}>
-          <CustomGlassTable rows={rows} checked={new Set(["BETA"])} onCheckedChange={jest.fn()} />
+          <CustomGlassTable
+            rows={rows}
+            checked={new Set(["BETA"])}
+            onCheckedChange={jest.fn()}
+          />
         </ImportCustomGlassStoreContext.Provider>
       </ThemeProvider>,
     );
@@ -141,7 +161,9 @@ describe("CustomGlassTable", () => {
     const user = userEvent.setup();
     const onCheckedChange = jest.fn();
     const checked = new Set(["ALPHA"]);
-    const store = createStore<ImportCustomGlassStore>(createImportCustomGlassSlice);
+    const store = createStore<ImportCustomGlassStore>(
+      createImportCustomGlassSlice,
+    );
     function SelectionHarness() {
       const [, forceRender] = useState(0);
       return (
@@ -184,9 +206,15 @@ describe("CustomGlassTable", () => {
   });
 
   it("restores saved sort and filter state and persists updates and clearing", async () => {
-    const store = createStore<ImportCustomGlassStore>(createImportCustomGlassSlice);
+    const store = createStore<ImportCustomGlassStore>(
+      createImportCustomGlassSlice,
+    );
     store.getState().setSortState([{ colId: "label", sort: "asc" }]);
-    store.getState().setFilterModel({ nd: { filterType: "number", type: "greaterThan", filter: 1.5 } });
+    store
+      .getState()
+      .setFilterModel({
+        nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+      });
     const { container } = renderTable(rows, new Set(), jest.fn(), store);
     const grid = container.querySelector("[data-testid='ag-grid-mock']");
     if (!(grid instanceof HTMLElement)) {
@@ -194,36 +222,64 @@ describe("CustomGlassTable", () => {
     }
 
     await waitFor(() => {
-      expect(grid).toHaveAttribute("data-applied-column-state", JSON.stringify({
-        state: [{ colId: "label", sort: "asc" }],
-        defaultState: {},
-      }));
-      expect(grid).toHaveAttribute("data-current-filter-model", JSON.stringify({
-        nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
-      }));
+      expect(grid).toHaveAttribute(
+        "data-applied-column-state",
+        JSON.stringify({
+          state: [{ colId: "label", sort: "asc" }],
+          defaultState: {},
+        }),
+      );
+      expect(grid).toHaveAttribute(
+        "data-current-filter-model",
+        JSON.stringify({
+          nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+        }),
+      );
     });
 
     act(() => {
-      grid.dispatchEvent(new CustomEvent("mockSortChanged", {
-        bubbles: true,
-        detail: { columnState: [{ colId: "nd", sort: "desc", sortIndex: 0 }] },
-      }));
-      grid.dispatchEvent(new CustomEvent("mockFilterChanged", {
-        bubbles: true,
-        detail: { filterModel: { label: { filterType: "text", type: "contains", filter: "A" } } },
-      }));
+      grid.dispatchEvent(
+        new CustomEvent("mockSortChanged", {
+          bubbles: true,
+          detail: {
+            columnState: [{ colId: "nd", sort: "desc", sortIndex: 0 }],
+          },
+        }),
+      );
+      grid.dispatchEvent(
+        new CustomEvent("mockFilterChanged", {
+          bubbles: true,
+          detail: {
+            filterModel: {
+              label: { filterType: "text", type: "contains", filter: "A" },
+            },
+          },
+        }),
+      );
     });
 
     await waitFor(() => {
-      expect(store.getState().sortState).toEqual([{ colId: "nd", sort: "desc", sortIndex: 0 }]);
+      expect(store.getState().sortState).toEqual([
+        { colId: "nd", sort: "desc", sortIndex: 0 },
+      ]);
       expect(store.getState().filterModel).toEqual({
         label: { filterType: "text", type: "contains", filter: "A" },
       });
     });
 
     act(() => {
-      grid.dispatchEvent(new CustomEvent("mockSortChanged", { bubbles: true, detail: { columnState: [] } }));
-      grid.dispatchEvent(new CustomEvent("mockFilterChanged", { bubbles: true, detail: { filterModel: {} } }));
+      grid.dispatchEvent(
+        new CustomEvent("mockSortChanged", {
+          bubbles: true,
+          detail: { columnState: [] },
+        }),
+      );
+      grid.dispatchEvent(
+        new CustomEvent("mockFilterChanged", {
+          bubbles: true,
+          detail: { filterModel: {} },
+        }),
+      );
     });
 
     await waitFor(() => {
@@ -233,7 +289,9 @@ describe("CustomGlassTable", () => {
   });
 
   it("does not apply empty saved table state on grid ready", async () => {
-    const store = createStore<ImportCustomGlassStore>(createImportCustomGlassSlice);
+    const store = createStore<ImportCustomGlassStore>(
+      createImportCustomGlassSlice,
+    );
     const { container } = renderTable(rows, new Set(), jest.fn(), store);
     const grid = container.querySelector("[data-testid='ag-grid-mock']");
     if (!(grid instanceof HTMLElement)) {
@@ -251,11 +309,18 @@ describe("CustomGlassTable", () => {
 
     await waitFor(() => expect(checkbox("Select ALPHA")).toBeChecked());
 
-    const refreshedRows = rows.map((row) => ({ ...row, data: { ...row.data } }));
+    const refreshedRows = rows.map((row) => ({
+      ...row,
+      data: { ...row.data },
+    }));
     rerender(
       <ThemeProvider>
         <ImportCustomGlassStoreContext.Provider value={store}>
-          <CustomGlassTable rows={refreshedRows} checked={new Set(["ALPHA"])} onCheckedChange={jest.fn()} />
+          <CustomGlassTable
+            rows={refreshedRows}
+            checked={new Set(["ALPHA"])}
+            onCheckedChange={jest.fn()}
+          />
         </ImportCustomGlassStoreContext.Provider>
       </ThemeProvider>,
     );

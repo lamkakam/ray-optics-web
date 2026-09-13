@@ -1,31 +1,60 @@
 import { createStore, type StoreApi } from "zustand";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
 import { createLensPrescriptionTools } from "@/features/lens-editor/lib/lensPrescriptionWebMcp";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 
 const basePrescription = {
   object: { distance: 1e10, medium: "air", manufacturer: "" },
-  surfaces: [{ label: "Default" as const, curvatureRadius: 50, thickness: 5, medium: "air", manufacturer: "", semiDiameter: 10 }],
+  surfaces: [
+    {
+      label: "Default" as const,
+      curvatureRadius: 50,
+      thickness: 5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 10,
+    },
+  ],
   image: { curvatureRadius: 0 },
 };
 
 const emptyLookupMaps: GlassLookupMaps = {
-  manufacturerMap: new Map(), mediumMap: new Map(), customMediumMap: new Map(),
+  manufacturerMap: new Map(),
+  mediumMap: new Map(),
+  customMediumMap: new Map(),
 };
 
 const lookupMaps: GlassLookupMaps = {
   manufacturerMap: new Map([["schott", "Schott"]]),
-  mediumMap: new Map([["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }]]),
-  customMediumMap: new Map([["user glass", { medium: "User Glass", manufacturer: "Custom" }]]),
+  mediumMap: new Map([
+    ["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }],
+  ]),
+  customMediumMap: new Map([
+    ["user glass", { medium: "User Glass", manufacturer: "Custom" }],
+  ]),
 };
 
 function setup(options: { lookupMaps?: GlassLookupMaps } = {}) {
   const store = createStore<LensEditorState>(createLensEditorSlice);
   store.getState().setRows(surfacesToGridRows(basePrescription));
-  const maps = Object.hasOwn(options, "lookupMaps") ? options.lookupMaps : emptyLookupMaps;
-  const tools = new Map(Object.values(createLensPrescriptionTools(store, maps)).map((tool) => [tool.name, tool]));
-  const execute = async (name: string, input: unknown, signal = new AbortController().signal) => {
+  const maps = Object.hasOwn(options, "lookupMaps")
+    ? options.lookupMaps
+    : emptyLookupMaps;
+  const tools = new Map(
+    Object.values(createLensPrescriptionTools(store, maps)).map((tool) => [
+      tool.name,
+      tool,
+    ]),
+  );
+  const execute = async (
+    name: string,
+    input: unknown,
+    signal = new AbortController().signal,
+  ) => {
     const tool = tools.get(name);
     if (!tool) throw new Error(`Missing tool ${name}`);
     return tool.execute(input as Record<string, unknown>, { signal });
@@ -48,7 +77,11 @@ describe("lens prescription WebMCP tools", () => {
     const store = createStore<LensEditorState>(createLensEditorSlice);
     const tools = createLensPrescriptionTools(store, emptyLookupMaps);
 
-    expect(Object.fromEntries(Object.entries(tools).map(([key, tool]) => [key, tool.name]))).toEqual({
+    expect(
+      Object.fromEntries(
+        Object.entries(tools).map(([key, tool]) => [key, tool.name]),
+      ),
+    ).toEqual({
       getLensPrescription: "get_lens_prescription",
       setLensPrescription: "set_lens_prescription",
       insertLensSurface: "insert_lens_surface",
@@ -60,17 +93,34 @@ describe("lens prescription WebMCP tools", () => {
   it("creates five strict descriptors with the expected annotations", () => {
     const { tools } = setup();
     expect([...tools.keys()]).toEqual([
-      "get_lens_prescription", "set_lens_prescription", "insert_lens_surface", "update_lens_row", "delete_lens_surface",
+      "get_lens_prescription",
+      "set_lens_prescription",
+      "insert_lens_surface",
+      "update_lens_row",
+      "delete_lens_surface",
     ]);
-    expect(tools.get("get_lens_prescription")?.annotations?.readOnlyHint).toBe(true);
-    expect(tools.get("set_lens_prescription")?.annotations?.readOnlyHint).toBe(false);
+    expect(tools.get("get_lens_prescription")?.annotations?.readOnlyHint).toBe(
+      true,
+    );
+    expect(tools.get("set_lens_prescription")?.annotations?.readOnlyHint).toBe(
+      false,
+    );
     for (const tool of tools.values()) {
-      expect(tool.inputSchema).toEqual(expect.objectContaining({ type: "object", additionalProperties: false }));
+      expect(tool.inputSchema).toEqual(
+        expect.objectContaining({
+          type: "object",
+          additionalProperties: false,
+        }),
+      );
       expect(tool.annotations?.untrustedContentHint).toBe(false);
     }
-    expect(tools.get("insert_lens_surface")?.annotations?.readOnlyHint).toBe(false);
+    expect(tools.get("insert_lens_surface")?.annotations?.readOnlyHint).toBe(
+      false,
+    );
     expect(tools.get("update_lens_row")?.annotations?.readOnlyHint).toBe(false);
-    expect(tools.get("delete_lens_surface")?.annotations?.readOnlyHint).toBe(false);
+    expect(tools.get("delete_lens_surface")?.annotations?.readOnlyHint).toBe(
+      false,
+    );
   });
 
   it.each([
@@ -99,7 +149,10 @@ describe("lens prescription WebMCP tools", () => {
     ["get_lens_prescription", { row: 0 }],
     ["get_lens_prescription", { row: "first" }],
     ["get_lens_prescription", { extra: true }],
-    ["set_lens_prescription", { object: basePrescription.object, surfaces: [] }],
+    [
+      "set_lens_prescription",
+      { object: basePrescription.object, surfaces: [] },
+    ],
     ["insert_lens_surface", {}],
     ["insert_lens_surface", { after: "image" }],
     ["update_lens_row", { row: 1 }],
@@ -116,7 +169,11 @@ describe("lens prescription WebMCP tools", () => {
   it.each([
     ["get_lens_prescription", { extra: true }, /Invalid input at \/extra/i],
     ["insert_lens_surface", {}, /Invalid input at \/after/i],
-    ["update_lens_row", { values: { comment: "missing row" } }, /Invalid input at \/row/i],
+    [
+      "update_lens_row",
+      { values: { comment: "missing row" } },
+      /Invalid input at \/row/i,
+    ],
     ["delete_lens_surface", {}, /Invalid input at \/surface/i],
   ])("reports the precise schema path for %s", async (name, input, message) => {
     const { execute } = setup();
@@ -128,11 +185,25 @@ describe("lens prescription WebMCP tools", () => {
     const { store, execute } = setup();
     const spy = jest.spyOn(store.getState(), "setRows");
     const before = store.getState().prescriptionRevision;
-    const replacement = { ...basePrescription, surfaces: [...basePrescription.surfaces, { ...basePrescription.surfaces[0], curvatureRadius: -30 }] };
-    const result = JSON.parse(String(await execute("set_lens_prescription", replacement)));
+    const replacement = {
+      ...basePrescription,
+      surfaces: [
+        ...basePrescription.surfaces,
+        { ...basePrescription.surfaces[0], curvatureRadius: -30 },
+      ],
+    };
+    const result = JSON.parse(
+      String(await execute("set_lens_prescription", replacement)),
+    );
     expect(spy).toHaveBeenCalledTimes(1);
     expect(store.getState().prescriptionRevision).toBe(before + 1);
-    expect(result).toEqual(expect.objectContaining({ revision: before + 1, surfaceCount: 2, systemUpdateRequired: true }));
+    expect(result).toEqual(
+      expect.objectContaining({
+        revision: before + 1,
+        surfaceCount: 2,
+        systemUpdateRequired: true,
+      }),
+    );
   });
 
   it("canonicalizes catalog and Custom media in a complete replacement", async () => {
@@ -140,15 +211,28 @@ describe("lens prescription WebMCP tools", () => {
     const replacement = {
       ...basePrescription,
       surfaces: [
-        { ...basePrescription.surfaces[0], medium: "n-bk7", manufacturer: "SCHOTT" },
-        { ...basePrescription.surfaces[0], medium: "USER GLASS", manufacturer: "wrong" },
+        {
+          ...basePrescription.surfaces[0],
+          medium: "n-bk7",
+          manufacturer: "SCHOTT",
+        },
+        {
+          ...basePrescription.surfaces[0],
+          medium: "USER GLASS",
+          manufacturer: "wrong",
+        },
       ],
     };
     await execute("set_lens_prescription", replacement);
-    expect(store.getState().rows).toEqual(expect.arrayContaining([
-      expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" }),
-      expect.objectContaining({ medium: "User Glass", manufacturer: "Custom" }),
-    ]));
+    expect(store.getState().rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" }),
+        expect.objectContaining({
+          medium: "User Glass",
+          manufacturer: "Custom",
+        }),
+      ]),
+    );
   });
 
   it("canonicalizes an object medium update through the same resolver as surface updates", async () => {
@@ -159,68 +243,119 @@ describe("lens prescription WebMCP tools", () => {
       values: { medium: "n-bk7", manufacturer: "SCHOTT" },
     });
 
-    expect(store.getState().rows[0]).toEqual(expect.objectContaining({
-      kind: "object",
-      medium: "N-BK7",
-      manufacturer: "Schott",
-    }));
+    expect(store.getState().rows[0]).toEqual(
+      expect.objectContaining({
+        kind: "object",
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      }),
+    );
   });
 
   it("writes both canonical material fields atomically for partial material updates", async () => {
     const { store, execute } = setup({ lookupMaps });
     await execute("set_lens_prescription", {
       ...basePrescription,
-      surfaces: [{ ...basePrescription.surfaces[0], medium: "N-BK7", manufacturer: "Schott" }],
+      surfaces: [
+        {
+          ...basePrescription.surfaces[0],
+          medium: "N-BK7",
+          manufacturer: "Schott",
+        },
+      ],
     });
     const spy = jest.spyOn(store.getState(), "updateRow");
 
-    await execute("update_lens_row", { row: 1, values: { manufacturer: "SCHOTT" } });
-    expect(spy).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
-      medium: "N-BK7", manufacturer: "Schott",
-    }));
+    await execute("update_lens_row", {
+      row: 1,
+      values: { manufacturer: "SCHOTT" },
+    });
+    expect(spy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      }),
+    );
 
-    await execute("update_lens_row", { row: 1, values: { medium: "USER GLASS" } });
-    expect(spy).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({
-      medium: "User Glass", manufacturer: "Custom",
-    }));
+    await execute("update_lens_row", {
+      row: 1,
+      values: { medium: "USER GLASS" },
+    });
+    expect(spy).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        medium: "User Glass",
+        manufacturer: "Custom",
+      }),
+    );
   });
 
   it.each([
     [lookupMaps, /\/surfaces\/0\/medium.*unknown/i],
     [undefined, /\/object\/medium.*catalog.*unavailable/i],
-  ])("rejects unresolved set media without changing rows or revision %#", async (maps, message) => {
-    const { store, execute } = setup({ lookupMaps: maps });
-    const before = snapshot(store);
-    const replacement = maps === undefined
-      ? basePrescription
-      : { ...basePrescription, surfaces: [{ ...basePrescription.surfaces[0], medium: "Mystery", manufacturer: "Acme" }] };
-    await expect(execute("set_lens_prescription", replacement)).rejects.toThrow(message);
-    expect(snapshot(store)).toEqual(before);
-  });
+  ])(
+    "rejects unresolved set media without changing rows or revision %#",
+    async (maps, message) => {
+      const { store, execute } = setup({ lookupMaps: maps });
+      const before = snapshot(store);
+      const replacement =
+        maps === undefined
+          ? basePrescription
+          : {
+              ...basePrescription,
+              surfaces: [
+                {
+                  ...basePrescription.surfaces[0],
+                  medium: "Mystery",
+                  manufacturer: "Acme",
+                },
+              ],
+            };
+      await expect(
+        execute("set_lens_prescription", replacement),
+      ).rejects.toThrow(message);
+      expect(snapshot(store)).toEqual(before);
+    },
+  );
 
   it("rejects an unknown merged update candidate at its zero-based path without mutation", async () => {
     const { store, execute } = setup({ lookupMaps });
     const before = snapshot(store);
-    await expect(execute("update_lens_row", {
-      row: 1, values: { medium: "Mystery", manufacturer: "Acme" },
-    })).rejects.toThrow(/\/surfaces\/0\/medium.*unknown/i);
+    await expect(
+      execute("update_lens_row", {
+        row: 1,
+        values: { medium: "Mystery", manufacturer: "Acme" },
+      }),
+    ).rejects.toThrow(/\/surfaces\/0\/medium.*unknown/i);
     expect(snapshot(store)).toEqual(before);
   });
 
   it("rejects updates while catalogs are unavailable without changing state", async () => {
     const { store, execute } = setup({ lookupMaps: undefined });
     const before = snapshot(store);
-    await expect(execute("update_lens_row", { row: 1, values: { thickness: 6 } }))
-      .rejects.toThrow(/\/object\/medium.*catalog.*unavailable/i);
+    await expect(
+      execute("update_lens_row", { row: 1, values: { thickness: 6 } }),
+    ).rejects.toThrow(/\/object\/medium.*catalog.*unavailable/i);
     expect(snapshot(store)).toEqual(before);
   });
 
   it("inserts after object and resolves shifted visible surface selectors", async () => {
     const { store, execute } = setup();
     await execute("insert_lens_surface", { after: "object" });
-    expect(store.getState().rows.filter((row) => row.kind === "surface")).toHaveLength(2);
-    await execute("update_lens_row", { row: 2, values: { comment: "formerly first" } });
-    expect(store.getState().rows[2]).toEqual(expect.objectContaining({ comment: "formerly first", curvatureRadius: 50 }));
+    expect(
+      store.getState().rows.filter((row) => row.kind === "surface"),
+    ).toHaveLength(2);
+    await execute("update_lens_row", {
+      row: 2,
+      values: { comment: "formerly first" },
+    });
+    expect(store.getState().rows[2]).toEqual(
+      expect.objectContaining({
+        comment: "formerly first",
+        curvatureRadius: 50,
+      }),
+    );
   });
 
   it("rejects insertion after a missing positive surface without mutation", async () => {
@@ -244,10 +379,21 @@ describe("lens prescription WebMCP tools", () => {
       ],
     });
 
-    const result = JSON.parse(String(await execute("insert_lens_surface", { after: 1 })));
-    expect(result).toEqual(expect.objectContaining({ surface: 2, surfaceCount: 3 }));
-    expect(store.getState().rows.filter((row) => row.kind === "surface")[1]).toEqual(
-      expect.objectContaining({ curvatureRadius: 0, thickness: 0, medium: "air", manufacturer: "" }),
+    const result = JSON.parse(
+      String(await execute("insert_lens_surface", { after: 1 })),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({ surface: 2, surfaceCount: 3 }),
+    );
+    expect(
+      store.getState().rows.filter((row) => row.kind === "surface")[1],
+    ).toEqual(
+      expect.objectContaining({
+        curvatureRadius: 0,
+        thickness: 0,
+        medium: "air",
+        manufacturer: "",
+      }),
     );
   });
 
@@ -258,30 +404,63 @@ describe("lens prescription WebMCP tools", () => {
       values: {
         label: "Stop",
         aspherical: { kind: "Conic", conicConstant: -1 },
-        decenter: { coordinateSystemStrategy: "reverse", alpha: 1, beta: 2, gamma: 3, offsetX: 4, offsetY: 5 },
+        decenter: {
+          coordinateSystemStrategy: "reverse",
+          alpha: 1,
+          beta: 2,
+          gamma: 3,
+          offsetX: 4,
+          offsetY: 5,
+        },
         clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 },
         diffractiveElement: { diffractionGrating: { lpmm: 600, order: -1 } },
       },
     });
-    await execute("update_lens_row", { row: 1, clear: ["aspherical", "decenter", "diffractiveElement"] });
-    expect(store.getState().rows[1]).toEqual(expect.objectContaining({ label: "Stop", aspherical: undefined, decenter: undefined, diffractiveElement: undefined }));
+    await execute("update_lens_row", {
+      row: 1,
+      clear: ["aspherical", "decenter", "diffractiveElement"],
+    });
+    expect(store.getState().rows[1]).toEqual(
+      expect.objectContaining({
+        label: "Stop",
+        aspherical: undefined,
+        decenter: undefined,
+        diffractiveElement: undefined,
+      }),
+    );
   });
 
   it("updates object and image with only applicable values", async () => {
     const { store, execute } = setup();
-    await execute("update_lens_row", { row: "object", values: { distance: 25, medium: "air", manufacturer: "" } });
-    await execute("update_lens_row", { row: "image", values: { curvatureRadius: -100 } });
-    expect(store.getState().rows[0]).toEqual(expect.objectContaining({ objectDistance: 25 }));
-    expect(store.getState().rows.at(-1)).toEqual(expect.objectContaining({ curvatureRadius: -100 }));
-    await expect(execute("update_lens_row", { row: "image", values: { thickness: 4 } })).rejects.toThrow(/not applicable/i);
+    await execute("update_lens_row", {
+      row: "object",
+      values: { distance: 25, medium: "air", manufacturer: "" },
+    });
+    await execute("update_lens_row", {
+      row: "image",
+      values: { curvatureRadius: -100 },
+    });
+    expect(store.getState().rows[0]).toEqual(
+      expect.objectContaining({ objectDistance: 25 }),
+    );
+    expect(store.getState().rows.at(-1)).toEqual(
+      expect.objectContaining({ curvatureRadius: -100 }),
+    );
+    await expect(
+      execute("update_lens_row", { row: "image", values: { thickness: 4 } }),
+    ).rejects.toThrow(/not applicable/i);
   });
 
   it("rejects fields that are not applicable to the object row", async () => {
     const { store, execute } = setup();
     const before = snapshot(store);
 
-    await expect(execute("update_lens_row", { row: "object", values: { comment: "not applicable" } }))
-      .rejects.toThrow(/comment is not applicable to the object row/i);
+    await expect(
+      execute("update_lens_row", {
+        row: "object",
+        values: { comment: "not applicable" },
+      }),
+    ).rejects.toThrow(/comment is not applicable to the object row/i);
 
     expect(snapshot(store)).toEqual(before);
   });
@@ -289,20 +468,45 @@ describe("lens prescription WebMCP tools", () => {
   it("validates the complete update candidate before calling updateRow", async () => {
     const { store, execute } = setup();
     const spy = jest.spyOn(store.getState(), "updateRow");
-    await expect(execute("update_lens_row", {
-      row: 1,
-      values: { clear_aperture: { shape: "annular", obstructionRadius: 20, offsetX: 0, offsetY: 0 } },
-    })).rejects.toThrow(/prescription/i);
+    await expect(
+      execute("update_lens_row", {
+        row: 1,
+        values: {
+          clear_aperture: {
+            shape: "annular",
+            obstructionRadius: 20,
+            offsetX: 0,
+            offsetY: 0,
+          },
+        },
+      }),
+    ).rejects.toThrow(/prescription/i);
     expect(spy).not.toHaveBeenCalled();
   });
 
   it("matches grid semi-diameter edit restrictions", async () => {
     const { store, execute } = setup();
     store.getState().setAutoAperture(true);
-    await expect(execute("update_lens_row", { row: 1, values: { semiDiameter: 4 } })).rejects.toThrow(/auto aperture/i);
+    await expect(
+      execute("update_lens_row", { row: 1, values: { semiDiameter: 4 } }),
+    ).rejects.toThrow(/auto aperture/i);
     store.getState().setAutoAperture(false);
-    await execute("update_lens_row", { row: 1, values: { clear_aperture: { shape: "rectangular", xHalfWidth: 4, yHalfWidth: 3, rotation: 0, offsetX: 0, offsetY: 0 } } });
-    await expect(execute("update_lens_row", { row: 1, values: { semiDiameter: 4 } })).rejects.toThrow(/rectangular/i);
+    await execute("update_lens_row", {
+      row: 1,
+      values: {
+        clear_aperture: {
+          shape: "rectangular",
+          xHalfWidth: 4,
+          yHalfWidth: 3,
+          rotation: 0,
+          offsetX: 0,
+          offsetY: 0,
+        },
+      },
+    });
+    await expect(
+      execute("update_lens_row", { row: 1, values: { semiDiameter: 4 } }),
+    ).rejects.toThrow(/rectangular/i);
   });
 
   it("zeroes semi-diameter when a surface becomes rectangular", async () => {
@@ -310,10 +514,21 @@ describe("lens prescription WebMCP tools", () => {
 
     await execute("update_lens_row", {
       row: 1,
-      values: { clear_aperture: { shape: "rectangular", xHalfWidth: 4, yHalfWidth: 3, rotation: 0, offsetX: 0, offsetY: 0 } },
+      values: {
+        clear_aperture: {
+          shape: "rectangular",
+          xHalfWidth: 4,
+          yHalfWidth: 3,
+          rotation: 0,
+          offsetX: 0,
+          offsetY: 0,
+        },
+      },
     });
 
-    expect(store.getState().rows[1]).toEqual(expect.objectContaining({ semiDiameter: 0 }));
+    expect(store.getState().rows[1]).toEqual(
+      expect.objectContaining({ semiDiameter: 0 }),
+    );
   });
 
   it("does not zero semi-diameter for a circular clear aperture", async () => {
@@ -324,7 +539,9 @@ describe("lens prescription WebMCP tools", () => {
       values: { clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 } },
     });
 
-    expect(store.getState().rows[1]).toEqual(expect.objectContaining({ semiDiameter: 10 }));
+    expect(store.getState().rows[1]).toEqual(
+      expect.objectContaining({ semiDiameter: 10 }),
+    );
   });
 
   it("allows a semi-diameter edit on a normal manual-aperture surface", async () => {
@@ -332,37 +549,62 @@ describe("lens prescription WebMCP tools", () => {
 
     await execute("update_lens_row", { row: 1, values: { semiDiameter: 4 } });
 
-    expect(store.getState().rows[1]).toEqual(expect.objectContaining({ semiDiameter: 4 }));
+    expect(store.getState().rows[1]).toEqual(
+      expect.objectContaining({ semiDiameter: 4 }),
+    );
   });
 
   it("does not add canonical medium fields to unrelated row updates", async () => {
     const { store, execute } = setup();
     const spy = jest.spyOn(store.getState(), "updateRow");
 
-    await execute("update_lens_row", { row: 1, values: { comment: "annotated" } });
+    await execute("update_lens_row", {
+      row: 1,
+      values: { comment: "annotated" },
+    });
 
-    expect(spy).toHaveBeenCalledWith(expect.any(String), { comment: "annotated" });
+    expect(spy).toHaveBeenCalledWith(expect.any(String), {
+      comment: "annotated",
+    });
   });
 
   it("labels unknown custom media with the Custom catalog", async () => {
     const { execute } = setup({ lookupMaps });
 
-    await expect(execute("set_lens_prescription", {
-      ...basePrescription,
-      surfaces: [{ ...basePrescription.surfaces[0], medium: "Mystery", manufacturer: "   " }],
-    })).rejects.toThrow(/\/surfaces\/0\/medium.*unknown medium Custom: Mystery/i);
+    await expect(
+      execute("set_lens_prescription", {
+        ...basePrescription,
+        surfaces: [
+          {
+            ...basePrescription.surfaces[0],
+            medium: "Mystery",
+            manufacturer: "   ",
+          },
+        ],
+      }),
+    ).rejects.toThrow(/\/surfaces\/0\/medium.*unknown medium Custom: Mystery/i);
   });
 
   it("deletes only a current positive surface index and clears its selection", async () => {
     const { store, execute } = setup();
     store.getState().setSelectedRowId(store.getState().rows[1].id);
-    const result = JSON.parse(String(await execute("delete_lens_surface", { surface: 1 })));
-    expect(store.getState().rows.filter((row) => row.kind === "surface")).toHaveLength(0);
-    expect(store.getState().selectedRowId).toBeUndefined();
-    expect(result).toEqual(expect.objectContaining({ surface: 1, surfaceCount: 0, systemUpdateRequired: true }));
-    await expect(execute("delete_lens_surface", { surface: 1 })).rejects.toThrow(
-      "Invalid input at /surface: 1 does not exist",
+    const result = JSON.parse(
+      String(await execute("delete_lens_surface", { surface: 1 })),
     );
+    expect(
+      store.getState().rows.filter((row) => row.kind === "surface"),
+    ).toHaveLength(0);
+    expect(store.getState().selectedRowId).toBeUndefined();
+    expect(result).toEqual(
+      expect.objectContaining({
+        surface: 1,
+        surfaceCount: 0,
+        systemUpdateRequired: true,
+      }),
+    );
+    await expect(
+      execute("delete_lens_surface", { surface: 1 }),
+    ).rejects.toThrow("Invalid input at /surface: 1 does not exist");
   });
 
   it("honours execution cancellation before reading or mutating state", async () => {
@@ -370,14 +612,28 @@ describe("lens prescription WebMCP tools", () => {
     const before = snapshot(store);
     const controller = new AbortController();
     controller.abort();
-    await expect(execute("get_lens_prescription", {}, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
-    await expect(execute("set_lens_prescription", basePrescription, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
-    await expect(execute("insert_lens_surface", { after: "object" }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
-    await expect(execute("update_lens_row", { row: 1, values: { thickness: 6 } }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
-    await expect(execute("delete_lens_surface", { surface: 1 }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
-    await expect(execute("get_lens_prescription", {}, controller.signal)).rejects.toThrow(
-      "Tool execution was cancelled",
-    );
+    await expect(
+      execute("get_lens_prescription", {}, controller.signal),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      execute("set_lens_prescription", basePrescription, controller.signal),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      execute("insert_lens_surface", { after: "object" }, controller.signal),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      execute(
+        "update_lens_row",
+        { row: 1, values: { thickness: 6 } },
+        controller.signal,
+      ),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      execute("delete_lens_surface", { surface: 1 }, controller.signal),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      execute("get_lens_prescription", {}, controller.signal),
+    ).rejects.toThrow("Tool execution was cancelled");
     expect(snapshot(store)).toEqual(before);
   });
 });

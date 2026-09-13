@@ -25,7 +25,8 @@ const config: Config = {
     "^pyodide$": "<rootDir>/src/__mocks__/pyodide.ts",
     "^ag-grid-react$": "<rootDir>/src/__mocks__/ag-grid-react.tsx",
     "^ag-grid-community$": "<rootDir>/src/__mocks__/ag-grid-community.ts",
-    "^ag-grid-community/styles/.*$": "<rootDir>/src/__mocks__/ag-grid-community.ts",
+    "^ag-grid-community/styles/.*$":
+      "<rootDir>/src/__mocks__/ag-grid-community.ts",
     "^@visx/responsive$": "<rootDir>/src/__mocks__/@visx/responsive.tsx",
     "^echarts/core$": "<rootDir>/src/__mocks__/echarts/core.ts",
     "^echarts/charts$": "<rootDir>/src/__mocks__/echarts/charts.ts",

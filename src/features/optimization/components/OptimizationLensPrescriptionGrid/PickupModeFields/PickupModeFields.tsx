@@ -2,7 +2,10 @@
 
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
-import { Select, type SelectOption } from "@/shared/components/primitives/Select";
+import {
+  Select,
+  type SelectOption,
+} from "@/shared/components/primitives/Select";
 
 interface PickupExtraField {
   readonly idSuffix: string;
@@ -88,7 +91,9 @@ export function PickupModeFields({
 
       {extraField ? (
         <div>
-          <Label htmlFor={`${idPrefix}-${extraField.idSuffix}`}>{extraField.label}</Label>
+          <Label htmlFor={`${idPrefix}-${extraField.idSuffix}`}>
+            {extraField.label}
+          </Label>
           {extraField.options === undefined ? (
             <Input
               id={`${idPrefix}-${extraField.idSuffix}`}
@@ -108,7 +113,13 @@ export function PickupModeFields({
         </div>
       ) : null}
 
-      <div className={scaleOffsetLayout === "two-column" ? "grid gap-3 md:grid-cols-2" : "grid gap-4"}>
+      <div
+        className={
+          scaleOffsetLayout === "two-column"
+            ? "grid gap-3 md:grid-cols-2"
+            : "grid gap-4"
+        }
+      >
         <div>
           <Label htmlFor={`${idPrefix}-scale`}>{scaleLabel}</Label>
           <Input

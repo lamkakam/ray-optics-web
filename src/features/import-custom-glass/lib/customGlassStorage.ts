@@ -34,38 +34,52 @@ function getIndexedDB(): IDBFactory {
 function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("IndexedDB request failed."));
+    request.onerror = () =>
+      reject(request.error ?? new Error("IndexedDB request failed."));
   });
 }
 
 function txDone(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("IndexedDB transaction failed."));
-    transaction.onabort = () => reject(transaction.error ?? new Error("IndexedDB transaction aborted."));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("IndexedDB transaction failed."));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("IndexedDB transaction aborted."));
   });
 }
 
 /** Accepts only non-blank labels, the tabulated discriminator, and finite numeric wavelength/index pairs. */
-export function isPersistedCustomGlassRow(value: unknown): value is PersistedCustomGlassRow {
+export function isPersistedCustomGlassRow(
+  value: unknown,
+): value is PersistedCustomGlassRow {
   if (typeof value !== "object" || value === null) {
     return false;
   }
-  const row = value as { readonly label?: unknown; readonly type?: unknown; readonly pairs?: unknown };
-  return typeof row.label === "string"
-    && row.label.trim() !== ""
-    && row.type === "tabulated"
-    && Array.isArray(row.pairs)
-    && row.pairs.every((pair) =>
-      Array.isArray(pair)
-      && pair.length === 2
-      && Number.isFinite(pair[0])
-      && Number.isFinite(pair[1])
-    );
+  const row = value as {
+    readonly label?: unknown;
+    readonly type?: unknown;
+    readonly pairs?: unknown;
+  };
+  return (
+    typeof row.label === "string" &&
+    row.label.trim() !== "" &&
+    row.type === "tabulated" &&
+    Array.isArray(row.pairs) &&
+    row.pairs.every(
+      (pair) =>
+        Array.isArray(pair) &&
+        pair.length === 2 &&
+        Number.isFinite(pair[0]) &&
+        Number.isFinite(pair[1]),
+    )
+  );
 }
 
 /** Copies worker input into the stable persisted row shape. */
-export function toPersistedCustomGlassRow(input: UserDefinedGlassInput): PersistedCustomGlassRow {
+export function toPersistedCustomGlassRow(
+  input: UserDefinedGlassInput,
+): PersistedCustomGlassRow {
   return {
     label: input.name,
     type: "tabulated",
@@ -96,7 +110,10 @@ async function withStore<T>(
   try {
     const transaction = db.transaction(storeName, mode);
     const request = operation(transaction.objectStore(storeName));
-    const [result] = await Promise.all([requestToPromise(request), txDone(transaction)]);
+    const [result] = await Promise.all([
+      requestToPromise(request),
+      txDone(transaction),
+    ]);
     return result;
   } finally {
     db.close();
@@ -104,7 +121,9 @@ async function withStore<T>(
 }
 
 /** Reads custom-glass rows and discards structurally invalid records. */
-export async function readPersistedCustomGlasses(): Promise<readonly PersistedCustomGlassRow[]> {
+export async function readPersistedCustomGlasses(): Promise<
+  readonly PersistedCustomGlassRow[]
+> {
   const rows = await readStoredCustomGlassRows();
   return rows.filter(isPersistedCustomGlassRow);
 }
@@ -115,12 +134,18 @@ export async function readStoredCustomGlassRows(): Promise<readonly unknown[]> {
 }
 
 /** Persists one row after its matching worker mutation succeeds. */
-export async function upsertPersistedCustomGlass(input: UserDefinedGlassInput): Promise<void> {
-  await withStore(CUSTOM_STORE, "readwrite", (store) => store.put(toPersistedCustomGlassRow(input)));
+export async function upsertPersistedCustomGlass(
+  input: UserDefinedGlassInput,
+): Promise<void> {
+  await withStore(CUSTOM_STORE, "readwrite", (store) =>
+    store.put(toPersistedCustomGlassRow(input)),
+  );
 }
 
 /** Persists multiple rows in one read-write transaction. */
-export async function upsertPersistedCustomGlasses(inputs: readonly UserDefinedGlassInput[]): Promise<void> {
+export async function upsertPersistedCustomGlasses(
+  inputs: readonly UserDefinedGlassInput[],
+): Promise<void> {
   const db = await openDb();
   try {
     const transaction = db.transaction(CUSTOM_STORE, "readwrite");
@@ -135,7 +160,9 @@ export async function upsertPersistedCustomGlasses(inputs: readonly UserDefinedG
 }
 
 /** Deletes named rows in one read-write transaction. */
-export async function deletePersistedCustomGlasses(labels: readonly string[]): Promise<void> {
+export async function deletePersistedCustomGlasses(
+  labels: readonly string[],
+): Promise<void> {
   const db = await openDb();
   try {
     const transaction = db.transaction(CUSTOM_STORE, "readwrite");
@@ -150,18 +177,30 @@ export async function deletePersistedCustomGlasses(labels: readonly string[]): P
 }
 
 /** Moves one valid persisted row to the quarantine store. */
-export async function quarantinePersistedCustomGlass(row: PersistedCustomGlassRow): Promise<void> {
+export async function quarantinePersistedCustomGlass(
+  row: PersistedCustomGlassRow,
+): Promise<void> {
   await quarantineStoredCustomGlassRow(row, row.label);
 }
 
 /** Writes an arbitrary stored value to quarantine and removes its custom-store entry atomically. */
-export async function quarantineStoredCustomGlassRow(row: unknown, label: string): Promise<void> {
+export async function quarantineStoredCustomGlassRow(
+  row: unknown,
+  label: string,
+): Promise<void> {
   const db = await openDb();
   try {
-    const transaction = db.transaction([CUSTOM_STORE, QUARANTINED_STORE], "readwrite");
-    transaction.objectStore(QUARANTINED_STORE).put(
-      typeof row === "object" && row !== null ? row : { label, type: "invalid", pairs: [] },
+    const transaction = db.transaction(
+      [CUSTOM_STORE, QUARANTINED_STORE],
+      "readwrite",
     );
+    transaction
+      .objectStore(QUARANTINED_STORE)
+      .put(
+        typeof row === "object" && row !== null
+          ? row
+          : { label, type: "invalid", pairs: [] },
+      );
     transaction.objectStore(CUSTOM_STORE).delete(label);
     await txDone(transaction);
   } finally {

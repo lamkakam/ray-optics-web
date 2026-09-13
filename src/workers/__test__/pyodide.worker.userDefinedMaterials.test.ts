@@ -54,13 +54,19 @@ describe("user-defined material worker APIs", () => {
     }, materials);
 
     expect(capturedCode).toContain("user_defined_materials[name] = pairs");
-    expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
-    expect(capturedCode).toContain("json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)");
-    expect(capturedCode).toContain("if hasattr(value, \"tolist\"):");
+    expect(capturedCode).toContain(
+      "user_defined_materials.get_materials_data(names)",
+    );
+    expect(capturedCode).toContain(
+      "json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)",
+    );
+    expect(capturedCode).toContain('if hasattr(value, "tolist"):');
     expect(capturedCode).toContain("return value.tolist()");
-    expect(capturedCode).toContain("if hasattr(value, \"item\"):");
+    expect(capturedCode).toContain('if hasattr(value, "item"):');
     expect(capturedCode).toContain("return value.item()");
-    expect(capturedCode).toContain("raise TypeError(f\"Object of type {value.__class__.__name__} is not JSON serializable\")");
+    expect(capturedCode).toContain(
+      'raise TypeError(f"Object of type {value.__class__.__name__} is not JSON serializable")',
+    );
     expect(capturedCode).toContain("CUSTOM_A");
     expect(capturedCode).not.toContain("len(pairs)");
     expect(capturedCode).not.toContain("len(set(names))");
@@ -79,8 +85,12 @@ describe("user-defined material worker APIs", () => {
 
     expect(capturedCode).toContain("del user_defined_materials[name]");
     expect(capturedCode).toContain("user_defined_materials[name] = pairs");
-    expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
-    expect(capturedCode).toContain("json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)");
+    expect(capturedCode).toContain(
+      "user_defined_materials.get_materials_data(names)",
+    );
+    expect(capturedCode).toContain(
+      "json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)",
+    );
     expect(capturedCode).not.toContain("len(pairs)");
     expect(capturedCode).not.toContain("len(set(names))");
     expect(result).toEqual(rawUserDefinedData);
@@ -89,10 +99,13 @@ describe("user-defined material worker APIs", () => {
   it("_deleteUserDefinedGlasses deletes requested names and returns no parsed payload", async () => {
     let capturedCode = "";
 
-    const result = await _deleteUserDefinedGlasses(async (code) => {
-      capturedCode = code;
-      return undefined;
-    }, ["CUSTOM_A"]);
+    const result = await _deleteUserDefinedGlasses(
+      async (code) => {
+        capturedCode = code;
+        return undefined;
+      },
+      ["CUSTOM_A"],
+    );
 
     expect(capturedCode).toContain("del user_defined_materials[name]");
     expect(capturedCode).not.toContain("get_materials_data");
@@ -102,13 +115,20 @@ describe("user-defined material worker APIs", () => {
   it("_getUserDefinedGlasses returns raw user-defined material data", async () => {
     let capturedCode = "";
 
-    const result = await _getUserDefinedGlasses(async (code) => {
-      capturedCode = code;
-      return JSON.stringify(rawUserDefinedData);
-    }, ["CUSTOM_A"]);
+    const result = await _getUserDefinedGlasses(
+      async (code) => {
+        capturedCode = code;
+        return JSON.stringify(rawUserDefinedData);
+      },
+      ["CUSTOM_A"],
+    );
 
-    expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
-    expect(capturedCode).toContain("json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)");
+    expect(capturedCode).toContain(
+      "user_defined_materials.get_materials_data(names)",
+    );
+    expect(capturedCode).toContain(
+      "json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)",
+    );
     expect(capturedCode).toContain("CUSTOM_A");
     expect(result).toEqual(rawUserDefinedData);
     expect(result.CUSTOM_A.dispersionCoeffKind).toBe("tabulated");

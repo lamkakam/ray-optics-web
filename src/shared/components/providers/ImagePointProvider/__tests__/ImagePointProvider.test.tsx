@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ImagePointProvider, useImagePoint } from "@/shared/components/providers/ImagePointProvider";
+import {
+  ImagePointProvider,
+  useImagePoint,
+} from "@/shared/components/providers/ImagePointProvider";
 
 function Harness() {
   const { imagePoint, setImagePoint } = useImagePoint();
@@ -8,9 +11,15 @@ function Harness() {
   return (
     <>
       <div data-testid="image-point">{imagePoint}</div>
-      <button type="button" onClick={() => setImagePoint("chief_ray")}>Set chief ray</button>
-      <button type="button" onClick={() => setImagePoint("centroid")}>Set centroid</button>
-      <button type="button" onClick={() => setImagePoint("invalid" as never)}>Set invalid</button>
+      <button type="button" onClick={() => setImagePoint("chief_ray")}>
+        Set chief ray
+      </button>
+      <button type="button" onClick={() => setImagePoint("centroid")}>
+        Set centroid
+      </button>
+      <button type="button" onClick={() => setImagePoint("invalid" as never)}>
+        Set invalid
+      </button>
     </>
   );
 }
@@ -116,7 +125,9 @@ describe("ImagePointProvider", () => {
     await user.click(screen.getByRole("button", { name: "Set chief ray" }));
 
     expect(screen.getByTestId("image-point")).toHaveTextContent("chief_ray");
-    expect(localStorage.getItem("ray-optics-web-image-point")).toBe("chief_ray");
+    expect(localStorage.getItem("ray-optics-web-image-point")).toBe(
+      "chief_ray",
+    );
   });
 
   it("ignores invalid runtime updates and throws outside the provider", async () => {
@@ -130,7 +141,8 @@ describe("ImagePointProvider", () => {
     expect(screen.getByTestId("image-point")).toHaveTextContent("chief_ray");
     expect(localStorage.getItem("ray-optics-web-image-point")).toBeNull();
 
-    expect(() => render(<Harness />)).toThrow("useImagePoint must be used within an ImagePointProvider");
+    expect(() => render(<Harness />)).toThrow(
+      "useImagePoint must be used within an ImagePointProvider",
+    );
   });
-
 });

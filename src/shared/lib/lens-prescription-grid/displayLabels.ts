@@ -21,33 +21,49 @@ export const ASPHERICAL_TYPE_LABELS = {
 } satisfies Record<AsphericalType, string>;
 
 /** Select options derived from the canonical asphere labels. */
-export const ASPHERICAL_TYPE_OPTIONS = Object.entries(ASPHERICAL_TYPE_LABELS).map(([value, label]) => ({
+export const ASPHERICAL_TYPE_OPTIONS = Object.entries(
+  ASPHERICAL_TYPE_LABELS,
+).map(([value, label]) => ({
   value: value as AsphericalType,
   label,
 }));
 
 /** Formats an optional asphere for a grid cell. */
-export function formatAsphericalLabel(aspherical: Surface["aspherical"] | undefined): string {
-  return aspherical === undefined ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL : ASPHERICAL_TYPE_LABELS[aspherical.kind];
+export function formatAsphericalLabel(
+  aspherical: Surface["aspherical"] | undefined,
+): string {
+  return aspherical === undefined
+    ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
+    : ASPHERICAL_TYPE_LABELS[aspherical.kind];
 }
 
 /** Formats an optional decenter strategy for a grid cell. */
-export function formatDecenterLabel(decenter: DecenterConfig | undefined): string {
-  return decenter === undefined ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL : decenter.coordinateSystemStrategy;
+export function formatDecenterLabel(
+  decenter: DecenterConfig | undefined,
+): string {
+  return decenter === undefined
+    ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
+    : decenter.coordinateSystemStrategy;
 }
 
 /** Formats optional grating density for a grid cell. */
-export function formatDiffractionGratingLabel(diffractionGrating: DiffractionGrating | undefined): string {
+export function formatDiffractionGratingLabel(
+  diffractionGrating: DiffractionGrating | undefined,
+): string {
   return diffractionGrating === undefined
     ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
     : `${diffractionGrating.lpmm} lp/mm`;
 }
 
-function hasOffset(aperture: Pick<ClearAperture, "offsetX" | "offsetY">): boolean {
+function hasOffset(
+  aperture: Pick<ClearAperture, "offsetX" | "offsetY">,
+): boolean {
   return aperture.offsetX !== 0 || aperture.offsetY !== 0;
 }
 
-function formatOffset(aperture: Pick<ClearAperture, "offsetX" | "offsetY">): string {
+function formatOffset(
+  aperture: Pick<ClearAperture, "offsetX" | "offsetY">,
+): string {
   return `offset (${aperture.offsetX}, ${aperture.offsetY})`;
 }
 
@@ -64,11 +80,15 @@ function formatTransformSuffix(aperture: {
   return suffixes.length === 0 ? "" : `, ${suffixes.join(", ")}`;
 }
 
-function formatClearApertureLabel(clearAperture: ClearAperture | undefined): string {
+function formatClearApertureLabel(
+  clearAperture: ClearAperture | undefined,
+): string {
   if (clearAperture === undefined) return "Default";
 
   if (clearAperture.shape === "circular") {
-    return hasOffset(clearAperture) ? `Cir ${formatOffset(clearAperture)}` : "Default";
+    return hasOffset(clearAperture)
+      ? `Cir ${formatOffset(clearAperture)}`
+      : "Default";
   }
 
   if (clearAperture.shape === "rectangular") {
@@ -80,7 +100,9 @@ function formatClearApertureLabel(clearAperture: ClearAperture | undefined): str
   }
 
   const baseLabel = `Annu obs ${clearAperture.obstructionRadius}`;
-  return hasOffset(clearAperture) ? `${baseLabel}, ${formatOffset(clearAperture)}` : baseLabel;
+  return hasOffset(clearAperture)
+    ? `${baseLabel}, ${formatOffset(clearAperture)}`
+    : baseLabel;
 }
 
 function formatEdgeApertureLabel(edgeAperture: EdgeAperture): string {
@@ -89,7 +111,9 @@ function formatEdgeApertureLabel(edgeAperture: EdgeAperture): string {
   }
 
   const baseLabel = `Edge Cir ${edgeAperture.radius}`;
-  return hasOffset(edgeAperture) ? `${baseLabel}, ${formatOffset(edgeAperture)}` : baseLabel;
+  return hasOffset(edgeAperture)
+    ? `${baseLabel}, ${formatOffset(edgeAperture)}`
+    : baseLabel;
 }
 
 /** Formats clear and edge aperture shapes, including Ronchi density and nonzero transforms, for a grid cell. */
@@ -98,5 +122,7 @@ export function formatApertureLabel(
   edgeAperture: EdgeAperture | undefined,
 ): string {
   const clearLabel = formatClearApertureLabel(clearAperture);
-  return edgeAperture === undefined ? clearLabel : `${clearLabel}; ${formatEdgeApertureLabel(edgeAperture)}`;
+  return edgeAperture === undefined
+    ? clearLabel
+    : `${clearLabel}; ${formatEdgeApertureLabel(edgeAperture)}`;
 }

@@ -10,8 +10,15 @@ jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
 }));
 
 jest.mock("ag-grid-community", () => {
-  const withParams = jest.fn((params: unknown) => ({ theme: "quartz", params }));
-  const withPart = jest.fn((part: unknown) => ({ theme: "quartz", part, withParams }));
+  const withParams = jest.fn((params: unknown) => ({
+    theme: "quartz",
+    params,
+  }));
+  const withPart = jest.fn((part: unknown) => ({
+    theme: "quartz",
+    part,
+    withParams,
+  }));
   const themeQuartz = { withPart };
   const colorSchemeLight = "colorSchemeLight";
   const colorSchemeDark = "colorSchemeDark";
@@ -20,7 +27,11 @@ jest.mock("ag-grid-community", () => {
 
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import { themeQuartz, colorSchemeDark, colorSchemeLight } from "ag-grid-community";
+import {
+  themeQuartz,
+  colorSchemeDark,
+  colorSchemeLight,
+} from "ag-grid-community";
 
 describe("useAgGridTheme", () => {
   beforeEach(() => {
@@ -34,7 +45,10 @@ describe("useAgGridTheme", () => {
     const { result } = renderHook(() => useAgGridTheme());
 
     expect(themeQuartz.withPart).toHaveBeenCalledWith(colorSchemeLight);
-    expect(result.current).toMatchObject({ theme: "quartz", part: colorSchemeLight });
+    expect(result.current).toMatchObject({
+      theme: "quartz",
+      part: colorSchemeLight,
+    });
   });
 
   it("returns dark theme when theme is dark", () => {
@@ -43,7 +57,10 @@ describe("useAgGridTheme", () => {
     const { result } = renderHook(() => useAgGridTheme());
 
     expect(themeQuartz.withPart).toHaveBeenCalledWith(colorSchemeDark);
-    expect(result.current).toMatchObject({ theme: "quartz", part: colorSchemeDark });
+    expect(result.current).toMatchObject({
+      theme: "quartz",
+      part: colorSchemeDark,
+    });
   });
 
   it("applies 16px font size params on small screens", () => {
@@ -52,9 +69,13 @@ describe("useAgGridTheme", () => {
 
     const { result } = renderHook(() => useAgGridTheme());
 
-    const themedGrid = (themeQuartz.withPart as jest.Mock).mock.results[0].value;
+    const themedGrid = (themeQuartz.withPart as jest.Mock).mock.results[0]
+      .value;
     expect(themedGrid.withParams).toHaveBeenCalledWith({ fontSize: 16 });
-    expect(result.current).toEqual({ theme: "quartz", params: { fontSize: 16 } });
+    expect(result.current).toEqual({
+      theme: "quartz",
+      params: { fontSize: 16 },
+    });
   });
 
   it("does not apply font size params on large screens", () => {
@@ -62,7 +83,8 @@ describe("useAgGridTheme", () => {
 
     renderHook(() => useAgGridTheme());
 
-    const themedGrid = (themeQuartz.withPart as jest.Mock).mock.results[0].value;
+    const themedGrid = (themeQuartz.withPart as jest.Mock).mock.results[0]
+      .value;
     expect(themedGrid.withParams).not.toHaveBeenCalled();
   });
 
@@ -75,6 +97,9 @@ describe("useAgGridTheme", () => {
     rerender();
 
     expect(result.current).not.toBe(lightTheme);
-    expect(result.current).toMatchObject({ theme: "quartz", part: colorSchemeDark });
+    expect(result.current).toMatchObject({
+      theme: "quartz",
+      part: colorSchemeDark,
+    });
   });
 });

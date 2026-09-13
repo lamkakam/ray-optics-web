@@ -10,17 +10,26 @@ interface MockDeckGLProps {
       readonly zoom?: number;
     };
   }) => void;
-  readonly viewState?: Record<string, {
-    readonly target: readonly [number, number, number];
-    readonly zoom: number;
-  }>;
+  readonly viewState?: Record<
+    string,
+    {
+      readonly target: readonly [number, number, number];
+      readonly zoom: number;
+    }
+  >;
 }
 
 const mockDeckGL = jest.fn(({ children }: MockDeckGLProps) => (
   <div data-testid="deck-gl">{children}</div>
 ));
-const mockBitmapLayer = jest.fn((props: unknown) => ({ id: "bitmap-layer", props }));
-const mockOrthographicView = jest.fn((props: unknown) => ({ id: "orthographic-view", props }));
+const mockBitmapLayer = jest.fn((props: unknown) => ({
+  id: "bitmap-layer",
+  props,
+}));
+const mockOrthographicView = jest.fn((props: unknown) => ({
+  id: "orthographic-view",
+  props,
+}));
 
 jest.mock("deck.gl", () => ({
   BitmapLayer: function BitmapLayer(props: unknown) {
@@ -92,11 +101,13 @@ describe("WavefrontMapChart", () => {
   it("creates a BitmapLayer in Cartesian coordinates from the wavefront bitmap", () => {
     render(<WavefrontMapChart wavefrontMapData={wavefrontMapData} />);
 
-    expect(mockBitmapLayer).toHaveBeenCalledWith(expect.objectContaining({
-      coordinateSystem: "cartesian",
-      bounds: [-1, -1, 1, 1],
-      pickable: false,
-    }));
+    expect(mockBitmapLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coordinateSystem: "cartesian",
+        bounds: [-1, -1, 1, 1],
+        pickable: false,
+      }),
+    );
 
     const layerProps = mockBitmapLayer.mock.calls[0][0] as {
       readonly image: ImageData;
@@ -110,20 +121,24 @@ describe("WavefrontMapChart", () => {
   it("uses an OrthographicView and initial zoom that fits the wavefront extent", () => {
     render(<WavefrontMapChart wavefrontMapData={wavefrontMapData} />);
 
-    expect(mockOrthographicView).toHaveBeenCalledWith(expect.objectContaining({
-      id: "wavefront-map-view",
-      flipY: false,
-      controller: true,
-    }));
-    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
-      views: [expect.objectContaining({ id: "orthographic-view" })],
-      viewState: expect.objectContaining({
-        "wavefront-map-view": expect.objectContaining({
-          target: [0, 0, 0],
-          zoom: expect.closeTo(Math.log2(192 / (2 * 1 * 1.12))),
+    expect(mockOrthographicView).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "wavefront-map-view",
+        flipY: false,
+        controller: true,
+      }),
+    );
+    expect(mockDeckGL).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        views: [expect.objectContaining({ id: "orthographic-view" })],
+        viewState: expect.objectContaining({
+          "wavefront-map-view": expect.objectContaining({
+            target: [0, 0, 0],
+            zoom: expect.closeTo(Math.log2(192 / (2 * 1 * 1.12))),
+          }),
         }),
       }),
-    }));
+    );
   });
 
   it("keeps DeckGL view state controlled under the wavefront map view id after panning", () => {
@@ -139,14 +154,16 @@ describe("WavefrontMapChart", () => {
       });
     });
 
-    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
-      viewState: {
-        "wavefront-map-view": {
-          target: [0.5, -0.5, 0],
-          zoom: Math.log2(192 / 2),
+    expect(mockDeckGL).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        viewState: {
+          "wavefront-map-view": {
+            target: [0.5, -0.5, 0],
+            zoom: Math.log2(192 / 2),
+          },
         },
-      },
-    }));
+      }),
+    );
   });
 
   it("updates x and y tick labels from the panned and zoomed orthographic viewport", () => {
@@ -171,15 +188,23 @@ describe("WavefrontMapChart", () => {
   it("displays axis labels, theme-aware ticks, and a waves color bar", () => {
     render(<WavefrontMapChart wavefrontMapData={wavefrontMapData} />);
 
-    expect(screen.getByText("x (pupil)")).toHaveAttribute("fill", "currentColor");
-    expect(screen.getByText("y (pupil)")).toHaveAttribute("fill", "currentColor");
+    expect(screen.getByText("x (pupil)")).toHaveAttribute(
+      "fill",
+      "currentColor",
+    );
+    expect(screen.getByText("y (pupil)")).toHaveAttribute(
+      "fill",
+      "currentColor",
+    );
     expect(screen.getByText("waves")).toHaveAttribute("fill", "currentColor");
     expect(screen.getByText("0.5")).toHaveAttribute("fill", "currentColor");
     expect(screen.getByText("0.1")).toHaveAttribute("fill", "currentColor");
   });
 
   it("uses a square auto-height chart when requested", () => {
-    render(<WavefrontMapChart wavefrontMapData={wavefrontMapData} autoHeight />);
+    render(
+      <WavefrontMapChart wavefrontMapData={wavefrontMapData} autoHeight />,
+    );
 
     expect(screen.getByTestId("wavefront-map-chart")).toHaveStyle({
       width: "400px",

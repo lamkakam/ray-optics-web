@@ -14,16 +14,25 @@ describe("cartesian plot helpers", () => {
     expect(getInitialOrthographicZoom(-100, 1)).toBe(0);
     expect(getInitialOrthographicZoom(100, -1)).toBe(0);
     expect(getInitialOrthographicZoom(224, 100)).toBeCloseTo(0);
-    expect(getInitialOrthographicZoom(100, 100)).toBeCloseTo(Math.log2(100 / (2 * 100 * 1.12)));
+    expect(getInitialOrthographicZoom(100, 100)).toBeCloseTo(
+      Math.log2(100 / (2 * 100 * 1.12)),
+    );
   });
 
   it("converts colors, visible domains, and five evenly spaced ticks", () => {
     expect(hexToRgb("#12aBc3")).toEqual([18, 171, 195]);
-    expect(getVisibleAxisDomains(100, { target: [4, -2, 0], zoom: 1 })).toEqual({
-      x: { min: -21, max: 29 },
-      y: { min: -27, max: 23 },
-    });
-    expect(getVisibleAxisDomains(100, { target: [4, -2, 0], zoom: Number.NEGATIVE_INFINITY })).toEqual({
+    expect(getVisibleAxisDomains(100, { target: [4, -2, 0], zoom: 1 })).toEqual(
+      {
+        x: { min: -21, max: 29 },
+        y: { min: -27, max: 23 },
+      },
+    );
+    expect(
+      getVisibleAxisDomains(100, {
+        target: [4, -2, 0],
+        zoom: Number.NEGATIVE_INFINITY,
+      }),
+    ).toEqual({
       x: { min: 4, max: 4 },
       y: { min: -2, max: -2 },
     });
@@ -53,7 +62,14 @@ describe("cartesian plot helpers", () => {
     );
     expect(container.querySelector("linearGradient")).not.toBeNull();
 
-    rerender(<CartesianSvgOverlay {...baseProps} colorBarId="flux" palette={["#000000", "#ffffff"]} colorBarTopLabel="1" />);
+    rerender(
+      <CartesianSvgOverlay
+        {...baseProps}
+        colorBarId="flux"
+        palette={["#000000", "#ffffff"]}
+        colorBarTopLabel="1"
+      />,
+    );
     expect(container.querySelector("linearGradient")).toBeNull();
 
     rerender(
