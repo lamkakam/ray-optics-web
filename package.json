@@ -18,6 +18,8 @@
     "type-check": "tsc --noEmit",
     "prelint": "npm run generate:python-export-helpers",
     "lint": "biome lint . --error-on-warnings",
+    "format": "biome format --write --javascript-formatter-enabled=true --json-formatter-enabled=false --css-formatter-enabled=false --html-formatter-enabled=false --graphql-formatter-enabled=false --files-ignore-unknown=true .",
+    "format:check": "biome format --javascript-formatter-enabled=true --json-formatter-enabled=false --css-formatter-enabled=false --html-formatter-enabled=false --graphql-formatter-enabled=false --files-ignore-unknown=true .",
     "pretest": "npm run generate:python-export-helpers",
     "test": "jest",
     "pretest:mutation": "npm run generate:python-export-helpers",
