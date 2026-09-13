@@ -1,5 +1,5 @@
 /**
- * Playwright end-to-end coverage for the complete singlet optimization workflow, from importing the supplied lens configuration through applying optimized even-aspheric coefficients back to the Lens Editor.
+ * Playwright end-to-end coverage for the complete singlet optimization workflow and customer-safe bounded-initial-value validation through the actual Pyodide worker.
  *
  * @remarks
  * ## Flow
@@ -18,6 +18,7 @@
  * - The applied surface reports `Even Aspherical` in the prescription grid.
  * - The `a_4`, `a_6`, `a_8`, and `a_10` fields contain finite numeric values.
  * - At least one of those optimized coefficients is non-zero.
+ * - A bounded `trf` variable whose current value is outside its bounds shows the concise validation message, keeps Optimize disabled, and never renders traceback text, Python filenames, exception prefixes, or package paths.
  *
  * The test identifies the target prescription row by its displayed `Index` value rather than its positional AG Grid row index. Because changing an operand kind can recreate the operand-grid columns, the weight edit targets the stable Weight cell position in the single operand row rather than retaining a transient AG Grid column ID.
  */
@@ -140,4 +141,55 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
     }),
   );
   expect(coefficientValues.some((value) => value !== 0)).toBe(true);
+});
+
+test("keeps Pyodide traceback details out of invalid-bounds validation", async ({
+  pyodidePage: page,
+}) => {
+  await dismissAnyOpenDialog(page);
+
+  await page.getByRole("tab", { name: "Prescription" }).click();
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByRole("button", { name: "Load Config", exact: true }).click(),
+  ]);
+  await fileChooser.setFiles(
+    path.join(__dirname, "jsons", "singlet-lens-optimization-test.json"),
+  );
+  const loadDialog = page.getByRole("dialog");
+  await loadDialog.getByRole("button", { name: "Load" }).click();
+  await expect(loadDialog).toBeHidden();
+
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.locator('a[href="/optimization"]').click();
+  await page.getByRole("tab", { name: "Operands" }).click();
+  await page.getByRole("button", { name: "Add operand" }).click();
+  await expect(page.getByRole("button", { name: "Optimize" })).toBeEnabled({
+    timeout: 120_000,
+  });
+
+  await page.getByRole("tab", { name: "Lens Prescription" }).click();
+  await page.getByRole("button", { name: "Radius mode for surface 1" }).click();
+  const radiusDialog = page.getByRole("dialog", {
+    name: "Radius Variable / Pickup",
+  });
+  await radiusDialog
+    .getByRole("combobox", { name: "Radius mode" })
+    .selectOption("variable");
+  await radiusDialog.getByLabel("Min.").fill("20");
+  await radiusDialog.getByLabel("Max.").fill("30");
+  await radiusDialog.getByRole("button", { name: "Confirm" }).click();
+
+  await expect(
+    page.getByText("Initial guess is outside of provided bounds"),
+  ).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByRole("button", { name: "Optimize" })).toBeDisabled();
+
+  const body = page.locator("body");
+  await expect(body).not.toContainText("Traceback");
+  await expect(body).not.toContainText(/\b[\w_]+\.py\b/);
+  await expect(body).not.toContainText(
+    /\b(?:ValueError|RuntimeError|TypeError):/,
+  );
+  await expect(body).not.toContainText(/site-packages|rayoptics_web_utils\//);
 });

@@ -209,6 +209,135 @@ class TestEvaluateOptimizationProblem:
             }
         ]
 
+    @pytest.mark.parametrize(
+        ("variable", "prepare"),
+        [
+            (
+                {
+                    "kind": "asphere_polynomial_coefficient",
+                    "surface_index": 1,
+                    "asphere_kind": "RadialPolynomial",
+                    "coefficient_index": 2,
+                    "min": -0.002,
+                    "max": 0.002,
+                },
+                "asphere",
+            ),
+            (
+                {
+                    "kind": "decenter_alpha",
+                    "surface_index": 1,
+                    "decenter_type": "bend",
+                    "min": -2.0,
+                    "max": 2.0,
+                },
+                "decenter",
+            ),
+        ],
+    )
+    def test_reports_bounded_trf_initial_values_outside_bounds(
+        self,
+        fresh_cooke_triplet,
+        variable,
+        prepare,
+    ):
+        from rayoptics.elem.profiles import RadialPolynomial
+        from rayoptics.elem.surface import DecenterData
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        if prepare == "asphere":
+            fresh_cooke_triplet["seq_model"].ifcs[1].profile = RadialPolynomial(
+                r=23.713,
+                cc=-1.2,
+                coefs=[0.001, 0.002, 0.003],
+            )
+        else:
+            fresh_cooke_triplet["seq_model"].ifcs[1].decenter = DecenterData("bend")
+            fresh_cooke_triplet["seq_model"].ifcs[1].decenter.euler[0] = 3.0
+        fresh_cooke_triplet.update_model()
+
+        initial_value = (
+            fresh_cooke_triplet["seq_model"].ifcs[1].profile.coefs[2]
+            if prepare == "asphere"
+            else fresh_cooke_triplet["seq_model"].ifcs[1].decenter.euler[0]
+        )
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [variable],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {"kind": "focal_length", "target": 100.0, "weight": 1.0}
+                    ]
+                },
+            },
+        )
+
+        current_value = (
+            fresh_cooke_triplet["seq_model"].ifcs[1].profile.coefs[2]
+            if prepare == "asphere"
+            else fresh_cooke_triplet["seq_model"].ifcs[1].decenter.euler[0]
+        )
+        assert report["success"] is False
+        assert report["status"] == "error"
+        assert report["message"] == "Initial guess is outside of provided bounds"
+        assert report["residuals"] == []
+        assert report["initial_values"] == report["final_values"]
+        assert current_value == pytest.approx(initial_value)
+
+    @pytest.mark.parametrize("initial_radius", [20.0, 30.0])
+    def test_accepts_bounded_trf_initial_values_equal_to_radius_bounds(
+        self,
+        fresh_cooke_triplet,
+        initial_radius,
+    ):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        fresh_cooke_triplet["seq_model"].ifcs[1].profile.r = initial_radius
+        fresh_cooke_triplet.update_model()
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [
+                    {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0}
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {"kind": "focal_length", "target": 100.0, "weight": 1.0}
+                    ]
+                },
+            },
+        )
+
+        assert report["success"] is True
+
+    def test_lm_evaluation_ignores_configured_initial_bounds(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm"},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 0.0, "max": 1.0}
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {"kind": "focal_length", "target": 100.0, "weight": 1.0}
+                    ]
+                },
+            },
+        )
+
+        assert report["success"] is True
+
     def test_accepts_differential_evolution_without_method(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
