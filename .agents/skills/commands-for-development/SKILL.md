@@ -35,6 +35,12 @@ npm run type-check
 npm run lint
 ```
 
+### Format
+
+```bash
+npm run format
+```
+
 ### Unit tests (Jest):
 
 ```bash
