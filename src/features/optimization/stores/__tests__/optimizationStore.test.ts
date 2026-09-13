@@ -87,6 +87,30 @@ function continuousReport(
 }
 
 describe("optimizationStore", () => {
+  it("initializes surface and Image decenter modes, builds component configs, and applies returned values", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    expect(store.getState().decenterStates).toHaveLength(3);
+    expect(store.getState().decenterStates[2]).toMatchObject({ surfaceIndex: 3, type: "bend", lockedType: false });
+    store.getState().replaceOperands([{ id: "operand", kind: "focal_length", target: "100", weight: "1" }]);
+    store.getState().setOptimizerKind("least_squares");
+    store.setState((state) => ({ optimizer: state.optimizer.kind === "least_squares" ? { ...state.optimizer, method: "lm" } : state.optimizer }));
+    store.getState().replaceDecenterState(3, {
+      ...store.getState().decenterStates[2], type: "reverse",
+      alpha: { mode: "variable", min: "-1", max: "1" },
+      x: { mode: "pickup", sourceSurfaceIndex: "1", scale: "2", offset: "3" },
+    });
+    expect(store.getState().buildOptimizationConfig()).toMatchObject({
+      variables: [{ kind: "decenter_alpha", surface_index: 3, decenter_type: "reverse" }],
+      pickups: [{ kind: "decenter_x", surface_index: 3, decenter_type: "reverse", source_surface_index: 1, scale: 2, offset: 3 }],
+    });
+    store.getState().applyOptimizationResult(continuousReport([
+      { kind: "decenter_alpha", surface_index: 3, decenter_type: "reverse", value: 4 },
+    ]));
+    expect(store.getState().optimizationModel?.image.decenter).toEqual({
+      coordinateSystemStrategy: "reverse", alpha: 4, beta: 0, gamma: 0, offsetX: 0, offsetY: 0,
+    });
+  });
   it("detects non-zero optimization contribution for operand-only rows", () => {
     expect(hasNonZeroOptimizationContribution({
       merit_function: {

@@ -32,11 +32,13 @@ type PrescriptionProps = Omit<
   | "thicknessModes"
   | "glassModes"
   | "asphereStates"
+  | "decenterStates"
   | "canOptimizeGlass"
   | "onOpenRadiusModal"
   | "onOpenThicknessModal"
   | "onOpenGlassModal"
   | "onOpenAsphereVarModal"
+  | "onOpenTiltDecenterVarModal"
   | "onCellEditingStarted"
   | "onCellEditingStopped"
 >;
@@ -102,6 +104,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   const thicknessModes = useStore(optimizationStore, (state) => state.thicknessModes);
   const glassModes = useStore(optimizationStore, (state) => state.glassModes);
   const asphereStates = useStore(optimizationStore, (state) => state.asphereStates);
+  const decenterStates = useStore(optimizationStore, (state) => state.decenterStates);
   const operands = useStore(optimizationStore, (state) => state.operands);
 
   const handleChangeOptimizer = useCallback((patch: OptimizerPatch) => {
@@ -143,6 +146,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   const handleOpenGlassModal = useCallback((surfaceIndex: number) => {
     optimizationStore.getState().openGlassModal(surfaceIndex);
   }, [optimizationStore]);
+  const handleOpenDecenterVarModal = useCallback((surfaceIndex: number) => optimizationStore.getState().openDecenterVarModal(surfaceIndex), [optimizationStore]);
 
   const handleUpdateFieldWeight = useCallback((index: number, value: number) => {
     optimizationStore.getState().setFieldWeight(index, value);
@@ -182,6 +186,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     glassModes,
     canOptimizeGlass,
     asphereStates,
+    decenterStates,
     onOpenRadiusModal: handleOpenRadiusModal,
     onOpenThicknessModal: handleOpenThicknessModal,
     onOpenGlassModal: handleOpenGlassModal,
@@ -190,16 +195,19 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     onOpenApertureModal: prescription.onOpenApertureModal,
     onOpenAsphereVarModal: handleOpenAsphereModal,
     onOpenDecenterModal: prescription.onOpenDecenterModal,
+    onOpenTiltDecenterVarModal: handleOpenDecenterVarModal,
     onOpenDiffractionGratingModal: prescription.onOpenDiffractionGratingModal,
     onCellEditingStarted: gridEditLifecycle?.onCellEditingStarted,
     onCellEditingStopped: gridEditLifecycle?.onCellEditingStopped,
   }), [
     asphereStates,
+    decenterStates,
     canOptimizeGlass,
     glassModes,
     gridEditLifecycle?.onCellEditingStarted,
     gridEditLifecycle?.onCellEditingStopped,
     handleOpenAsphereModal,
+    handleOpenDecenterVarModal,
     handleOpenGlassModal,
     handleOpenRadiusModal,
     handleOpenThicknessModal,

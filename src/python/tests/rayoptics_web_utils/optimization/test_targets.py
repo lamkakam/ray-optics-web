@@ -220,6 +220,43 @@ def test_target_read_and_write_cover_scalar_asphere_and_toroid_branches():
     assert read_target_value(toric_opm, toric) == pytest.approx(31.0)
 
 
+@pytest.mark.parametrize(
+    ("kind", "attribute", "slot"),
+    [
+        ("decenter_alpha", "euler", 0),
+        ("decenter_beta", "euler", 1),
+        ("decenter_gamma", "euler", 2),
+        ("decenter_x", "dec", 0),
+        ("decenter_y", "dec", 1),
+    ],
+)
+def test_decenter_targets_materialize_and_read_write_all_components(kind, attribute, slot):
+    from rayoptics_web_utils.optimization.targets import read_target_value, write_target_value
+
+    opm = _FakeModel()
+    entry = {"kind": kind, "surface_index": 1, "decenter_type": "bend"}
+    write_target_value(opm, entry, 4.25)
+
+    assert read_target_value(opm, entry) == pytest.approx(4.25)
+    assert getattr(opm.seq_model.ifcs[1].decenter, attribute)[slot] == pytest.approx(4.25)
+    assert opm.seq_model.ifcs[1].decenter.dtype == "bend"
+
+
+def test_decenter_target_rejects_conflicting_existing_strategy_and_unconfigured_source_reads_zero():
+    from rayoptics_web_utils.optimization.targets import read_target_value
+
+    opm = _FakeModel()
+    opm.seq_model.ifcs[1].decenter = SimpleNamespace(dtype="reverse", euler=[1, 2, 3], dec=[4, 5, 0])
+    with pytest.raises(ValueError, match="already has decenter type reverse"):
+        read_target_value(opm, {"kind": "decenter_alpha", "surface_index": 1, "decenter_type": "bend"})
+
+    del opm.seq_model.ifcs[1].decenter
+    assert read_target_value(
+        opm,
+        {"kind": "decenter_x", "surface_index": 1, "decenter_type": "bend", "materialize": False},
+    ) == 0.0
+
+
 def test_target_read_and_write_report_unknown_and_non_toroid_kinds_exactly():
     from rayoptics_web_utils.optimization.targets import (
         read_target_value,

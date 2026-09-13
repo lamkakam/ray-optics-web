@@ -4,7 +4,9 @@ Least-squares supports ``trf`` and ``lm``; differential evolution has its own
 methodless option set. Bounded solvers require finite bounds, while ``lm`` permits
 fully unbounded variables and requires at least as many nominal residuals as
 variables. Validation also enforces unique mutable targets, acyclic pickups, and
-stable option-driven residual counts after field/wavelength expansion. Operand
+stable option-driven residual counts after field/wavelength expansion. Tilt and
+decenter targets validate their interface and coordinate strategy, materialize
+missing target data, and leave missing pickup sources unconfigured. Operand
 normalization validates every supplied field and wavelength index, preserves
 sample order, and then removes combinations with an exactly zero operand, field,
 or wavelength weight.
@@ -20,7 +22,10 @@ from rayoptics.environment import OpticalModel
 
 from .operands import OPERAND_REGISTRY, get_nominal_operand_sample_residual_count
 from .targets import (
+    DECENTER_KINDS,
+    DECENTER_TYPES,
     ensure_asphere_profile,
+    ensure_decenter_data,
     is_toroid,
     supports_polynomials,
     surface_profile,
@@ -107,7 +112,7 @@ def normalize_variables(
     seen_targets: set[TargetKey] = set()
     for entry in variables:
         kind = entry.get("kind")
-        if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
+        if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius", *DECENTER_KINDS}:
             raise ValueError(f"Unknown variable kind: {kind}")
         normalized_entry: VariableConfig = {
             "kind": kind,
@@ -115,6 +120,8 @@ def normalize_variables(
         }
         if kind in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
             normalized_entry["asphere_kind"] = entry.get("asphere_kind")
+        if kind in DECENTER_KINDS:
+            normalized_entry["decenter_type"] = entry.get("decenter_type")
         if kind == "asphere_polynomial_coefficient":
             normalized_entry["coefficient_index"] = entry.get("coefficient_index")
         validate_target_for_kind(opm, normalized_entry)
@@ -149,7 +156,7 @@ def normalize_pickups(
     seen_targets: set[TargetKey] = set()
     for entry in pickups:
         kind = entry.get("kind")
-        if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
+        if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius", *DECENTER_KINDS}:
             raise ValueError(f"Unknown pickup kind: {kind}")
         normalized_entry: PickupConfig = {
             "kind": kind,
@@ -158,6 +165,8 @@ def normalize_pickups(
         }
         if kind in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
             normalized_entry["asphere_kind"] = entry.get("asphere_kind")
+        if kind in DECENTER_KINDS:
+            normalized_entry["decenter_type"] = entry.get("decenter_type")
         if kind == "asphere_polynomial_coefficient":
             normalized_entry["coefficient_index"] = entry.get("coefficient_index")
             normalized_entry["source_coefficient_index"] = entry.get("source_coefficient_index")
@@ -197,6 +206,12 @@ def validate_target_for_kind(opm: OpticalModel, entry: VariableConfig | PickupCo
         return
     if kind == "thickness":
         validate_surface_index(sm.gaps, surface_index, label)
+        return
+    if kind in DECENTER_KINDS:
+        validate_surface_index(sm.ifcs, surface_index, label)
+        if entry.get("decenter_type") not in DECENTER_TYPES:
+            raise ValueError(f"Unknown decenter type: {entry.get('decenter_type')}")
+        ensure_decenter_data(opm, entry, materialize=label == "surface_index")
         return
     if kind in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
         validate_surface_index(sm.ifcs, surface_index, label)

@@ -10,7 +10,7 @@
  * - Shared optimizer capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the selected optimizer's rule set; Glass Expert requires bounds and enables the separate glass mode column.
  * - Every optimizer numeric-field default, label, and validation category is seeded from `features/optimization/lib/optimizerUiConfig.ts`.
  * - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.
- * - Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
+ * - Surface pickup source-index validation stays centralized; tilt/decenter adds five same-component targets with the same source range rules and carries its coordinate strategy through every worker entry.
  *
  * ## Validation Rules
  *
@@ -42,13 +42,13 @@
  * - `syncFromOpticalModel()` updates `optimizationModel` and the baseline without clearing prescription modes when the editor prescription changed with `"preserveOptimizationModes"`.
  * - Algorithm settings and operand rows are never reset by editor sync.
  * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
- * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius modes, thickness modes, glass modes, and `asphereStates` by index so model-shape-compatible modes survive while new targets receive default constant modes.
+ * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius, thickness, glass, asphere, and tilt/decenter modes by index so model-shape-compatible modes survive while new targets receive default constant modes.
  * - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
  * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, `differential_evolution`, and `glass_expert`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
  * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
  * - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal`.
  * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count after combinations with an exactly zero operand, field, or wavelength weight are excluded. `ray_fan` contributes `num_rays * 2` residuals per retained field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
- * - `applyOptimizationResult()` can create or update `surface.aspherical` and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`. Special results store an empty manufacturer; manufacturer and Custom results store their catalog name.
+ * - `applyOptimizationResult()` can create or update `surface.aspherical` and surface/Image `decenter`, preserving untouched tilt/decenter components, and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
  * - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
  * - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
  * - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
@@ -56,7 +56,7 @@
  */
 import type { StateCreator } from "zustand";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
-import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { AsphericalType, DecenterConfig, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
   GlassOptimizationConfig,
   OptimizationConfig,
@@ -68,6 +68,7 @@ import type {
   OptimizationRunConfig,
   OptimizationRunReport,
   OptimizationValueEntry,
+  DecenterTargetKind,
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
@@ -194,6 +195,18 @@ export interface AsphereOptimizationState {
   readonly coefficients: ReadonlyArray<AsphereMode>;
 }
 
+/** Independent modes and selected coordinate strategy for one non-object interface. */
+export interface DecenterOptimizationState {
+  readonly surfaceIndex: number;
+  readonly type: DecenterConfig["coordinateSystemStrategy"];
+  readonly lockedType: boolean;
+  readonly alpha: AsphereMode;
+  readonly beta: AsphereMode;
+  readonly gamma: AsphereMode;
+  readonly x: AsphereMode;
+  readonly y: AsphereMode;
+}
+
 export interface OptimizationOperandRow {
   readonly id: string;
   readonly kind: OptimizationOperandKind;
@@ -221,6 +234,11 @@ interface GlassModalState {
   readonly surfaceIndex: number | undefined;
 }
 
+interface DecenterVarModalState {
+  readonly open: boolean;
+  readonly surfaceIndex: number | undefined;
+}
+
 export interface OptimizationState {
   /** Active Optimization page tab. Defaults to `"algorithm"`. */
   activeTabId: string;
@@ -242,6 +260,8 @@ export interface OptimizationState {
   glassModes: GlassMode[];
   /** Optimization asphere type and independent term modes for every real surface. */
   asphereStates: AsphereOptimizationState[];
+  /** Tilt/decenter strategy and five independently configurable modes for surfaces and Image. */
+  decenterStates: DecenterOptimizationState[];
   /** Merit-function operand rows. Defaults to an empty array; target-less kinds store `target: undefined`. */
   operands: OptimizationOperandRow[];
   /** Whether optimization is running and the page-blocking overlay should be shown. Defaults to `false`. */
@@ -260,6 +280,8 @@ export interface OptimizationState {
   asphereModal: AsphereModalState;
   /** Glass candidate-pool modal state. Defaults to closed without a gap index. */
   glassModal: GlassModalState;
+  /** Tilt/decenter variable/pickup modal state. */
+  decenterVarModal: DecenterVarModalState;
 
   /** Seeds Optimization state and its sync baseline only when no local model exists; otherwise only backfills a missing baseline. */
   initializeFromOpticalModel: (model: OpticalModel) => void;
@@ -281,6 +303,8 @@ export interface OptimizationState {
   setAsphereType: (surfaceIndex: number, type: AsphericalType) => void;
   /** Replaces a surface's full asphere state while preserving its index and any existing type lock. */
   replaceAsphereState: (surfaceIndex: number, state: AsphereOptimizationState) => void;
+  /** Commits one complete tilt/decenter modal draft. */
+  replaceDecenterState: (surfaceIndex: number, state: DecenterOptimizationState) => void;
   /** Replaces one conic, toric-sweep, or coefficient term mode; coefficient drafts default to slot `0` when no index is supplied. */
   setAsphereTermMode: (surfaceIndex: number, term: "conic" | "toricSweep" | "coefficient", mode: AsphereTermModeDraft) => void;
   /** Opens the radius modal for a surface. */
@@ -299,6 +323,8 @@ export interface OptimizationState {
   openGlassModal: (surfaceIndex: number) => void;
   /** Closes the glass candidate-pool modal and clears its gap index. */
   closeGlassModal: () => void;
+  openDecenterVarModal: (surfaceIndex: number) => void;
+  closeDecenterVarModal: () => void;
   /** Appends a default focal-length operand with target `"100"` and weight `"1"`. */
   addOperand: () => void;
   /** Deletes the operand with `id`; an unknown ID leaves the rows unchanged. */
@@ -686,6 +712,32 @@ function buildAspherePickups(
   });
 }
 
+const DECENTER_COMPONENTS = [
+  ["alpha", "decenter_alpha"], ["beta", "decenter_beta"], ["gamma", "decenter_gamma"],
+  ["x", "decenter_x"], ["y", "decenter_y"],
+] as const satisfies ReadonlyArray<readonly [keyof Pick<DecenterOptimizationState, "alpha" | "beta" | "gamma" | "x" | "y">, DecenterTargetKind]>;
+
+function buildDecenterVariables(states: ReadonlyArray<DecenterOptimizationState>, canUseBounds: boolean): OptimizationConfig["variables"] {
+  return states.flatMap((state) => DECENTER_COMPONENTS.flatMap(([component, kind]) => {
+    const mode = state[component];
+    return mode.mode === "variable" ? [createVariableConfig(canUseBounds, {
+      kind, surface_index: state.surfaceIndex, decenter_type: state.type,
+    }, mode.min, mode.max)] : [];
+  }));
+}
+
+function buildDecenterPickups(states: ReadonlyArray<DecenterOptimizationState>): OptimizationConfig["pickups"] {
+  return states.flatMap((state) => DECENTER_COMPONENTS.flatMap(([component, kind]) => {
+    const mode = state[component];
+    if (mode.mode !== "pickup") return [];
+    const source = parsePositiveInteger(mode.sourceSurfaceIndex, "Source surface index");
+    if (source === state.surfaceIndex) throw new Error("Pickup source surface index must not equal the target surface index.");
+    if (source > states.length) throw new Error("Pickup source surface index is out of range.");
+    return [{ kind, surface_index: state.surfaceIndex, decenter_type: state.type,
+      source_surface_index: source, scale: parseFloatValue(mode.scale, "scale"), offset: parseFloatValue(mode.offset, "offset") }];
+  }));
+}
+
 function buildMeritFunctionOperands(
   operands: ReadonlyArray<OptimizationOperandRow>,
   fieldWeights: ReadonlyArray<number>,
@@ -879,6 +931,29 @@ function createAsphereStates(model: OpticalModel): AsphereOptimizationState[] {
     toricSweep: createDefaultAsphereMode(),
     coefficients: Array.from({ length: 10 }, createDefaultAsphereMode),
   }));
+}
+
+function createDecenterStates(model: OpticalModel): DecenterOptimizationState[] {
+  const targets = [...model.surfaces, model.image];
+  return targets.map((target, index) => ({
+    surfaceIndex: index + 1,
+    type: target.decenter?.coordinateSystemStrategy ?? "bend",
+    lockedType: target.decenter !== undefined,
+    alpha: createDefaultAsphereMode(), beta: createDefaultAsphereMode(), gamma: createDefaultAsphereMode(),
+    x: createDefaultAsphereMode(), y: createDefaultAsphereMode(),
+  }));
+}
+
+function reconcileDecenterStates(previous: DecenterOptimizationState[], model: OpticalModel): DecenterOptimizationState[] {
+  const byIndex = new Map(previous.map((entry) => [entry.surfaceIndex, entry] as const));
+  return createDecenterStates(model).map((entry) => {
+    const previousEntry = byIndex.get(entry.surfaceIndex);
+    return previousEntry === undefined ? entry : {
+      ...previousEntry,
+      type: entry.lockedType ? entry.type : previousEntry.type,
+      lockedType: entry.lockedType,
+    };
+  });
 }
 
 function reconcileAsphereStates(previous: AsphereOptimizationState[], model: OpticalModel): AsphereOptimizationState[] {
@@ -1137,6 +1212,17 @@ function applyThicknessToModel(model: OpticalModel, surfaceIndex: number, value:
   };
 }
 
+function applyDecenterToModel(model: OpticalModel, entry: Extract<OptimizationValueEntry | OptimizationPickupConfig, { readonly kind: DecenterTargetKind }>, value: number): OpticalModel {
+  const component = entry.kind.replace("decenter_", "") as "alpha" | "beta" | "gamma" | "x" | "y";
+  const update = <T extends { readonly decenter?: DecenterConfig }>(target: T): T => {
+    const base = target.decenter ?? { coordinateSystemStrategy: entry.decenter_type, alpha: 0, beta: 0, gamma: 0, offsetX: 0, offsetY: 0 };
+    const key = component === "x" ? "offsetX" : component === "y" ? "offsetY" : component;
+    return { ...target, decenter: { ...base, coordinateSystemStrategy: entry.decenter_type, [key]: value } };
+  };
+  if (entry.surface_index === model.surfaces.length + 1) return { ...model, image: update(model.image) };
+  return { ...model, surfaces: model.surfaces.map((surface, index) => index === entry.surface_index - 1 ? update(surface) : surface) };
+}
+
 function applyGlassToModel(
   model: OpticalModel,
   entry: Extract<OptimizationRunReport, { readonly final_glasses: unknown }>["final_glasses"][number],
@@ -1181,6 +1267,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   thicknessModes: [],
   glassModes: [],
   asphereStates: [],
+  decenterStates: [],
   operands: [],
   isOptimizing: false,
   hasUnappliedOptimizationResult: false,
@@ -1190,6 +1277,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   thicknessModal: { open: false, surfaceIndex: undefined },
   asphereModal: { open: false, surfaceIndex: undefined },
   glassModal: { open: false, surfaceIndex: undefined },
+  decenterVarModal: { open: false, surfaceIndex: undefined },
 
   initializeFromOpticalModel: (model) =>
     set((state) => {
@@ -1208,6 +1296,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
         thicknessModes: createThicknessModes(model),
         glassModes: createGlassModes(model),
         asphereStates: createAsphereStates(model),
+        decenterStates: createDecenterStates(model),
         operands: [],
         lastOptimizationReport: undefined,
         hasUnappliedOptimizationResult: false,
@@ -1226,6 +1315,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           thicknessModes: createThicknessModes(model),
           glassModes: createGlassModes(model),
           asphereStates: createAsphereStates(model),
+          decenterStates: createDecenterStates(model),
           operands: [],
           lastOptimizationReport: undefined,
           hasUnappliedOptimizationResult: false,
@@ -1273,6 +1363,9 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
         asphereStates: shouldResetPrescriptionModes
           ? createAsphereStates(model)
           : reconcileAsphereStates(state.asphereStates, model),
+        decenterStates: shouldResetPrescriptionModes
+          ? createDecenterStates(model)
+          : reconcileDecenterStates(state.decenterStates, model),
       };
     }),
 
@@ -1337,6 +1430,13 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       ),
     })),
 
+  replaceDecenterState: (surfaceIndex, nextState) =>
+    set((state) => ({
+      decenterStates: state.decenterStates.map((entry) => entry.surfaceIndex === surfaceIndex
+        ? { ...nextState, surfaceIndex, lockedType: entry.lockedType || nextState.lockedType }
+        : entry),
+    })),
+
   setAsphereTermMode: (surfaceIndex, term, mode) =>
     set((state) => ({
       asphereStates: state.asphereStates.map((entry) => {
@@ -1385,6 +1485,9 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
 
   closeGlassModal: () =>
     set({ glassModal: { open: false, surfaceIndex: undefined } }),
+
+  openDecenterVarModal: (surfaceIndex) => set({ decenterVarModal: { open: true, surfaceIndex } }),
+  closeDecenterVarModal: () => set({ decenterVarModal: { open: false, surfaceIndex: undefined } }),
 
   addOperand: () =>
     set((state) => ({
@@ -1444,6 +1547,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
     const variables = [
       ...buildSurfaceVariables(state.radiusModes, state.thicknessModes, capabilities.canUseBounds),
       ...buildAsphereVariables(state.asphereStates, capabilities.canUseBounds),
+      ...buildDecenterVariables(state.decenterStates, capabilities.canUseBounds),
     ];
     if (
       capabilities.requiresResidualCountAtLeastVariableCount
@@ -1455,6 +1559,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
     const pickups = [
       ...buildSurfacePickups(state.radiusModes, state.thicknessModes),
       ...buildAspherePickups(state.asphereStates),
+      ...buildDecenterPickups(state.decenterStates),
     ];
     const merit_function = {
       operands: meritOperands,
@@ -1512,6 +1617,8 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           nextModel = applyRadiusToModel(nextModel, entry.surface_index, entry.value);
         } else if (entry.kind === "thickness") {
           nextModel = applyThicknessToModel(nextModel, entry.surface_index, entry.value);
+        } else if (entry.kind.startsWith("decenter_")) {
+          nextModel = applyDecenterToModel(nextModel, entry as Extract<OptimizationValueEntry | OptimizationPickupConfig, { readonly kind: DecenterTargetKind }>, entry.value);
         } else {
           const zeroBased = entry.surface_index - 1;
           nextModel = {
@@ -1529,6 +1636,8 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           nextModel = applyRadiusToModel(nextModel, entry.surface_index, entry.value);
         } else if (entry.kind === "thickness") {
           nextModel = applyThicknessToModel(nextModel, entry.surface_index, entry.value);
+        } else if (entry.kind.startsWith("decenter_")) {
+          nextModel = applyDecenterToModel(nextModel, entry as Extract<OptimizationValueEntry | OptimizationPickupConfig, { readonly kind: DecenterTargetKind }>, entry.value);
         } else {
           const zeroBased = entry.surface_index - 1;
           nextModel = {

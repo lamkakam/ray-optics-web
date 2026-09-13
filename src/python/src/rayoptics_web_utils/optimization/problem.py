@@ -38,7 +38,7 @@ class OptimizationProblem:
 
     - Normalizes the incoming config with `config.normalize_config(...)`.
     - Keeps variables in radius-based external units while translating radius optimization internally to curvature space.
-    - Keeps variable-state report entries aligned with the normalized config shape, so `min` / `max` appear only for bounded variables.
+    - Keeps variable-state report entries aligned with the normalized config shape, including asphere descriptors, tilt/decenter strategy, and optional bounds.
     - Applies variables, then pickups in dependency order, then calls `opm.update_model()`.
     - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
     - Receives only non-zero-weight operand samples from config normalization, so disabled operands and field/wavelength combinations are neither evaluated nor reported.
@@ -132,6 +132,7 @@ class OptimizationProblem:
             source_target = {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
+                **({"decenter_type": pickup["decenter_type"], "materialize": False} if "decenter_type" in pickup else {}),
                 **({"asphere_kind": pickup["asphere_kind"]} if "asphere_kind" in pickup else {}),
                 **(
                     {"coefficient_index": pickup["source_coefficient_index"]}
@@ -210,6 +211,7 @@ class OptimizationProblem:
                 "kind": variable["kind"],
                 "surface_index": variable["surface_index"],
                 **({"asphere_kind": variable["asphere_kind"]} if "asphere_kind" in variable else {}),
+                **({"decenter_type": variable["decenter_type"]} if "decenter_type" in variable else {}),
                 **({"coefficient_index": variable["coefficient_index"]} if "coefficient_index" in variable else {}),
                 "value": float(read_target_value(self.opm, variable)),
                 **({"min": variable["min"]} if "min" in variable else {}),

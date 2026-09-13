@@ -161,6 +161,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const onOpenAsphericalModal = jest.fn();
     const onOpenAsphereVarModalMock = jest.fn();
     const onOpenDecenterModal = jest.fn();
+    const onOpenTiltDecenterVarModal = jest.fn();
     const onOpenDiffractionGratingModal = jest.fn();
     const onOpenApertureModal = jest.fn();
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
@@ -178,6 +179,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphericalModal={onOpenAsphericalModal}
         onOpenAsphereVarModal={onOpenAsphereVarModalMock}
         onOpenDecenterModal={onOpenDecenterModal}
+        onOpenTiltDecenterVarModal={onOpenTiltDecenterVarModal}
         onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
         onOpenApertureModal={onOpenApertureModal}
         onCellEditingStarted={jest.fn()}
@@ -205,11 +207,12 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Asph.",
       "Var.",
       "Tilt & Decenter",
+      "Var.",
       "Diffraction Grating",
     ]);
     expect(headers[0]).toHaveAttribute("data-pinned", "left");
 
-    expect(screen.getAllByText("Var.")).toHaveLength(3);
+    expect(screen.getAllByText("Var.")).toHaveLength(4);
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("Semi-diam.")).toBeInTheDocument();
     expect(screen.getByText("Aperture")).toBeInTheDocument();
@@ -239,6 +242,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit decenter and tilt" }));
     expect(onOpenDecenterModal).toHaveBeenCalledWith(surfaceRow);
+
+    await user.click(screen.getByRole("button", { name: "Tilt and decenter mode for surface 1" }));
+    expect(onOpenTiltDecenterVarModal).toHaveBeenCalledWith(1);
 
     await user.click(screen.getByRole("button", { name: "Edit diffraction grating" }));
     expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith(surfaceRow);
@@ -289,6 +295,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "",
       "",
+      "",
     ]);
     expect(Array.from(rows[1].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
       "1",
@@ -304,6 +311,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "None",
       "C",
       "None",
+      "C",
       "None",
     ]);
     expect(Array.from(rows[2].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
@@ -320,6 +328,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "",
       "None",
+      "C",
       "",
     ]);
   });
@@ -655,6 +664,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Asph.",
       "Var.",
       "Tilt & Decenter",
+      "Var.",
       "Diffraction Grating",
     ]);
     expect(screen.getByRole("button", { name: "Glass mode for Object" })).toHaveTextContent("V");
