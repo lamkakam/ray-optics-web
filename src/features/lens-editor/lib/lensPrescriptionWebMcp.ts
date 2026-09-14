@@ -296,7 +296,6 @@ export type LensPrescriptionTools = Readonly<{
   readonly deleteLensSurface: WebMCP.ModelContextTool;
 }>;
 
-
 export function createLensPrescriptionTools(
   store: StoreApi<LensEditorState>,
   lookupMaps: GlassLookupMaps | undefined,
