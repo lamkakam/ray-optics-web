@@ -39,6 +39,8 @@ const rowSelectorSchema = {
 } as const;
 const surfaceSelectorSchema = { type: "integer", minimum: 1 } as const;
 
+const numericInputGuidance =
+  " Numeric input guidance: Flat surfaces use `0` for radius of curvature. Infinity object/image distances use `1e10`.";
 const materialInputGuidance =
   ' Material input guidance: catalog glass requires `manufacturer` to be one of `CDGM`, `Hikari`, `Hoya`, `Ohara`, `Schott`, or `Sumita`; special materials and reflective surfaces use an empty manufacturer. Single-index model glass uses `{"medium": "<refractive_index>", "manufacturer": ""}`. Model glass with `nd` and `vd` uses `{"medium": "<nd>", "manufacturer": "<vd>"}`. All numeric values must be stringified.';
 const canonicalMaterialGuidance =
@@ -323,6 +325,7 @@ export function createLensPrescriptionTools(
       name: "set_lens_prescription",
       description:
         "Replace the complete Lens Editor prescription after strict validation." +
+        numericInputGuidance +
         materialInputGuidance +
         canonicalMaterialGuidance,
       inputSchema: setLensPrescriptionInputSchema,
@@ -341,6 +344,7 @@ export function createLensPrescriptionTools(
       name: "insert_lens_surface",
       description:
         "Insert a default physical lens surface after Object or a visible surface index." +
+        numericInputGuidance +
         materialInputGuidance +
         canonicalMaterialGuidance,
       inputSchema: insertLensSurfaceInputSchema,
@@ -374,6 +378,7 @@ export function createLensPrescriptionTools(
       name: "update_lens_row",
       description:
         "Update applicable simple or nested fields on a visible Object, surface, or Image row." +
+        numericInputGuidance +
         materialInputGuidance +
         canonicalMaterialGuidance,
       inputSchema: updateLensRowInputSchema,

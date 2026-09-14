@@ -148,7 +148,7 @@ describe("lens prescription WebMCP tools", () => {
     }
   });
 
-  it("documents material input formats before canonical material guidance", () => {
+  it("documents material input formats before material special cases guidance", () => {
     const { tools } = setup();
     const materialInputGuidanceClauses = [
       "CDGM",
@@ -174,8 +174,30 @@ describe("lens prescription WebMCP tools", () => {
         expect(description).toContain(clause);
       }
       expect(description.indexOf("Material input guidance")).toBeLessThan(
-        description.indexOf("Canonical material guidance"),
+        description.indexOf("Material input special cases guidance"),
       );
+    }
+  });
+
+  it("documents numeric sentinel values before material input guidance", () => {
+    const { tools } = setup();
+    const numericGuidanceClauses = [
+      "Flat surfaces use `0` for radius of curvature.",
+      "Infinity object/image distances use `1e10`.",
+    ];
+
+    for (const name of [
+      "set_lens_prescription",
+      "insert_lens_surface",
+      "update_lens_row",
+    ]) {
+      const description = tools.get(name)?.description ?? "";
+      for (const clause of numericGuidanceClauses) {
+        expect(description).toContain(clause);
+        expect(description.indexOf(clause)).toBeLessThan(
+          description.indexOf("Material input guidance"),
+        );
+      }
     }
   });
 
