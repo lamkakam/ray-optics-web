@@ -123,6 +123,31 @@ describe("lens prescription WebMCP tools", () => {
     );
   });
 
+  it("documents canonical material identities on material-related descriptors", () => {
+    const { tools } = setup();
+    const materialGuidanceClauses = [
+      '{"medium": "REFL", "manufacturer": ""}',
+      '{"medium": "air" | "Water" | "CAF2" | "Fused Silica" | "D263TECO", "manufacturer": ""}',
+      "S-BSL7",
+      "S-FSL5",
+      "S-NBH5",
+      "S-BSL 7",
+      "S-FSL 5",
+      "S-NBH 5",
+    ];
+
+    for (const name of [
+      "set_lens_prescription",
+      "insert_lens_surface",
+      "update_lens_row",
+    ]) {
+      const description = tools.get(name)?.description;
+      for (const clause of materialGuidanceClauses) {
+        expect(description).toContain(clause);
+      }
+    }
+  });
+
   it.each([
     [{}, basePrescription],
     [{ row: "object" }, basePrescription.object],

@@ -39,6 +39,9 @@ const rowSelectorSchema = {
 } as const;
 const surfaceSelectorSchema = { type: "integer", minimum: 1 } as const;
 
+const canonicalMaterialGuidance =
+  ' Canonical material guidance: reflective surfaces use `{"medium": "REFL", "manufacturer": ""}`. Air, water, fluorite/fluorspar/CaF2, fused silica, and Schott D263 T eco use `{"medium": "air" | "Water" | "CAF2" | "Fused Silica" | "D263TECO", "manufacturer": ""}`. Some Ohara names ending in a single digit, including `S-BSL7`, `S-FSL5`, and `S-NBH5`, require canonical names with whitespace: `S-BSL 7`, `S-FSL 5`, and `S-NBH 5`.';
+
 /** Read tool schema; omission of `row` requests the complete prescription. */
 export const getLensPrescriptionInputSchema = {
   type: "object",
@@ -298,6 +301,8 @@ export type LensPrescriptionTools = Readonly<{
  * `updateLensRow`, and `deleteLensSurface`; each descriptor retains its stable
  * snake_case MCP name. Set and update resolve the complete candidate before
  * mutation; material edits commit both canonical fields in one `updateRow` call.
+ * The three mutation descriptors also expose the same canonical material
+ * guidance in their user-facing descriptions.
  */
 export function createLensPrescriptionTools(
   store: StoreApi<LensEditorState>,
@@ -325,7 +330,8 @@ export function createLensPrescriptionTools(
     setLensPrescription: {
       name: "set_lens_prescription",
       description:
-        "Replace the complete Lens Editor prescription after strict validation.",
+        "Replace the complete Lens Editor prescription after strict validation." +
+        canonicalMaterialGuidance,
       inputSchema: setLensPrescriptionInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: (input, { signal }) => {
@@ -341,7 +347,8 @@ export function createLensPrescriptionTools(
     insertLensSurface: {
       name: "insert_lens_surface",
       description:
-        "Insert a default physical lens surface after Object or a visible surface index.",
+        "Insert a default physical lens surface after Object or a visible surface index." +
+        canonicalMaterialGuidance,
       inputSchema: insertLensSurfaceInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: (input, { signal }) => {
@@ -372,7 +379,8 @@ export function createLensPrescriptionTools(
     updateLensRow: {
       name: "update_lens_row",
       description:
-        "Update applicable simple or nested fields on a visible Object, surface, or Image row.",
+        "Update applicable simple or nested fields on a visible Object, surface, or Image row." +
+        canonicalMaterialGuidance,
       inputSchema: updateLensRowInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: (input, { signal }) => {
