@@ -148,6 +148,37 @@ describe("lens prescription WebMCP tools", () => {
     }
   });
 
+  it("documents material input formats before canonical material guidance", () => {
+    const { tools } = setup();
+    const materialInputGuidanceClauses = [
+      "CDGM",
+      "Hikari",
+      "Hoya",
+      "Ohara",
+      "Schott",
+      "Sumita",
+      "special materials",
+      "reflective surfaces",
+      '{"medium": "<refractive_index>", "manufacturer": ""}',
+      '{"medium": "<nd>", "manufacturer": "<vd>"}',
+      "All numeric values must be stringified.",
+    ];
+
+    for (const name of [
+      "set_lens_prescription",
+      "insert_lens_surface",
+      "update_lens_row",
+    ]) {
+      const description = tools.get(name)?.description ?? "";
+      for (const clause of materialInputGuidanceClauses) {
+        expect(description).toContain(clause);
+      }
+      expect(description.indexOf("Material input guidance")).toBeLessThan(
+        description.indexOf("Canonical material guidance"),
+      );
+    }
+  });
+
   it.each([
     [{}, basePrescription],
     [{ row: "object" }, basePrescription.object],

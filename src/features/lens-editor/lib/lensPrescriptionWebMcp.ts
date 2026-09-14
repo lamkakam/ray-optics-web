@@ -39,8 +39,10 @@ const rowSelectorSchema = {
 } as const;
 const surfaceSelectorSchema = { type: "integer", minimum: 1 } as const;
 
+const materialInputGuidance =
+  ' Material input guidance: catalog glass requires `manufacturer` to be one of `CDGM`, `Hikari`, `Hoya`, `Ohara`, `Schott`, or `Sumita`; special materials and reflective surfaces use an empty manufacturer. Single-index model glass uses `{"medium": "<refractive_index>", "manufacturer": ""}`. Model glass with `nd` and `vd` uses `{"medium": "<nd>", "manufacturer": "<vd>"}`. All numeric values must be stringified.';
 const canonicalMaterialGuidance =
-  ' Canonical material guidance: reflective surfaces use `{"medium": "REFL", "manufacturer": ""}`. Air, water, fluorite/fluorspar/CaF2, fused silica, and Schott D263 T eco use `{"medium": "air" | "Water" | "CAF2" | "Fused Silica" | "D263TECO", "manufacturer": ""}`. Some Ohara names ending in a single digit, including `S-BSL7`, `S-FSL5`, and `S-NBH5`, require canonical names with whitespace: `S-BSL 7`, `S-FSL 5`, and `S-NBH 5`.';
+  ' Material input special cases guidance: reflective surfaces use `{"medium": "REFL", "manufacturer": ""}`. Air, water, fluorite/fluorspar/CaF2, fused silica, and Schott D263 T eco use `{"medium": "air" | "Water" | "CAF2" | "Fused Silica" | "D263TECO", "manufacturer": ""}`. Some Ohara names ending in a single digit, including `S-BSL7`, `S-FSL5`, and `S-NBH5`, require canonical names with whitespace: `S-BSL 7`, `S-FSL 5`, and `S-NBH 5`.';
 
 /** Read tool schema; omission of `row` requests the complete prescription. */
 export const getLensPrescriptionInputSchema = {
@@ -294,16 +296,7 @@ export type LensPrescriptionTools = Readonly<{
   readonly deleteLensSurface: WebMCP.ModelContextTool;
 }>;
 
-/**
- * Creates a readonly object of five validated tool descriptors bound to the
- * supplied Lens Editor store and current glass lookup snapshot. The object keys
- * are `getLensPrescription`, `setLensPrescription`, `insertLensSurface`,
- * `updateLensRow`, and `deleteLensSurface`; each descriptor retains its stable
- * snake_case MCP name. Set and update resolve the complete candidate before
- * mutation; material edits commit both canonical fields in one `updateRow` call.
- * The three mutation descriptors also expose the same canonical material
- * guidance in their user-facing descriptions.
- */
+
 export function createLensPrescriptionTools(
   store: StoreApi<LensEditorState>,
   lookupMaps: GlassLookupMaps | undefined,
@@ -331,6 +324,7 @@ export function createLensPrescriptionTools(
       name: "set_lens_prescription",
       description:
         "Replace the complete Lens Editor prescription after strict validation." +
+        materialInputGuidance +
         canonicalMaterialGuidance,
       inputSchema: setLensPrescriptionInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
@@ -348,6 +342,7 @@ export function createLensPrescriptionTools(
       name: "insert_lens_surface",
       description:
         "Insert a default physical lens surface after Object or a visible surface index." +
+        materialInputGuidance +
         canonicalMaterialGuidance,
       inputSchema: insertLensSurfaceInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
@@ -380,6 +375,7 @@ export function createLensPrescriptionTools(
       name: "update_lens_row",
       description:
         "Update applicable simple or nested fields on a visible Object, surface, or Image row." +
+        materialInputGuidance +
         canonicalMaterialGuidance,
       inputSchema: updateLensRowInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
