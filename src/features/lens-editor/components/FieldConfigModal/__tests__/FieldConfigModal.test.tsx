@@ -12,11 +12,17 @@ const defaultProps = {
   initialSpace: "object" as const,
   initialType: "angle" as const,
   initialMaxField: 20,
-  initialRelativeFields: [0, 0.7, 1],
+  initialFields: [0, 0.7, 1],
   initialIsWideAngle: false,
   onApply: jest.fn(),
   onClose: jest.fn(),
 };
+
+function getGridValueInputs(): HTMLInputElement[] {
+  return within(screen.getByTestId("ag-grid-mock")).getAllByRole(
+    "textbox",
+  ) as HTMLInputElement[];
+}
 
 describe("FieldConfigModal", () => {
   beforeEach(() => {
@@ -104,7 +110,81 @@ describe("FieldConfigModal", () => {
     expect(input).toHaveValue("20");
   });
 
-  it("renders ag-grid with initial relative fields", () => {
+  it("defaults to relative fields and shows the relative field controls", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+
+    expect(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    ).not.toBeChecked();
+    expect(
+      within(screen.getByTestId("ag-grid-mock")).getByRole("columnheader", {
+        name: "Relative Field",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Maximum 10 relative fields")).toBeInTheDocument();
+  });
+
+  it("opens imported absolute fields without converting their samples", () => {
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialFields={[-10, 0, 4]}
+        initialIsRelative={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    ).toBeChecked();
+    expect(
+      screen.queryByLabelText("Max half-field value"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ag-grid-mock")).getByRole("columnheader", {
+        name: "Field",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Maximum 10 fields")).toBeInTheDocument();
+    expect(getGridValueInputs().map((input) => input.value)).toEqual([
+      "-10",
+      "0",
+      "4",
+    ]);
+  });
+
+  it("keeps grid values and the hidden maximum draft when toggling modes", async () => {
+    const user = userEvent.setup();
+    render(<FieldConfigModal {...defaultProps} />);
+
+    const maxField = screen.getByLabelText("Max half-field value");
+    await user.clear(maxField);
+    await user.type(maxField, "45");
+    await user.click(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    );
+
+    expect(
+      screen.queryByLabelText("Max half-field value"),
+    ).not.toBeInTheDocument();
+    expect(getGridValueInputs().map((input) => input.value)).toEqual([
+      "0",
+      "0.7",
+      "1",
+    ]);
+
+    await user.click(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    );
+
+    expect(screen.getByLabelText("Max half-field value")).toHaveValue("45");
+    expect(
+      within(screen.getByTestId("ag-grid-mock")).getByRole("columnheader", {
+        name: "Relative Field",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders ag-grid with initial fields", () => {
     render(<FieldConfigModal {...defaultProps} />);
     const grid = screen.getByTestId("ag-grid-mock");
     expect(grid).toBeInTheDocument();
@@ -134,7 +214,7 @@ describe("FieldConfigModal", () => {
   });
 
   it("does not render delete button for first row", () => {
-    render(<FieldConfigModal {...defaultProps} initialRelativeFields={[0]} />);
+    render(<FieldConfigModal {...defaultProps} initialFields={[0]} />);
     expect(screen.queryByLabelText("Delete field row")).not.toBeInTheDocument();
   });
 
@@ -146,7 +226,7 @@ describe("FieldConfigModal", () => {
   });
 
   it("adds a row when add button is clicked (up to 10)", async () => {
-    render(<FieldConfigModal {...defaultProps} initialRelativeFields={[0]} />);
+    render(<FieldConfigModal {...defaultProps} initialFields={[0]} />);
     const addBtn = screen.getByLabelText("Add field row");
     await userEvent.click(addBtn);
 
@@ -158,9 +238,7 @@ describe("FieldConfigModal", () => {
 
   it("does not add more than 10 rows", async () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
-    render(
-      <FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />,
-    );
+    render(<FieldConfigModal {...defaultProps} initialFields={tenFields} />);
     const addBtns = screen.getAllByLabelText("Add field row");
     await userEvent.click(addBtns[0]);
 
@@ -206,7 +284,8 @@ describe("FieldConfigModal", () => {
       space: "object",
       type: "angle",
       maxField: 20,
-      relativeFields: [0, 0.7, 1],
+      fields: [0, 0.7, 1],
+      isRelative: true,
       isWideAngle: false,
     });
   });
@@ -225,7 +304,8 @@ describe("FieldConfigModal", () => {
       space: "object",
       type: "angle",
       maxField: 20,
-      relativeFields: [0.25, 0.7, 1],
+      fields: [0.25, 0.7, 1],
+      isRelative: true,
       isWideAngle: false,
     });
   });
@@ -267,6 +347,13 @@ describe("FieldConfigModal", () => {
         name: "Use wide angle mode for more robust ray aiming",
       }),
     ).not.toBeChecked();
+  });
+
+  it("renders the absolute fields checkbox below the wide angle checkbox", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+    expect(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    ).toBeInTheDocument();
   });
 
   it("wide angle checkbox reflects initialIsWideAngle", () => {
@@ -336,9 +423,7 @@ describe("FieldConfigModal", () => {
 
   it("hides add buttons when at 10 rows", () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
-    render(
-      <FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />,
-    );
+    render(<FieldConfigModal {...defaultProps} initialFields={tenFields} />);
     const addBtns = screen.getAllByLabelText("Add field row");
     addBtns.forEach((btn) => {
       expect(btn).toHaveStyle({ visibility: "hidden" });
@@ -347,9 +432,7 @@ describe("FieldConfigModal", () => {
 
   it("shows add buttons after deleting a row from 10", async () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
-    render(
-      <FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />,
-    );
+    render(<FieldConfigModal {...defaultProps} initialFields={tenFields} />);
     const deleteBtns = screen.getAllByLabelText("Delete field row");
     await userEvent.click(deleteBtns[0]);
 
@@ -374,9 +457,57 @@ describe("FieldConfigModal", () => {
       space: "object",
       type: "angle",
       maxField: 20,
-      relativeFields: [0, 0.7, 1],
+      fields: [0, 0.7, 1],
+      isRelative: true,
       isWideAngle: true,
     });
+  });
+
+  it("applies absolute fields without a maxField property", async () => {
+    const onApply = jest.fn();
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialFields={[-10, 0, 4]}
+        initialIsRelative={false}
+        onApply={onApply}
+      />,
+    );
+
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith({
+      space: "object",
+      type: "angle",
+      fields: [-10, 0, 4],
+      isRelative: false,
+      isWideAngle: false,
+    });
+  });
+
+  it("reinitializes the field mode from props when the modal reopens", async () => {
+    const { rerender } = render(<FieldConfigModal {...defaultProps} />);
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    );
+
+    rerender(<FieldConfigModal {...defaultProps} isOpen={false} />);
+    rerender(
+      <FieldConfigModal
+        {...defaultProps}
+        initialFields={[-2, 0, 4]}
+        initialIsRelative={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    ).toBeChecked();
+    expect(getGridValueInputs().map((input) => input.value)).toEqual([
+      "-2",
+      "0",
+      "4",
+    ]);
   });
 
   it("resets wide angle checkbox from props when modal reopens", async () => {
@@ -436,7 +567,7 @@ describe("FieldConfigModal", () => {
       <FieldConfigModal
         {...defaultProps}
         initialMaxField={30}
-        initialRelativeFields={[0, 0.5, 1]}
+        initialFields={[0, 0.5, 1]}
       />,
     );
 
@@ -458,7 +589,7 @@ describe("FieldConfigModal", () => {
     render(
       <FieldConfigModal
         {...defaultProps}
-        initialRelativeFields={[0.1, 0.2]}
+        initialFields={[0.1, 0.2]}
         onApply={onApply}
       />,
     );
@@ -467,7 +598,7 @@ describe("FieldConfigModal", () => {
     await userEvent.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ relativeFields: [0.1, 0, 0.2] }),
+      expect.objectContaining({ fields: [0.1, 0, 0.2], isRelative: true }),
     );
   });
 
@@ -479,7 +610,7 @@ describe("FieldConfigModal", () => {
     await userEvent.click(screen.getByText("Apply"));
 
     expect(onApply).toHaveBeenCalledWith(
-      expect.objectContaining({ relativeFields: [0, 0.7, 1, 0] }),
+      expect.objectContaining({ fields: [0, 0.7, 1, 0], isRelative: true }),
     );
   });
 
@@ -494,6 +625,114 @@ describe("FieldConfigModal", () => {
 
     expect(onApply).toHaveBeenCalledWith(
       expect.objectContaining({ maxField: 0 }),
+    );
+  });
+
+  it.each([
+    ["below", "-1.01"],
+    ["above", "1.01"],
+  ])(
+    "rejects a relative field value %s the inclusive bounds",
+    async (_position, value) => {
+      const user = userEvent.setup();
+      const onApply = jest.fn();
+      render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+      const input = getGridValueInputs()[1];
+      await user.clear(input);
+      await user.type(input, value);
+      await user.keyboard("{Enter}");
+
+      expect(
+        screen.getByText("Relative field values must be between -1 and 1."),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
+      expect(onApply).not.toHaveBeenCalled();
+    },
+  );
+
+  it("allows the inclusive relative field endpoints", async () => {
+    const onApply = jest.fn();
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialFields={[-1, 1]}
+        onApply={onApply}
+      />,
+    );
+
+    expect(
+      screen.queryByText("Relative field values must be between -1 and 1."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ fields: [-1, 1], isRelative: true }),
+    );
+  });
+
+  it("validates a pending grid edit before allowing Apply", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+    const input = getGridValueInputs()[1];
+    await user.clear(input);
+    await user.type(input, "1.01");
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+
+    expect(
+      screen.getByText("Relative field values must be between -1 and 1."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
+    expect(onApply).not.toHaveBeenCalled();
+  });
+
+  it("re-enables Apply after an invalid relative value is corrected", async () => {
+    const user = userEvent.setup();
+    render(<FieldConfigModal {...defaultProps} />);
+
+    const input = getGridValueInputs()[1];
+    await user.clear(input);
+    await user.type(input, "1.01");
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
+
+    const correctedInput = getGridValueInputs()[1];
+    await user.clear(correctedInput);
+    await user.type(correctedInput, "0.5");
+    await user.keyboard("{Enter}");
+
+    expect(
+      screen.queryByText("Relative field values must be between -1 and 1."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled();
+  });
+
+  it("clears relative-range validation when absolute mode is selected", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialFields={[0, 2]}
+        onApply={onApply}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
+    await user.click(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    );
+
+    expect(
+      screen.queryByText("Relative field values must be between -1 and 1."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ fields: [0, 2], isRelative: false }),
     );
   });
 });

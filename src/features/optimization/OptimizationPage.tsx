@@ -107,6 +107,7 @@ function buildCurrentEditorModel(
  *
  * - On page mount, initializes the optimization slice from the current editor draft only when the optimization slice does not already have a model; persisted Optimization state survives route returns.
  * - Listens to live Lens Editor and Specs store changes and calls `syncFromOpticalModel(...)` so optimization reflects the latest prescription/spec state instead of staying stale.
+ * - Includes neutral field samples and their `isRelative` interpretation in the synchronization dependencies so absolute-field mode changes are reflected in the optimization model.
  * - Builds the synchronized editor model through a pure `buildCurrentEditorModel(...)` helper whose explicit inputs are the reactive editor rows, reactive auto-aperture mode, reactive row-ID-keyed auto semi-diameter cache, and current optical specs.
  * - In auto-aperture mode, the synchronized model replaces each physical surface row's manual `semiDiameter` with its cached computed value and falls back to the manual value when that row ID is absent from the cache. In manual mode, the retained cache is ignored and the editable row values are synchronized unchanged.
  * - Both `editorAutoAperture` and `editorAutoSemiDiameters` are synchronization dependencies, so mode-only changes and new worker-computed cache values update `optimizationModel`. Consequently, evaluation and either optimizer run receive the effective semi-diameters without a separate Optimization worker request.
@@ -238,7 +239,8 @@ export function OptimizationPage({
   const fieldSpace = useStore(specsStore, (state) => state.fieldSpace);
   const fieldType = useStore(specsStore, (state) => state.fieldType);
   const maxField = useStore(specsStore, (state) => state.maxField);
-  const relativeFields = useStore(specsStore, (state) => state.relativeFields);
+  const fields = useStore(specsStore, (state) => state.fields);
+  const isRelative = useStore(specsStore, (state) => state.isRelative);
   const isWideAngle = useStore(specsStore, (state) => state.isWideAngle);
   const wavelengthWeightsFromEditor = useStore(
     specsStore,
@@ -421,7 +423,8 @@ export function OptimizationPage({
     fieldSpace,
     fieldType,
     maxField,
-    relativeFields,
+    fields,
+    isRelative,
     isWideAngle,
     wavelengthWeightsFromEditor,
     referenceIndex,

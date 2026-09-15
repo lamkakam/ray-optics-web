@@ -65,6 +65,30 @@ describe("SpecsConfiguratorContainer", () => {
     expect(screen.getByText("Half-Field")).toBeInTheDocument();
   });
 
+  it("derives the absolute field summary maximum from sample magnitudes", () => {
+    const store = createStore<SpecsConfiguratorState>(
+      createSpecsConfiguratorSlice,
+    );
+    store.getState().loadFromSpecs({
+      ...testSpecs,
+      field: {
+        space: "object",
+        type: "height",
+        fields: [-10, 0, 4],
+        isRelative: false,
+      },
+    });
+    render(
+      <SpecsConfiguratorStoreContext.Provider value={store}>
+        <SpecsConfiguratorContainer />
+      </SpecsConfiguratorStoreContext.Provider>,
+    );
+
+    expect(screen.getByRole("button", { name: /field/i })).toHaveTextContent(
+      "3 fields, 10mm max",
+    );
+  });
+
   it("renders the panel with Wavelengths section", () => {
     renderWithContext();
     expect(screen.getByText("Wavelengths")).toBeInTheDocument();
@@ -166,5 +190,41 @@ describe("SpecsConfiguratorContainer", () => {
     expect(store.getState().fieldSpace).toBe("object");
     expect(store.getState().fieldType).toBe("height");
     expect(store.getState().isWideAngle).toBe(true);
+  });
+
+  it("persists absolute field samples after applying the modal", async () => {
+    const store = createStore<SpecsConfiguratorState>(
+      createSpecsConfiguratorSlice,
+    );
+    store.getState().loadFromSpecs({
+      ...testSpecs,
+      field: {
+        space: "object",
+        type: "height",
+        fields: [-10, 0, 4],
+        isRelative: false,
+      },
+    });
+    render(
+      <SpecsConfiguratorStoreContext.Provider value={store}>
+        <SpecsConfiguratorContainer />
+      </SpecsConfiguratorStoreContext.Provider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /field/i }));
+    expect(
+      screen.getByRole("checkbox", { name: "Use absolute fields" }),
+    ).toBeChecked();
+    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+    expect(store.getState().fields).toEqual([-10, 0, 4]);
+    expect(store.getState().isRelative).toBe(false);
+    expect(store.getState().toOpticalSpecs().field).toEqual({
+      space: "object",
+      type: "height",
+      fields: [-10, 0, 4],
+      isRelative: false,
+      isWideAngle: false,
+    });
   });
 });

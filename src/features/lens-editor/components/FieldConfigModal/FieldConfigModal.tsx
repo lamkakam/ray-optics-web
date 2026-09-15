@@ -13,6 +13,7 @@ import { Select } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import type {
+  FieldConfig,
   FieldSpace,
   FieldType,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -22,13 +23,8 @@ interface FieldRow {
   value: number;
 }
 
-interface FieldConfigResult {
-  readonly space: FieldSpace;
-  readonly type: FieldType;
-  readonly maxField: number;
-  readonly relativeFields: number[];
-  readonly isWideAngle: boolean;
-}
+/** Result emitted by the field editor; absolute results omit the relative-only maximum. */
+export type FieldConfigResult = FieldConfig;
 
 interface FieldConfigModalProps {
   /** Controls visibility */
@@ -37,10 +33,12 @@ interface FieldConfigModalProps {
   readonly initialSpace: FieldSpace;
   /** `"height"` or `"angle"` */
   readonly initialType: FieldType;
-  /** Max half-field value in mm or degrees */
+  /** Maximum relative half-field value in mm or degrees; retained as a hidden draft in absolute mode. */
   readonly initialMaxField: number;
-  /** List of relative field values (0–1) */
-  readonly initialRelativeFields: readonly number[];
+  /** Field samples interpreted according to `initialIsRelative`. */
+  readonly initialFields: readonly number[];
+  /** Initial field-sample interpretation. Defaults to relative mode when omitted. */
+  readonly initialIsRelative?: boolean;
   /** Initial state for the wide-angle ray-aiming checkbox */
   readonly initialIsWideAngle: boolean;
   /** Called with the final config on Apply */
@@ -61,7 +59,7 @@ function fieldsToRows(fields: readonly number[]): FieldRow[] {
 const MAX_ROWS = 10;
 
 /**
- * Modal for configuring optical field settings: field space, field type, max half-field value, a list of relative field positions, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
+ * Modal for configuring optical field settings: field space, field type, an optional relative maximum, field samples, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
  *
  * @remarks
  * ## Key Behaviors
@@ -71,9 +69,12 @@ const MAX_ROWS = 10;
  * - The first row cannot be deleted.
  * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
  * - A compact shared `CheckboxInput` below the grid toggles exact wide-angle ray aiming for Object Angle, Object Height, and Image Height. The checkbox stays narrow while the label is left-aligned beside it.
+ * - A second shared `CheckboxInput` below the wide-angle control selects absolute field samples; relative mode is the default.
+ * - Relative mode validates every draft sample against the inclusive range `[-1, 1]` and disables Apply while any sample is outside that range. Absolute mode has no sample range restriction.
+ * - Toggling interpretation changes only `isRelative`; field samples and the hidden maximum draft remain unchanged.
  * - Row ids use a module-level counter for stable AG Grid `getRowId`.
  * - Image space offers Height only. Selecting Image while Object Angle is active atomically changes the draft type to Height, so the modal can never emit Image Angle.
- * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
+ * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Field cell edit is committed before footer actions such as Apply read the draft rows.
  * - Keeps the caption outside a grid container that is `200px` high below the project-standard `1440px` breakpoint and `400px` high at `1440px` and above, and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
  *
  *
@@ -81,7 +82,7 @@ const MAX_ROWS = 10;
  * ## Grid Columns
  *
  * - Row actions: 100px.
- * - Relative Field: 125px.
+ * - Relative Field or Field: 125px.
  *
  * ## Modal Footer
  *
@@ -99,7 +100,8 @@ function FieldConfigModalContent({
   initialSpace,
   initialType,
   initialMaxField,
-  initialRelativeFields,
+  initialFields,
+  initialIsRelative,
   initialIsWideAngle,
   onApply,
   onClose,
@@ -110,12 +112,14 @@ function FieldConfigModalContent({
   const [space, setSpace] = useState(() => initialSpace);
   /** Draft angle- or height-field selection. */
   const [fieldType, setFieldType] = useState(() => initialType);
-  /** String draft of the maximum absolute field. */
+  /** String draft of the relative maximum, including while its input is hidden in absolute mode. */
   const [maxFieldStr, setMaxFieldStr] = useState(() => String(initialMaxField));
-  /** Editable relative-field rows with stable grid ids. */
+  /** Editable field rows with stable grid ids. */
   const [rows, setRows] = useState<FieldRow[]>(() =>
-    fieldsToRows(initialRelativeFields),
+    fieldsToRows(initialFields),
   );
+  /** Draft field-sample interpretation; relative mode is the default. */
+  const [isRelative, setIsRelative] = useState(() => initialIsRelative ?? true);
   /** Draft wide-angle ray-aiming setting. */
   const [isWideAngle, setIsWideAngle] = useState(() => initialIsWideAngle);
   const fieldTypeOptions =
@@ -136,6 +140,9 @@ function FieldConfigModalContent({
   const handleFieldTypeChange = (nextType: FieldType) => {
     setFieldType(nextType);
   };
+
+  const hasInvalidRelativeField =
+    isRelative && rows.some((row) => row.value < -1 || row.value > 1);
 
   const addRow = useCallback((afterId: string) => {
     setRows((prev) => {
@@ -163,12 +170,27 @@ function FieldConfigModalContent({
   }, []);
 
   const handleApply = () => {
+    if (hasInvalidRelativeField) return;
+
+    const fields = rows.map((r) => r.value);
+    if (!isRelative) {
+      onApply({
+        space,
+        type: fieldType,
+        fields,
+        isRelative: false,
+        isWideAngle,
+      });
+      return;
+    }
+
     const maxField = parseFloat(maxFieldStr);
     onApply({
       space,
       type: fieldType,
       maxField: Number.isNaN(maxField) ? 0 : maxField,
-      relativeFields: rows.map((r) => r.value),
+      fields,
+      isRelative: true,
       isWideAngle,
     });
   };
@@ -195,7 +217,7 @@ function FieldConfigModalContent({
       },
     },
     {
-      headerName: "Relative Field",
+      headerName: isRelative ? "Relative Field" : "Field",
       field: "value",
       width: 125,
       editable: true,
@@ -226,7 +248,11 @@ function FieldConfigModalContent({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleApply}>
+          <Button
+            variant="primary"
+            onClick={handleApply}
+            disabled={hasInvalidRelativeField}
+          >
             Apply
           </Button>
         </div>
@@ -256,21 +282,30 @@ function FieldConfigModalContent({
             options={fieldTypeOptions}
           />
         </div>
-        <div className="col-span-2 sm:col-span-1">
-          <Label htmlFor="field-max">Max half-field value</Label>
-          <Input
-            id="field-max"
-            type="text"
-            aria-label="Max half-field value"
-            value={maxFieldStr}
-            onChange={(e) => setMaxFieldStr(e.target.value)}
-            className="w-full"
-          />
-        </div>
+        {isRelative ? (
+          <div className="col-span-2 sm:col-span-1">
+            <Label htmlFor="field-max">Max half-field value</Label>
+            <Input
+              id="field-max"
+              type="text"
+              aria-label="Max half-field value"
+              value={maxFieldStr}
+              onChange={(e) => setMaxFieldStr(e.target.value)}
+              className="w-full"
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="mb-4" style={{ width: "100%" }}>
-        <Paragraph variant="caption">Maximum 10 relative fields</Paragraph>
+        <Paragraph variant="caption">
+          {isRelative ? "Maximum 10 relative fields" : "Maximum 10 fields"}
+        </Paragraph>
+        {hasInvalidRelativeField ? (
+          <Paragraph variant="errorMessage">
+            Relative field values must be between -1 and 1.
+          </Paragraph>
+        ) : null}
         <div className="ag-grid-touch-scroll h-[200px] min-[1440px]:h-[400px]">
           <AgGridProvider modules={[AllCommunityModule]}>
             <EditableAgGridReact<FieldRow>
@@ -295,6 +330,14 @@ function FieldConfigModalContent({
             ariaLabel="Use wide angle mode for more robust ray aiming"
             label="Use wide angle mode for more robust ray aiming"
             onChange={setIsWideAngle}
+            labelClassName="mb-0"
+          />
+          <CheckboxInput
+            id="field-absolute"
+            checked={!isRelative}
+            ariaLabel="Use absolute fields"
+            label="Use absolute fields"
+            onChange={(checked) => setIsRelative(!checked)}
             labelClassName="mb-0"
           />
         </div>

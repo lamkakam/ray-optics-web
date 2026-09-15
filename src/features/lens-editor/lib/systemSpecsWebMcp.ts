@@ -1,7 +1,9 @@
 /**
  * Dependency-injected WebMCP descriptors for reading and staging Lens Editor
  * System Specs. These setters update only the draft specs form; recomputation is
- * deliberately owned by `recompute_optical_system`.
+ * deliberately owned by `recompute_optical_system`. The `set_half_field` setter
+ * remains relative-only and populates the neutral field store with
+ * `isRelative: true`.
  */
 import type { StoreApi } from "zustand";
 import type { OpticalSpecs, PupilSpec } from "@/shared/lib/types/opticalModel";
@@ -110,7 +112,8 @@ export function createSystemSpecsTools(
           space: field.space,
           type: field.type,
           maxField: field.maxField,
-          relativeFields: field.fields,
+          fields: field.fields,
+          isRelative: true,
           isWideAngle: field.isWideAngle === true,
         });
         return JSON.stringify({

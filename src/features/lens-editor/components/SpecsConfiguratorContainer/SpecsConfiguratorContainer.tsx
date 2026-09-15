@@ -5,8 +5,7 @@ import { useStore } from "zustand";
 import type {
   PupilSpace,
   PupilType,
-  FieldSpace,
-  FieldType,
+  FieldConfig,
   WavelengthWeights,
   ReferenceIndex,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -22,8 +21,8 @@ import { WavelengthConfigModal } from "@/features/lens-editor/components/Wavelen
  * ## Key Behaviors
  *
  * - Subscribes to all relevant store slices individually with `useStore(store, selector)` for granular reactivity.
- * - Computes `fieldSummary` (e.g. `"3 fields, 20° max"`) for the visible Half-Field section and `wavelengthSummary` (e.g. `"3 wavelengths"`) inline.
- * - Subscribes to `isWideAngle` and passes it into `FieldConfigModal`; explicit opt-in state is preserved across every supported field type.
+ * - Computes `fieldSummary` (e.g. `"3 fields, 20° max"`) for the visible Half-Field section, deriving the maximum magnitude from absolute samples, and `wavelengthSummary` (e.g. `"3 wavelengths"`) inline.
+ * - Subscribes to `fields`, `isRelative`, `maxField`, and `isWideAngle` and passes the field draft into `FieldConfigModal`; absolute samples and their mode are preserved across reopenings and applies.
  * - All store mutation callbacks (`handleApertureChange`, `handleFieldApply`, `handleWavelengthApply`) are wrapped in `useCallback` with `[store]` dependency and call `store.getState().<action>` to avoid stale closures.
  * - Modal open/close is driven by `fieldModalOpen` and `wavelengthModalOpen` state from the store.
  *
@@ -43,14 +42,20 @@ export function SpecsConfiguratorContainer() {
   const fieldSpace = useStore(store, (s) => s.fieldSpace);
   const fieldType = useStore(store, (s) => s.fieldType);
   const maxField = useStore(store, (s) => s.maxField);
-  const relativeFields = useStore(store, (s) => s.relativeFields);
+  const fields = useStore(store, (s) => s.fields);
+  const isRelative = useStore(store, (s) => s.isRelative);
   const isWideAngle = useStore(store, (s) => s.isWideAngle);
   const wavelengthWeights = useStore(store, (s) => s.wavelengthWeights);
   const referenceIndex = useStore(store, (s) => s.referenceIndex);
   const fieldModalOpen = useStore(store, (s) => s.fieldModalOpen);
   const wavelengthModalOpen = useStore(store, (s) => s.wavelengthModalOpen);
 
-  const fieldSummary = `${relativeFields.length} field${relativeFields.length !== 1 ? "s" : ""}, ${maxField}${fieldType === "angle" ? "°" : "mm"} max`;
+  const absoluteMaximum = fields.reduce(
+    (largest, sample) => Math.max(largest, Math.abs(sample)),
+    0,
+  );
+  const fieldMaximum = isRelative ? maxField : absoluteMaximum;
+  const fieldSummary = `${fields.length} field${fields.length !== 1 ? "s" : ""}, ${fieldMaximum}${fieldType === "angle" ? "°" : "mm"} max`;
   const wavelengthSummary = `${wavelengthWeights.length} wavelength${wavelengthWeights.length !== 1 ? "s" : ""}`;
 
   const handleApertureChange = useCallback(
@@ -65,13 +70,7 @@ export function SpecsConfiguratorContainer() {
   );
 
   const handleFieldApply = useCallback(
-    (result: {
-      space: FieldSpace;
-      type: FieldType;
-      maxField: number;
-      relativeFields: number[];
-      isWideAngle: boolean;
-    }) => {
+    (result: FieldConfig) => {
       store.getState().setField(result);
       store.getState().closeFieldModal();
     },
@@ -107,7 +106,8 @@ export function SpecsConfiguratorContainer() {
         initialSpace={fieldSpace}
         initialType={fieldType}
         initialMaxField={maxField}
-        initialRelativeFields={relativeFields}
+        initialFields={fields}
+        initialIsRelative={isRelative}
         initialIsWideAngle={isWideAngle}
         onApply={handleFieldApply}
         onClose={() => store.getState().closeFieldModal()}
