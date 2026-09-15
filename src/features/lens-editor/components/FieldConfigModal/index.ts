@@ -1,1 +1,1 @@
-export { FieldConfigModal } from "./FieldConfigModal";
+export { FieldConfigModal, type FieldConfigResult } from "./FieldConfigModal";

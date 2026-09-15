@@ -91,7 +91,7 @@ describe("validateImportedLensData", () => {
       "image field",
       { ...baseModel.specs.field, space: "image", type: "height" },
     ],
-  ])("requires every %s field", (_label, fieldValue) => {
+  ])("requires every relative %s property", (_label, fieldValue) => {
     for (const field of ["space", "type", "maxField", "fields", "isRelative"]) {
       const invalidField = { ...fieldValue } as Record<string, unknown>;
       delete invalidField[field];
@@ -103,6 +103,64 @@ describe("validateImportedLensData", () => {
         }),
       ).toBe(false);
     }
+  });
+
+  it.each([
+    ["object", { space: "object", type: "height" }],
+    ["image", { space: "image", type: "height" }],
+  ])("accepts an absolute %s field without maxField", (_label, location) => {
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          field: {
+            ...location,
+            fields: [0, 4, 10],
+            isRelative: false,
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ["object", { space: "object", type: "angle" }],
+    ["image", { space: "image", type: "height" }],
+  ])("rejects maxField on an absolute %s field", (_label, location) => {
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          field: {
+            ...location,
+            maxField: 10,
+            fields: [0, 4, 10],
+            isRelative: false,
+          },
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it.each([
+    ["object", { space: "object", type: "angle" }],
+    ["image", { space: "image", type: "height" }],
+  ])("rejects a relative %s field without maxField", (_label, location) => {
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          field: {
+            ...location,
+            fields: [0, 0.5, 1],
+            isRelative: true,
+          },
+        },
+      }),
+    ).toBe(false);
   });
 
   it.each([
@@ -224,26 +282,23 @@ describe("validateImportedLensData", () => {
       type: "angle",
       maxField: Number.NaN,
       fields: [0],
-      isRelative: false,
+      isRelative: true,
     },
     {
       space: "object",
       type: "height",
-      maxField: 1,
       fields: [Number.POSITIVE_INFINITY],
       isRelative: false,
     },
     {
       space: "object",
       type: "angle",
-      maxField: 1,
       fields: [0],
       isRelative: "false",
     },
     {
       space: "image",
       type: "angle",
-      maxField: 1,
       fields: [0],
       isRelative: false,
     },
@@ -515,9 +570,8 @@ describe("validateImportedLensData", () => {
           field: {
             space: "image",
             type: "height",
-            maxField: 1,
             fields: [0],
-            isRelative: false,
+            isRelative: field === "maxField",
             ...(field === "maxField" ? { maxField: value } : {}),
             ...(field === "fields" ? { fields: value } : {}),
             ...(field === "isRelative" ? { isRelative: value } : {}),

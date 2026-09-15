@@ -40,7 +40,7 @@ interface FocusingContainerProps {
  *
  * The `disabled` prop passed to `FocusingPanel` is `!isReady || computing || focusing`.
  *
- * `fieldOptions` are derived reactively from `useSpecsConfiguratorStore` and Zustand's `useStore` (subscribes to `relativeFields`, `maxField`, `fieldType`). This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
+ * `fieldOptions` are derived reactively from `useSpecsConfiguratorStore` and Zustand's `useStore` (subscribes to `fields`, `isRelative`, `maxField`, and `fieldType`). Relative samples are scaled by `maxField`; absolute samples are displayed directly. This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
  *
  * Instantiated in `BottomDrawerContainer.tsx` as the "Focusing" tab content.
  *
@@ -75,17 +75,18 @@ export function FocusingContainer({
   const [focusing, setFocusing] = useState(false);
 
   const specsStore = useSpecsConfiguratorStore();
-  const relativeFields = useStore(specsStore, (s) => s.relativeFields);
+  const fields = useStore(specsStore, (s) => s.fields);
+  const isRelative = useStore(specsStore, (s) => s.isRelative);
   const maxField = useStore(specsStore, (s) => s.maxField);
   const fieldType = useStore(specsStore, (s) => s.fieldType);
 
   const fieldOptions = useMemo(() => {
     const unit = fieldType === "angle" ? "°" : " mm";
-    return relativeFields.map((rf, i) => ({
-      label: `${(rf * maxField).toPrecision(3)}${unit}`,
+    return fields.map((field, i) => ({
+      label: `${(isRelative ? field * maxField : field).toPrecision(3)}${unit}`,
       value: i,
     }));
-  }, [relativeFields, maxField, fieldType]);
+  }, [fields, isRelative, maxField, fieldType]);
 
   const handleFocus = async () => {
     if (!proxy) return;

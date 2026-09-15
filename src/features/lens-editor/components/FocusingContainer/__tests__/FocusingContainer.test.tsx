@@ -54,7 +54,8 @@ function createTestSpecsStore() {
     space: "object",
     type: "angle",
     maxField: 20,
-    relativeFields: [0, 0.7, 1],
+    fields: [0, 0.7, 1],
+    isRelative: true,
     isWideAngle: false,
   });
   return store;
@@ -345,7 +346,8 @@ describe("FocusingContainer", () => {
         space: "object",
         type: "angle",
         maxField: 30,
-        relativeFields: [0, 1],
+        fields: [0, 1],
+        isRelative: true,
         isWideAngle: false,
       });
     });
@@ -373,5 +375,38 @@ describe("FocusingContainer", () => {
         screen.queryByRole("option", { name: "14.0°" }),
       ).not.toBeInTheDocument();
     });
+  });
+
+  it("displays absolute field samples without scaling", async () => {
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
+    specsStore.getState().setField({
+      space: "object",
+      type: "angle",
+      fields: [0, 14, 30],
+      isRelative: false,
+      isWideAngle: false,
+    });
+    render(
+      <SpecsConfiguratorStoreContext.Provider value={specsStore}>
+        <LensEditorStoreContext.Provider value={lensStore}>
+          <FocusingContainer
+            proxy={makeMockProxy()}
+            isReady={true}
+            computing={false}
+            getOpticalModel={() => testOpticalModel}
+            onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+            onError={jest.fn()}
+          />
+        </LensEditorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
+    );
+
+    expect(screen.getByRole("option", { name: "0.00°" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "14.0°" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "30.0°" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "600°" }),
+    ).not.toBeInTheDocument();
   });
 });

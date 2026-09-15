@@ -38,7 +38,8 @@ function draftSnapshot(store: { getState: () => SpecsConfiguratorState }) {
     fieldSpace: state.fieldSpace,
     fieldType: state.fieldType,
     maxField: state.maxField,
-    relativeFields: state.relativeFields,
+    fields: state.fields,
+    isRelative: state.isRelative,
     isWideAngle: state.isWideAngle,
     wavelengthWeights: state.wavelengthWeights,
     referenceIndex: state.referenceIndex,
@@ -95,7 +96,7 @@ describe("System Specs WebMCP tools", () => {
   });
 
   it("stages a relative half-field and wavelengths", async () => {
-    const { execute } = setup();
+    const { execute, store } = setup();
     const field = {
       space: "object",
       type: "angle",
@@ -116,6 +117,8 @@ describe("System Specs WebMCP tools", () => {
       field,
       systemUpdateRequired: true,
     });
+    expect(store.getState().fields).toEqual(field.fields);
+    expect(store.getState().isRelative).toBe(true);
     expect(
       JSON.parse(String(await execute("set_wavelengths", wavelengths))),
     ).toEqual({ wavelengths, systemUpdateRequired: true });

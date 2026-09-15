@@ -52,7 +52,6 @@ const defaultOptimizationModel: OpticalModel = {
     field: {
       space: "object",
       type: "angle",
-      maxField: 10,
       fields: [0],
       isRelative: false,
     },

@@ -47,7 +47,8 @@ describe("specsConfiguratorStore", () => {
       expect(s.fieldSpace).toBe("object");
       expect(s.fieldType).toBe("angle");
       expect(s.maxField).toBe(20);
-      expect(s.relativeFields).toEqual([0, 0.7, 1]);
+      expect(s.fields).toEqual([0, 0.7, 1]);
+      expect(s.isRelative).toBe(true);
       expect(s.isWideAngle).toBe(true);
     });
 
@@ -83,6 +84,42 @@ describe("specsConfiguratorStore", () => {
 
       expect(store.getState().isWideAngle).toBe(true);
       expect(store.getState().toOpticalSpecs().field.isWideAngle).toBe(true);
+    });
+
+    it("preserves imported absolute fields and their interpretation", () => {
+      const store = makeStore();
+      const absoluteSpecs: OpticalSpecs = {
+        ...sampleSpecs,
+        field: {
+          space: "object",
+          type: "height",
+          fields: [-10, 0, 4],
+          isRelative: false,
+          isWideAngle: false,
+        },
+      };
+      store.getState().loadFromSpecs(absoluteSpecs);
+
+      expect(store.getState().fields).toEqual([-10, 0, 4]);
+      expect(store.getState().isRelative).toBe(false);
+      expect(store.getState().toOpticalSpecs()).toEqual(absoluteSpecs);
+    });
+
+    it("keeps all-zero absolute fields unchanged", () => {
+      const store = makeStore();
+      store.getState().loadFromSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "image",
+          type: "height",
+          fields: [0, 0],
+          isRelative: false,
+        },
+      });
+
+      expect(store.getState().maxField).toBe(0);
+      expect(store.getState().fields).toEqual([0, 0]);
+      expect(store.getState().isRelative).toBe(false);
     });
 
     it("populates all wavelength fields", () => {
@@ -138,15 +175,46 @@ describe("specsConfiguratorStore", () => {
         space: "image",
         type: "height",
         maxField: 10,
-        relativeFields: [0, 0.5, 1],
+        fields: [0, 0.5, 1],
+        isRelative: true,
         isWideAngle: true,
       });
       const s = store.getState();
       expect(s.fieldSpace).toBe("image");
       expect(s.fieldType).toBe("height");
       expect(s.maxField).toBe(10);
-      expect(s.relativeFields).toEqual([0, 0.5, 1]);
+      expect(s.fields).toEqual([0, 0.5, 1]);
+      expect(s.isRelative).toBe(true);
       expect(s.isWideAngle).toBe(true);
+    });
+
+    it("stores absolute fields without replacing the hidden maximum draft", () => {
+      const store = makeStore();
+      store.getState().setField({
+        space: "object",
+        type: "height",
+        maxField: 20,
+        fields: [0, 1],
+        isRelative: true,
+        isWideAngle: false,
+      });
+      store.getState().setField({
+        space: "object",
+        type: "height",
+        fields: [-10, 0, 4],
+        isRelative: false,
+        isWideAngle: false,
+      });
+
+      expect(store.getState().maxField).toBe(20);
+      expect(store.getState().fields).toEqual([-10, 0, 4]);
+      expect(store.getState().toOpticalSpecs().field).toEqual({
+        space: "object",
+        type: "height",
+        fields: [-10, 0, 4],
+        isRelative: false,
+        isWideAngle: false,
+      });
     });
 
     it("stores wide-angle mode for object height", () => {
@@ -155,7 +223,8 @@ describe("specsConfiguratorStore", () => {
         space: "object",
         type: "height",
         maxField: 10,
-        relativeFields: [0, 1],
+        fields: [0, 1],
+        isRelative: true,
         isWideAngle: true,
       });
 
@@ -170,7 +239,8 @@ describe("specsConfiguratorStore", () => {
         space: "object",
         type: "angle",
         maxField: 10,
-        relativeFields: [0, 1],
+        fields: [0, 1],
+        isRelative: true,
         isWideAngle: undefined as unknown as boolean,
       });
 
@@ -350,6 +420,25 @@ describe("specsConfiguratorStore", () => {
       expect(store.getState().getFieldOptions()).toEqual([
         { label: "0.00 mm", value: 0 },
         { label: "5.00 mm", value: 1 },
+        { label: "10.0 mm", value: 2 },
+      ]);
+    });
+
+    it("getFieldOptions displays absolute field samples directly", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "object",
+          type: "height",
+          fields: [0, 4, 10],
+          isRelative: false,
+        },
+      });
+
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00 mm", value: 0 },
+        { label: "4.00 mm", value: 1 },
         { label: "10.0 mm", value: 2 },
       ]);
     });
