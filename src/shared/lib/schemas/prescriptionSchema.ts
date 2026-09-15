@@ -50,28 +50,24 @@ export const positiveFiniteNumberSchema = {
 const objectFieldProperties = {
   space: { type: "string", const: "object" },
   type: { type: "string", enum: ["angle", "height"] },
-  maxField: finiteNumberSchema,
   fields: {
     type: "array",
     minItems: 1,
     maxItems: 10,
     items: finiteNumberSchema,
   },
-  isRelative: { type: "boolean" },
   isWideAngle: { type: "boolean" },
 } as const;
 
 const imageFieldProperties = {
   space: { type: "string", const: "image" },
   type: { type: "string", const: "height" },
-  maxField: finiteNumberSchema,
   fields: {
     type: "array",
     minItems: 1,
     maxItems: 10,
     items: finiteNumberSchema,
   },
-  isRelative: { type: "boolean" },
   isWideAngle: { type: "boolean" },
 } as const;
 
@@ -102,7 +98,7 @@ export const pupilSpecSchema = {
   ],
 } as const;
 
-/** Imported field specification; absolute and relative samples remain compatible. */
+/** Imported field specification; relative samples require maxField and absolute samples forbid it. */
 export const fieldSpecSchema = {
   type: "object",
   oneOf: [
@@ -110,13 +106,39 @@ export const fieldSpecSchema = {
       type: "object",
       required: ["space", "type", "maxField", "fields", "isRelative"],
       additionalProperties: false,
-      properties: objectFieldProperties,
+      properties: {
+        ...objectFieldProperties,
+        maxField: finiteNumberSchema,
+        isRelative: { type: "boolean", const: true },
+      },
     },
     {
       type: "object",
       required: ["space", "type", "maxField", "fields", "isRelative"],
       additionalProperties: false,
-      properties: imageFieldProperties,
+      properties: {
+        ...imageFieldProperties,
+        maxField: finiteNumberSchema,
+        isRelative: { type: "boolean", const: true },
+      },
+    },
+    {
+      type: "object",
+      required: ["space", "type", "fields", "isRelative"],
+      additionalProperties: false,
+      properties: {
+        ...objectFieldProperties,
+        isRelative: { type: "boolean", const: false },
+      },
+    },
+    {
+      type: "object",
+      required: ["space", "type", "fields", "isRelative"],
+      additionalProperties: false,
+      properties: {
+        ...imageFieldProperties,
+        isRelative: { type: "boolean", const: false },
+      },
     },
   ],
 } as const;
@@ -131,6 +153,7 @@ export const relativeFieldSpecSchema = {
       additionalProperties: false,
       properties: {
         ...objectFieldProperties,
+        maxField: finiteNumberSchema,
         isRelative: { type: "boolean", const: true },
       },
     },
@@ -140,6 +163,7 @@ export const relativeFieldSpecSchema = {
       additionalProperties: false,
       properties: {
         ...imageFieldProperties,
+        maxField: finiteNumberSchema,
         isRelative: { type: "boolean", const: true },
       },
     },

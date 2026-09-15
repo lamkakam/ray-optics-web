@@ -85,6 +85,38 @@ describe("specsConfiguratorStore", () => {
       expect(store.getState().toOpticalSpecs().field.isWideAngle).toBe(true);
     });
 
+    it("normalizes absolute fields without changing their physical coordinates", () => {
+      const store = makeStore();
+      store.getState().loadFromSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "object",
+          type: "height",
+          fields: [-10, 0, 4],
+          isRelative: false,
+        },
+      });
+
+      expect(store.getState().maxField).toBe(10);
+      expect(store.getState().relativeFields).toEqual([-1, 0, 0.4]);
+    });
+
+    it("keeps all-zero absolute fields unchanged", () => {
+      const store = makeStore();
+      store.getState().loadFromSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "image",
+          type: "height",
+          fields: [0, 0],
+          isRelative: false,
+        },
+      });
+
+      expect(store.getState().maxField).toBe(0);
+      expect(store.getState().relativeFields).toEqual([0, 0]);
+    });
+
     it("populates all wavelength fields", () => {
       const store = makeStore();
       store.getState().loadFromSpecs(sampleSpecs);
@@ -350,6 +382,25 @@ describe("specsConfiguratorStore", () => {
       expect(store.getState().getFieldOptions()).toEqual([
         { label: "0.00 mm", value: 0 },
         { label: "5.00 mm", value: 1 },
+        { label: "10.0 mm", value: 2 },
+      ]);
+    });
+
+    it("getFieldOptions displays absolute field samples directly", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "object",
+          type: "height",
+          fields: [0, 4, 10],
+          isRelative: false,
+        },
+      });
+
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00 mm", value: 0 },
+        { label: "4.00 mm", value: 1 },
         { label: "10.0 mm", value: 2 },
       ]);
     });

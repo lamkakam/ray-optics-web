@@ -187,6 +187,7 @@ function buildCurrentEditorModel(
  * ## Key Conventions
  *
  * - The optimization page stays decoupled from the editor while open; it does not mutate the editor until the user confirms `Apply to Editor`.
+ * - Half-field row labels convert relative samples through `maxField` and display absolute samples directly because those coordinates are already physical.
  * - Mount-time initialization preserves existing optimization weights, operands, algorithm settings, and variable/pickup modes when returning to the route without editor changes.
  * - Editor-driven optical-model changes propagate into optimization automatically; field, wavelength, and prescription differences are synchronized independently so only affected optimization defaults reset.
  * - Auto-aperture semi-diameter cache updates follow the same prescription synchronization policy as other editor-driven surface changes; disabling auto aperture restores manual values without clearing the Lens Editor cache.
@@ -461,11 +462,12 @@ export function OptimizationPage({
       return [];
     }
 
-    const unit = optimizationModel.specs.field.type === "angle" ? "°" : " mm";
-    return optimizationModel.specs.field.fields.map((field, index) => ({
+    const fieldSpec = optimizationModel.specs.field;
+    const unit = fieldSpec.type === "angle" ? "°" : " mm";
+    return fieldSpec.fields.map((field, index) => ({
       id: `field-${index}`,
       index,
-      label: `${(field * optimizationModel.specs.field.maxField).toPrecision(3)}${unit}`,
+      label: `${(fieldSpec.isRelative ? field * fieldSpec.maxField : field).toPrecision(3)}${unit}`,
       weight: fieldWeights[index] ?? 1,
     }));
   }, [fieldWeights, optimizationModel]);

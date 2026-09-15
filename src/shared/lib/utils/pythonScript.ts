@@ -14,6 +14,7 @@
  * - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
  * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`. Worker computations use the user-defined material table initialized by Pyodide; standalone exports initialize their table from the editable version-1.0 `custom-glass.json` path in the `userDefinedMaterials` export section.
  * - Wide-angle Object Angle, Object Height, and Image Height models use `ExactOpticalModel`. Object Height uses `ExactObjectHeightFieldSpec`, Image Height uses `ExactImageHeightFieldSpec`, and Object Angle retains `FieldSpec`. False or omitted flags use RayOptics `OpticalModel` and `FieldSpec`.
+ * - Relative field specifications emit RayOptics' `value=<maxField>` scaling argument. Absolute fields omit `value` because their `flds` entries are already physical coordinates.
  * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `RonchiRuling` is required when a clear aperture has `shape: "ronchi"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
  * - Generated helper blocks exactly match their Python sources. NPM lifecycle scripts regenerate both ignored TypeScript outputs before install/check/test/build commands, and Jest keeps the standalone export behavior pinned to those sources.
  * - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
@@ -108,19 +109,16 @@ function formatWavelengthSpec(opticalModel: OpticalModel): PythonLine {
 }
 
 function formatFieldSpec(opticalModel: OpticalModel): PythonLine {
+  const field = opticalModel.specs.field;
   const {
-    specs: {
-      field: {
-        space: fieldSpace,
-        type: fieldType,
-        maxField,
-        fields,
-        isRelative: isFieldRelative,
-        isWideAngle: isFieldWideAngle,
-      },
-    },
-  } = opticalModel;
+    space: fieldSpace,
+    type: fieldType,
+    fields,
+    isRelative: isFieldRelative,
+    isWideAngle: isFieldWideAngle,
+  } = field;
   const usesExactStack = usesExactRealRayStack(opticalModel);
+  const maxFieldArgument = field.isRelative ? `, value=${field.maxField}` : "";
   const isWideAngleFlag =
     usesExactStack && isFieldWideAngle === true ? ", is_wide_angle=True" : "";
   const fieldSpecClass =
@@ -130,7 +128,7 @@ function formatFieldSpec(opticalModel: OpticalModel): PythonLine {
         ? "ExactObjectHeightFieldSpec"
         : "FieldSpec";
 
-  return `osp['fov'] = ${fieldSpecClass}(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})`;
+  return `osp['fov'] = ${fieldSpecClass}(osp, key=['${fieldSpace}', '${fieldType}']${maxFieldArgument}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})`;
 }
 
 function formatPupilSpec(opticalModel: OpticalModel): PythonLine {

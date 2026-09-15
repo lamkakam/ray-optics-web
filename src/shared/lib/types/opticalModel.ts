@@ -10,24 +10,34 @@ export type PupilSpec =
   | { space: "object"; type: "epd" | "NA"; value: number }
   | { space: "image"; type: "f/#"; value: number };
 
-/** Supported physical field definitions; image-space angle is invalid and every field may explicitly opt into exact wide-angle handling. */
-export type FieldSpec =
+/** Supported object- or image-space field coordinates; image-space angle is invalid. */
+type FieldCoordinates =
   | {
       space: "object";
       type: "angle" | "height";
-      maxField: number;
-      fields: number[];
-      isRelative: boolean;
-      isWideAngle?: boolean;
     }
   | {
       space: "image";
       type: "height";
-      maxField: number;
-      fields: number[];
-      isRelative: boolean;
-      isWideAngle?: boolean;
     };
+
+/** Relative samples require a physical maximum; absolute samples are already physical and forbid one. */
+type FieldSampling =
+  | {
+      isRelative: true;
+      maxField: number;
+    }
+  | {
+      isRelative: false;
+      maxField?: never;
+    };
+
+/** Supported physical field definition with strictly discriminated relative or absolute samples and optional exact wide-angle handling. */
+export type FieldSpec = FieldCoordinates &
+  FieldSampling & {
+    fields: number[];
+    isWideAngle?: boolean;
+  };
 
 /** Optical system specifications using only physically resolved combinations. */
 export interface OpticalSpecs {

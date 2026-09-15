@@ -103,6 +103,9 @@ export function createSystemSpecsTools(
         assertWebMcpInput(validators.field, input);
         assertWebMcpNotCancelled(signal);
         const field = input as OpticalSpecs["field"];
+        if (!field.isRelative) {
+          throw new Error("set_half_field requires relative field samples.");
+        }
         store.getState().setField({
           space: field.space,
           type: field.type,

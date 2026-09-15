@@ -4,7 +4,7 @@
  * @remarks
  * ## Key Conventions
  *
- * - `relativeFields` maps to `OpticalSpecs.field.fields`; `isRelative` is hardcoded to `true` in `toOpticalSpecs`.
+ * - `relativeFields` maps to `OpticalSpecs.field.fields`; `isRelative` is hardcoded to `true` in `toOpticalSpecs`. Absolute imported samples are normalized by their largest magnitude when loaded into this relative-only form, with all-zero samples kept unchanged.
  * - `isWideAngle` maps to `OpticalSpecs.field.isWideAngle`; omitted values normalize to `false`, while explicit values are preserved for every supported field type.
  * - `wavelengthWeights` is an array of `[wavelength_nm, weight]` tuples.
  * - `referenceIndex` is a zero-based index into `wavelengthWeights`; callers must keep it in range.
@@ -74,7 +74,7 @@ function buildFieldSpec(
   const shared = {
     maxField,
     fields,
-    isRelative: true,
+    isRelative: true as const,
     isWideAngle: normalizeWideAngle(isWideAngle),
   };
   if (space === "image" && type === "height") {
@@ -84,6 +84,28 @@ function buildFieldSpec(
     return { space, type, ...shared };
   }
   throw new Error(`Invalid field specification: ${space} ${type}`);
+}
+
+/** Converts relative or absolute model samples into the relative-only field form without changing physical coordinates. */
+function toRelativeFieldForm(field: FieldSpec): {
+  maxField: number;
+  relativeFields: number[];
+} {
+  if (field.isRelative) {
+    return { maxField: field.maxField, relativeFields: field.fields };
+  }
+
+  const maxField = field.fields.reduce(
+    (largest, sample) => Math.max(largest, Math.abs(sample)),
+    0,
+  );
+  return {
+    maxField,
+    relativeFields:
+      maxField === 0
+        ? field.fields
+        : field.fields.map((sample) => sample / maxField),
+  };
 }
 
 export interface SpecsConfiguratorState {
@@ -114,7 +136,7 @@ export interface SpecsConfiguratorState {
   committedSpecs: OpticalSpecs;
   /** Stores the committed specifications snapshot after a successful submit. */
   setCommittedSpecs: (specs: OpticalSpecs) => void;
-  /** Derives field selector options from `committedSpecs`, using degrees for angles and millimetres for heights. */
+  /** Derives physical field selector options from `committedSpecs`, scaling relative samples and displaying absolute samples directly. */
   getFieldOptions: () => { label: string; value: number }[];
   /** Derives wavelength selector options from `committedSpecs`, labelled in nanometres. */
   getWavelengthOptions: () => { label: string; value: number }[];
@@ -158,7 +180,7 @@ export interface SpecsConfiguratorState {
   closeWavelengthModal: () => void;
   /** Builds current form state as `OpticalSpecs`, always emitting relative fields and a normalized boolean wide-angle flag. */
   toOpticalSpecs: () => OpticalSpecs;
-  /** Loads form fields from specifications without changing `committedSpecs`; a missing wide-angle flag becomes `false`. */
+  /** Loads specifications into the relative-only form without changing `committedSpecs`; absolute samples are normalized without changing their physical coordinates, and a missing wide-angle flag becomes `false`. */
   loadFromSpecs: (specs: OpticalSpecs) => void;
 }
 
@@ -208,10 +230,10 @@ export const createSpecsConfiguratorSlice: StateCreator<
   },
 
   getFieldOptions: () => {
-    const { fields, maxField, type } = get().committedSpecs.field;
-    const unit = type === "angle" ? "°" : " mm";
-    return fields.map((rf, i) => ({
-      label: `${(rf * maxField).toPrecision(3)}${unit}`,
+    const field = get().committedSpecs.field;
+    const unit = field.type === "angle" ? "°" : " mm";
+    return field.fields.map((sample, i) => ({
+      label: `${(field.isRelative ? sample * field.maxField : sample).toPrecision(3)}${unit}`,
       value: i,
     }));
   },
@@ -271,17 +293,19 @@ export const createSpecsConfiguratorSlice: StateCreator<
     };
   },
 
-  loadFromSpecs: (specs) =>
+  loadFromSpecs: (specs) => {
+    const fieldForm = toRelativeFieldForm(specs.field);
     set({
       pupilSpace: specs.pupil.space,
       pupilType: specs.pupil.type,
       pupilValue: specs.pupil.value,
       fieldSpace: specs.field.space,
       fieldType: specs.field.type,
-      maxField: specs.field.maxField,
-      relativeFields: specs.field.fields,
+      maxField: fieldForm.maxField,
+      relativeFields: fieldForm.relativeFields,
       isWideAngle: normalizeWideAngle(specs.field.isWideAngle),
       wavelengthWeights: specs.wavelengths.weights,
       referenceIndex: specs.wavelengths.referenceIndex,
-    }),
+    });
+  },
 });

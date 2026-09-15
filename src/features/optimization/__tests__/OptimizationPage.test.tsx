@@ -387,6 +387,34 @@ describe("OptimizationPage", () => {
     ).toEqual(["0", "1", "1"]);
   });
 
+  it("displays absolute field samples without scaling them", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.setState({
+        optimizationModel: {
+          ...baseModel,
+          specs: {
+            ...baseModel.specs,
+            field: {
+              space: "object",
+              type: "height",
+              fields: [0, 4, 10],
+              isRelative: false,
+            },
+          },
+        },
+      });
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Half-Fields" }));
+    const grid = screen.getByTestId("optimization-weights-grid");
+    expect(within(grid).getByText("0.00 mm")).toBeInTheDocument();
+    expect(within(grid).getByText("4.00 mm")).toBeInTheDocument();
+    expect(within(grid).getByText("10.0 mm")).toBeInTheDocument();
+  });
+
   it("updates the optimizer method in store when Levenberg-Marquardt is selected", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();

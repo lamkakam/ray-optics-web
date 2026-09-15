@@ -224,15 +224,17 @@ describe("buildOpticalModelScript", () => {
         field: {
           space: "object",
           type: "height",
-          maxField: 2,
-          fields: [0, 1],
+          fields: [0, 2],
           isRelative: false,
         },
       },
     });
 
     expect(script).toContain(
-      "osp['fov'] = FieldSpec(osp, key=['object', 'height'], value=2, flds=[0,1], is_relative=False)",
+      "osp['fov'] = FieldSpec(osp, key=['object', 'height'], flds=[0,2], is_relative=False)",
+    );
+    expect(script).not.toContain(
+      "osp['fov'] = FieldSpec(osp, key=['object', 'height'], value=",
     );
     expect(script).not.toContain("ExactObjectHeightFieldSpec(");
   });
