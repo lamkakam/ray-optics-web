@@ -37,6 +37,7 @@ import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
+import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
 import {
   buildDraftOpticalModel,
   computeOpticalSystem,
@@ -50,12 +51,12 @@ export interface LensEditorProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   /** Whether Pyodide is initialised */
   readonly isReady: boolean;
-  /** Called on submit compute error; opens page-level error modal */
+  /** Called on submit or imperative focus compute error; opens page-level error modal */
   readonly onError: () => void;
 }
 
 /**
- * Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Lens Editor config toolbar placement, Paraxial/Seidel/Zernike modal state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the compute error modal to `page.tsx` via `onError`.
+ * Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Lens Editor config toolbar placement, Paraxial/Seidel/Zernike modal state, focus lifecycle and overlay state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the compute error modal to `page.tsx` via `onError`.
  * Lens-editor child components are imported through the `features/lens-editor/components` root barrel so `LensEditor` depends on the component package surface rather than individual component directories.
  * `AnalysisPlotContainer` is imported through the `features/analysis/components` root barrel for the same reason.
  *
@@ -82,8 +83,8 @@ export interface LensEditorProps {
  * - ParaxialDataModal, SeidelAberrModal, ZernikeTermsModal
  *
  * ## Notes
- * - `onError` delegates compute failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
- * - Missing prescription glasses are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
+ * - `onError` delegates submit and imperative focus failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
+ * - Missing prescription glasses from submit or imperative focus are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
  * - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
  * - `handleSubmit` delegates to the throwing `computeOpticalSystem` core, so submit-time first-order, Seidel, plot, layout, selection, specs, model, and auto-aperture updates use one complete commit pipeline shared with WebMCP.
  * - `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because it derives from the same complete cached Seidel payload committed separately.
@@ -91,7 +92,7 @@ export interface LensEditorProps {
  * - `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractiveElement.diffractionGrating`
  * - Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
- * - `useLensEditorWebMCP(...)` supplies all eleven imperative descriptors: the five prescription tools, four System Specs tools, recomputation, and focusing. Descriptor executions observe newly loaded catalogs and current worker/theme/store snapshots through the latest-descriptor ref; unsupported browsers are skipped and each registration is aborted on cleanup.
+ * - `useLensEditorWebMCP(...)` supplies all eleven imperative descriptors: the five prescription tools, four System Specs tools, recomputation, and focusing. Descriptor executions observe newly loaded catalogs and current worker/theme/store snapshots through the latest-descriptor ref; focus execution also drives this component's focus overlay and computation loading lifecycle. Unsupported browsers are skipped and each registration is aborted on cleanup.
  */
 export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
@@ -104,18 +105,6 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const analysisPlotStore = useAnalysisPlotStore();
   const analysisDataStore = useAnalysisDataStore();
   const lensLayoutImageStore = useLensLayoutImageStore();
-
-  useLensEditorWebMCP({
-    lensStore,
-    specsStore,
-    analysisPlotStore,
-    analysisDataStore,
-    lensLayoutImageStore,
-    lookupMaps,
-    proxy,
-    isDark: theme === "dark",
-    imagePoint,
-  });
 
   const selectedFieldIndex = useStore(
     analysisPlotStore,
@@ -140,6 +129,8 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   );
   /** Whether an Update System computation is in progress. */
   const [computing, setComputing] = useState(false);
+  /** Whether a focus request, including its final Update System computation, is in progress. */
+  const [focusing, setFocusing] = useState(false);
   /** Missing-glass validation error displayed by the editor-local error modal. */
   const [validationErrorMessage, setValidationErrorMessage] = useState<
     string | undefined
@@ -150,6 +141,60 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   /** Visibility of the Zernike terms modal. */
   const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
+
+  /** Starts the shared Update System loading lifecycle. */
+  const handleComputationStart = useCallback(() => {
+    setComputing(true);
+    lensLayoutImageStore.getState().setLayoutLoading(true);
+    analysisPlotStore.getState().setPlotLoading(true);
+  }, [analysisPlotStore, lensLayoutImageStore]);
+
+  /** Clears the shared Update System loading lifecycle. */
+  const handleComputationEnd = useCallback(() => {
+    setComputing(false);
+    lensLayoutImageStore.getState().setLayoutLoading(false);
+    analysisPlotStore.getState().setPlotLoading(false);
+  }, [analysisPlotStore, lensLayoutImageStore]);
+
+  /** Starts the Lens Editor-level focus lifecycle for both UI and WebMCP calls. */
+  const handleFocusStart = useCallback(() => {
+    setFocusing(true);
+  }, []);
+
+  /** Clears the Lens Editor-level focus lifecycle for both UI and WebMCP calls. */
+  const handleFocusEnd = useCallback(() => {
+    setFocusing(false);
+  }, []);
+
+  /** Routes imperative focus failures through the same editor error surfaces as submit. */
+  const handleWebMcpError = useCallback(
+    (error: unknown) => {
+      if (isMissingPrescriptionGlassError(error)) {
+        setValidationErrorMessage(error.message);
+      } else {
+        console.log("Focus failed:", error);
+        onError();
+      }
+    },
+    [onError],
+  );
+
+  useLensEditorWebMCP({
+    lensStore,
+    specsStore,
+    analysisPlotStore,
+    analysisDataStore,
+    lensLayoutImageStore,
+    lookupMaps,
+    proxy,
+    isDark: theme === "dark",
+    imagePoint,
+    onFocusStart: handleFocusStart,
+    onFocusEnd: handleFocusEnd,
+    onComputationStart: handleComputationStart,
+    onComputationEnd: handleComputationEnd,
+    onError: handleWebMcpError,
+  });
 
   /** Fetches Zernike coefficients for the committed model and current image reference. */
   const handleFetchZernikeData = useCallback(
@@ -185,9 +230,7 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
   const handleSubmit = useCallback(async () => {
     if (!proxy) return;
 
-    setComputing(true);
-    lensLayoutImageStore.getState().setLayoutLoading(true);
-    analysisPlotStore.getState().setPlotLoading(true);
+    handleComputationStart();
 
     try {
       await computeOpticalSystem({
@@ -212,9 +255,7 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
         onError();
       }
     } finally {
-      setComputing(false);
-      lensLayoutImageStore.getState().setLayoutLoading(false);
-      analysisPlotStore.getState().setPlotLoading(false);
+      handleComputationEnd();
     }
   }, [
     proxy,
@@ -230,6 +271,8 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
     theme,
     imagePoint,
     lookupMaps,
+    handleComputationStart,
+    handleComputationEnd,
   ]);
 
   /** Builds the current optical-model snapshot from the provider-backed stores. */
@@ -305,7 +348,7 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
       getOpticalModel={getOpticalModel}
       onImportJson={handleImportJson}
       onUpdateSystem={handleSubmit}
-      isUpdateSystemDisabled={!isReady || computing}
+      isUpdateSystemDisabled={!isReady || computing || focusing}
     />
   );
   /** Whether at least one analysis modal control can be rendered. */
@@ -328,6 +371,9 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
       onUpdateSystem={handleSubmit}
       isReady={isReady}
       computing={computing}
+      focusing={focusing}
+      onFocusStart={handleFocusStart}
+      onFocusEnd={handleFocusEnd}
       proxy={proxy}
       onError={onError}
       draggable={isLG}
@@ -449,5 +495,15 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
     </div>
   );
 
-  return isLG ? lgContent : smContent;
+  return (
+    <>
+      {isLG ? lgContent : smContent}
+      {focusing && (
+        <LoadingOverlay
+          title="Focusing…"
+          contents="Optimizing image plane position…"
+        />
+      )}
+    </>
+  );
 }

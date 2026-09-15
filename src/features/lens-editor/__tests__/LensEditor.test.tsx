@@ -90,6 +90,8 @@ const testImportModelWithDiffractionGrating: OpticalModel = {
   ],
 };
 
+const focusingResult = { delta_thi: 0.5, metric_value: 0.01 };
+
 const photonsToPhotosDataDir = path.join(
   process.cwd(),
   "src/__tests__/data/photons-to-photos",
@@ -103,9 +105,15 @@ jest.mock("@/features/lens-editor/components/BottomDrawerContainer", () => ({
   BottomDrawerContainer: ({
     draggable,
     onUpdateSystem,
+    focusing,
+    computing,
+    isReady,
   }: {
     draggable: boolean;
     onUpdateSystem: () => Promise<void>;
+    focusing: boolean;
+    computing: boolean;
+    isReady: boolean;
   }) => (
     <div
       data-testid="bottom-drawer-container"
@@ -113,6 +121,7 @@ jest.mock("@/features/lens-editor/components/BottomDrawerContainer", () => ({
     >
       <button
         data-testid="update-system-btn"
+        disabled={!isReady || computing || focusing}
         onClick={() => void onUpdateSystem()}
       >
         Mock Update System
@@ -333,10 +342,10 @@ function makeProxy(): PyodideWorkerAPI {
     getDiffractionMTFData: jest.fn().mockResolvedValue(mockDiffractionMtfData),
     get3rdOrderSeidelData: jest.fn().mockResolvedValue(mockSeidelData),
     getZernikeCoefficients: jest.fn(),
-    focusByMonoRmsSpot: jest.fn(),
-    focusByMonoStrehl: jest.fn(),
-    focusByPolyRmsSpot: jest.fn(),
-    focusByPolyStrehl: jest.fn(),
+    focusByMonoRmsSpot: jest.fn().mockResolvedValue(focusingResult),
+    focusByMonoStrehl: jest.fn().mockResolvedValue(focusingResult),
+    focusByPolyRmsSpot: jest.fn().mockResolvedValue(focusingResult),
+    focusByPolyStrehl: jest.fn().mockResolvedValue(focusingResult),
     getAllGlassCatalogsData: jest.fn(),
   } as unknown as PyodideWorkerAPI;
 }
@@ -463,6 +472,162 @@ describe("LensEditor", () => {
 
     unmount();
     expect(signals.every((signal) => signal?.aborted === true)).toBe(true);
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
+  it("keeps the focus overlay and computation loading state through imperative focus", async () => {
+    const registrations: WebMCP.ModelContextTool[] = [];
+    const registerTool = jest.fn((tool: WebMCP.ModelContextTool) => {
+      registrations.push(tool);
+      return Promise.resolve();
+    });
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: { registerTool },
+    });
+
+    let resolveLayout!: (value: string) => void;
+    const proxy = makeProxy();
+    (proxy.plotLensLayout as jest.Mock).mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveLayout = resolve;
+        }),
+    );
+    const rendered = renderLensEditor({ proxy });
+    act(() => {
+      rendered.specsStore.getState().loadFromSpecs(testImportModel.specs);
+      rendered.lensStore.getState().setRows(
+        surfacesToGridRows({
+          ...testImportModel,
+          surfaces: [
+            {
+              label: "Default",
+              curvatureRadius: 50,
+              thickness: 5,
+              medium: "air",
+              manufacturer: "",
+              semiDiameter: 10,
+            },
+          ],
+        }),
+      );
+    });
+
+    const focusTool = registrations.find(
+      (tool) => tool.name === "focus_optical_system",
+    );
+    expect(focusTool).toBeDefined();
+    if (!focusTool) return;
+
+    let focusExecution!: Promise<unknown>;
+    act(() => {
+      focusExecution = Promise.resolve(
+        focusTool.execute(
+          { chromaticity: "mono", metric: "rmsSpot", fieldIndex: 0 },
+          { signal: new AbortController().signal },
+        ),
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Focusing…")).toBeInTheDocument();
+      expect(screen.getByTestId("update-system-btn")).toBeDisabled();
+      expect(rendered.lensLayoutImageStore.getState().layoutLoading).toBe(true);
+      expect(rendered.analysisPlotStore.getState().plotLoading).toBe(true);
+    });
+    expect(screen.getByText("Focusing…")).toBeInTheDocument();
+
+    act(() => resolveLayout("layout-resolved"));
+    await act(async () => {
+      await focusExecution;
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Focusing…")).not.toBeInTheDocument();
+      expect(screen.getByTestId("update-system-btn")).toBeEnabled();
+    });
+    expect(rendered.lensLayoutImageStore.getState().layoutLoading).toBe(false);
+    expect(rendered.analysisPlotStore.getState().plotLoading).toBe(false);
+    rendered.unmount();
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
+  it("routes imperative focus missing-glass failures to the existing error modal", async () => {
+    const registrations: WebMCP.ModelContextTool[] = [];
+    const registerTool = jest.fn((tool: WebMCP.ModelContextTool) => {
+      registrations.push(tool);
+      return Promise.resolve();
+    });
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: { registerTool },
+    });
+
+    const rendered = renderLensEditor({
+      proxy: makeProxy(),
+      glassCatalogContextValue: {
+        catalogs: undefined,
+        lookupMaps: {
+          manufacturerMap: new Map(),
+          mediumMap: new Map(),
+          customMediumMap: new Map(),
+        },
+        error: undefined,
+        isLoaded: true,
+        isLoading: false,
+        preload: jest.fn(),
+      },
+    });
+    act(() => {
+      rendered.specsStore.getState().loadFromSpecs(testImportModel.specs);
+      rendered.lensStore.getState().setRows(
+        surfacesToGridRows({
+          ...testImportModel,
+          surfaces: [
+            {
+              label: "Default",
+              curvatureRadius: 50,
+              thickness: 5,
+              medium: "N-BK7",
+              manufacturer: "Schott",
+              semiDiameter: 10,
+            },
+          ],
+        }),
+      );
+    });
+
+    const focusTool = registrations.find(
+      (tool) => tool.name === "focus_optical_system",
+    );
+    expect(focusTool).toBeDefined();
+    if (!focusTool) return;
+
+    let focusExecution!: Promise<unknown>;
+    act(() => {
+      focusExecution = Promise.resolve(
+        focusTool.execute(
+          { chromaticity: "mono", metric: "rmsSpot", fieldIndex: 0 },
+          { signal: new AbortController().signal },
+        ),
+      );
+    });
+    await act(async () => {
+      await expect(focusExecution).rejects.toThrow("Schott: N-BK7");
+    });
+
+    expect(
+      await screen.findByRole("dialog", { name: "Error" }),
+    ).toHaveTextContent("Schott: N-BK7");
+    expect(rendered.onError).not.toHaveBeenCalled();
+    rendered.unmount();
     Object.defineProperty(document, "modelContext", {
       configurable: true,
       value: undefined,

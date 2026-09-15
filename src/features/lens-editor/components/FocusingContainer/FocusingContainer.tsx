@@ -7,7 +7,6 @@ import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorS
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
-import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
 import {
   applyFocusingDelta,
   dispatchFocusing,
@@ -19,26 +18,33 @@ interface FocusingContainerProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly computing: boolean;
+  /** Whether any focus request, including its recomputation, is in progress. */
+  readonly focusing: boolean;
+  /** Starts the Lens Editor-level focus lifecycle. */
+  readonly onFocusStart: () => void;
+  /** Ends the Lens Editor-level focus lifecycle. */
+  readonly onFocusEnd: () => void;
   readonly getOpticalModel: () => OpticalModel;
   readonly onUpdateSystem: () => Promise<void>;
   readonly onError: () => void;
 }
 
 /**
- * Container for the Focusing tab in the bottom drawer. Manages focusing strategy state, calls the appropriate worker function, updates the last surface thickness in `lensStore`, then calls `onUpdateSystem` to recompute the model.
+ * Container for the Focusing tab in the bottom drawer. Manages focusing strategy state, calls the appropriate worker function, updates the last surface thickness in `lensStore`, then calls `onUpdateSystem` to recompute the model. The parent owns the focus lifecycle so the loading overlay remains visible when another drawer tab is active.
  *
  * @remarks
  * ## Behavior
  *
  * `handleFocus`:
- * 1. Sets `focusing=true` (shows `LoadingOverlay`, disables `FocusingPanel`).
+ * 1. Calls `onFocusStart` so the parent can show the Lens Editor-level focus overlay and disable related controls.
  * 2. Dispatches through the shared four-way `dispatchFocusing` helper based on `chromaticity` × `metric`.
  * 3. Applies the returned delta through the shared `applyFocusingDelta` helper to the last physical surface, using `optimizationSyncPolicy: "preserveOptimizationModes"` so Optimization keeps existing prescription variable/pickup modes.
  * 4. Calls `onUpdateSystem()` to recompute layout and plots.
  * 5. On any error, calls `onError()`.
- * 6. Sets `focusing=false` in `finally`.
+ * 6. Calls `onFocusEnd` in `finally`.
  *
- * The `disabled` prop passed to `FocusingPanel` is `!isReady || computing || focusing`.
+ * The controlled `focusing` and `computing` props both participate in the
+ * `disabled` value passed to `FocusingPanel`: `!isReady || computing || focusing`.
  *
  * `fieldOptions` are derived reactively from `useSpecsConfiguratorStore` and Zustand's `useStore` (subscribes to `fields`, `isRelative`, `maxField`, and `fieldType`). Relative samples are scaled by `maxField`; absolute samples are displayed directly. This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
  *
@@ -48,17 +54,16 @@ interface FocusingContainerProps {
  *
  * ## Rendering
  *
- * ```tsx
- * <div className="relative p-4">
- * {focusing && <LoadingOverlay title="Focusing…" contents="Optimizing image plane position…" />}
- * <FocusingPanel ... />
- * </div>
- * ```
+ * `FocusingContainer` renders only the panel. `LensEditor` renders the
+ * `LoadingOverlay` outside the drawer so it is independent of the selected tab.
  */
 export function FocusingContainer({
   proxy,
   isReady,
   computing,
+  focusing,
+  onFocusStart,
+  onFocusEnd,
   getOpticalModel,
   onUpdateSystem,
   onError,
@@ -71,8 +76,6 @@ export function FocusingContainer({
   const [metric, setMetric] = useState<FocusingMetric>("rmsSpot");
   /** Selected field index for the focusing operation. */
   const [fieldIndex, setFieldIndex] = useState(0);
-  /** Whether a focusing worker call is in progress. */
-  const [focusing, setFocusing] = useState(false);
 
   const specsStore = useSpecsConfiguratorStore();
   const fields = useStore(specsStore, (s) => s.fields);
@@ -89,8 +92,8 @@ export function FocusingContainer({
   }, [fields, isRelative, maxField, fieldType]);
 
   const handleFocus = async () => {
-    if (!proxy) return;
-    setFocusing(true);
+    if (!proxy || focusing || computing) return;
+    onFocusStart();
     try {
       const model = getOpticalModel();
       const result = await dispatchFocusing(proxy, model, {
@@ -104,18 +107,12 @@ export function FocusingContainer({
     } catch {
       onError();
     } finally {
-      setFocusing(false);
+      onFocusEnd();
     }
   };
 
   return (
     <div className="relative p-4">
-      {focusing && (
-        <LoadingOverlay
-          title="Focusing…"
-          contents="Optimizing image plane position…"
-        />
-      )}
       <FocusingPanel
         chromaticity={chromaticity}
         metric={metric}

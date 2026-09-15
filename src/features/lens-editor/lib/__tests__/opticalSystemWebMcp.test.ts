@@ -23,7 +23,10 @@ import {
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import { createOpticalSystemTools } from "@/features/lens-editor/lib/opticalSystemWebMcp";
+import {
+  createOpticalSystemTools,
+  type OpticalSystemWebMcpDependencies,
+} from "@/features/lens-editor/lib/opticalSystemWebMcp";
 
 const model: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -117,7 +120,19 @@ function makeProxy(
   } as unknown as PyodideWorkerAPI;
 }
 
-function setup(proxy = makeProxy()) {
+type LifecycleCallbacks = Pick<
+  OpticalSystemWebMcpDependencies,
+  | "onFocusStart"
+  | "onFocusEnd"
+  | "onComputationStart"
+  | "onComputationEnd"
+  | "onError"
+>;
+
+function setup(
+  proxy = makeProxy(),
+  lifecycleCallbacks: LifecycleCallbacks = {},
+) {
   const stores = makeStores();
   const tools = new Map(
     Object.values(
@@ -130,6 +145,7 @@ function setup(proxy = makeProxy()) {
         selectedPlotType: "rayFan",
         isDark: false,
         imagePoint: "chief_ray",
+        ...lifecycleCallbacks,
       }),
     ).map((tool) => [tool.name, tool]),
   );
@@ -260,6 +276,115 @@ describe("optical-system WebMCP tools", () => {
     expect(stores.lensStore.getState().committedOpticalModel).toBe(
       beforeCommitted,
     );
+  });
+
+  it("fires focus and computation lifecycle callbacks in order on success", async () => {
+    const events: string[] = [];
+    const { execute } = setup(makeProxy(), {
+      onFocusStart: () => events.push("focus:start"),
+      onFocusEnd: () => events.push("focus:end"),
+      onComputationStart: () => events.push("computation:start"),
+      onComputationEnd: () => events.push("computation:end"),
+    });
+
+    await execute("focus_optical_system", {
+      chromaticity: "mono",
+      metric: "rmsSpot",
+      fieldIndex: 0,
+    });
+
+    expect(events).toEqual([
+      "focus:start",
+      "computation:start",
+      "computation:end",
+      "focus:end",
+    ]);
+  });
+
+  it("balances focus lifecycle callbacks and reports worker failures", async () => {
+    const error = new Error("focus failed");
+    const events: string[] = [];
+    const onError = jest.fn();
+    const proxy = makeProxy({
+      focusByMonoRmsSpot: jest.fn().mockRejectedValue(error),
+    });
+    const { execute } = setup(proxy, {
+      onFocusStart: () => events.push("focus:start"),
+      onFocusEnd: () => events.push("focus:end"),
+      onComputationStart: () => events.push("computation:start"),
+      onComputationEnd: () => events.push("computation:end"),
+      onError,
+    });
+
+    await expect(
+      execute("focus_optical_system", {
+        chromaticity: "mono",
+        metric: "rmsSpot",
+        fieldIndex: 0,
+      }),
+    ).rejects.toThrow("focus failed");
+
+    expect(events).toEqual(["focus:start", "focus:end"]);
+    expect(onError).toHaveBeenCalledWith(error);
+  });
+
+  it("balances computation and focus lifecycle callbacks when recomputation fails", async () => {
+    const error = new Error("recompute failed");
+    const events: string[] = [];
+    const onError = jest.fn();
+    const proxy = makeProxy({
+      plotLensLayout: jest.fn().mockRejectedValue(error),
+    });
+    const { execute } = setup(proxy, {
+      onFocusStart: () => events.push("focus:start"),
+      onFocusEnd: () => events.push("focus:end"),
+      onComputationStart: () => events.push("computation:start"),
+      onComputationEnd: () => events.push("computation:end"),
+      onError,
+    });
+
+    await expect(
+      execute("focus_optical_system", {
+        chromaticity: "mono",
+        metric: "rmsSpot",
+        fieldIndex: 0,
+      }),
+    ).rejects.toThrow("recompute failed");
+
+    expect(events).toEqual([
+      "focus:start",
+      "computation:start",
+      "computation:end",
+      "focus:end",
+    ]);
+    expect(onError).toHaveBeenCalledWith(error);
+  });
+
+  it("balances every lifecycle callback when focus is cancelled during recomputation", async () => {
+    const events: string[] = [];
+    const controller = new AbortController();
+    const { execute } = setup(makeProxy(), {
+      onFocusStart: () => events.push("focus:start"),
+      onFocusEnd: () => events.push("focus:end"),
+      onComputationStart: () => {
+        events.push("computation:start");
+        controller.abort();
+      },
+      onComputationEnd: () => events.push("computation:end"),
+    });
+
+    const execution = execute(
+      "focus_optical_system",
+      { chromaticity: "mono", metric: "rmsSpot", fieldIndex: 0 },
+      controller.signal,
+    );
+    await expect(execution).rejects.toMatchObject({ name: "AbortError" });
+    expect(events).toEqual([
+      "focus:start",
+      "computation:start",
+      "computation:end",
+      "focus:end",
+    ]);
   });
 
   it("rejects cancellation before focus dispatch and mutation", async () => {

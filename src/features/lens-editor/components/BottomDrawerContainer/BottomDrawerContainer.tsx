@@ -20,6 +20,12 @@ interface BottomDrawerContainerProps {
   readonly isReady: boolean;
   /** Whether a computation is in progress */
   readonly computing: boolean;
+  /** Whether a focus request, including its recomputation, is in progress */
+  readonly focusing: boolean;
+  /** Starts the Lens Editor-level focus lifecycle */
+  readonly onFocusStart: () => void;
+  /** Ends the Lens Editor-level focus lifecycle */
+  readonly onFocusEnd: () => void;
   /** Pyodide worker proxy */
   readonly proxy: PyodideWorkerAPI | undefined;
   /** Called when an async operation throws */
@@ -32,7 +38,7 @@ interface BottomDrawerContainerProps {
  * Container component that composes the four drawer tabs (System Specs, Prescription, Focusing, Image Reference) and renders them inside `BottomDrawer`. Extracts `drawerTabs` construction from `page.tsx` to encapsulate bottom-drawer concerns.
  *
  * @remarks
- * `SpecsConfiguratorContainer`, `LensPrescriptionContainer`, and `FocusingContainer` read their stores through the provider hooks, so this container only forwards the callbacks and worker state they still need.
+ * `SpecsConfiguratorContainer`, `LensPrescriptionContainer`, and `FocusingContainer` read their stores through the provider hooks, so this container only forwards the callbacks and worker state they still need. Focus lifecycle state is owned by `LensEditor`, allowing its overlay to remain visible when the drawer switches tabs.
  *
  * Used in `LensEditor.tsx` for both LG and SM layouts, with `draggable` toggled by breakpoint.
  *
@@ -59,6 +65,9 @@ export function BottomDrawerContainer({
   onUpdateSystem,
   isReady,
   computing,
+  focusing,
+  onFocusStart,
+  onFocusEnd,
   proxy,
   onError,
   draggable,
@@ -91,6 +100,9 @@ export function BottomDrawerContainer({
             proxy={proxy}
             isReady={isReady}
             computing={computing}
+            focusing={focusing}
+            onFocusStart={onFocusStart}
+            onFocusEnd={onFocusEnd}
             getOpticalModel={getOpticalModel}
             onUpdateSystem={onUpdateSystem}
             onError={onError}
@@ -103,7 +115,17 @@ export function BottomDrawerContainer({
         content: <ImageReferencePanel />,
       },
     ],
-    [getOpticalModel, onUpdateSystem, isReady, computing, proxy, onError],
+    [
+      getOpticalModel,
+      onUpdateSystem,
+      isReady,
+      computing,
+      focusing,
+      onFocusStart,
+      onFocusEnd,
+      proxy,
+      onError,
+    ],
   );
 
   return (
