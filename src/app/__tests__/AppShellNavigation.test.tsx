@@ -2,6 +2,8 @@
  * Exercises the AppShell navigation callback at its public Layout boundary.
  * The boundary mock intentionally invokes the callback both with and without
  * a mouse event so its return value and optional event handling are observable.
+ * It also exercises the three global page WebMCP registrations and confirms
+ * that they share the shell's Optimization confirmation state machine.
  */
 import type React from "react";
 import { act, render } from "@testing-library/react";
@@ -19,8 +21,9 @@ let mockCapturedOnNavigate:
 let mockUnappliedModalProps:
   | {
       readonly isOpen: boolean;
+      readonly onStay: () => void;
       readonly onLeave: () => void;
-      readonly onApplyToEditor: () => void;
+      readonly onApplyToEditor: () => void | Promise<void>;
     }
   | undefined;
 
@@ -35,6 +38,15 @@ const mockOptimizationStore = {
   }),
 };
 const mockProxy = {} as PyodideWorkerAPI;
+
+function setModelContext(
+  modelContext: Pick<WebMCP.ModelContext, "registerTool"> | undefined,
+): void {
+  Object.defineProperty(document, "modelContext", {
+    configurable: true,
+    value: modelContext,
+  });
+}
 
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
@@ -128,6 +140,7 @@ jest.mock("@/app/UnappliedOptimizationResultModal", () => ({
 describe("AppShell navigation callback", () => {
   beforeEach(() => {
     mockPush.mockReset();
+    setModelContext(undefined);
     mockPathname = "/";
     mockHasUnappliedResult = false;
     mockOptimizationModel = undefined;
@@ -202,6 +215,189 @@ describe("AppShell navigation callback", () => {
     });
 
     expect(mockApplyOptimizationModelToEditor).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["/", "lens_editor"],
+    ["/example-systems", "example_systems"],
+    ["/optimization", "optimization"],
+    ["/glass-map", "glass_map"],
+    ["/import-custom-glass", "import_custom_glass"],
+    ["/settings", "settings"],
+    ["/privacy-policy", "privacy_policy"],
+    ["/about", "about"],
+  ] as const)(
+    "registers global page tools on the %s route and cleans them up",
+    (path, _page) => {
+      mockPathname = path;
+      const registerTool = jest.fn().mockResolvedValue(undefined);
+      setModelContext({ registerTool });
+
+      const { unmount } = render(
+        <AppShell>
+          <div>Route body</div>
+        </AppShell>,
+      );
+
+      expect(registerTool).toHaveBeenCalledTimes(3);
+      expect(registerTool.mock.calls.map(([tool]) => tool.name)).toEqual([
+        "set_active_page",
+        "get_active_page",
+        "resolve_optimization_navigation",
+      ]);
+      const signals = registerTool.mock.calls.map(
+        ([, options]) =>
+          (options as WebMCP.ModelContextRegisterToolOptions).signal,
+      );
+      expect(signals.every((signal) => signal?.aborted === false)).toBe(true);
+
+      unmount();
+      expect(signals.every((signal) => signal?.aborted === true)).toBe(true);
+    },
+  );
+
+  it("shares the Optimization leave guard with WebMCP navigation", async () => {
+    mockPathname = "/optimization";
+    mockHasUnappliedResult = true;
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    setModelContext({ registerTool });
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
+    const setActivePage = registerTool.mock.calls.find(
+      ([tool]) => tool.name === "set_active_page",
+    )?.[0] as WebMCP.ModelContextTool;
+
+    let result: unknown;
+    await act(async () => {
+      result = await setActivePage.execute(
+        { page: "about" },
+        { signal: new AbortController().signal },
+      );
+    });
+
+    expect(JSON.parse(String(result))).toEqual({
+      status: "pending_optimization_confirmation",
+      currentPage: "optimization",
+      requestedPage: "about",
+    });
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockUnappliedModalProps?.isOpen).toBe(true);
+  });
+
+  it("resolves WebMCP Optimization navigation through Stay, Leave, and Apply", async () => {
+    mockPathname = "/optimization";
+    mockHasUnappliedResult = true;
+    mockOptimizationModel = {} as OpticalModel;
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    setModelContext({ registerTool });
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
+    const getTool = (name: string) =>
+      registerTool.mock.calls.find(([tool]) => tool.name === name)?.[0] as
+        | WebMCP.ModelContextTool
+        | undefined;
+    const setActivePage = getTool("set_active_page");
+    const resolveNavigation = getTool("resolve_optimization_navigation");
+    const execute = async (tool: WebMCP.ModelContextTool, input: unknown) =>
+      tool.execute(input as Record<string, unknown>, {
+        signal: new AbortController().signal,
+      });
+
+    await act(async () => {
+      await execute(setActivePage!, { page: "settings" });
+    });
+    let result: unknown;
+    await act(async () => {
+      result = await execute(resolveNavigation!, { action: "stay" });
+    });
+    expect(JSON.parse(String(result))).toEqual({ status: "stayed" });
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockUnappliedModalProps?.isOpen).toBe(false);
+
+    await act(async () => {
+      await execute(setActivePage!, { page: "settings" });
+    });
+    await act(async () => {
+      result = await execute(resolveNavigation!, { action: "leave" });
+    });
+    expect(JSON.parse(String(result))).toEqual({
+      status: "left",
+      page: "settings",
+    });
+    expect(mockPush).toHaveBeenCalledWith("/settings");
+
+    mockPush.mockClear();
+    mockPathname = "/optimization";
+    await act(async () => {
+      await execute(setActivePage!, { page: "settings" });
+    });
+    mockApplyOptimizationModelToEditor.mockResolvedValue(undefined);
+    await act(async () => {
+      result = await execute(resolveNavigation!, {
+        action: "apply_to_editor",
+      });
+    });
+    expect(JSON.parse(String(result))).toEqual({
+      status: "applied_and_left",
+      page: "settings",
+    });
+    expect(mockApplyOptimizationModelToEditor).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith("/settings");
+  });
+
+  it("navigates directly for non-Optimization WebMCP requests", async () => {
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    setModelContext({ registerTool });
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
+    const setActivePage = registerTool.mock.calls.find(
+      ([tool]) => tool.name === "set_active_page",
+    )?.[0] as WebMCP.ModelContextTool;
+
+    const result = await act(async () =>
+      setActivePage.execute(
+        { page: "about" },
+        { signal: new AbortController().signal },
+      ),
+    );
+
+    expect(JSON.parse(String(result))).toEqual({
+      status: "navigated",
+      page: "about",
+    });
+    expect(mockPush).toHaveBeenCalledWith("/about");
+  });
+
+  it("reports no pending navigation without changing route state", async () => {
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    setModelContext({ registerTool });
+    render(
+      <AppShell>
+        <div>Route body</div>
+      </AppShell>,
+    );
+    const resolveNavigation = registerTool.mock.calls.find(
+      ([tool]) => tool.name === "resolve_optimization_navigation",
+    )?.[0] as WebMCP.ModelContextTool;
+
+    const result = await resolveNavigation.execute(
+      { action: "leave" },
+      { signal: new AbortController().signal },
+    );
+
+    expect(JSON.parse(String(result))).toEqual({
+      status: "no_pending_navigation",
+    });
     expect(mockPush).not.toHaveBeenCalled();
   });
 });
