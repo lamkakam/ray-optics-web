@@ -123,6 +123,84 @@ describe("lens prescription WebMCP tools", () => {
     );
   });
 
+  it("documents canonical material identities on material-related descriptors", () => {
+    const { tools } = setup();
+    const materialGuidanceClauses = [
+      '{"medium": "REFL", "manufacturer": ""}',
+      '{"medium": "air" | "Water" | "CAF2" | "Fused Silica" | "D263TECO", "manufacturer": ""}',
+      "S-BSL7",
+      "S-FSL5",
+      "S-NBH5",
+      "S-BSL 7",
+      "S-FSL 5",
+      "S-NBH 5",
+    ];
+
+    for (const name of [
+      "set_lens_prescription",
+      "insert_lens_surface",
+      "update_lens_row",
+    ]) {
+      const description = tools.get(name)?.description;
+      for (const clause of materialGuidanceClauses) {
+        expect(description).toContain(clause);
+      }
+    }
+  });
+
+  it("documents material input formats before material special cases guidance", () => {
+    const { tools } = setup();
+    const materialInputGuidanceClauses = [
+      "CDGM",
+      "Hikari",
+      "Hoya",
+      "Ohara",
+      "Schott",
+      "Sumita",
+      "special materials",
+      "reflective surfaces",
+      '{"medium": "<refractive_index>", "manufacturer": ""}',
+      '{"medium": "<nd>", "manufacturer": "<vd>"}',
+      "All numeric values must be stringified.",
+    ];
+
+    for (const name of [
+      "set_lens_prescription",
+      "insert_lens_surface",
+      "update_lens_row",
+    ]) {
+      const description = tools.get(name)?.description ?? "";
+      for (const clause of materialInputGuidanceClauses) {
+        expect(description).toContain(clause);
+      }
+      expect(description.indexOf("Material input guidance")).toBeLessThan(
+        description.indexOf("Material input special cases guidance"),
+      );
+    }
+  });
+
+  it("documents numeric sentinel values before material input guidance", () => {
+    const { tools } = setup();
+    const numericGuidanceClauses = [
+      "Flat surfaces use `0` for radius of curvature.",
+      "Infinity object/image distances use `1e10`.",
+    ];
+
+    for (const name of [
+      "set_lens_prescription",
+      "insert_lens_surface",
+      "update_lens_row",
+    ]) {
+      const description = tools.get(name)?.description ?? "";
+      for (const clause of numericGuidanceClauses) {
+        expect(description).toContain(clause);
+        expect(description.indexOf(clause)).toBeLessThan(
+          description.indexOf("Material input guidance"),
+        );
+      }
+    }
+  });
+
   it.each([
     [{}, basePrescription],
     [{ row: "object" }, basePrescription.object],

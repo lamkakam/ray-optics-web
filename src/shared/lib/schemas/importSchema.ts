@@ -5,11 +5,11 @@
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import {
   createPrescriptionAjv,
-  finiteNumberSchema,
   positiveFiniteNumberSchema,
   objectPrescriptionSchema,
   imagePrescriptionSchema,
   surfaceSchema,
+  opticalSpecsSchema,
 } from "@/shared/lib/schemas/prescriptionSchema";
 
 const ajv = createPrescriptionAjv();
@@ -19,7 +19,9 @@ const ajv = createPrescriptionAjv();
  * Object distance, medium, and manufacturer are required; reflective object media
  * are rejected, while `specs.field.isWideAngle` remains optional for legacy files.
  * Pupil keys accept only Object EPD, Object NA, and Image F/#. Field keys accept
- * only Object Height, Object Angle, and Image Height.
+ * only Object Height, Object Angle, and Image Height. The reusable specs schema
+ * accepts both absolute and relative imported fields, one to ten field samples,
+ * one to seven wavelength tuples, and an in-range integer reference index.
  */
 const importedLensDataSchema = {
   type: "object",
@@ -31,82 +33,7 @@ const importedLensDataSchema = {
       enum: ["autoAperture", "manualAperture"],
     },
     specs: {
-      type: "object",
-      required: ["pupil", "field", "wavelengths"],
-      additionalProperties: false,
-      properties: {
-        pupil: {
-          oneOf: [
-            {
-              type: "object",
-              required: ["space", "type", "value"],
-              additionalProperties: false,
-              properties: {
-                space: { type: "string", const: "object" },
-                type: { type: "string", enum: ["epd", "NA"] },
-                value: finiteNumberSchema,
-              },
-            },
-            {
-              type: "object",
-              required: ["space", "type", "value"],
-              additionalProperties: false,
-              properties: {
-                space: { type: "string", const: "image" },
-                type: { type: "string", const: "f/#" },
-                value: finiteNumberSchema,
-              },
-            },
-          ],
-        },
-        field: {
-          oneOf: [
-            {
-              type: "object",
-              required: ["space", "type", "maxField", "fields", "isRelative"],
-              additionalProperties: false,
-              properties: {
-                space: { type: "string", const: "object" },
-                type: { type: "string", enum: ["angle", "height"] },
-                maxField: finiteNumberSchema,
-                fields: { type: "array", items: finiteNumberSchema },
-                isRelative: { type: "boolean" },
-                isWideAngle: { type: "boolean" },
-              },
-            },
-            {
-              type: "object",
-              required: ["space", "type", "maxField", "fields", "isRelative"],
-              additionalProperties: false,
-              properties: {
-                space: { type: "string", const: "image" },
-                type: { type: "string", const: "height" },
-                maxField: finiteNumberSchema,
-                fields: { type: "array", items: finiteNumberSchema },
-                isRelative: { type: "boolean" },
-                isWideAngle: { type: "boolean" },
-              },
-            },
-          ],
-        },
-        wavelengths: {
-          type: "object",
-          required: ["weights", "referenceIndex"],
-          additionalProperties: false,
-          properties: {
-            weights: {
-              type: "array",
-              items: {
-                type: "array",
-                items: finiteNumberSchema,
-                minItems: 2,
-                maxItems: 2,
-              },
-            },
-            referenceIndex: finiteNumberSchema,
-          },
-        },
-      },
+      ...opticalSpecsSchema,
     },
     object: objectPrescriptionSchema,
     image: imagePrescriptionSchema,

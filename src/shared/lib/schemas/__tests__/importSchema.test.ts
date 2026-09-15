@@ -256,7 +256,7 @@ describe("validateImportedLensData", () => {
     ).toBe(false);
   });
 
-  it("allows an empty wavelength list", () => {
+  it("rejects an empty wavelength list", () => {
     expect(
       validateImportedLensData({
         ...baseModel,
@@ -265,7 +265,104 @@ describe("validateImportedLensData", () => {
           wavelengths: { ...baseModel.specs.wavelengths, weights: [] },
         },
       }),
+    ).toBe(false);
+  });
+
+  it("enforces the field collection boundary", () => {
+    const field = baseModel.specs.field;
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: { ...baseModel.specs, field: { ...field, fields: [0] } },
+      }),
     ).toBe(true);
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          field: { ...field, fields: Array.from({ length: 10 }, (_, i) => i) },
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: { ...baseModel.specs, field: { ...field, fields: [] } },
+      }),
+    ).toBe(false);
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          field: {
+            ...field,
+            fields: Array.from({ length: 11 }, (_, i) => i),
+          },
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("enforces wavelength count and reference-index boundaries", () => {
+    const makeWeights = (count: number): [number, number][] =>
+      Array.from({ length: count }, (_, index) => [500 + index, 1]);
+
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          wavelengths: { weights: makeWeights(1), referenceIndex: 0 },
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          wavelengths: { weights: makeWeights(7), referenceIndex: 6 },
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          wavelengths: { weights: [], referenceIndex: 0 },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      validateImportedLensData({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          wavelengths: {
+            weights: makeWeights(8),
+            referenceIndex: 0,
+          },
+        },
+      }),
+    ).toBe(false);
+
+    for (const referenceIndex of [-1, 1.5, 3, 7]) {
+      expect(
+        validateImportedLensData({
+          ...baseModel,
+          specs: {
+            ...baseModel.specs,
+            wavelengths: {
+              weights: makeWeights(3),
+              referenceIndex,
+            },
+          },
+        }),
+      ).toBe(false);
+    }
   });
 
   it.each([{ weights: [[587.562]] }, { weights: [[587.562, 1, 2]] }])(

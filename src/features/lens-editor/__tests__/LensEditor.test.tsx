@@ -451,6 +451,12 @@ describe("LensEditor", () => {
       "insert_lens_surface",
       "update_lens_row",
       "delete_lens_surface",
+      "get_system_specs",
+      "set_system_aperture",
+      "set_half_field",
+      "set_wavelengths",
+      "recompute_optical_system",
+      "focus_optical_system",
     ]);
     const signals = registrations.map(({ options }) => options?.signal);
     expect(signals.every((signal) => signal?.aborted === false)).toBe(true);
