@@ -60,6 +60,7 @@ export type OptimizationOperandConfig =
         readonly index: number;
         readonly weight: number;
       }>;
+      /** Optional sampling controls, preserved by the Optimization GUI. */
       readonly options?: { readonly num_rays?: number };
     }
   | {
@@ -74,6 +75,7 @@ export type OptimizationOperandConfig =
         readonly index: number;
         readonly weight: number;
       }>;
+      /** Optional sampling controls, preserved by the Optimization GUI. */
       readonly options?: { readonly num_rays?: number };
     };
 

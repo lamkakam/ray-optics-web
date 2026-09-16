@@ -1,4 +1,4 @@
-/** Shared strict-input and cancellation helpers for Lens Editor WebMCP tools. */
+/** Shared strict-input and cancellation helpers for imperative WebMCP tools. */
 import type { ErrorObject, ValidateFunction } from "ajv";
 
 /** Converts an AJV error into the JSON-pointer path exposed to tool callers. */

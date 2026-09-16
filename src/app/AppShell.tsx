@@ -32,7 +32,7 @@ import {
   type PageNavigationResult,
 } from "@/app/pageNavigationWebMcp";
 import { useWebMCP } from "@/shared/hooks/useWebMCP";
-import { assertWebMcpNotCancelled } from "@/features/lens-editor/lib/webMcpValidation";
+import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
 import {
   isPersistedCustomGlassRow,
   quarantinePersistedCustomGlass,
@@ -81,6 +81,7 @@ type GlassCatalogPreloadStatus = "loading" | "loaded" | "error";
  * - Owns glass-catalog preload status/error locally and commits only successful data into `GlassMapStore`
  * - Registers an app-wide `beforeunload` guard for reload, tab close, typed URL, and external navigation
  * - Registers the global `set_active_page`, `get_active_page`, and `resolve_optimization_navigation` WebMCP tools for the persistent client-side shell
+ * - Uses the shared WebMCP validation and cancellation helpers used by page-scoped tools, keeping shell navigation and feature tools on one error-path contract
  * - Allows browser back/forward navigation between app routes without native confirmation, while keeping the Optimization unapplied-result modal as the browser-history guard for unapplied results
  * - Guards in-app SideNav navigation away from `/optimization` when an optimized result has not been applied to the Editor
  * - Provides `proxy`, `isReady`, and `openErrorModal` through `AppShellProvider`

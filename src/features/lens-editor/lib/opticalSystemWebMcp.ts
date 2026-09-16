@@ -4,6 +4,7 @@
  * same core operation and focusing helpers used by the visible editor. Focus
  * execution can notify the owning editor about focus and computation lifecycle
  * transitions and forwards failures before rethrowing them to WebMCP callers.
+ * Both descriptors use the shared strict-input and cancellation helpers.
  */
 import type { StoreApi } from "zustand";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
@@ -29,7 +30,7 @@ import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
-} from "@/features/lens-editor/lib/webMcpValidation";
+} from "@/shared/lib/webMcpValidation";
 
 /** Empty input schema for the complete recomputation tool. */
 export const recomputeOpticalSystemInputSchema = {

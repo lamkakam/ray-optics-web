@@ -5,7 +5,8 @@
  * The descriptors deliberately receive navigation callbacks instead of owning
  * a router. `AppShell` supplies those callbacks so WebMCP requests use the
  * same Optimization leave guard, modal, and apply synchronization path as
- * SideNav clicks.
+ * SideNav clicks. Input and cancellation checks use the shared WebMCP helper so
+ * shell and route-scoped tools expose the same stable validation behavior.
  */
 import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
 import {
@@ -16,7 +17,7 @@ import {
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
-} from "@/features/lens-editor/lib/webMcpValidation";
+} from "@/shared/lib/webMcpValidation";
 
 /** Result returned after a page navigation request is accepted or deferred. */
 export type PageNavigationResult =
