@@ -1,7 +1,9 @@
 /**
  * Dependency-injected WebMCP descriptors for complete Lens Editor recomputation
  * and final-image-plane focusing. The descriptors delegate computation to the
- * same core operation and focusing helpers used by the visible editor.
+ * same core operation and focusing helpers used by the visible editor. Focus
+ * execution can notify the owning editor about focus and computation lifecycle
+ * transitions and forwards failures before rethrowing them to WebMCP callers.
  */
 import type { StoreApi } from "zustand";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
@@ -76,6 +78,16 @@ export interface OpticalSystemWebMcpDependencies {
   readonly selectedPlotType?: PlotType;
   readonly isDark: boolean;
   readonly imagePoint?: ImagePoint;
+  /** Starts the Lens Editor-level focus overlay lifecycle. */
+  readonly onFocusStart?: () => void;
+  /** Ends the Lens Editor-level focus overlay lifecycle. */
+  readonly onFocusEnd?: () => void;
+  /** Starts the full Update System computation lifecycle for focus. */
+  readonly onComputationStart?: () => void;
+  /** Ends the full Update System computation lifecycle for focus. */
+  readonly onComputationEnd?: () => void;
+  /** Routes focus failures through the visible editor error UI. */
+  readonly onError?: (error: unknown) => void;
 }
 
 /** Named readonly handles for recomputation and focusing descriptors. */
@@ -101,6 +113,11 @@ export function createOpticalSystemTools(
     selectedPlotType,
     isDark,
     imagePoint,
+    onFocusStart,
+    onFocusEnd,
+    onComputationStart,
+    onComputationEnd,
+    onError,
   } = dependencies;
 
   const currentComputation = (signal: AbortSignal) =>
@@ -123,6 +140,16 @@ export function createOpticalSystemTools(
       imagePoint,
       signal,
     });
+
+  /** Runs the full focus recomputation while balancing its loading lifecycle. */
+  const focusComputation = async (signal: AbortSignal) => {
+    try {
+      onComputationStart?.();
+      return await currentComputation(signal);
+    } finally {
+      onComputationEnd?.();
+    }
+  };
 
   return {
     recomputeOpticalSystem: {
@@ -151,7 +178,6 @@ export function createOpticalSystemTools(
       execute: async (input, { signal }) => {
         assertWebMcpInput(validators.focus, input);
         assertWebMcpNotCancelled(signal);
-        if (proxy === undefined) throw new Error("Pyodide not ready");
 
         const focusInput = input as FocusInput;
         const specs = specsStore.getState().toOpticalSpecs();
@@ -161,20 +187,33 @@ export function createOpticalSystemTools(
           );
         }
         const draft = buildDraftOpticalModel(lensStore, specsStore);
-        const focusResult = await dispatchFocusing(proxy, draft.model, {
-          chromaticity: focusInput.chromaticity,
-          metric: focusInput.metric,
-          fieldIndex: focusInput.fieldIndex,
-        });
-        assertWebMcpNotCancelled(signal);
-        const imageSpaceThickness = applyFocusingDelta(lensStore, focusResult);
-        await currentComputation(signal);
-        return JSON.stringify({
-          delta_thi: focusResult.delta_thi,
-          metric_value: focusResult.metric_value,
-          imageSpaceThickness,
-          systemUpdated: true,
-        });
+        try {
+          onFocusStart?.();
+          if (proxy === undefined) throw new Error("Pyodide not ready");
+
+          const focusResult = await dispatchFocusing(proxy, draft.model, {
+            chromaticity: focusInput.chromaticity,
+            metric: focusInput.metric,
+            fieldIndex: focusInput.fieldIndex,
+          });
+          assertWebMcpNotCancelled(signal);
+          const imageSpaceThickness = applyFocusingDelta(
+            lensStore,
+            focusResult,
+          );
+          await focusComputation(signal);
+          return JSON.stringify({
+            delta_thi: focusResult.delta_thi,
+            metric_value: focusResult.metric_value,
+            imageSpaceThickness,
+            systemUpdated: true,
+          });
+        } catch (error: unknown) {
+          onError?.(error);
+          throw error;
+        } finally {
+          onFocusEnd?.();
+        }
       },
     },
   };

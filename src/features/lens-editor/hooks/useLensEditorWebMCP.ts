@@ -1,6 +1,6 @@
 "use client";
 
-/** Composition hook that registers all eleven imperative Lens Editor WebMCP tools. */
+/** Composition hook that registers all eleven imperative Lens Editor WebMCP tools and forwards focus/computation lifecycle callbacks to the editor. */
 import { useMemo } from "react";
 import type { StoreApi } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -27,9 +27,19 @@ export interface LensEditorWebMCPDependencies {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isDark: boolean;
   readonly imagePoint?: ImagePoint;
+  /** Starts the Lens Editor-level focus overlay lifecycle. */
+  readonly onFocusStart?: () => void;
+  /** Ends the Lens Editor-level focus overlay lifecycle. */
+  readonly onFocusEnd?: () => void;
+  /** Starts the Update System computation lifecycle. */
+  readonly onComputationStart?: () => void;
+  /** Ends the Update System computation lifecycle. */
+  readonly onComputationEnd?: () => void;
+  /** Routes focus failures to the editor's error UI. */
+  readonly onError?: (error: unknown) => void;
 }
 
-/** Registers prescription, System Specs, recomputation, and focus tools in order. */
+/** Registers prescription, System Specs, recomputation, and focus tools in order. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
 export function useLensEditorWebMCP({
   lensStore,
   specsStore,
@@ -40,6 +50,11 @@ export function useLensEditorWebMCP({
   proxy,
   isDark,
   imagePoint,
+  onFocusStart,
+  onFocusEnd,
+  onComputationStart,
+  onComputationEnd,
+  onError,
 }: LensEditorWebMCPDependencies): void {
   const prescriptionTools = useMemo(
     () => createLensPrescriptionTools(lensStore, lookupMaps),
@@ -61,6 +76,11 @@ export function useLensEditorWebMCP({
         lookupMaps,
         isDark,
         imagePoint,
+        onFocusStart,
+        onFocusEnd,
+        onComputationStart,
+        onComputationEnd,
+        onError,
       }),
     [
       proxy,
@@ -72,6 +92,11 @@ export function useLensEditorWebMCP({
       lookupMaps,
       isDark,
       imagePoint,
+      onFocusStart,
+      onFocusEnd,
+      onComputationStart,
+      onComputationEnd,
+      onError,
     ],
   );
 
@@ -97,5 +122,10 @@ export function useLensEditorWebMCP({
     analysisPlotStore,
     analysisDataStore,
     lensLayoutImageStore,
+    onFocusStart,
+    onFocusEnd,
+    onComputationStart,
+    onComputationEnd,
+    onError,
   ]);
 }

@@ -4,6 +4,7 @@ import type React from "react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { Button } from "@/shared/components/primitives/Button";
 import { NavLink } from "@/shared/components/primitives/NavLink";
+import { PAGE_DEFINITIONS } from "@/shared/lib/navigation/pageDefinitions";
 
 interface SideNavProps {
   /** When `false`, nav is translated off-screen (`-translate-x-full`); always in DOM */
@@ -19,30 +20,6 @@ interface SideNavProps {
   ) => boolean;
 }
 
-/** Ordered application routes rendered by the side navigation. */
-const NAV_ITEMS = [
-  { segment: null, href: "/", label: "Lens Editor" },
-  {
-    segment: "example-systems",
-    href: "/example-systems",
-    label: "Example Systems",
-  },
-  { segment: "optimization", href: "/optimization", label: "Optimization" },
-  { segment: "glass-map", href: "/glass-map", label: "Glass Map" },
-  {
-    segment: "import-custom-glass",
-    href: "/import-custom-glass",
-    label: "Import Custom Glass",
-  },
-  { segment: "settings", href: "/settings", label: "Settings" },
-  {
-    segment: "privacy-policy",
-    href: "/privacy-policy",
-    label: "Privacy Policy",
-  },
-  { segment: "about", href: "/about", label: "About" },
-] as const;
-
 /**
  *
  * ## Behaviour
@@ -55,6 +32,7 @@ const NAV_ITEMS = [
  * - Parent container must have `overflow-hidden` to clip the off-screen nav
  * - Close button (`aria-label="Close navigation"`) is right-aligned at the top
  * - Uses `useSelectedLayoutSegment()` to determine the active route
+ * - Consumes the shared canonical page definitions used by the global page WebMCP tools
  * - Nav items rendered as `<NavLink>` links
  * - Active item: `active={true}` + `aria-current="page"`
  * - Root route (`/`) is active when the selected segment is `null`
@@ -85,17 +63,17 @@ export function SideNav({ isOpen, isLG, onClose, onNavigate }: SideNavProps) {
         </Button>
       </div>
       <div className="flex flex-col gap-1 px-2">
-        {NAV_ITEMS.map(({ segment, href, label }) => {
+        {PAGE_DEFINITIONS.map(({ segment, path, label }) => {
           const isActive = activeSegment === segment;
           return (
             <NavLink
-              key={href}
-              href={href}
+              key={path}
+              href={path}
               active={isActive}
               aria-label={label}
               aria-current={isActive ? "page" : undefined}
               onClick={(event) => {
-                if (onNavigate?.(href, event) === false) {
+                if (onNavigate?.(path, event) === false) {
                   return;
                 }
                 onClose();

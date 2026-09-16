@@ -114,6 +114,9 @@ function renderContainer(
         onUpdateSystem={jest.fn()}
         isReady={true}
         computing={false}
+        focusing={false}
+        onFocusStart={() => undefined}
+        onFocusEnd={() => undefined}
         proxy={makeProxy()}
         onError={jest.fn()}
         draggable={draggable}

@@ -21,6 +21,19 @@ import { applyOptimizationModelToEditor } from "@/features/optimization/lib/appl
 import { GlassCatalogProvider } from "@/shared/components/providers/GlassCatalogProvider";
 import { loadGlassCatalogs } from "@/features/glass-map/lib/glassCatalogLoader";
 import {
+  getPageDefinition,
+  getPageDefinitionForPathname,
+  type PageKey,
+} from "@/shared/lib/navigation/pageDefinitions";
+import {
+  createPageNavigationTools,
+  type OptimizationNavigationAction,
+  type OptimizationNavigationResult,
+  type PageNavigationResult,
+} from "@/app/pageNavigationWebMcp";
+import { useWebMCP } from "@/shared/hooks/useWebMCP";
+import { assertWebMcpNotCancelled } from "@/features/lens-editor/lib/webMcpValidation";
+import {
   isPersistedCustomGlassRow,
   quarantinePersistedCustomGlass,
   quarantineStoredCustomGlassRow,
@@ -67,6 +80,7 @@ type GlassCatalogPreloadStatus = "loading" | "loaded" | "error";
  * - Quarantines invalid or worker-rejected persisted custom glass rows and reports one warning after initialization
  * - Owns glass-catalog preload status/error locally and commits only successful data into `GlassMapStore`
  * - Registers an app-wide `beforeunload` guard for reload, tab close, typed URL, and external navigation
+ * - Registers the global `set_active_page`, `get_active_page`, and `resolve_optimization_navigation` WebMCP tools for the persistent client-side shell
  * - Allows browser back/forward navigation between app routes without native confirmation, while keeping the Optimization unapplied-result modal as the browser-history guard for unapplied results
  * - Guards in-app SideNav navigation away from `/optimization` when an optimized result has not been applied to the Editor
  * - Provides `proxy`, `isReady`, and `openErrorModal` through `AppShellProvider`
@@ -120,6 +134,8 @@ type GlassCatalogPreloadStatus = "loading" | "loaded" | "error";
  * - `Stay` clears the pending route and remains on Optimization.
  * - `Leave` pushes the pending route without applying the Optimization-local model.
  * - `Apply to Editor` applies the Optimization-local optical model through `applyOptimizationModelToEditor()`, clears the optimization store's unapplied-result marker, then pushes the pending route.
+ * - The global page WebMCP tools use canonical page keys and paths from the shared page-definition module; query strings and hashes are ignored for active-page lookup, and page-tool navigation uses canonical paths.
+ * - `set_active_page` returns either a direct-navigation result or `pending_optimization_confirmation` with the current and requested page keys. `get_active_page` exposes the current key and any pending destination. `resolve_optimization_navigation` delegates Stay, Leave, and Apply to the same callbacks rendered by the modal.
  * - The browser-history guard tracks the complete active Optimization history entry: its full URL (including query and hash) and its original `history.state`, including Next.js App Router's `__NA` state. It listens for `popstate` in capture phase and, when navigation leaves `/optimization` with an unapplied result, stops immediate propagation before Next.js handles the event, restores that exact entry with `history.pushState(...)`, stores the attempted destination, and synchronously shows the same React warning modal without starting a router transition. Reusing the original Next history state prevents Next's patched `pushState` from dispatching a router restore.
  * - Browser back/forward navigation outside that Optimization modal path leaves the full history destination, including path, query, and hash, in place without calling `window.confirm`, and updates the tracked current URL for subsequent history navigation.
  */
@@ -143,6 +159,8 @@ export default function AppShell({ children }: AppShellProps) {
   const [pendingNavigationHref, setPendingNavigationHref] = useState<
     string | undefined
   >();
+  /** Immediate pending-navigation snapshot shared by modal and imperative tool callbacks. */
+  const pendingNavigationHrefRef = useRef<string | undefined>(undefined);
   /** Initial catalog preload lifecycle after Pyodide becomes ready. */
   const [glassCatalogPreloadStatus, setGlassCatalogPreloadStatus] = useState<
     GlassCatalogPreloadStatus | undefined
@@ -174,7 +192,7 @@ export default function AppShell({ children }: AppShellProps) {
   const shouldWarnBeforeLeavingOptimization = useCallback(
     (targetHref: string) =>
       pathname === "/optimization" &&
-      targetHref !== "/optimization" &&
+      getPathnameFromHref(targetHref) !== "/optimization" &&
       hasUnappliedOptimizationResult,
     [hasUnappliedOptimizationResult, pathname],
   );
@@ -182,17 +200,54 @@ export default function AppShell({ children }: AppShellProps) {
   /** Clears pending navigation and pushes an accepted route. */
   const proceedToHref = useCallback(
     (href: string) => {
+      pendingNavigationHrefRef.current = undefined;
       setPendingNavigationHref(undefined);
       router.push(href);
     },
     [router],
   );
 
+  /** Resolves a supported page key through the same guard used by SideNav. */
+  const requestPageNavigation = useCallback(
+    (page: PageKey): PageNavigationResult => {
+      const definition = getPageDefinition(page);
+      if (definition === undefined) {
+        throw new Error(`Unknown application page: ${page}`);
+      }
+
+      if (shouldWarnBeforeLeavingOptimization(definition.path)) {
+        pendingNavigationHrefRef.current = definition.path;
+        setPendingNavigationHref(definition.path);
+        const currentPage = getPageDefinitionForPathname(pathname);
+        if (currentPage === undefined) {
+          throw new Error(`Unknown application pathname: ${pathname}`);
+        }
+        return {
+          status: "pending_optimization_confirmation",
+          currentPage: currentPage.key,
+          requestedPage: page,
+        };
+      }
+
+      proceedToHref(definition.path);
+      return { status: "navigated", page };
+    },
+    [pathname, proceedToHref, shouldWarnBeforeLeavingOptimization],
+  );
+
   /** Intercepts in-app navigation away from an unapplied Optimization result. */
   const guardedNavigate = useCallback(
     (href: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
       event?.preventDefault();
+      const targetPage = getPageDefinitionForPathname(
+        getPathnameFromHref(href),
+      );
+      if (targetPage !== undefined) {
+        return requestPageNavigation(targetPage.key).status === "navigated";
+      }
+
       if (shouldWarnBeforeLeavingOptimization(href)) {
+        pendingNavigationHrefRef.current = href;
         setPendingNavigationHref(href);
         return false;
       }
@@ -200,54 +255,127 @@ export default function AppShell({ children }: AppShellProps) {
       proceedToHref(href);
       return true;
     },
-    [proceedToHref, shouldWarnBeforeLeavingOptimization],
+    [proceedToHref, requestPageNavigation, shouldWarnBeforeLeavingOptimization],
+  );
+
+  /** Reads the shell's canonical current page for `get_active_page`. */
+  const getCurrentPage = useCallback((): PageKey => {
+    const page = getPageDefinitionForPathname(pathname);
+    if (page === undefined) {
+      throw new Error(`Unknown application pathname: ${pathname}`);
+    }
+    return page.key;
+  }, [pathname]);
+
+  /** Resolves the shell's pending href to a canonical page key when possible. */
+  const getPendingNavigation = useCallback(() => {
+    const pendingHref = pendingNavigationHrefRef.current;
+    if (pendingHref === undefined) {
+      return undefined;
+    }
+    return getPageDefinitionForPathname(getPathnameFromHref(pendingHref))?.key;
+  }, []);
+
+  /** Shared Stay/Leave/Apply implementation used by the modal and WebMCP. */
+  const resolveOptimizationNavigation = useCallback(
+    async (
+      action: OptimizationNavigationAction,
+      signal?: AbortSignal,
+    ): Promise<OptimizationNavigationResult> => {
+      const href = pendingNavigationHrefRef.current;
+      if (href === undefined) {
+        return { status: "no_pending_navigation" };
+      }
+
+      assertWebMcpNotCancelled(signal);
+      const destinationPage = getPageDefinitionForPathname(
+        getPathnameFromHref(href),
+      )?.key;
+
+      if (action === "stay") {
+        pendingNavigationHrefRef.current = undefined;
+        setPendingNavigationHref(undefined);
+        return { status: "stayed" };
+      }
+
+      if (action === "leave") {
+        proceedToHref(href);
+        return {
+          status: "left",
+          ...(destinationPage === undefined ? {} : { page: destinationPage }),
+        } as OptimizationNavigationResult;
+      }
+
+      const model = optimizationStore.getState().optimizationModel;
+      if (model === undefined) {
+        pendingNavigationHrefRef.current = undefined;
+        setPendingNavigationHref(undefined);
+        return { status: "no_pending_navigation" };
+      }
+      if (proxy === undefined) {
+        return { status: "no_pending_navigation" };
+      }
+
+      try {
+        await applyOptimizationModelToEditor({
+          model,
+          lensStore,
+          specsStore,
+          proxy,
+        });
+        assertWebMcpNotCancelled(signal);
+        optimizationStore.getState().markOptimizationResultAppliedToEditor();
+        proceedToHref(href);
+        return {
+          status: "applied_and_left",
+          ...(destinationPage === undefined ? {} : { page: destinationPage }),
+        } as OptimizationNavigationResult;
+      } catch (error: unknown) {
+        if (!signal?.aborted) {
+          setErrorModalOpen(true);
+        }
+        throw error;
+      }
+    },
+    [lensStore, optimizationStore, proceedToHref, proxy, specsStore],
   );
 
   /** Dismisses the warning while remaining on Optimization. */
   const handleStayOnOptimization = useCallback(() => {
-    setPendingNavigationHref(undefined);
-  }, []);
+    void resolveOptimizationNavigation("stay").catch(() => undefined);
+  }, [resolveOptimizationNavigation]);
 
   /** Leaves without applying the Optimization-local model. */
   const handleLeaveOptimization = useCallback(() => {
-    const href = pendingNavigationHref;
-    if (href === undefined) {
-      return;
-    }
-
-    proceedToHref(href);
-  }, [pendingNavigationHref, proceedToHref]);
+    void resolveOptimizationNavigation("leave").catch(() => undefined);
+  }, [resolveOptimizationNavigation]);
 
   /** Atomically applies the optimized model and navigates only after success. */
-  const handleApplyOptimizationToEditorAndLeave = useCallback(async () => {
-    const href = pendingNavigationHref;
-    const model = optimizationStore.getState().optimizationModel;
-    if (href === undefined || model === undefined) {
-      setPendingNavigationHref(undefined);
-      return;
-    }
+  const handleApplyOptimizationToEditorAndLeave = useCallback(() => {
+    void resolveOptimizationNavigation("apply_to_editor").catch(
+      () => undefined,
+    );
+  }, [resolveOptimizationNavigation]);
 
-    if (proxy === undefined) return;
-    try {
-      await applyOptimizationModelToEditor({
-        model,
-        lensStore,
-        specsStore,
-        proxy,
-      });
-      optimizationStore.getState().markOptimizationResultAppliedToEditor();
-      proceedToHref(href);
-    } catch {
-      setErrorModalOpen(true);
-    }
-  }, [
-    lensStore,
-    optimizationStore,
-    pendingNavigationHref,
-    proceedToHref,
-    proxy,
-    specsStore,
-  ]);
+  /** Global page tools remain mounted with the persistent application shell. */
+  const pageNavigationTools = useMemo(
+    () =>
+      createPageNavigationTools({
+        getCurrentPage,
+        getPendingNavigation,
+        navigateToPage: requestPageNavigation,
+        resolveOptimizationNavigation,
+      }),
+    [
+      getCurrentPage,
+      getPendingNavigation,
+      requestPageNavigation,
+      resolveOptimizationNavigation,
+    ],
+  );
+  useWebMCP(pageNavigationTools.setActivePage);
+  useWebMCP(pageNavigationTools.getActivePage);
+  useWebMCP(pageNavigationTools.resolveOptimizationNavigation);
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -278,6 +406,7 @@ export default function AppShell({ children }: AppShellProps) {
       ) {
         event.stopImmediatePropagation();
         window.history.pushState(activeEntry.state, "", activeEntry.href);
+        pendingNavigationHrefRef.current = nextHref;
         flushSync(() => setPendingNavigationHref(nextHref));
         return;
       }

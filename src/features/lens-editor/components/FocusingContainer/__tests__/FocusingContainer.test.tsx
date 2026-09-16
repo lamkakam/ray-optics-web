@@ -120,6 +120,9 @@ describe("FocusingContainer", () => {
             proxy={makeMockProxy()}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={jest.fn()}
@@ -140,6 +143,9 @@ describe("FocusingContainer", () => {
             proxy={undefined}
             isReady={false}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={jest.fn()}
@@ -160,6 +166,9 @@ describe("FocusingContainer", () => {
             proxy={makeMockProxy()}
             isReady={true}
             computing={true}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={jest.fn()}
@@ -182,6 +191,9 @@ describe("FocusingContainer", () => {
             proxy={proxy}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={onUpdateSystem}
             onError={jest.fn()}
@@ -210,6 +222,9 @@ describe("FocusingContainer", () => {
             proxy={proxy}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={onUpdateSystem}
             onError={jest.fn()}
@@ -233,6 +248,9 @@ describe("FocusingContainer", () => {
             proxy={proxy}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={onUpdateSystem}
             onError={jest.fn()}
@@ -269,6 +287,9 @@ describe("FocusingContainer", () => {
             proxy={proxy}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={onError}
@@ -280,41 +301,62 @@ describe("FocusingContainer", () => {
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
   });
 
-  it("shows LoadingOverlay while focusing", async () => {
+  it("disables all focus controls while focusing", () => {
     const lensStore = createTestLensStore();
     const specsStore = createTestSpecsStore();
-    let resolveProxy!: () => void;
-    const slowProxy = makeMockProxy({
-      focusByMonoRmsSpot: jest.fn().mockImplementation(
-        () =>
-          new Promise<typeof focusingResult>((resolve) => {
-            resolveProxy = () => resolve(focusingResult);
-          }),
-      ),
-    });
-    const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
       <SpecsConfiguratorStoreContext.Provider value={specsStore}>
         <LensEditorStoreContext.Provider value={lensStore}>
           <FocusingContainer
-            proxy={slowProxy}
+            proxy={makeMockProxy()}
             isReady={true}
             computing={false}
+            focusing={true}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
-            onUpdateSystem={onUpdateSystem}
+            onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={jest.fn()}
           />
         </LensEditorStoreContext.Provider>
       </SpecsConfiguratorStoreContext.Provider>,
     );
-    await userEvent.click(screen.getByRole("button", { name: "Focus" }));
-    expect(screen.getByText("Focusing…")).toBeInTheDocument();
-    await act(async () => {
-      resolveProxy();
-    });
-    await waitFor(() =>
-      expect(screen.queryByText("Focusing…")).not.toBeInTheDocument(),
+    expect(screen.getByRole("radio", { name: "Monochromatic" })).toBeDisabled();
+    expect(
+      screen.getByRole("radio", { name: "Minimize RMS Spot Radius" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Field" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Focus" })).toBeDisabled();
+  });
+
+  it("notifies the parent when focus starts and ends", async () => {
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
+    const proxy = makeMockProxy();
+    const onFocusStart = jest.fn();
+    const onFocusEnd = jest.fn();
+    render(
+      <SpecsConfiguratorStoreContext.Provider value={specsStore}>
+        <LensEditorStoreContext.Provider value={lensStore}>
+          <FocusingContainer
+            proxy={proxy}
+            isReady={true}
+            computing={false}
+            focusing={false}
+            onFocusStart={onFocusStart}
+            onFocusEnd={onFocusEnd}
+            getOpticalModel={() => testOpticalModel}
+            onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+            onError={jest.fn()}
+          />
+        </LensEditorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>,
     );
+
+    await userEvent.click(screen.getByRole("button", { name: "Focus" }));
+
+    expect(onFocusStart).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onFocusEnd).toHaveBeenCalledTimes(1));
   });
 
   it("field dropdown options sync with specsStore even before commit", async () => {
@@ -327,6 +369,9 @@ describe("FocusingContainer", () => {
             proxy={makeMockProxy()}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={jest.fn()}
@@ -360,6 +405,9 @@ describe("FocusingContainer", () => {
             proxy={makeMockProxy()}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={jest.fn()}
@@ -394,6 +442,9 @@ describe("FocusingContainer", () => {
             proxy={makeMockProxy()}
             isReady={true}
             computing={false}
+            focusing={false}
+            onFocusStart={() => undefined}
+            onFocusEnd={() => undefined}
             getOpticalModel={() => testOpticalModel}
             onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
             onError={jest.fn()}
