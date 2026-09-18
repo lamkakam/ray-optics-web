@@ -3,6 +3,8 @@
  * action and imperative WebMCP tools. All worker requests resolve before any
  * committed store is changed, so a failed computation leaves the previous
  * analyses, model, specs, selection, and auto-aperture cache intact.
+ * WebMCP callers use the shared cancellation helper before committing the same
+ * result path as the visible Update System action.
  */
 import type { StoreApi } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -31,7 +33,7 @@ import type {
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
-import { assertWebMcpNotCancelled } from "@/features/lens-editor/lib/webMcpValidation";
+import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
 
 /** Error used by the UI wrapper to preserve its local missing-glass modal. */
 export class MissingPrescriptionGlassError extends Error {

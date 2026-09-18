@@ -3,7 +3,8 @@
  * System Specs. These setters update only the draft specs form; recomputation is
  * deliberately owned by `recompute_optical_system`. The `set_half_field` setter
  * remains relative-only and populates the neutral field store with
- * `isRelative: true`.
+ * `isRelative: true`. All descriptor executions use the shared WebMCP
+ * validation and cancellation boundary helpers.
  */
 import type { StoreApi } from "zustand";
 import type { OpticalSpecs, PupilSpec } from "@/shared/lib/types/opticalModel";
@@ -18,7 +19,7 @@ import {
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
-} from "@/features/lens-editor/lib/webMcpValidation";
+} from "@/shared/lib/webMcpValidation";
 
 /** Empty input accepted by the current-draft System Specs read tool. */
 export const getSystemSpecsInputSchema = {

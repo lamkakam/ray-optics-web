@@ -51,6 +51,8 @@ import type {
   OptimizationConfig,
   OptimizationProgressEntry,
   OptimizationReport,
+  OptimizationRunConfig,
+  OptimizationRunReport,
 } from "./types/optimizationWorkerTypes";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -58,6 +60,8 @@ import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
+import { useOptimizationWebMCP } from "./hooks/useOptimizationWebMCP";
+import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
 
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -151,6 +155,8 @@ function buildCurrentEditorModel(
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
  * - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
  * - Whenever the committed optimization config changes, the component immediately marks Operand Evaluation pending, clears the prior report, debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
+ * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, and `apply_optimization_to_editor` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
+ * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, and application call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, and confirmed Apply action. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
  * - A resolved failed evaluation report clears stale rows and surfaces only the approved `Initial guess is outside of provided bounds` validation message. Other failed reports and rejected worker calls are logged with their full diagnostic object while Operand Evaluation shows `Operand evaluation failed.`; a later successful evaluation clears either warning.
  * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
  * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
@@ -174,6 +180,7 @@ function buildCurrentEditorModel(
  * - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
  * - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
  * - `Apply to Editor` asynchronously applies through `applyOptimizationModelToEditor()`, clearing the unapplied marker only after success. Synchronization failures retain the result and use the existing error UI.
+ * - An aborted WebMCP execution sends the active run through the same interrupt-buffer and worker run-id Stop path as the modal, waits for the worker report to settle, mirrors any stopped partial result, and then rejects with `AbortError`.
  * - Modal rendering is delegated to extracted wrappers:
  * - `RadiusModeModal`
  * - `ThicknessModeModal`
@@ -365,8 +372,17 @@ export function OptimizationPage({
   const sharedContentRef = useRef<HTMLDivElement | null>(null);
   const evaluationPanelRef = useRef<HTMLDivElement | null>(null);
   const evaluationRequestIdRef = useRef(0);
+  const evaluatedOptimizationRunConfigSignatureRef = useRef<string | undefined>(
+    undefined,
+  );
   const optimizationRunIdRef = useRef<string | undefined>(undefined);
   const optimizationInterruptBufferRef = useRef<SharedArrayBuffer | undefined>(
+    undefined,
+  );
+  const optimizationStopRequestedRunIdRef = useRef<string | undefined>(
+    undefined,
+  );
+  const optimizationStopPromiseRef = useRef<Promise<void> | undefined>(
     undefined,
   );
 
@@ -616,6 +632,99 @@ export function OptimizationPage({
     );
   }, [evaluationReservedHeight, isLG, liveDrawerHeight, pageShellHeight]);
 
+  const evaluateOptimizationOperation = useCallback(
+    async ({
+      requestId,
+      model,
+      currentImagePoint,
+      catalogSnapshot,
+      signal,
+    }: {
+      readonly requestId: number;
+      readonly model: OpticalModel;
+      readonly currentImagePoint: typeof imagePoint;
+      readonly catalogSnapshot: AllGlassCatalogsData | undefined;
+      readonly signal?: AbortSignal;
+    }): Promise<OptimizationReport> => {
+      if (evaluationRequestIdRef.current === requestId) {
+        evaluatedOptimizationRunConfigSignatureRef.current = undefined;
+      }
+      let config: OptimizationConfig;
+      let runConfig: OptimizationRunConfig;
+      try {
+        const state = optimizationStore.getState();
+        runConfig = state.buildOptimizationConfig(catalogSnapshot);
+        config = state.buildOptimizationEvaluationConfig(catalogSnapshot);
+      } catch (error) {
+        if (evaluationRequestIdRef.current === requestId) {
+          setEvaluationReport(undefined);
+          setIsEvaluating(false);
+          setIsPostEditEvaluationPending(false);
+        }
+        throw error;
+      }
+
+      if (proxy === undefined) {
+        if (evaluationRequestIdRef.current === requestId) {
+          setEvaluationReport(undefined);
+          setIsEvaluating(false);
+          setIsPostEditEvaluationPending(false);
+        }
+        throw new Error("Pyodide is not ready.");
+      }
+
+      try {
+        const report = await proxy.evaluateOptimizationProblem(
+          model,
+          config,
+          currentImagePoint,
+        );
+        assertWebMcpNotCancelled(signal);
+        if (evaluationRequestIdRef.current !== requestId) {
+          return report;
+        }
+
+        if (!report.success) {
+          if (
+            report.status === "error" &&
+            report.message === INITIAL_GUESS_OUTSIDE_BOUNDS_MESSAGE
+          ) {
+            setEvaluationReport(report);
+            setOptimizationWarningMessage(INITIAL_GUESS_OUTSIDE_BOUNDS_MESSAGE);
+            return report;
+          }
+
+          console.error(OPERAND_EVALUATION_FAILED_MESSAGE, report);
+          setEvaluationReport(undefined);
+          setOptimizationWarningMessage(OPERAND_EVALUATION_FAILED_MESSAGE);
+          return report;
+        }
+
+        setOptimizationWarningMessage(undefined);
+        setEvaluationReport(report);
+        evaluatedOptimizationRunConfigSignatureRef.current =
+          JSON.stringify(runConfig);
+        return report;
+      } catch (error: unknown) {
+        if (evaluationRequestIdRef.current === requestId) {
+          const errorName = error instanceof Error ? error.name : undefined;
+          if (errorName !== "AbortError") {
+            console.error(OPERAND_EVALUATION_FAILED_MESSAGE, error);
+            setEvaluationReport(undefined);
+            setOptimizationWarningMessage(OPERAND_EVALUATION_FAILED_MESSAGE);
+          }
+        }
+        throw error;
+      } finally {
+        if (evaluationRequestIdRef.current === requestId) {
+          setIsEvaluating(false);
+          setIsPostEditEvaluationPending(false);
+        }
+      }
+    },
+    [imagePoint, optimizationStore, proxy],
+  );
+
   const { run: runDebouncedEvaluation, cancel: cancelDebouncedEvaluation } =
     useDebouncedCallback(
       (
@@ -624,71 +733,12 @@ export function OptimizationPage({
         currentImagePoint: typeof imagePoint,
         catalogSnapshot: AllGlassCatalogsData | undefined,
       ) => {
-        let config: OptimizationConfig;
-        try {
-          config = optimizationStore
-            .getState()
-            .buildOptimizationEvaluationConfig(catalogSnapshot);
-        } catch {
-          if (evaluationRequestIdRef.current === requestId) {
-            setEvaluationReport(undefined);
-            setIsEvaluating(false);
-            setIsPostEditEvaluationPending(false);
-          }
-          return;
-        }
-
-        if (proxy === undefined) {
-          if (evaluationRequestIdRef.current === requestId) {
-            setEvaluationReport(undefined);
-            setIsEvaluating(false);
-            setIsPostEditEvaluationPending(false);
-          }
-          return;
-        }
-
-        void proxy
-          .evaluateOptimizationProblem(model, config, currentImagePoint)
-          .then((report) => {
-            if (evaluationRequestIdRef.current !== requestId) {
-              return;
-            }
-
-            if (!report.success) {
-              if (
-                report.status === "error" &&
-                report.message === INITIAL_GUESS_OUTSIDE_BOUNDS_MESSAGE
-              ) {
-                setEvaluationReport(report);
-                setOptimizationWarningMessage(
-                  INITIAL_GUESS_OUTSIDE_BOUNDS_MESSAGE,
-                );
-                return;
-              }
-
-              console.error(OPERAND_EVALUATION_FAILED_MESSAGE, report);
-              setEvaluationReport(undefined);
-              setOptimizationWarningMessage(OPERAND_EVALUATION_FAILED_MESSAGE);
-              return;
-            }
-
-            setOptimizationWarningMessage(undefined);
-            setEvaluationReport(report);
-          })
-          .catch((error: unknown) => {
-            if (evaluationRequestIdRef.current !== requestId) {
-              return;
-            }
-            console.error(OPERAND_EVALUATION_FAILED_MESSAGE, error);
-            setEvaluationReport(undefined);
-            setOptimizationWarningMessage(OPERAND_EVALUATION_FAILED_MESSAGE);
-          })
-          .finally(() => {
-            if (evaluationRequestIdRef.current === requestId) {
-              setIsEvaluating(false);
-              setIsPostEditEvaluationPending(false);
-            }
-          });
+        void evaluateOptimizationOperation({
+          requestId,
+          model,
+          currentImagePoint,
+          catalogSnapshot,
+        }).catch(() => undefined);
       },
       200,
     );
@@ -702,6 +752,8 @@ export function OptimizationPage({
       missingGlassMessage !== undefined
     ) {
       cancelDebouncedEvaluation();
+      evaluationRequestIdRef.current += 1;
+      evaluatedOptimizationRunConfigSignatureRef.current = undefined;
       setEvaluationReport(undefined);
       setIsEvaluating(false);
       setIsPostEditEvaluationPending(false);
@@ -740,6 +792,47 @@ export function OptimizationPage({
     cancelDebouncedEvaluation,
   ]);
 
+  const evaluateCurrentOptimization = useCallback(
+    async (signal: AbortSignal): Promise<OptimizationReport> => {
+      assertWebMcpNotCancelled(signal);
+      if (optimizationStore.getState().isOptimizing) {
+        throw new Error(
+          "Cannot evaluate operands while optimization is running.",
+        );
+      }
+      if (!isReady || proxy === undefined || optimizationModel === undefined) {
+        throw new Error("Optimization is not ready for operand evaluation.");
+      }
+      if (missingGlassMessage !== undefined) {
+        throw new Error(missingGlassMessage);
+      }
+
+      cancelDebouncedEvaluation();
+      const requestId = evaluationRequestIdRef.current + 1;
+      evaluationRequestIdRef.current = requestId;
+      setEvaluationReport(undefined);
+      setIsEvaluating(true);
+      return evaluateOptimizationOperation({
+        requestId,
+        model: optimizationModel,
+        currentImagePoint: imagePoint,
+        catalogSnapshot: catalogs,
+        signal,
+      });
+    },
+    [
+      cancelDebouncedEvaluation,
+      catalogs,
+      evaluateOptimizationOperation,
+      imagePoint,
+      isReady,
+      missingGlassMessage,
+      optimizationModel,
+      optimizationStore,
+      proxy,
+    ],
+  );
+
   const handleGridCellEditingStarted = useCallback(() => {
     setActiveGridEditCount((count) => count + 1);
   }, []);
@@ -750,48 +843,113 @@ export function OptimizationPage({
     setGridEditStopRevision((revision) => revision + 1);
   }, []);
 
-  const handleOptimize = async () => {
-    if (
-      !canOptimize ||
-      proxy === undefined ||
-      optimizationModel === undefined ||
-      missingGlassMessage !== undefined
-    ) {
-      return;
-    }
+  const requestOptimizationStop = useCallback(
+    (requestedRunId?: string): Promise<void> => {
+      const runId = requestedRunId ?? optimizationRunIdRef.current;
+      if (proxy === undefined || runId === undefined) {
+        return Promise.resolve();
+      }
+      if (optimizationStopRequestedRunIdRef.current === runId) {
+        return optimizationStopPromiseRef.current ?? Promise.resolve();
+      }
 
-    const runId =
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `optimization-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const interruptBuffer =
-      canStopOptimization && typeof SharedArrayBuffer !== "undefined"
-        ? new SharedArrayBuffer(4)
-        : undefined;
-    optimizationRunIdRef.current = runId;
-    optimizationInterruptBufferRef.current = interruptBuffer;
-    setOptimizationWarningMessage(undefined);
-    setOptimizationProgress([]);
-    setOptimizationProgressModalOpen(true);
-    setOptimizationRunComplete(false);
-    setIsStoppingOptimization(false);
-    optimizationStore.getState().setIsOptimizing(true);
-    try {
+      optimizationStopRequestedRunIdRef.current = runId;
+      const interruptBuffer = optimizationInterruptBufferRef.current;
+      if (interruptBuffer !== undefined) {
+        Atomics.store(
+          new Int32Array(interruptBuffer),
+          0,
+          PYODIDE_INTERRUPT_SIGNAL,
+        );
+      }
+
+      setIsStoppingOptimization(true);
+      let stopPromise: Promise<void>;
+      try {
+        stopPromise = proxy
+          .requestOptimizationStop(runId)
+          .then(() => undefined)
+          .catch(() => undefined);
+      } catch {
+        stopPromise = Promise.resolve();
+      }
+      optimizationStopPromiseRef.current = stopPromise;
+      return stopPromise;
+    },
+    [proxy],
+  );
+
+  const executeOptimizationOperation = useCallback(
+    async (signal: AbortSignal): Promise<OptimizationRunReport> => {
+      assertWebMcpNotCancelled(signal);
+      if (
+        optimizationStore.getState().isOptimizing ||
+        optimizationRunIdRef.current !== undefined
+      ) {
+        throw new Error("Optimization is already running.");
+      }
+      if (
+        !canOptimize ||
+        proxy === undefined ||
+        optimizationModel === undefined ||
+        missingGlassMessage !== undefined
+      ) {
+        throw new Error("Optimization is not ready to run.");
+      }
+
+      const runId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `optimization-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const interruptBuffer =
+        canStopOptimization && typeof SharedArrayBuffer !== "undefined"
+          ? new SharedArrayBuffer(4)
+          : undefined;
       const config = optimizationStore
         .getState()
         .buildOptimizationConfig(catalogs);
+      if (
+        evaluatedOptimizationRunConfigSignatureRef.current !==
+        JSON.stringify(config)
+      ) {
+        throw new Error(
+          "Optimization requires a successful evaluation of the current configuration.",
+        );
+      }
       if (!hasNonZeroOptimizationContribution(config)) {
         setOptimizationWarningMessage(ZERO_WEIGHT_WARNING_MESSAGE);
-        return;
+        throw new Error(ZERO_WEIGHT_WARNING_MESSAGE);
       }
+
+      optimizationRunIdRef.current = runId;
+      optimizationInterruptBufferRef.current = interruptBuffer;
+      optimizationStopRequestedRunIdRef.current = undefined;
+      optimizationStopPromiseRef.current = undefined;
+      setOptimizationWarningMessage(undefined);
+      setOptimizationProgress([]);
+      setOptimizationProgressModalOpen(true);
+      setOptimizationRunComplete(false);
+      setIsStoppingOptimization(false);
+      optimizationStore.getState().setIsOptimizing(true);
+
       const progressCallback = comlinkProxy(
         (progress: ReadonlyArray<OptimizationProgressEntry>) => {
-          setOptimizationProgress(progress);
+          if (optimizationRunIdRef.current === runId) {
+            setOptimizationProgress(progress);
+          }
         },
       );
-      const report =
-        "glass_variables" in config
-          ? await proxy.optimizeGlasses(
+      const abortHandler = () => {
+        void requestOptimizationStop(runId);
+      };
+      signal.addEventListener("abort", abortHandler, { once: true });
+      if (signal.aborted) {
+        abortHandler();
+      }
+
+      try {
+        const report = await ("glass_variables" in config
+          ? proxy.optimizeGlasses(
               optimizationModel,
               config,
               imagePoint,
@@ -799,85 +957,123 @@ export function OptimizationPage({
               runId,
               interruptBuffer,
             )
-          : await proxy.optimizeOpm(
+          : proxy.optimizeOpm(
               optimizationModel,
               config,
               imagePoint,
               progressCallback,
               runId,
               interruptBuffer,
+            ));
+        setOptimizationProgress(report.optimization_progress ?? []);
+        if (report.status === "error") {
+          console.error(OPTIMIZATION_FAILED_MESSAGE, report);
+          setOptimizationWarningMessage(OPTIMIZATION_FAILED_MESSAGE);
+        } else {
+          optimizationStore.getState().applyOptimizationResult(report);
+          if (!report.success && report.status !== "stopped") {
+            console.error(OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE, report);
+            setOptimizationWarningMessage(
+              OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE,
             );
-      setOptimizationProgress(report.optimization_progress ?? []);
-      if (report.status === "error") {
-        console.error(OPTIMIZATION_FAILED_MESSAGE, report);
+          }
+        }
+        assertWebMcpNotCancelled(signal);
+        return report;
+      } catch (error: unknown) {
+        if (signal.aborted) {
+          throw new DOMException("Tool execution was cancelled", "AbortError");
+        }
+        console.error(OPTIMIZATION_FAILED_MESSAGE, error);
         setOptimizationWarningMessage(OPTIMIZATION_FAILED_MESSAGE);
-        return;
+        onError();
+        throw error;
+      } finally {
+        signal.removeEventListener("abort", abortHandler);
+        setOptimizationRunComplete(true);
+        setIsStoppingOptimization(false);
+        optimizationRunIdRef.current = undefined;
+        optimizationInterruptBufferRef.current = undefined;
+        optimizationStopRequestedRunIdRef.current = undefined;
+        optimizationStopPromiseRef.current = undefined;
+        optimizationStore.getState().setIsOptimizing(false);
       }
-      optimizationStore.getState().applyOptimizationResult(report);
-      if (!report.success && report.status !== "stopped") {
-        console.error(OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE, report);
-        setOptimizationWarningMessage(OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE);
-        return;
+    },
+    [
+      canOptimize,
+      canStopOptimization,
+      catalogs,
+      imagePoint,
+      missingGlassMessage,
+      onError,
+      optimizationModel,
+      optimizationStore,
+      proxy,
+      requestOptimizationStop,
+    ],
+  );
+
+  const handleOptimize = useCallback(() => {
+    void executeOptimizationOperation(new AbortController().signal).catch(
+      () => undefined,
+    );
+  }, [executeOptimizationOperation]);
+
+  const handleStopOptimization = useCallback(() => {
+    void requestOptimizationStop();
+  }, [requestOptimizationStop]);
+
+  /** Forwards cancellation to the editor commit boundary; a cancelled pending Apply retains the result and skips the completion callback. */
+  const applyOptimizationOperation = useCallback(
+    async (signal: AbortSignal): Promise<{ readonly surfaceCount: number }> => {
+      assertWebMcpNotCancelled(signal);
+      if (
+        optimizationStore.getState().isOptimizing ||
+        optimizationRunIdRef.current !== undefined
+      ) {
+        throw new Error(
+          "Cannot apply optimization while a run is already running.",
+        );
       }
-    } catch (error) {
-      console.error(OPTIMIZATION_FAILED_MESSAGE, error);
-      setOptimizationWarningMessage(OPTIMIZATION_FAILED_MESSAGE);
-      onError();
-    } finally {
-      setOptimizationRunComplete(true);
-      setIsStoppingOptimization(false);
-      optimizationRunIdRef.current = undefined;
-      optimizationInterruptBufferRef.current = undefined;
-      optimizationStore.getState().setIsOptimizing(false);
-    }
-  };
-
-  const handleStopOptimization = () => {
-    if (proxy === undefined || isStoppingOptimization) {
-      return;
-    }
-
-    const runId = optimizationRunIdRef.current;
-    if (runId === undefined) {
-      return;
-    }
-
-    const interruptBuffer = optimizationInterruptBufferRef.current;
-    if (interruptBuffer !== undefined) {
-      Atomics.store(
-        new Int32Array(interruptBuffer),
-        0,
-        PYODIDE_INTERRUPT_SIGNAL,
-      );
-    }
-
-    setIsStoppingOptimization(true);
-    void proxy.requestOptimizationStop(runId).catch(() => {
-      setIsStoppingOptimization(false);
-    });
-  };
-
-  const handleApplyToEditor = async () => {
-    const model = optimizationStore.getState().optimizationModel;
-    if (model === undefined) {
-      return;
-    }
-
-    if (proxy === undefined) return;
-    try {
+      const model = optimizationStore.getState().optimizationModel;
+      if (model === undefined) {
+        throw new Error("No optimized optical model is available.");
+      }
+      if (proxy === undefined) {
+        throw new Error("Pyodide is not ready.");
+      }
       await applyOptimizationModelToEditor({
         model,
         lensStore,
         specsStore,
         proxy,
+        signal,
       });
+      assertWebMcpNotCancelled(signal);
+      await onApplyToEditor?.(model);
+      assertWebMcpNotCancelled(signal);
       optimizationStore.getState().closeApplyConfirm();
       optimizationStore.getState().markOptimizationResultAppliedToEditor();
-      await onApplyToEditor?.(model);
+      return { surfaceCount: model.surfaces.length };
+    },
+    [lensStore, onApplyToEditor, optimizationStore, proxy, specsStore],
+  );
+
+  const handleApplyToEditor = useCallback(async () => {
+    try {
+      await applyOptimizationOperation(new AbortController().signal);
     } catch {
       onError();
     }
-  };
+  }, [applyOptimizationOperation, onError]);
+
+  useOptimizationWebMCP({
+    optimizationStore,
+    catalogs,
+    evaluate: evaluateCurrentOptimization,
+    execute: executeOptimizationOperation,
+    apply: applyOptimizationOperation,
+  });
 
   const bottomDrawerFields = useMemo(
     () => ({

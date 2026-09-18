@@ -4,12 +4,23 @@
  * a mouse event so its return value and optional event handling are observable.
  * It also exercises the three global page WebMCP registrations and confirms
  * that they share the shell's Optimization confirmation state machine.
+ * Cancelled Apply requests exercise the real helper and leave editor/specs
+ * stores, the unapplied result, and the pending destination intact.
  */
 import type React from "react";
 import { act, render } from "@testing-library/react";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import AppShell from "@/app/AppShell";
+import { createStore } from "zustand/vanilla";
+import {
+  createLensEditorSlice,
+  type LensEditorState,
+} from "@/features/lens-editor/stores/lensEditorStore";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
 
 const mockPush = jest.fn<void, [string]>();
 let mockPathname = "/";
@@ -30,14 +41,24 @@ let mockUnappliedModalProps:
 const mockGlassMapStore = {
   getState: () => ({ catalogsData: {}, lookupMaps: undefined }),
 };
+let mockLensStore = createStore<LensEditorState>(createLensEditorSlice);
+let mockSpecsStore = createStore<SpecsConfiguratorState>(
+  createSpecsConfiguratorSlice,
+);
+const mockMarkResultApplied = jest.fn(() => {
+  mockHasUnappliedResult = false;
+});
 const mockOptimizationStore = {
   getState: () => ({
     hasUnappliedOptimizationResult: mockHasUnappliedResult,
     optimizationModel: mockOptimizationModel,
-    markOptimizationResultAppliedToEditor: jest.fn(),
+    markOptimizationResultAppliedToEditor: mockMarkResultApplied,
   }),
 };
-const mockProxy = {} as PyodideWorkerAPI;
+const mockGetSurfaceSemiDiameters = jest.fn();
+const mockProxy = {
+  getSurfaceSemiDiameters: mockGetSurfaceSemiDiameters,
+} as unknown as PyodideWorkerAPI;
 
 function setModelContext(
   modelContext: Pick<WebMCP.ModelContext, "registerTool"> | undefined,
@@ -70,13 +91,13 @@ jest.mock("@/shared/hooks/usePyodide", () => ({
 }));
 
 jest.mock("@/features/lens-editor/providers/LensEditorStoreProvider", () => ({
-  useLensEditorStore: () => ({ getState: jest.fn() }),
+  useLensEditorStore: () => mockLensStore,
 }));
 
 jest.mock(
   "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider",
   () => ({
-    useSpecsConfiguratorStore: () => ({ getState: jest.fn() }),
+    useSpecsConfiguratorStore: () => mockSpecsStore,
   }),
 );
 
@@ -144,7 +165,13 @@ describe("AppShell navigation callback", () => {
     mockPathname = "/";
     mockHasUnappliedResult = false;
     mockOptimizationModel = undefined;
-    mockApplyOptimizationModelToEditor.mockClear();
+    mockApplyOptimizationModelToEditor.mockReset().mockResolvedValue(undefined);
+    mockLensStore = createStore<LensEditorState>(createLensEditorSlice);
+    mockSpecsStore = createStore<SpecsConfiguratorState>(
+      createSpecsConfiguratorSlice,
+    );
+    mockGetSurfaceSemiDiameters.mockReset();
+    mockMarkResultApplied.mockClear();
     mockCapturedOnNavigate = undefined;
     mockUnappliedModalProps = undefined;
   });
@@ -351,6 +378,113 @@ describe("AppShell navigation callback", () => {
     expect(mockApplyOptimizationModelToEditor).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith("/settings");
   });
+
+  it.each(["before apply", "during aperture extraction"] as const)(
+    "preserves the editor, result, and pending navigation when Apply is cancelled %s",
+    async (cancellationTime) => {
+      mockPathname = "/optimization";
+      mockHasUnappliedResult = true;
+      mockOptimizationModel = {
+        setAutoAperture: "autoAperture",
+        object: { distance: 1e10, medium: "air", manufacturer: "" },
+        image: { curvatureRadius: 0 },
+        surfaces: [
+          {
+            label: "Default",
+            curvatureRadius: 42,
+            thickness: 2,
+            medium: "air",
+            manufacturer: "",
+            semiDiameter: 5,
+          },
+        ],
+        specs: {
+          pupil: { space: "object", type: "epd", value: 10 },
+          field: {
+            space: "object",
+            type: "angle",
+            fields: [0, 1],
+            isRelative: true,
+            maxField: 10,
+          },
+          wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
+        },
+      };
+      const { applyOptimizationModelToEditor } = jest.requireActual<
+        typeof import("@/features/optimization/lib/applyOptimizationModelToEditor")
+      >("@/features/optimization/lib/applyOptimizationModelToEditor");
+      mockApplyOptimizationModelToEditor.mockImplementation((params) =>
+        applyOptimizationModelToEditor(
+          params as Parameters<typeof applyOptimizationModelToEditor>[0],
+        ),
+      );
+      let resolveAperture!: (values: number[]) => void;
+      mockGetSurfaceSemiDiameters.mockReturnValue(
+        new Promise<number[]>((resolve) => {
+          resolveAperture = resolve;
+        }),
+      );
+      const registerTool = jest.fn().mockResolvedValue(undefined);
+      setModelContext({ registerTool });
+      render(
+        <AppShell>
+          <div>Route body</div>
+        </AppShell>,
+      );
+      const getTool = (name: string) =>
+        registerTool.mock.calls.find(
+          ([tool]) => tool.name === name,
+        )![0] as WebMCP.ModelContextTool;
+      await act(async () => {
+        await getTool("set_active_page").execute(
+          { page: "settings" },
+          { signal: new AbortController().signal },
+        );
+      });
+      const initialLensState = mockLensStore.getState();
+      const initialSpecsState = mockSpecsStore.getState();
+      const controller = new AbortController();
+      if (cancellationTime === "before apply") controller.abort();
+      let application!: Promise<unknown>;
+      await act(async () => {
+        application = Promise.resolve(
+          getTool("resolve_optimization_navigation").execute(
+            { action: "apply_to_editor" },
+            { signal: controller.signal },
+          ),
+        );
+        void application.catch(() => undefined);
+      });
+      if (cancellationTime === "during aperture extraction") {
+        expect(mockGetSurfaceSemiDiameters).toHaveBeenCalledWith(
+          mockOptimizationModel,
+        );
+        controller.abort();
+        await act(async () => {
+          resolveAperture([100, 6, 200]);
+          await application.catch(() => undefined);
+        });
+      } else {
+        expect(mockGetSurfaceSemiDiameters).not.toHaveBeenCalled();
+      }
+
+      await expect(application).rejects.toMatchObject({ name: "AbortError" });
+      expect(mockLensStore.getState()).toBe(initialLensState);
+      expect(mockSpecsStore.getState()).toBe(initialSpecsState);
+      expect(mockHasUnappliedResult).toBe(true);
+      expect(mockMarkResultApplied).not.toHaveBeenCalled();
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockUnappliedModalProps?.isOpen).toBe(true);
+      const page = await getTool("get_active_page").execute(
+        {},
+        { signal: new AbortController().signal },
+      );
+      expect(JSON.parse(String(page))).toEqual({
+        page: "optimization",
+        pendingNavigation: "settings",
+      });
+    },
+  );
 
   it("navigates directly for non-Optimization WebMCP requests", async () => {
     const registerTool = jest.fn().mockResolvedValue(undefined);

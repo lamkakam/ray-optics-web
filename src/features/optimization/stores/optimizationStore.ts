@@ -48,6 +48,7 @@
  * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
  * - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal`.
  * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count after combinations with an exactly zero operand, field, or wavelength weight are excluded. `ray_fan` contributes `num_rays * 2` residuals per retained field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
+ * - `setOptimizationConfig()` atomically adapts a strict worker config into the string-backed form state, normalizes shared field/wavelength vectors, preserves operand options, and leaves the page-local model, sync baseline, prior report, and unapplied-result marker untouched.
  * - `applyOptimizationResult()` can create or update `surface.aspherical` and surface/Image `decenter`, preserving untouched tilt/decenter components, and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
  * - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
  * - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
@@ -74,6 +75,8 @@ import type {
   OptimizationValueEntry,
   DecenterTargetKind,
 } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { OptimizationOperandOptions } from "@/features/optimization/types/optimizationOperandTypes";
+import { adaptOptimizationRunConfigToGuiState } from "@/features/optimization/lib/optimizationConfigAdapter";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import {
@@ -232,6 +235,8 @@ export interface OptimizationOperandRow {
   readonly kind: OptimizationOperandKind;
   readonly target?: string;
   readonly weight: string;
+  /** Optional public worker sampling settings, including non-default Ray Fan counts. */
+  readonly options?: OptimizationOperandOptions;
 }
 
 interface RadiusModalState {
@@ -369,6 +374,11 @@ export interface OptimizationState {
   ) => void;
   /** Replaces all operand rows. */
   replaceOperands: (rows: OptimizationOperandRow[]) => void;
+  /** Atomically replaces all optimizer, target-mode, operand, and shared-weight configuration from a worker config. */
+  setOptimizationConfig: (
+    config: OptimizationRunConfig,
+    catalogs?: AllGlassCatalogsData,
+  ) => void;
   /** Opens the apply-to-Editor confirmation modal. */
   openApplyConfirm: () => void;
   /** Closes the apply-to-Editor confirmation modal. */
@@ -911,15 +921,15 @@ function buildMeritFunctionOperands(
               index,
               weight: currentWeight,
             })),
-            ...(metadata.defaultOptions !== undefined
-              ? { options: metadata.defaultOptions }
+            ...((operand.options ?? metadata.defaultOptions) !== undefined
+              ? { options: operand.options ?? metadata.defaultOptions }
               : {}),
           }
         : {
             kind: operand.kind,
             weight,
-            ...(metadata.defaultOptions !== undefined
-              ? { options: metadata.defaultOptions }
+            ...((operand.options ?? metadata.defaultOptions) !== undefined
+              ? { options: operand.options ?? metadata.defaultOptions }
               : {}),
           };
 
@@ -1554,6 +1564,71 @@ function hasGlassResults(
   return "final_glasses" in report;
 }
 
+function buildOptimizationConfigForState(
+  state: OptimizationState,
+  catalogs?: AllGlassCatalogsData,
+): OptimizationRunConfig {
+  if (state.optimizationModel === undefined) {
+    throw new Error("No optical model available for optimization.");
+  }
+
+  const meritOperands = buildMeritFunctionOperands(
+    state.operands,
+    state.fieldWeights,
+    state.wavelengthWeights,
+  );
+  const capabilities = getOptimizationAlgorithmCapabilities(
+    state.optimizer.kind === "least_squares"
+      ? { kind: state.optimizer.kind, method: state.optimizer.method }
+      : { kind: state.optimizer.kind },
+  );
+  const variables = [
+    ...buildSurfaceVariables(
+      state.radiusModes,
+      state.thicknessModes,
+      capabilities.canUseBounds,
+    ),
+    ...buildAsphereVariables(state.asphereStates, capabilities.canUseBounds),
+    ...buildDecenterVariables(state.decenterStates, capabilities.canUseBounds),
+  ];
+  if (
+    capabilities.requiresResidualCountAtLeastVariableCount &&
+    countResidualSamples(meritOperands) < variables.length
+  ) {
+    throw new Error(
+      "Levenberg-Marquardt requires at least as many residuals as variables.",
+    );
+  }
+
+  const pickups = [
+    ...buildSurfacePickups(state.radiusModes, state.thicknessModes),
+    ...buildAspherePickups(state.asphereStates),
+    ...buildDecenterPickups(state.decenterStates),
+  ];
+  const merit_function = { operands: meritOperands };
+
+  if (state.optimizer.kind === "glass_expert") {
+    return {
+      glass_optimizer: buildGlassOptimizerConfig(state.optimizer),
+      glass_variables: buildGlassVariables(
+        state.optimizationModel,
+        state.glassModes,
+        catalogs,
+      ),
+      variables,
+      pickups,
+      merit_function,
+    };
+  }
+
+  return {
+    optimizer: buildOptimizerConfig(state.optimizer),
+    variables,
+    pickups,
+    merit_function,
+  };
+}
+
 export const createOptimizationSlice: StateCreator<OptimizationState> = (
   set,
   get,
@@ -1856,6 +1931,24 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (
 
   replaceOperands: (rows) => set({ operands: rows }),
 
+  setOptimizationConfig: (config, catalogs) => {
+    const state = get();
+    if (state.isOptimizing) {
+      throw new Error(
+        "Cannot change optimization configuration while a run is already running.",
+      );
+    }
+
+    const nextConfiguration = adaptOptimizationRunConfigToGuiState(
+      config,
+      state.optimizationModel,
+      catalogs,
+    );
+    const nextState = { ...state, ...nextConfiguration };
+    buildOptimizationConfigForState(nextState, catalogs);
+    set(nextConfiguration);
+  },
+
   openApplyConfirm: () => set({ applyConfirmOpen: true }),
   closeApplyConfirm: () => set({ applyConfirmOpen: false }),
   setIsOptimizing: (value) => set({ isOptimizing: value }),
@@ -1864,73 +1957,8 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (
   setOptimizerKind: (kind) =>
     set({ optimizer: createDefaultOptimizerState(kind) }),
 
-  buildOptimizationConfig: (catalogs) => {
-    const state = get();
-    if (state.optimizationModel === undefined) {
-      throw new Error("No optical model available for optimization.");
-    }
-
-    const meritOperands = buildMeritFunctionOperands(
-      state.operands,
-      state.fieldWeights,
-      state.wavelengthWeights,
-    );
-    const capabilities = getOptimizationAlgorithmCapabilities(
-      state.optimizer.kind === "least_squares"
-        ? { kind: state.optimizer.kind, method: state.optimizer.method }
-        : { kind: state.optimizer.kind },
-    );
-    const variables = [
-      ...buildSurfaceVariables(
-        state.radiusModes,
-        state.thicknessModes,
-        capabilities.canUseBounds,
-      ),
-      ...buildAsphereVariables(state.asphereStates, capabilities.canUseBounds),
-      ...buildDecenterVariables(
-        state.decenterStates,
-        capabilities.canUseBounds,
-      ),
-    ];
-    if (
-      capabilities.requiresResidualCountAtLeastVariableCount &&
-      countResidualSamples(meritOperands) < variables.length
-    ) {
-      throw new Error(
-        "Levenberg-Marquardt requires at least as many residuals as variables.",
-      );
-    }
-
-    const pickups = [
-      ...buildSurfacePickups(state.radiusModes, state.thicknessModes),
-      ...buildAspherePickups(state.asphereStates),
-      ...buildDecenterPickups(state.decenterStates),
-    ];
-    const merit_function = {
-      operands: meritOperands,
-    };
-
-    if (state.optimizer.kind === "glass_expert") {
-      return {
-        glass_optimizer: buildGlassOptimizerConfig(state.optimizer),
-        glass_variables: buildGlassVariables(
-          state.optimizationModel,
-          state.glassModes,
-          catalogs,
-        ),
-        variables,
-        pickups,
-        merit_function,
-      };
-    }
-
-    return {
-      optimizer: buildOptimizerConfig(state.optimizer),
-      variables,
-      pickups,
-      merit_function,
-    };
-  },
+  buildOptimizationConfig: (catalogs) =>
+    buildOptimizationConfigForState(get(), catalogs),
 
   buildOptimizationEvaluationConfig: (catalogs) => {
     const runConfig = get().buildOptimizationConfig(catalogs);

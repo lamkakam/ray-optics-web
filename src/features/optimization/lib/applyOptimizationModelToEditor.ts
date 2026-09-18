@@ -6,12 +6,15 @@ import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/grid
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
+import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
 
 interface ApplyOptimizationModelToEditorParams {
   readonly model: OpticalModel;
   readonly lensStore: StoreApi<LensEditorState>;
   readonly specsStore: StoreApi<SpecsConfiguratorState>;
   readonly proxy: Pick<PyodideWorkerAPI, "getSurfaceSemiDiameters">;
+  /** Cancels a pending application before its synchronous store commit begins. */
+  readonly signal?: AbortSignal;
 }
 
 /**
@@ -20,6 +23,7 @@ interface ApplyOptimizationModelToEditorParams {
  * @remarks
  * ## Behavior
  *
+ * - Checks cancellation at entry and after aperture extraction, immediately before the first store mutation. Cancellation rejects with `AbortError` and leaves both stores unchanged; it does not interrupt the worker request or roll back a completed commit.
  * - Loads and commits `model.specs` through `SpecsConfiguratorState`.
  * - Converts `model` surfaces to prescription grid rows with `surfacesToGridRows()`.
  * - Calls `LensEditorState.setRows()` with `optimizationSyncPolicy: "preserveOptimizationModes"` so the Optimization store can sync the applied model without discarding compatible optimization variable/pickup settings.
@@ -31,7 +35,9 @@ export async function applyOptimizationModelToEditor({
   lensStore,
   specsStore,
   proxy,
+  signal,
 }: ApplyOptimizationModelToEditorParams): Promise<void> {
+  assertWebMcpNotCancelled(signal);
   const rows = surfacesToGridRows(model);
   const autoSemiDiameters =
     model.setAutoAperture === "autoAperture"
@@ -41,6 +47,7 @@ export async function applyOptimizationModelToEditor({
         )
       : {};
 
+  assertWebMcpNotCancelled(signal);
   specsStore.getState().loadFromSpecs(model.specs);
   specsStore.getState().setCommittedSpecs(model.specs);
   lensStore.getState().setRows(rows, {

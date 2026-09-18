@@ -2,8 +2,9 @@
  * Dependency-injected WebMCP registration for validated Lens Editor prescription
  * reads and mutations. Browser validation is advisory: every execution is checked
  * again with the compiled application-side AJV schema before Zustand is accessed.
+ * Strict input errors and cancellation checks are supplied by the shared WebMCP
+ * validation module so feature-local tools use the same boundary contract.
  */
-import type { ErrorObject, ValidateFunction } from "ajv";
 import type { StoreApi } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
@@ -27,6 +28,11 @@ import {
   finiteNumberSchema,
   lensPrescriptionSchema,
 } from "@/shared/lib/schemas/prescriptionSchema";
+import {
+  assertWebMcpInput,
+  assertWebMcpNotCancelled,
+  webMcpErrorPath,
+} from "@/shared/lib/webMcpValidation";
 
 type RowSelector = "object" | "image" | number;
 type JsonRecord = Record<string, unknown>;
@@ -127,36 +133,6 @@ const validators = {
   update: ajv.compile(updateLensRowInputSchema),
   delete: ajv.compile(deleteLensSurfaceInputSchema),
 };
-
-function errorPath(error: ErrorObject | undefined): string {
-  if (!error) return "/";
-  if (error.keyword === "required")
-    return (
-      `${error.instancePath}/${String(error.params.missingProperty)}` || "/"
-    );
-  if (error.keyword === "additionalProperties")
-    return (
-      `${error.instancePath}/${String(error.params.additionalProperty)}` || "/"
-    );
-  return error.instancePath || "/";
-}
-
-function assertInput<T>(
-  validator: ValidateFunction<T>,
-  input: unknown,
-): asserts input is T {
-  if (!validator(input)) {
-    const error = validator.errors?.[0];
-    throw new Error(
-      `Invalid input at ${errorPath(error)}: ${error?.message ?? "schema check failed"}`,
-    );
-  }
-}
-
-function assertNotCancelled(signal: AbortSignal): void {
-  if (signal.aborted)
-    throw new DOMException("Tool execution was cancelled", "AbortError");
-}
 
 function resolveRow(
   rows: GridRow[],
@@ -310,8 +286,8 @@ export function createLensPrescriptionTools(
       inputSchema: getLensPrescriptionInputSchema,
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       execute: (input, { signal }) => {
-        assertInput(validators.get, input);
-        assertNotCancelled(signal);
+        assertWebMcpInput(validators.get, input);
+        assertWebMcpNotCancelled(signal);
         const rows = store.getState().rows;
         const selector = input.row as RowSelector | undefined;
         if (selector === undefined)
@@ -331,8 +307,8 @@ export function createLensPrescriptionTools(
       inputSchema: setLensPrescriptionInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: (input, { signal }) => {
-        assertInput(validators.set, input);
-        assertNotCancelled(signal);
+        assertWebMcpInput(validators.set, input);
+        assertWebMcpNotCancelled(signal);
         const prescription = assertResolvedMedia(
           resolvePrescriptionMedia(input, lookupMaps),
         );
@@ -350,8 +326,8 @@ export function createLensPrescriptionTools(
       inputSchema: insertLensSurfaceInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: (input, { signal }) => {
-        assertInput(validators.insert, input);
-        assertNotCancelled(signal);
+        assertWebMcpInput(validators.insert, input);
+        assertWebMcpNotCancelled(signal);
         const state = store.getState();
         const after = input.after as "object" | number;
         const row = resolveRow(state.rows, after);
@@ -384,8 +360,8 @@ export function createLensPrescriptionTools(
       inputSchema: updateLensRowInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: (input, { signal }) => {
-        assertInput(validators.update, input);
-        assertNotCancelled(signal);
+        assertWebMcpInput(validators.update, input);
+        assertWebMcpNotCancelled(signal);
         const state = store.getState();
         const selector = input.row as RowSelector;
         const row = resolveRow(state.rows, selector);
@@ -414,7 +390,7 @@ export function createLensPrescriptionTools(
         if (!validators.set(prescription)) {
           const error = validators.set.errors?.[0];
           throw new Error(
-            `Invalid candidate prescription at ${errorPath(error)}: ${error?.message ?? "schema check failed"}`,
+            `Invalid candidate prescription at ${webMcpErrorPath(error)}: ${error?.message ?? "schema check failed"}`,
           );
         }
         const resolvedPrescription = assertResolvedMedia(
@@ -447,8 +423,8 @@ export function createLensPrescriptionTools(
       inputSchema: deleteLensSurfaceInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: (input, { signal }) => {
-        assertInput(validators.delete, input);
-        assertNotCancelled(signal);
+        assertWebMcpInput(validators.delete, input);
+        assertWebMcpNotCancelled(signal);
         const state = store.getState();
         const surface = input.surface as number;
         const row = resolveRow(state.rows, surface);

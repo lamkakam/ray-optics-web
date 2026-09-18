@@ -1,3 +1,4 @@
+/** Covers Optimization page state transitions, worker orchestration, and WebMCP Apply cancellation before editor commits. */
 import {
   act,
   fireEvent,
@@ -14,6 +15,8 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type {
   GlassOptimizationConfig,
   OptimizationConfig,
+  OptimizationReport,
+  OptimizationRunReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -193,6 +196,24 @@ function makeEvaluationReport() {
   };
 }
 
+function makeWebMcpOptimizationConfig(): OptimizationConfig {
+  return {
+    optimizer: {
+      kind: "least_squares",
+      method: "trf",
+      max_nfev: 100,
+      ftol: 1e-5,
+      xtol: 1e-5,
+      gtol: 1e-5,
+    },
+    variables: [],
+    pickups: [],
+    merit_function: {
+      operands: [{ kind: "focal_length", target: 100, weight: 1 }],
+    },
+  };
+}
+
 function mockPointerCapture(element: HTMLElement) {
   Object.defineProperty(element, "setPointerCapture", {
     configurable: true,
@@ -300,6 +321,13 @@ describe("OptimizationPage", () => {
       configurable: true,
       writable: true,
       value: MockResizeObserver,
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: undefined,
     });
   });
 
@@ -2923,5 +2951,325 @@ describe("OptimizationPage", () => {
     );
     expect(evaluationScroll).not.toHaveClass("overflow-y-auto");
     expect(evaluationScroll.style.maxHeight).toBe("");
+  });
+
+  it("registers page-scoped tools and routes configuration, evaluation, execution, and apply through shared operations", async () => {
+    const registrations: Array<{
+      readonly tool: WebMCP.ModelContextTool;
+      readonly signal: AbortSignal;
+    }> = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn(
+          (
+            tool: WebMCP.ModelContextTool,
+            options?: WebMCP.ModelContextRegisterToolOptions,
+          ) => {
+            registrations.push({
+              tool,
+              signal: options?.signal as AbortSignal,
+            });
+          },
+        ),
+      },
+    });
+
+    const proxy = makeProxy();
+    const { lensStore, optimizationStore, unmount } =
+      renderOptimizationPage(proxy);
+    await waitFor(() => expect(registrations).toHaveLength(5));
+    const tools = new Map(
+      registrations.map(({ tool }) => [tool.name, tool] as const),
+    );
+    const signal = new AbortController().signal;
+    const config = makeWebMcpOptimizationConfig();
+
+    let configured: unknown;
+    await act(async () => {
+      configured = await tools
+        .get("set_optimization_config")
+        ?.execute({ ...config }, { signal });
+    });
+    expect(JSON.parse(String(configured))).toEqual({
+      configured: true,
+      config,
+    });
+
+    let canonical: unknown;
+    await act(async () => {
+      canonical = await tools
+        .get("get_optimization_config")
+        ?.execute({}, { signal });
+    });
+    expect(JSON.parse(String(canonical))).toEqual(config);
+
+    let evaluation: unknown;
+    await act(async () => {
+      evaluation = await tools
+        .get("evaluate_optimization_operands")
+        ?.execute({}, { signal });
+    });
+    expect(JSON.parse(String(evaluation))).toMatchObject({
+      status: "evaluated",
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+    );
+
+    let execution: unknown;
+    await act(async () => {
+      execution = await tools
+        .get("execute_optimization")
+        ?.execute({}, { signal });
+    });
+    expect(JSON.parse(String(execution))).toMatchObject({
+      status: "optimized",
+    });
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+      true,
+    );
+
+    let applied: unknown;
+    await act(async () => {
+      applied = await tools
+        .get("apply_optimization_to_editor")
+        ?.execute({}, { signal });
+    });
+    expect(JSON.parse(String(applied))).toEqual({
+      applied: true,
+      surfaceCount: baseModel.surfaces.length,
+    });
+    expect(lensStore.getState().rows[1]).toMatchObject({ curvatureRadius: 42 });
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+      false,
+    );
+
+    expect([...tools.keys()]).toEqual([
+      "set_optimization_config",
+      "get_optimization_config",
+      "evaluate_optimization_operands",
+      "execute_optimization",
+      "apply_optimization_to_editor",
+    ]);
+    unmount();
+    expect(
+      registrations.every(
+        ({ signal: registrationSignal }) => registrationSignal.aborted,
+      ),
+    ).toBe(true);
+  });
+
+  it.each(["before apply", "during aperture extraction"] as const)(
+    "retains the unapplied result and both editor stores when WebMCP Apply is cancelled %s",
+    async (cancellationTime) => {
+      const registrations: WebMCP.ModelContextTool[] = [];
+      Object.defineProperty(document, "modelContext", {
+        configurable: true,
+        value: {
+          registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+            registrations.push(tool);
+          }),
+        },
+      });
+      let resolveAperture!: (values: number[]) => void;
+      const aperture = new Promise<number[]>((resolve) => {
+        resolveAperture = resolve;
+      });
+      const getSurfaceSemiDiameters = jest.fn(() => aperture);
+      const onApplyToEditor = jest.fn();
+      const { lensStore, specsStore, optimizationStore } =
+        renderOptimizationPage(
+          makeProxy({ getSurfaceSemiDiameters }),
+          jest.fn(),
+          undefined,
+          { onApplyToEditor },
+        );
+      await waitFor(() => expect(registrations).toHaveLength(5));
+      const optimizedModel: OpticalModel = {
+        ...baseModel,
+        setAutoAperture: "autoAperture",
+        surfaces: baseModel.surfaces.map((surface) => ({
+          ...surface,
+          curvatureRadius: 42,
+        })),
+      };
+      act(() => {
+        optimizationStore.setState({
+          optimizationModel: optimizedModel,
+          hasUnappliedOptimizationResult: true,
+        });
+      });
+      const initialLensState = lensStore.getState();
+      const initialSpecsState = specsStore.getState();
+      const controller = new AbortController();
+      if (cancellationTime === "before apply") controller.abort();
+      const apply = registrations.find(
+        (tool) => tool.name === "apply_optimization_to_editor",
+      )!;
+      let application!: Promise<unknown>;
+      await act(async () => {
+        application = Promise.resolve(
+          apply.execute({}, { signal: controller.signal }),
+        );
+        // Observe rejection immediately while the deferred worker call is pending.
+        void application.catch(() => undefined);
+      });
+
+      if (cancellationTime === "during aperture extraction") {
+        expect(getSurfaceSemiDiameters).toHaveBeenCalledWith(optimizedModel);
+        controller.abort();
+        await act(async () => {
+          resolveAperture([100, 6, 7, 200]);
+          await application.catch(() => undefined);
+        });
+      } else {
+        expect(getSurfaceSemiDiameters).not.toHaveBeenCalled();
+      }
+
+      await expect(application).rejects.toMatchObject({ name: "AbortError" });
+      expect(lensStore.getState()).toBe(initialLensState);
+      expect(specsStore.getState()).toBe(initialSpecsState);
+      expect(optimizationStore.getState().optimizationModel).toBe(
+        optimizedModel,
+      );
+      expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+        true,
+      );
+      expect(onApplyToEditor).not.toHaveBeenCalled();
+    },
+  );
+
+  it("stops an aborted WebMCP execution, applies a stopped partial result, and rejects with AbortError", async () => {
+    let resolveOptimization:
+      | ((report: OptimizationRunReport) => void)
+      | undefined;
+    const optimizationPromise = new Promise<OptimizationRunReport>(
+      (resolve) => {
+        resolveOptimization = resolve;
+      },
+    );
+    const requestOptimizationStop = jest
+      .fn()
+      .mockResolvedValue({ signaled: true });
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockImplementation(() => optimizationPromise),
+      requestOptimizationStop,
+    });
+    const registrations: WebMCP.ModelContextTool[] = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+          registrations.push(tool);
+        }),
+      },
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    const signalController = new AbortController();
+    await waitFor(() => expect(registrations).toHaveLength(5));
+    const tools = new Map(
+      registrations.map((tool) => [tool.name, tool] as const),
+    );
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+    );
+
+    let execution!: Promise<unknown>;
+    await act(async () => {
+      execution = Promise.resolve(
+        tools
+          .get("execute_optimization")
+          ?.execute({}, { signal: signalController.signal }),
+      );
+    });
+    await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
+    await act(async () => {
+      signalController.abort();
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(requestOptimizationStop).toHaveBeenCalledTimes(1),
+    );
+
+    await act(async () => {
+      resolveOptimization?.({
+        ...makeEvaluationReport(),
+        status: "stopped",
+        message: "Optimization stopped by user",
+        final_values: [
+          { kind: "radius", surface_index: 1, value: 44, min: 40, max: 60 },
+        ],
+        optimization_progress: [],
+      } as OptimizationReport);
+      await expect(execution).rejects.toMatchObject({ name: "AbortError" });
+    });
+    await waitFor(() => {
+      expect(
+        optimizationStore.getState().optimizationModel?.surfaces[0]
+          .curvatureRadius,
+      ).toBe(44);
+      expect(optimizationStore.getState().isOptimizing).toBe(false);
+    });
+  });
+
+  it("requires a fresh evaluation after a WebMCP configuration change", async () => {
+    const registrations: WebMCP.ModelContextTool[] = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+          registrations.push(tool);
+        }),
+      },
+    });
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    await waitFor(() => expect(registrations).toHaveLength(5));
+    const tools = new Map(
+      registrations.map((tool) => [tool.name, tool] as const),
+    );
+    const signal = new AbortController().signal;
+    const config: GlassOptimizationConfig = {
+      glass_optimizer: { num_neighbours: 7, maxiter: 1000, tol: 1e-3 },
+      glass_variables: [],
+      variables: [],
+      pickups: [],
+      merit_function: {
+        operands: [{ kind: "focal_length", target: 100, weight: 1 }],
+      },
+    };
+
+    await act(async () => {
+      await tools
+        .get("set_optimization_config")
+        ?.execute({ ...config }, { signal });
+      await tools
+        .get("evaluate_optimization_operands")
+        ?.execute({}, { signal });
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+    );
+
+    const changedConfig: GlassOptimizationConfig = {
+      ...config,
+      glass_optimizer: { ...config.glass_optimizer, maxiter: 1001 },
+    };
+    await act(async () => {
+      await tools
+        .get("set_optimization_config")
+        ?.execute({ ...changedConfig }, { signal });
+      await expect(
+        tools.get("execute_optimization")?.execute({}, { signal }),
+      ).rejects.toThrow(
+        "Optimization requires a successful evaluation of the current configuration.",
+      );
+    });
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+    expect(optimizationStore.getState().isOptimizing).toBe(false);
   });
 });
