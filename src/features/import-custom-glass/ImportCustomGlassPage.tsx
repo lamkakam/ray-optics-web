@@ -23,6 +23,8 @@ import {
   upsertPersistedCustomGlass,
   upsertPersistedCustomGlasses,
 } from "@/features/import-custom-glass/lib/customGlassStorage";
+import { deleteCustomGlasses } from "@/features/import-custom-glass/lib/customGlassOperations";
+import { useCustomGlassWebMCP } from "@/features/import-custom-glass/hooks/useCustomGlassWebMCP";
 import type {
   ConfirmationMode,
   CustomGlassRow,
@@ -59,12 +61,13 @@ export {
  * ## Worker And Store Flow
  * - Add/edit modal submissions are converted with `toWorkerInput` and persisted through `saveCustomGlass`.
  * - Add/edit persistence writes to IndexedDB only after the corresponding worker mutation succeeds.
- * - Delete confirmation calls `deleteUserDefinedGlasses`, deletes matching IndexedDB rows, mirrors the deletion into the Glass Map store, clears selection, and closes the modal.
+ * - Modal add/update/rename and confirmed deletion delegate to shared worker-first orchestration also used by WebMCP.
  * - JSON and CSV imports are split into update/add worker calls based on labels already present in `catalogsData.Custom`.
  * - JSON and CSV import update/add batches are written to IndexedDB only after their worker calls succeed.
  * - Successful imports call `upsertCustomGlasses({ ...updated, ...added })`.
  * - IndexedDB failures after successful worker mutations open `Custom Glass Persistence Warning`; they do not roll back the Pyodide runtime or Glass Map store.
  * - The page does not call `getAllGlassCatalogsData()`.
+ * - Four custom-glass CRUD WebMCP tools are registered only while this page is mounted. Stable registrations execute against the latest proxy, custom catalog, store, persistence functions, and warning callback, and every registration is aborted on unmount.
  *
  * ## Import Behavior
  * - JSON imports are parsed and validated by `validateImportedCustomGlassData`.
@@ -134,6 +137,19 @@ export default function ImportCustomGlassPage() {
     checkedLabels.length === 1 ? checkedLabels[0] : undefined;
   const selectedEditData =
     selectedEditLabel === undefined ? undefined : custom[selectedEditLabel];
+  const showPersistenceWarning = (message: string) => {
+    setPersistenceWarning(message);
+    setConfirmationMode("persistence-warning");
+  };
+
+  useCustomGlassWebMCP({
+    proxy,
+    customGlasses: custom,
+    storeActions: glassMapStore.getState(),
+    persistInput: upsertPersistedCustomGlass,
+    deletePersisted: deletePersistedCustomGlasses,
+    onPersistenceWarning: showPersistenceWarning,
+  });
 
   const openEdit = () => {
     if (selectedEditLabel !== undefined) {
@@ -144,22 +160,14 @@ export default function ImportCustomGlassPage() {
     if (proxy === undefined || checkedLabels.length === 0) {
       return;
     }
-    await proxy.deleteUserDefinedGlasses(checkedLabels);
-    let hasPersistenceWarning = false;
-    try {
-      await deletePersistedCustomGlasses(checkedLabels);
-    } catch (error) {
-      hasPersistenceWarning = true;
-      setPersistenceWarning(
-        error instanceof Error
-          ? error.message
-          : "Failed to delete persisted custom glass.",
-      );
-      setConfirmationMode("persistence-warning");
-    }
-    glassMapStore.getState().deleteCustomGlasses(checkedLabels);
+    const result = await deleteCustomGlasses(checkedLabels, {
+      proxy,
+      storeActions: glassMapStore.getState(),
+      deletePersisted: deletePersistedCustomGlasses,
+      onPersistenceWarning: showPersistenceWarning,
+    });
     setChecked(new Set());
-    if (!hasPersistenceWarning) {
+    if (result.persistenceWarnings === undefined) {
       setConfirmationMode(undefined);
     }
   };
@@ -178,10 +186,7 @@ export default function ImportCustomGlassPage() {
       storeActions: glassMapStore.getState(),
       persistInput: upsertPersistedCustomGlass,
       deletePersisted: deletePersistedCustomGlasses,
-      onPersistenceWarning: (message) => {
-        setPersistenceWarning(message);
-        setConfirmationMode("persistence-warning");
-      },
+      onPersistenceWarning: showPersistenceWarning,
     });
     setChecked(new Set([label]));
     setModalMode(undefined);

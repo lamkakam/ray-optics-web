@@ -110,7 +110,7 @@ describe("formatNumber, toWorkerInput, and toCustomGlassPayload", () => {
     expect(formatNumber(Number.POSITIVE_INFINITY)).toBe("");
   });
 
-  it("trims the label and converts editable string rows to worker pairs", () => {
+  it("trims the label, converts valid editable rows, and rejects invalid worker-bound input", () => {
     expect(
       toWorkerInput("  CUSTOM  ", [
         {
@@ -119,15 +119,44 @@ describe("formatNumber, toWorkerInput, and toCustomGlassPayload", () => {
           wavelength: " 587.56 ",
           refractiveIndex: "1.5168",
         },
-        { id: "b", fraunhofer: "", wavelength: "", refractiveIndex: "0" },
+        {
+          id: "b",
+          fraunhofer: "",
+          wavelength: "486.13",
+          refractiveIndex: "1.522",
+        },
+        {
+          id: "c",
+          fraunhofer: "",
+          wavelength: "546.07",
+          refractiveIndex: "1.518",
+        },
+        {
+          id: "d",
+          fraunhofer: "",
+          wavelength: "656.27",
+          refractiveIndex: "1.514",
+        },
       ]),
     ).toEqual({
       name: "CUSTOM",
       pairs: [
         [587.56, 1.5168],
-        [0, 0],
+        [486.13, 1.522],
+        [546.07, 1.518],
+        [656.27, 1.514],
       ],
     });
+    expect(() =>
+      toWorkerInput("CUSTOM", [
+        {
+          id: "a",
+          fraunhofer: "",
+          wavelength: "587.56",
+          refractiveIndex: "1.5",
+        },
+      ]),
+    ).toThrow("Invalid custom-glass worker input.");
   });
 
   it("builds a versioned JSON payload for every custom glass", () => {

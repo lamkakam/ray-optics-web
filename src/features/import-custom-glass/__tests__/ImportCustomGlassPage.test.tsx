@@ -218,6 +218,10 @@ async function fillCoefficientGrid(
 
 describe("ImportCustomGlassPage", () => {
   beforeEach(() => {
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: undefined,
+    });
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
     mockDeletePersistedCustomGlasses.mockClear();
     mockUpsertPersistedCustomGlass.mockClear();
@@ -225,6 +229,48 @@ describe("ImportCustomGlassPage", () => {
     mockDeletePersistedCustomGlasses.mockResolvedValue(undefined);
     mockUpsertPersistedCustomGlass.mockResolvedValue(undefined);
     mockUpsertPersistedCustomGlasses.mockResolvedValue(undefined);
+  });
+
+  it("registers page-scoped custom-glass tools in order and aborts them on unmount", async () => {
+    const registrations: Array<{
+      tool: WebMCP.ModelContextTool;
+      signal: AbortSignal;
+    }> = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn(
+          (
+            tool: WebMCP.ModelContextTool,
+            options?: WebMCP.ModelContextRegisterToolOptions,
+          ) => {
+            registrations.push({
+              tool,
+              signal: options?.signal as AbortSignal,
+            });
+          },
+        ),
+      },
+    });
+
+    const rendered = renderPage({});
+    expect(registrations.map(({ tool }) => tool.name)).toEqual([
+      "get_custom_glasses",
+      "add_custom_glass",
+      "update_custom_glass",
+      "delete_custom_glass",
+    ]);
+    await expect(
+      registrations[0]?.tool.execute(
+        { name: "CUSTOM_A" },
+        { signal: new AbortController().signal },
+      ),
+    ).resolves.toBe(
+      JSON.stringify({ customGlasses: { CUSTOM_A: customGlass } }),
+    );
+
+    rendered.unmount();
+    expect(registrations.every(({ signal }) => signal.aborted)).toBe(true);
   });
 
   it("renders the custom glass table as an AG Grid instance", () => {

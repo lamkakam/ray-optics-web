@@ -5,6 +5,10 @@ import { AllCommunityModule } from "ag-grid-community";
 import { AgGridProvider } from "ag-grid-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { makeEditablePair } from "@/features/import-custom-glass/lib/customGlassImport";
+import {
+  duplicateCustomGlassWavelengths,
+  validateCustomGlassInput,
+} from "@/features/import-custom-glass/lib/customGlassValidation";
 import type {
   EditablePair,
   ModalMode,
@@ -32,24 +36,6 @@ interface CustomGlassModalProps {
   readonly onSubmit: (label: string, rows: readonly EditablePair[]) => void;
 }
 
-function isPositiveFinite(value: string): boolean {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0;
-}
-
-function duplicateWavelengths(rows: readonly EditablePair[]): Set<string> {
-  const counts = new Map<string, number>();
-  for (const row of rows) {
-    const normalized = row.wavelength.trim();
-    if (normalized !== "") {
-      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
-    }
-  }
-  return new Set(
-    [...counts].filter(([, count]) => count > 1).map(([value]) => value),
-  );
-}
-
 /**
  * Add/edit modal for a single user-defined tabulated custom glass.
  *
@@ -58,7 +44,7 @@ function duplicateWavelengths(rows: readonly EditablePair[]): Set<string> {
  * - Uses the shared `Modal` primitive and an AG Grid instance for row editing.
  * - Preserves the tabulated pair columns: delete action, `Fraunhofer`, `Wavelength (nm)`, and `Refractive Index`.
  * - The Fraunhofer selector fills the matching wavelength and clears free-form wavelength edits when wavelength is manually changed.
- * - Confirm is disabled until the label is non-blank and unique, there are at least four rows, all wavelength/index values are finite positive numbers, and wavelengths are distinct.
+ * - Confirm delegates the named-pair contract to the shared custom-glass validator and additionally rejects a label already present in the catalog.
  * - The modal-level `Add row`, `Cancel`, and `Confirm` buttons use the Lens Editor responsive sizing rule: shared `Button` size `sm` on `screenLG`, and `xs` on `screenSM`.
  * - Row-level AG Grid delete actions stay fixed at shared `Button` size `xs`.
  * - Duplicate wavelengths are marked with `text-red-600` and a validation message.
@@ -85,23 +71,25 @@ export function CustomGlassModal({
   const gridTheme = useAgGridTheme();
   const [label, setLabel] = useState(initialLabel);
   const [rows, setRows] = useState<readonly EditablePair[]>(initialRows);
-  const duplicates = duplicateWavelengths(rows);
-  const duplicatesRef = useRef<ReadonlySet<string>>(new Set());
+  const numericPairs = rows.map(
+    (row) => [Number(row.wavelength), Number(row.refractiveIndex)] as const,
+  );
+  const duplicates = duplicateCustomGlassWavelengths(
+    rows
+      .filter((row) => row.wavelength.trim() !== "")
+      .map(
+        (row) => [Number(row.wavelength), Number(row.refractiveIndex)] as const,
+      ),
+  );
+  const duplicatesRef = useRef<ReadonlySet<number>>(new Set());
   duplicatesRef.current = duplicates;
   const trimmedLabel = label.trim();
   const labelExists =
     existingLabels.has(trimmedLabel) &&
     (mode === "add" || trimmedLabel !== initialLabel);
   const canConfirm =
-    trimmedLabel !== "" &&
     !labelExists &&
-    rows.length >= 4 &&
-    rows.every(
-      (row) =>
-        isPositiveFinite(row.wavelength) &&
-        isPositiveFinite(row.refractiveIndex),
-    ) &&
-    duplicates.size === 0;
+    validateCustomGlassInput({ name: trimmedLabel, pairs: numericPairs });
   const updateRow = useCallback((id: string, patch: Partial<EditablePair>) => {
     setRows((current) =>
       current.map((row) => (row.id === id ? { ...row, ...patch } : row)),
@@ -166,7 +154,7 @@ export function CustomGlassModal({
         width: 170,
         editable: true,
         cellClass: (params) =>
-          duplicatesRef.current.has(String(params.value ?? "").trim())
+          duplicatesRef.current.has(Number(params.value))
             ? "text-red-600"
             : undefined,
         valueSetter: (params) => {

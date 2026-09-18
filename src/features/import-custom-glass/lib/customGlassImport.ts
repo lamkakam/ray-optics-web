@@ -15,6 +15,16 @@ import type {
   SaveCustomGlassOptions,
   UserDefinedCustomCatalog,
 } from "@/features/import-custom-glass/types/customGlassImport";
+import {
+  MIN_CUSTOM_GLASS_PAIRS,
+  duplicateCustomGlassWavelengths,
+  validateCustomGlassInput,
+  validateCustomGlassPairs,
+} from "@/features/import-custom-glass/lib/customGlassValidation";
+import {
+  addCustomGlass,
+  updateCustomGlass,
+} from "@/features/import-custom-glass/lib/customGlassOperations";
 
 /** Stable empty custom catalog used before worker-backed data is available. */
 export const EMPTY_CUSTOM_GLASSES: UserDefinedCustomCatalog = {};
@@ -47,12 +57,16 @@ export function toWorkerInput(
   label: string,
   rows: readonly EditablePair[],
 ): UserDefinedGlassInput {
-  return {
+  const input = {
     name: label.trim(),
     pairs: rows.map(
       (row) => [Number(row.wavelength), Number(row.refractiveIndex)] as const,
     ),
   };
+  if (!validateCustomGlassInput(input)) {
+    throw new Error("Invalid custom-glass worker input.");
+  }
+  return input;
 }
 
 /** Builds the strict version-1.0 JSON export envelope for tabulated custom glasses. */
@@ -106,7 +120,7 @@ export function isUserDefinedGlassAlreadyExistsError(error: unknown): boolean {
   return message.includes("User-defined glass already exists:");
 }
 
-/** Coordinates add or edit worker mutations, optional persistence, and store mirroring. Persistence failures are warning-only and never roll back a successful worker mutation. */
+/** Compatibility wrapper over the shared add/update/rename orchestration. */
 export async function saveCustomGlass({
   mode,
   previousLabel,
@@ -117,64 +131,24 @@ export async function saveCustomGlass({
   deletePersisted,
   onPersistenceWarning,
 }: SaveCustomGlassOptions): Promise<void> {
-  if (
-    mode === "edit" &&
-    previousLabel !== undefined &&
-    previousLabel !== input.name
-  ) {
-    const added = await proxy.addUserDefinedGlasses([input]);
-    try {
-      await persistInput?.(input);
-    } catch (error) {
-      onPersistenceWarning?.(
-        error instanceof Error
-          ? error.message
-          : "Failed to persist custom glass.",
-      );
-    }
-    await proxy.deleteUserDefinedGlasses([previousLabel]);
-    try {
-      await deletePersisted?.([previousLabel]);
-    } catch (error) {
-      onPersistenceWarning?.(
-        error instanceof Error
-          ? error.message
-          : "Failed to delete persisted custom glass.",
-      );
-    }
-    storeActions.upsertCustomGlasses(added);
-    storeActions.deleteCustomGlasses([previousLabel]);
+  const dependencies = {
+    proxy,
+    storeActions,
+    persistInput,
+    deletePersisted,
+    onPersistenceWarning,
+  };
+  if (mode === "edit") {
+    await updateCustomGlass(previousLabel ?? input.name, input, dependencies);
     return;
   }
-
-  let result: Record<string, UserDefinedGlassData>;
-  let workerMutationSucceeded = false;
   try {
-    if (mode === "add") {
-      result = await proxy.addUserDefinedGlasses([input]);
-    } else {
-      result = await proxy.updateUserDefinedGlasses([input]);
-    }
-    workerMutationSucceeded = true;
+    await addCustomGlass(input, dependencies);
   } catch (error) {
-    if (mode !== "add" || !isUserDefinedGlassAlreadyExistsError(error)) {
-      throw error;
-    }
-
-    result = await proxy.getUserDefinedGlasses([input.name]);
+    if (!isUserDefinedGlassAlreadyExistsError(error)) throw error;
+    const existing = await proxy.getUserDefinedGlasses([input.name]);
+    storeActions.upsertCustomGlasses(existing);
   }
-  if (workerMutationSucceeded) {
-    try {
-      await persistInput?.(input);
-    } catch (error) {
-      onPersistenceWarning?.(
-        error instanceof Error
-          ? error.message
-          : "Failed to persist custom glass.",
-      );
-    }
-  }
-  storeActions.upsertCustomGlasses(result);
 }
 
 function filenameStem(filename: string): string {
@@ -216,7 +190,6 @@ export function parseCustomGlassCsv(
   }
 
   const pairs: [number, number][] = [];
-  const wavelengths = new Set<number>();
   for (const [index, line] of lines.slice(1).entries()) {
     const rowNumber = index + 2;
     const columns = line.split(",").map((column) => column.trim());
@@ -244,24 +217,38 @@ export function parseCustomGlassCsv(
         reason: `Row ${rowNumber} values must be positive.`,
       };
     }
-    if (wavelengths.has(wavelengthMicrometers)) {
+    if (
+      duplicateCustomGlassWavelengths([
+        ...pairs,
+        [
+          micrometersToNanometers(wavelengthMicrometers),
+          refractiveIndex,
+        ] as const,
+      ]).size > 0
+    ) {
       return {
         filename: file.name,
         reason: `Duplicate wavelength ${columns[0]} found.`,
       };
     }
 
-    wavelengths.add(wavelengthMicrometers);
     pairs.push([
       micrometersToNanometers(wavelengthMicrometers),
       refractiveIndex,
     ]);
   }
 
-  if (pairs.length < 4) {
+  if (pairs.length < MIN_CUSTOM_GLASS_PAIRS) {
     return {
       filename: file.name,
       reason: "CSV must contain at least four valid wavelength/index pairs.",
+    };
+  }
+
+  if (!validateCustomGlassPairs(pairs)) {
+    return {
+      filename: file.name,
+      reason: "CSV wavelength/index pairs are invalid.",
     };
   }
 

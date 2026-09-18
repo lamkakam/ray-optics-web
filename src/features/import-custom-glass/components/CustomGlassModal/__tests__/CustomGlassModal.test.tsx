@@ -166,11 +166,11 @@ describe("CustomGlassModal", () => {
     expect(confirmButton()).toBeDisabled();
   });
 
-  it("enforces duplicate wavelength validation after trimming values", async () => {
+  it("enforces duplicate wavelength validation after numeric normalization", async () => {
     const user = userEvent.setup();
     const duplicateRows = makeRows([
       ["486.13", "1.522"],
-      [" 486.13 ", "1.518"],
+      [" 486.130 ", "1.518"],
       ["587.56", "1.5168"],
       ["656.27", "1.514"],
     ]);

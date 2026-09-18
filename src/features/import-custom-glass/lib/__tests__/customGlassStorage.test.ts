@@ -20,6 +20,8 @@ const firstInput: UserDefinedGlassInput = {
   pairs: [
     [587.56, 1.5168],
     [486.13, 1.522],
+    [546.07, 1.518],
+    [656.27, 1.514],
   ],
 };
 
@@ -28,6 +30,8 @@ const secondInput: UserDefinedGlassInput = {
   pairs: [
     [546.07, 1.518],
     [656.27, 1.514],
+    [486.13, 1.522],
+    [587.56, 1.5168],
   ],
 };
 
@@ -329,34 +333,43 @@ describe("customGlassStorage", () => {
     expect(
       toPersistedCustomGlassRow({
         name: "CUSTOM",
-        pairs: [
-          [587.56, 1.5168],
-          [486.13, 1.522],
-        ],
+        pairs: firstInput.pairs,
       }),
     ).toEqual({
       label: "CUSTOM",
       type: "tabulated",
-      pairs: [
-        [587.56, 1.5168],
-        [486.13, 1.522],
-      ],
+      pairs: firstInput.pairs,
     });
   });
 
-  it("accepts only tabulated rows with finite numeric pairs", () => {
+  it("rejects persistence writes that do not satisfy the shared named four-pair contract", () => {
+    expect(() =>
+      toPersistedCustomGlassRow({
+        name: "TOO_SHORT",
+        pairs: firstInput.pairs.slice(0, 3),
+      }),
+    ).toThrow("Invalid custom-glass persistence input.");
+    expect(() =>
+      toPersistedCustomGlassRow({
+        name: "DUPLICATE",
+        pairs: [...firstInput.pairs.slice(0, 3), firstInput.pairs[0]],
+      }),
+    ).toThrow("Invalid custom-glass persistence input.");
+  });
+
+  it("accepts only strict tabulated rows satisfying the shared four-pair contract", () => {
     expect(
       isPersistedCustomGlassRow({
         label: "CUSTOM",
         type: "tabulated",
-        pairs: [[587.56, 1.5168]],
+        pairs: firstInput.pairs,
       }),
     ).toBe(true);
     expect(
       isPersistedCustomGlassRow({
         label: "CUSTOM",
         type: "sellmeier",
-        pairs: [[587.56, 1.5168]],
+        pairs: firstInput.pairs,
       }),
     ).toBe(false);
     expect(
@@ -370,10 +383,8 @@ describe("customGlassStorage", () => {
       isPersistedCustomGlassRow({
         label: "CUSTOM",
         type: "tabulated",
-        pairs: [
-          [587.56, 1.5],
-          [486.13, Number.NaN],
-        ],
+        pairs: firstInput.pairs,
+        extra: true,
       }),
     ).toBe(false);
   });

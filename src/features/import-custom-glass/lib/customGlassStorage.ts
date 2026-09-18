@@ -6,6 +6,10 @@
  * `quarantinedCustomGlasses` object stores, both keyed by `label`.
  */
 import type { UserDefinedGlassInput } from "@/features/glass-map/types/glassMap";
+import {
+  validateCustomGlassInput,
+  validatePersistedCustomGlassRow,
+} from "@/features/import-custom-glass/lib/customGlassValidation";
 
 const DB_NAME = "ray-optics-web-custom-glass";
 const DB_VERSION = 1;
@@ -49,37 +53,20 @@ function txDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-/** Accepts only non-blank labels, the tabulated discriminator, and finite numeric wavelength/index pairs. */
+/** Accepts only the shared strict named four-pair custom-glass contract. */
 export function isPersistedCustomGlassRow(
   value: unknown,
 ): value is PersistedCustomGlassRow {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const row = value as {
-    readonly label?: unknown;
-    readonly type?: unknown;
-    readonly pairs?: unknown;
-  };
-  return (
-    typeof row.label === "string" &&
-    row.label.trim() !== "" &&
-    row.type === "tabulated" &&
-    Array.isArray(row.pairs) &&
-    row.pairs.every(
-      (pair) =>
-        Array.isArray(pair) &&
-        pair.length === 2 &&
-        Number.isFinite(pair[0]) &&
-        Number.isFinite(pair[1]),
-    )
-  );
+  return validatePersistedCustomGlassRow(value);
 }
 
 /** Copies worker input into the stable persisted row shape. */
 export function toPersistedCustomGlassRow(
   input: UserDefinedGlassInput,
 ): PersistedCustomGlassRow {
+  if (!validateCustomGlassInput(input)) {
+    throw new Error("Invalid custom-glass persistence input.");
+  }
   return {
     label: input.name,
     type: "tabulated",
