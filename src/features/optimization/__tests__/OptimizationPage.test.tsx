@@ -1,4 +1,4 @@
-/** Covers Optimization page state transitions, worker orchestration, and WebMCP integration. */
+/** Covers Optimization page state transitions, worker orchestration, and WebMCP Apply cancellation before editor commits. */
 import {
   act,
   fireEvent,
@@ -3059,6 +3059,86 @@ describe("OptimizationPage", () => {
       ),
     ).toBe(true);
   });
+
+  it.each(["before apply", "during aperture extraction"] as const)(
+    "retains the unapplied result and both editor stores when WebMCP Apply is cancelled %s",
+    async (cancellationTime) => {
+      const registrations: WebMCP.ModelContextTool[] = [];
+      Object.defineProperty(document, "modelContext", {
+        configurable: true,
+        value: {
+          registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+            registrations.push(tool);
+          }),
+        },
+      });
+      let resolveAperture!: (values: number[]) => void;
+      const aperture = new Promise<number[]>((resolve) => {
+        resolveAperture = resolve;
+      });
+      const getSurfaceSemiDiameters = jest.fn(() => aperture);
+      const onApplyToEditor = jest.fn();
+      const { lensStore, specsStore, optimizationStore } =
+        renderOptimizationPage(
+          makeProxy({ getSurfaceSemiDiameters }),
+          jest.fn(),
+          undefined,
+          { onApplyToEditor },
+        );
+      await waitFor(() => expect(registrations).toHaveLength(5));
+      const optimizedModel: OpticalModel = {
+        ...baseModel,
+        setAutoAperture: "autoAperture",
+        surfaces: baseModel.surfaces.map((surface) => ({
+          ...surface,
+          curvatureRadius: 42,
+        })),
+      };
+      act(() => {
+        optimizationStore.setState({
+          optimizationModel: optimizedModel,
+          hasUnappliedOptimizationResult: true,
+        });
+      });
+      const initialLensState = lensStore.getState();
+      const initialSpecsState = specsStore.getState();
+      const controller = new AbortController();
+      if (cancellationTime === "before apply") controller.abort();
+      const apply = registrations.find(
+        (tool) => tool.name === "apply_optimization_to_editor",
+      )!;
+      let application!: Promise<unknown>;
+      await act(async () => {
+        application = Promise.resolve(
+          apply.execute({}, { signal: controller.signal }),
+        );
+        // Observe rejection immediately while the deferred worker call is pending.
+        void application.catch(() => undefined);
+      });
+
+      if (cancellationTime === "during aperture extraction") {
+        expect(getSurfaceSemiDiameters).toHaveBeenCalledWith(optimizedModel);
+        controller.abort();
+        await act(async () => {
+          resolveAperture([100, 6, 7, 200]);
+          await application.catch(() => undefined);
+        });
+      } else {
+        expect(getSurfaceSemiDiameters).not.toHaveBeenCalled();
+      }
+
+      await expect(application).rejects.toMatchObject({ name: "AbortError" });
+      expect(lensStore.getState()).toBe(initialLensState);
+      expect(specsStore.getState()).toBe(initialSpecsState);
+      expect(optimizationStore.getState().optimizationModel).toBe(
+        optimizedModel,
+      );
+      expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+        true,
+      );
+      expect(onApplyToEditor).not.toHaveBeenCalled();
+    },
+  );
 
   it("stops an aborted WebMCP execution, applies a stopped partial result, and rejects with AbortError", async () => {
     let resolveOptimization:

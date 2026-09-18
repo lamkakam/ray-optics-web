@@ -1023,6 +1023,7 @@ export function OptimizationPage({
     void requestOptimizationStop();
   }, [requestOptimizationStop]);
 
+  /** Forwards cancellation to the editor commit boundary; a cancelled pending Apply retains the result and skips the completion callback. */
   const applyOptimizationOperation = useCallback(
     async (signal: AbortSignal): Promise<{ readonly surfaceCount: number }> => {
       assertWebMcpNotCancelled(signal);
@@ -1046,6 +1047,7 @@ export function OptimizationPage({
         lensStore,
         specsStore,
         proxy,
+        signal,
       });
       assertWebMcpNotCancelled(signal);
       await onApplyToEditor?.(model);

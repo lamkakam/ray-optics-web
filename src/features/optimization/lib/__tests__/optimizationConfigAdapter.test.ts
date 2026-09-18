@@ -1,4 +1,4 @@
-/** Exercises the public OptimizationRunConfig to GUI-state adapter contract. */
+/** Exercises config round-tripping, Python-compatible sample defaults, and sparse/zero weights. */
 import { createStore } from "zustand";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -115,6 +115,110 @@ const trfConfig: OptimizationConfig = {
 };
 
 describe("optimization config adapter", () => {
+  it.each([
+    {
+      name: "empty fields",
+      fields: [],
+      wavelengths: [{ index: 1, weight: 0.5 }],
+      fieldWeights: [1, 1],
+      wavelengthWeights: [0, 0.5],
+    },
+    {
+      name: "empty wavelengths",
+      fields: [{ index: 0, weight: 2 }],
+      wavelengths: [],
+      fieldWeights: [2, 0],
+      wavelengthWeights: [1, 1],
+    },
+    {
+      name: "both sample arrays empty",
+      fields: [],
+      wavelengths: [],
+      fieldWeights: [1, 1],
+      wavelengthWeights: [1, 1],
+    },
+    {
+      name: "explicit zero weights",
+      fields: [{ index: 0, weight: 0 }],
+      wavelengths: [{ index: 1, weight: 0 }],
+      fieldWeights: [0, 0],
+      wavelengthWeights: [0, 0],
+    },
+  ])(
+    "round-trips $name with the expected sample weights",
+    ({ fields, wavelengths, fieldWeights, wavelengthWeights }) => {
+      const store = setup();
+      const operand = {
+        kind: "ray_fan" as const,
+        weight: 1,
+        fields,
+        wavelengths,
+      };
+
+      store.getState().setOptimizationConfig(
+        {
+          ...trfConfig,
+          merit_function: { operands: [operand] },
+        },
+        catalogs,
+      );
+
+      expect(store.getState().fieldWeights).toEqual(fieldWeights);
+      expect(store.getState().wavelengthWeights).toEqual(wavelengthWeights);
+      expect(
+        store.getState().buildOptimizationConfig(catalogs).merit_function
+          .operands,
+      ).toMatchObject([
+        {
+          ...operand,
+          fields: fieldWeights.map((weight, index) => ({ index, weight })),
+          wavelengths: wavelengthWeights.map((weight, index) => ({
+            index,
+            weight,
+          })),
+        },
+      ]);
+    },
+  );
+
+  it("accepts empty and omitted arrays as equivalent shared sample weights", () => {
+    const store = setup();
+    store.getState().setOptimizationConfig(
+      {
+        ...trfConfig,
+        merit_function: {
+          operands: [
+            { kind: "ray_fan", weight: 1 },
+            {
+              kind: "ray_fan_tangential",
+              weight: 1,
+              fields: [],
+              wavelengths: [],
+            },
+          ],
+        },
+      },
+      catalogs,
+    );
+
+    const factors = [
+      { index: 0, weight: 1 },
+      { index: 1, weight: 1 },
+    ];
+    expect(
+      store.getState().buildOptimizationConfig(catalogs).merit_function
+        .operands,
+    ).toMatchObject([
+      { kind: "ray_fan", weight: 1, fields: factors, wavelengths: factors },
+      {
+        kind: "ray_fan_tangential",
+        weight: 1,
+        fields: factors,
+        wavelengths: factors,
+      },
+    ]);
+  });
+
   it("round-trips bounded continuous settings, pickups, options, and shared weights", () => {
     const store = setup();
 

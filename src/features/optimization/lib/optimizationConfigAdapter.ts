@@ -370,6 +370,11 @@ function updateDecenterType(
   return next;
 }
 
+/**
+ * Matches Python sample defaults: omitted or empty arrays give every sample unit
+ * weight. Nonempty arrays select only listed indices; omitted indices and
+ * explicit zero weights remain zero.
+ */
 function normalizeFactors(
   factors:
     | ReadonlyArray<{ readonly index: number; readonly weight: number }>
@@ -378,7 +383,7 @@ function normalizeFactors(
   label: string,
 ): number[] {
   const weights: number[] = Array.from({ length: count }, () =>
-    factors === undefined ? 1 : 0,
+    factors === undefined || factors.length === 0 ? 1 : 0,
   );
   const seen = new Set<number>();
   for (const factor of factors ?? []) {

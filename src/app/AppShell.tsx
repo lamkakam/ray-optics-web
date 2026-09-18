@@ -277,7 +277,7 @@ export default function AppShell({ children }: AppShellProps) {
     return getPageDefinitionForPathname(getPathnameFromHref(pendingHref))?.key;
   }, []);
 
-  /** Shared Stay/Leave/Apply implementation used by the modal and WebMCP. */
+  /** Shared Stay/Leave/Apply implementation. Forwards cancellation to the editor commit boundary so a cancelled pending Apply retains the result and destination without mutating editor/specs stores or navigating. */
   const resolveOptimizationNavigation = useCallback(
     async (
       action: OptimizationNavigationAction,
@@ -323,6 +323,7 @@ export default function AppShell({ children }: AppShellProps) {
           lensStore,
           specsStore,
           proxy,
+          signal,
         });
         assertWebMcpNotCancelled(signal);
         optimizationStore.getState().markOptimizationResultAppliedToEditor();

@@ -1,3 +1,4 @@
+/** Covers successful editor commits and cancellation before any editor or specs mutation. */
 import { createStore } from "zustand/vanilla";
 import {
   createLensEditorSlice,
@@ -47,6 +48,67 @@ function stores() {
 }
 
 describe("applyOptimizationModelToEditor", () => {
+  it.each(["autoAperture", "manualAperture"] as const)(
+    "rejects a pre-aborted %s apply without touching either store or the worker",
+    async (setAutoAperture) => {
+      const { lensStore, specsStore } = stores();
+      const initialLensState = lensStore.getState();
+      const initialSpecsState = specsStore.getState();
+      const proxy = {
+        getSurfaceSemiDiameters: jest.fn().mockResolvedValue([100, 6.25, 200]),
+      };
+      const controller = new AbortController();
+      controller.abort();
+      const params = {
+        model: { ...model, setAutoAperture },
+        lensStore,
+        specsStore,
+        proxy,
+        signal: controller.signal,
+      };
+
+      await expect(
+        applyOptimizationModelToEditor(params),
+      ).rejects.toMatchObject({
+        name: "AbortError",
+      });
+
+      expect(lensStore.getState()).toBe(initialLensState);
+      expect(specsStore.getState()).toBe(initialSpecsState);
+      expect(proxy.getSurfaceSemiDiameters).not.toHaveBeenCalled();
+    },
+  );
+
+  it("leaves both stores unchanged when cancelled during aperture extraction", async () => {
+    const { lensStore, specsStore } = stores();
+    const initialLensState = lensStore.getState();
+    const initialSpecsState = specsStore.getState();
+    let resolveAperture!: (values: number[]) => void;
+    const aperture = new Promise<number[]>((resolve) => {
+      resolveAperture = resolve;
+    });
+    const proxy = { getSurfaceSemiDiameters: jest.fn(() => aperture) };
+    const controller = new AbortController();
+    const params = {
+      model,
+      lensStore,
+      specsStore,
+      proxy,
+      signal: controller.signal,
+    };
+
+    const application = applyOptimizationModelToEditor(params);
+    expect(proxy.getSurfaceSemiDiameters).toHaveBeenCalledWith(model);
+    expect(lensStore.getState()).toBe(initialLensState);
+    expect(specsStore.getState()).toBe(initialSpecsState);
+    controller.abort();
+    resolveAperture([100, 6.25, 200]);
+
+    await expect(application).rejects.toMatchObject({ name: "AbortError" });
+    expect(lensStore.getState()).toBe(initialLensState);
+    expect(specsStore.getState()).toBe(initialSpecsState);
+  });
+
   it("fetches auto values before atomically applying the model", async () => {
     const { lensStore, specsStore } = stores();
     const proxy = {
