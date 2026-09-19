@@ -146,6 +146,7 @@ export interface OptimizationLensPrescriptionGridProps {
  * - Accepts an optional `autoAperture` prop (default `false`) and passes it to the shared semi-diameter column as its read-only mode. Auto mode displays each effective model `semiDiameter`, including rectangular-aperture surfaces; manual mode keeps editable/manual values and the existing blank rectangular-aperture cell behavior.
  * - Uses a horizontal-overflow wrapper for the wide prescription table and relies on parent layout padding instead of adding its own outer `p-4`.
  * - Uses AG Grid's normal layout so the grid owns vertical row scrolling. Below `1440px` the wrapper height is `calc(100vh - 160px)`; at `1440px` and above it fills the drawer panel with a `200px` minimum height.
+ * - Memoizes row data by `rows` and uses each `RadiusRow.id` as AG Grid's row ID to preserve the mounted grid's vertical scroll position when radius, thickness, asphere, tilt/decenter, or glass modes change. Scroll position is not persisted across navigation or reload.
  * - Keeps AG Grid's native touch handling enabled so resizable header handles respond to touchscreen drags. The shared `ag-grid-touch-scroll` coarse-pointer styles continue to provide native horizontal and vertical panning, iOS momentum scrolling, and scroll chaining on viewport areas; AG Grid owns gestures that begin on resize handles.
  * - Applies the shared `lensPrescriptionGridDefaultColDef` (`{ sortable: false, suppressMovable: true }`) so the prescription columns stay in their prescribed order across the Optimization tabs.
  * - Uses `EditableAgGridReact`, matching the other editable AG Grid surfaces so any future editable prescription cells commit pending edits when editing stops.
@@ -183,6 +184,7 @@ export function OptimizationLensPrescriptionGrid({
   onCellEditingStopped,
 }: OptimizationLensPrescriptionGridProps) {
   const gridTheme = useAgGridTheme();
+  const rowData = useMemo(() => [...rows], [rows]);
 
   const lensColumns = useMemo<ColDef<RadiusRow>[]>(
     () => [
@@ -436,8 +438,9 @@ export function OptimizationLensPrescriptionGrid({
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<RadiusRow>
           theme={gridTheme}
-          rowData={[...rows]}
+          rowData={rowData}
           columnDefs={lensColumns}
+          getRowId={(params) => params.data.id}
           defaultColDef={lensPrescriptionGridDefaultColDef}
           domLayout="normal"
           onCellEditingStarted={onCellEditingStarted}
