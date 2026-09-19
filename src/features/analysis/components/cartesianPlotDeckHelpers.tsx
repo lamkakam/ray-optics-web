@@ -193,7 +193,6 @@ export function buildCartesianTicks(axisDomain: AxisDomain): readonly number[] {
 }
 
 interface CartesianSvgOverlayProps {
-  readonly height: number;
   readonly layout: CartesianPlotLayout;
   readonly xAxisTicks: readonly number[];
   readonly yAxisTicks: readonly number[];
@@ -206,9 +205,12 @@ interface CartesianSvgOverlayProps {
   readonly colorBarTitle?: string;
 }
 
-/** Renders shared SVG axes, ticks, labels, and optional color-bar chrome above a deck.gl plot. */
+/**
+ * Renders shared SVG axes, ticks, labels, and optional color-bar chrome above a
+ * deck.gl plot. Centers the x-axis label beneath the plotted axis with its
+ * baseline 44px below the axis, preserving desktop spacing as the plot resizes.
+ */
 export function CartesianSvgOverlay({
-  height,
   layout,
   xAxisTicks,
   yAxisTicks,
@@ -300,7 +302,7 @@ export function CartesianSvgOverlay({
       })}
       <text
         x={layout.plotLeft + layout.plotSide / 2}
-        y={height - 12}
+        y={layout.plotTop + layout.plotSide + CARTESIAN_CHART_BOTTOM - 12}
         textAnchor="middle"
         fontSize="12"
         fill="currentColor"
