@@ -22,7 +22,11 @@ import {
 
 /** Explicit freshness contract shared by all committed analysis descriptions. */
 const committedSystemDescription =
-  "Reads the last successfully computed optical system. To include pending Lens Editor edits, call `recompute_optical_system` first.";
+  "Reads the current committed optical system. To include pending Lens Editor edits, call `recompute_optical_system` first.";
+
+/** Stored payloads need ownership matching the committed model, including after Apply. */
+const storedResultDescription =
+  "Stored results must belong to that exact model; after optimization Apply, call `recompute_optical_system` if results are missing or stale.";
 
 /** Stored analysis getters accept only an empty object. */
 const emptyInputSchema = {
@@ -91,7 +95,10 @@ export interface AnalysisTools {
 
 /**
  * Creates analysis descriptors for committed data only. Paraxial and complete
- * Seidel payloads are read directly from AnalysisDataStore without recomputing.
+ * Seidel payloads are read directly from AnalysisDataStore without recomputing,
+ * only when their source is the current, defined committed model instance.
+ * Missing data or ownership, including stale results after optimization Apply,
+ * requires `recompute_optical_system`. Draft edits do not affect this check.
  * Zernike uses the exact committed model instance and the dialog's loader/cache,
  * including its failure eviction, in-flight coalescing, and LRU behavior.
  *
@@ -113,32 +120,43 @@ export function createAnalysisTools({
   return {
     getParaxialData: {
       name: "get_paraxial_data",
-      description: `Read the complete first-order data shown by the Paraxial Data dialog. ${committedSystemDescription}`,
+      description: `Read the complete first-order data shown by the Paraxial Data dialog. ${committedSystemDescription} ${storedResultDescription}`,
       inputSchema: emptyInputSchema,
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       execute: (input, { signal }) => {
         assertWebMcpInput(validators.empty, input);
         assertWebMcpNotCancelled(signal);
-        const { firstOrderData } = analysisDataStore.getState();
-        if (firstOrderData === undefined)
+        const { firstOrderData, firstOrderDataModel } =
+          analysisDataStore.getState();
+        const model = lensStore.getState().committedOpticalModel;
+        if (
+          firstOrderData === undefined ||
+          model === undefined ||
+          firstOrderDataModel !== model
+        )
           throw new Error(
-            "No computed paraxial data. Call recompute_optical_system first.",
+            "Paraxial data is missing or stale for the current committed optical system. Call recompute_optical_system first.",
           );
         return JSON.stringify(firstOrderData);
       },
     },
     get3rdOrderSeidelData: {
       name: "get_3rd_order_seidel_data",
-      description: `Read complete third-order Seidel surfaceBySurface, transverse, wavefront, and curvature data, including surface labels and totals. ${committedSystemDescription}`,
+      description: `Read complete third-order Seidel surfaceBySurface, transverse, wavefront, and curvature data, including surface labels and totals. ${committedSystemDescription} ${storedResultDescription}`,
       inputSchema: emptyInputSchema,
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       execute: (input, { signal }) => {
         assertWebMcpInput(validators.empty, input);
         assertWebMcpNotCancelled(signal);
-        const { seidelData } = analysisDataStore.getState();
-        if (seidelData === undefined)
+        const { seidelData, seidelDataModel } = analysisDataStore.getState();
+        const model = lensStore.getState().committedOpticalModel;
+        if (
+          seidelData === undefined ||
+          model === undefined ||
+          seidelDataModel !== model
+        )
           throw new Error(
-            "No computed Seidel data. Call recompute_optical_system first.",
+            "Seidel data is missing or stale for the current committed optical system. Call recompute_optical_system first.",
           );
         return JSON.stringify(seidelData);
       },

@@ -1,9 +1,16 @@
-/** Covers committed analysis reads, Zernike selectors, and shared cache behavior. */
+/** Covers analysis freshness across computation and optimization Apply, Zernike selectors, and shared caches. */
 import { createStore } from "zustand";
 import { createAnalysisDataSlice } from "@/features/analysis/stores/analysisDataStore";
+import { createAnalysisPlotSlice } from "@/features/analysis/stores/analysisPlotStore";
+import { createLensLayoutImageSlice } from "@/features/analysis/stores/lensLayoutImageStore";
 import { createLensEditorSlice } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfiguratorSlice } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createAnalysisTools } from "@/features/lens-editor/lib/analysisWebMcp";
+import { computeOpticalSystem } from "@/features/lens-editor/lib/opticalSystemComputation";
+import { createOpticalSystemTools } from "@/features/lens-editor/lib/opticalSystemWebMcp";
+import { applyExampleSystem } from "@/features/example-systems/lib/applyExampleSystem";
+import { applyOptimizationModelToEditor } from "@/features/optimization/lib/applyOptimizationModelToEditor";
+import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 import { loadZernikeData } from "@/features/analysis/lib/plotFunctions";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -132,8 +139,11 @@ function setup(imagePoint: ImagePoint = "centroid") {
   lensStore.getState().setCommittedOpticalModel(model);
   analysisDataStore
     .getState()
-    .setFirstOrderData({ efl: 100.123456789, fno: 4, extraWorkerMetric: 12 });
-  analysisDataStore.getState().setSeidelData(seidel);
+    .setFirstOrderData(
+      { efl: 100.123456789, fno: 4, extraWorkerMetric: 12 },
+      model,
+    );
+  analysisDataStore.getState().setSeidelData(seidel, model);
   const deps = { lensStore, analysisDataStore, proxy, imagePoint };
   const tools = createAnalysisTools(deps);
   const execute = async (
@@ -165,17 +175,233 @@ function setup(imagePoint: ImagePoint = "centroid") {
   };
 }
 
+/** Exercises real computation and Apply helpers, mocking only worker results. */
+function computationSetup() {
+  const s = setup();
+  s.lensStore.setState({ committedOpticalModel: undefined });
+  s.analysisDataStore.getState().setFirstOrderData(undefined);
+  s.analysisDataStore.getState().setSeidelData(undefined);
+  s.lensStore.getState().setRows(surfacesToGridRows(model));
+  s.lensStore.getState().setAutoAperture(false);
+  s.specsStore.getState().loadFromSpecs(model.specs);
+  const worker = {
+    getFirstOrderData: jest.fn().mockResolvedValue({ efl: 100 }),
+    get3rdOrderSeidelData: jest.fn().mockResolvedValue(seidel),
+    plotLensLayout: jest.fn().mockResolvedValue("layout"),
+    getRayFanData: jest.fn().mockResolvedValue([]),
+    focusByMonoRmsSpot: jest
+      .fn()
+      .mockResolvedValue({ delta_thi: 0.5, metric_value: 0.01 }),
+  };
+  const proxy = { ...s.proxy, ...worker };
+  const deps = {
+    ...s,
+    proxy,
+    analysisPlotStore: createStore(createAnalysisPlotSlice),
+    lensLayoutImageStore: createStore(createLensLayoutImageSlice),
+    lookupMaps: undefined,
+    selectedFieldIndex: 0,
+    selectedWavelengthIndex: 1,
+    selectedPlotType: "rayFan" as const,
+    isDark: false,
+  };
+  const appliedModel: OpticalModel = {
+    ...model,
+    surfaces: [{ ...model.surfaces[0], curvatureRadius: 75 }],
+  };
+  return {
+    ...deps,
+    worker,
+    appliedModel,
+    compute: (signal?: AbortSignal) =>
+      computeOpticalSystem({ ...deps, signal }),
+    apply: () =>
+      applyOptimizationModelToEditor({ ...deps, model: appliedModel }),
+  };
+}
+
 describe("analysis WebMCP tools", () => {
   beforeEach(() => _resetAnalysisCache());
 
+  it.each(["getParaxialData", "get3rdOrderSeidelData"] as const)(
+    "rejects %s from compute A after Apply B while Zernike computes B",
+    async (getter) => {
+      const s = computationSetup();
+      const computed = await s.compute();
+      const previousAnalysis = s.analysisDataStore.getState();
+      expect(previousAnalysis.firstOrderDataModel).toBe(computed.model);
+      expect(previousAnalysis.seidelDataModel).toBe(computed.model);
+      await s.apply();
+      expect(s.analysisDataStore.getState()).toBe(previousAnalysis);
+      await s.query();
+      expect(s.getZernikeCoefficients.mock.calls[0][0]).toBe(s.appliedModel);
+      await expect(s.execute(s.tools[getter])).rejects.toThrow(
+        "recompute_optical_system",
+      );
+      expect(s.worker.getFirstOrderData).toHaveBeenCalledTimes(1);
+      expect(s.worker.get3rdOrderSeidelData).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it.each(["recompute", "focus"] as const)(
+    "serves fresh stored results after successful %s following Apply",
+    async (action) => {
+      const s = computationSetup();
+      await s.compute();
+      await s.apply();
+      const nextSeidel = { ...seidel, transverse: { TSA: 20 } };
+      s.worker.getFirstOrderData.mockResolvedValue({ efl: 200 });
+      s.worker.get3rdOrderSeidelData.mockResolvedValue(nextSeidel);
+      const opticalTools = createOpticalSystemTools(s);
+      await s.execute(
+        action === "recompute"
+          ? opticalTools.recomputeOpticalSystem
+          : opticalTools.focusOpticalSystem,
+        action === "recompute"
+          ? {}
+          : { chromaticity: "mono", metric: "rmsSpot", fieldIndex: 0 },
+      );
+      const committed = s.lensStore.getState().committedOpticalModel;
+      expect(committed).toBeDefined();
+      expect(committed).not.toBe(s.appliedModel);
+      expect(s.analysisDataStore.getState().firstOrderDataModel).toBe(
+        committed,
+      );
+      expect(s.analysisDataStore.getState().seidelDataModel).toBe(committed);
+      await expect(s.execute(s.tools.getParaxialData)).resolves.toBe(
+        JSON.stringify({ efl: 200 }),
+      );
+      await expect(s.execute(s.tools.get3rdOrderSeidelData)).resolves.toBe(
+        JSON.stringify(nextSeidel),
+      );
+    },
+  );
+
+  it.each(["failure", "cancellation"] as const)(
+    "retains results and ownership after recomputation %s, rejecting stale reads",
+    async (outcome) => {
+      const s = computationSetup();
+      await s.compute();
+      await s.apply();
+      const previousAnalysis = s.analysisDataStore.getState();
+      const controller = new AbortController();
+      s.worker.plotLensLayout.mockImplementationOnce(async () => {
+        if (outcome === "failure") throw new Error("layout failed");
+        controller.abort();
+        return "new-layout";
+      });
+      await expect(s.compute(controller.signal)).rejects.toThrow(
+        outcome === "failure" ? "layout failed" : /cancelled/i,
+      );
+      expect(s.analysisDataStore.getState()).toBe(previousAnalysis);
+      expect(s.lensStore.getState().committedOpticalModel).toBe(s.appliedModel);
+      for (const tool of [
+        s.tools.getParaxialData,
+        s.tools.get3rdOrderSeidelData,
+      ]) {
+        await expect(s.execute(tool)).rejects.toThrow(
+          "recompute_optical_system",
+        );
+      }
+    },
+  );
+
+  it("keeps computed results readable after ordinary draft edits", async () => {
+    const s = computationSetup();
+    const computed = await s.compute();
+    s.lensStore.getState().addRowAfter("object");
+    s.specsStore
+      .getState()
+      .setWavelengths({ weights: [[700, 1]], referenceIndex: 0 });
+    expect(s.lensStore.getState().committedOpticalModel).toBe(computed.model);
+    await expect(s.execute(s.tools.getParaxialData)).resolves.toBe(
+      JSON.stringify({ efl: 100 }),
+    );
+    await expect(s.execute(s.tools.get3rdOrderSeidelData)).resolves.toBe(
+      JSON.stringify(seidel),
+    );
+  });
+
+  it("records the exact source of successful example results", async () => {
+    const s = computationSetup();
+    await applyExampleSystem({ ...s, model: s.appliedModel });
+    expect(s.analysisDataStore.getState().firstOrderDataModel).toBe(
+      s.appliedModel,
+    );
+    expect(s.analysisDataStore.getState().seidelDataModel).toBe(s.appliedModel);
+    await expect(s.execute(s.tools.getParaxialData)).resolves.toBe(
+      JSON.stringify({ efl: 100 }),
+    );
+    await expect(s.execute(s.tools.get3rdOrderSeidelData)).resolves.toBe(
+      JSON.stringify(seidel),
+    );
+  });
+
+  it("retains computed results and ownership when example loading fails", async () => {
+    const s = computationSetup();
+    const computed = await s.compute();
+    const previousAnalysis = s.analysisDataStore.getState();
+    s.worker.plotLensLayout.mockRejectedValueOnce(new Error("layout failed"));
+    await expect(
+      applyExampleSystem({ ...s, model: s.appliedModel }),
+    ).rejects.toThrow("layout failed");
+    expect(s.analysisDataStore.getState()).toBe(previousAnalysis);
+    expect(s.lensStore.getState().committedOpticalModel).toBe(computed.model);
+  });
+
+  describe.each(["getParaxialData", "get3rdOrderSeidelData"] as const)(
+    "%s ownership checks",
+    (getter) => {
+      it.each([
+        "missing source",
+        "missing committed model",
+        "missing source and committed model",
+        "equal but distinct model",
+        "cleared result",
+      ] as const)("requires recomputation for %s", async (condition) => {
+        const s = setup();
+        const isParaxial = getter === "getParaxialData";
+        if (
+          condition === "missing source" ||
+          condition === "missing source and committed model"
+        ) {
+          if (isParaxial)
+            s.analysisDataStore.getState().setFirstOrderData({ efl: 100 });
+          else s.analysisDataStore.getState().setSeidelData(seidel);
+        }
+        if (
+          condition === "missing committed model" ||
+          condition === "missing source and committed model"
+        ) {
+          s.lensStore.setState({ committedOpticalModel: undefined });
+        } else if (condition === "equal but distinct model") {
+          s.lensStore.getState().setCommittedOpticalModel({ ...model });
+        } else if (condition === "cleared result") {
+          if (isParaxial)
+            s.analysisDataStore.getState().setFirstOrderData(undefined, model);
+          else s.analysisDataStore.getState().setSeidelData(undefined, model);
+        }
+        await expect(s.execute(s.tools[getter])).rejects.toThrow(
+          "recompute_optical_system",
+        );
+      });
+    },
+  );
+
   it("marks all tools read-only and explains committed results", () => {
-    for (const tool of Object.values(setup().tools)) {
+    const { tools } = setup();
+    for (const tool of Object.values(tools)) {
       expect(tool.annotations).toEqual({
         readOnlyHint: true,
         untrustedContentHint: false,
       });
       expect(tool.description).toContain(
-        "Reads the last successfully computed optical system. To include pending Lens Editor edits, call `recompute_optical_system` first.",
+        "Reads the current committed optical system. To include pending Lens Editor edits, call `recompute_optical_system` first.",
+      );
+    }
+    for (const tool of [tools.getParaxialData, tools.get3rdOrderSeidelData]) {
+      expect(tool.description).toContain(
+        "Stored results must belong to that exact model; after optimization Apply, call `recompute_optical_system` if results are missing or stale.",
       );
     }
   });
@@ -197,10 +423,10 @@ describe("analysis WebMCP tools", () => {
     expect(s.getZernikeCoefficients).not.toHaveBeenCalled();
     expect(s.lensStore.getState()).toBe(beforeLens);
     expect(s.analysisDataStore.getState()).toBe(beforeAnalysis);
-    s.analysisDataStore.getState().setFirstOrderData({ efl: 200 });
+    s.analysisDataStore.getState().setFirstOrderData({ efl: 200 }, model);
     s.analysisDataStore
       .getState()
-      .setSeidelData({ ...seidel, transverse: { TSA: 20 } });
+      .setSeidelData({ ...seidel, transverse: { TSA: 20 } }, model);
     expect(
       JSON.parse(String(await s.execute(s.tools.getParaxialData))),
     ).toEqual({ efl: 200 });

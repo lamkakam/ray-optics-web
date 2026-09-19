@@ -39,7 +39,7 @@ interface ApplyExampleSystemParams {
  * - Performs the specs, prescription rows, auto-aperture, and loading-flag store updates before awaiting worker computations so callers can route immediately after starting the returned promise.
  * - Computes lens layout directly and loads first-order, selected analysis plot, and complete Seidel data through the shared app-lifetime model/aim-point cache.
  * - Passes the app-wide `imagePoint` through to selected OPD-related analysis plot loading.
- * - Commits first-order data, layout image, plot data, Seidel data, specs, and optical model to their stores.
+ * - Commits first-order data, layout image, plot data, Seidel data, specs, and optical model to their stores. First-order and Seidel data record the exact source `model` instance; failed computations retain previous results and ownership.
  * - Commits selected plot-store-backed analysis results through `commitAnalysisPlotResult(...)`, including diffraction MTF data.
  * - Leaves surface-by-surface Seidel plot results out of `AnalysisPlotState`; the full Seidel payload is committed to `AnalysisDataState` separately.
  * - Clears layout and plot loading flags in `finally`.
@@ -108,10 +108,10 @@ export async function applyExampleSystem({
       loadSeidelData({ proxy, model, imagePoint }),
     ]);
 
-    analysisDataStore.getState().setFirstOrderData(fod);
+    analysisDataStore.getState().setFirstOrderData(fod, model);
     lensLayoutImageStore.getState().setLayoutImage(layout);
     commitAnalysisPlotResult(plotResult, analysisPlotStore);
-    analysisDataStore.getState().setSeidelData(seidel);
+    analysisDataStore.getState().setSeidelData(seidel, model);
     specsStore.getState().setCommittedSpecs(model.specs);
     lensStore.getState().setCommittedOpticalModel(model);
   } finally {

@@ -1,5 +1,7 @@
 /**
- * Zustand store for analysis results computed after each successful submit. Holds Seidel aberration data and first-order optical data returned by the Pyodide worker.
+ * Zustand store for successful Seidel and first-order worker results and their
+ * exact source-model instances. Ownership permits consumers to detect stale
+ * results when the committed model changes without recomputing analyses.
  *
  * @remarks
  * ## Dependencies
@@ -9,25 +11,43 @@
  */
 import type { StateCreator } from "zustand";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 export interface AnalysisDataState {
-  /** Third-order Seidel aberration data from the latest successful submit, or `undefined` before submission or after clearing. Controls visibility of the Seidel and Zernike buttons. */
+  /** Complete third-order Seidel payload from the latest successful computation, or `undefined` before computation or after clearing. Controls visibility of the Seidel button. */
   seidelData: SeidelData | undefined;
+  /** Exact source instance for `seidelData`, or `undefined` when cleared or stored without a source. */
+  seidelDataModel: OpticalModel | undefined;
   /** First-order optical data, such as EFL and f-number, from the latest successful submit, or `undefined` before submission or after clearing. */
   firstOrderData: Record<string, number> | undefined;
+  /** Exact source instance for `firstOrderData`, or `undefined` when cleared or stored without a source. */
+  firstOrderDataModel: OpticalModel | undefined;
 
-  /** Stores or clears the third-order Seidel aberration data returned by `proxy.get3rdOrderSeidelData`. */
-  setSeidelData: (data: SeidelData | undefined) => void;
-  /** Stores or clears the first-order optical data returned by `proxy.getFirstOrderData`. */
-  setFirstOrderData: (data: Record<string, number> | undefined) => void;
+  /** Stores the complete Seidel payload and its source together. Clearing data or omitting the source clears ownership. */
+  setSeidelData: (data: SeidelData | undefined, model?: OpticalModel) => void;
+  /** Stores first-order data and its source together. Clearing data or omitting the source clears ownership. */
+  setFirstOrderData: (
+    data: Record<string, number> | undefined,
+    model?: OpticalModel,
+  ) => void;
 }
 
 export const createAnalysisDataSlice: StateCreator<AnalysisDataState> = (
   set,
 ) => ({
   seidelData: undefined,
+  seidelDataModel: undefined,
   firstOrderData: undefined,
+  firstOrderDataModel: undefined,
 
-  setSeidelData: (data) => set({ seidelData: data }),
-  setFirstOrderData: (data) => set({ firstOrderData: data }),
+  setSeidelData: (data, model) =>
+    set({
+      seidelData: data,
+      seidelDataModel: data === undefined ? undefined : model,
+    }),
+  setFirstOrderData: (data, model) =>
+    set({
+      firstOrderData: data,
+      firstOrderDataModel: data === undefined ? undefined : model,
+    }),
 });
