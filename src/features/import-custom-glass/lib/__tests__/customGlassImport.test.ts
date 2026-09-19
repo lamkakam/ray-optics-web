@@ -752,6 +752,41 @@ describe("parseCustomGlassCsv", () => {
     });
   });
 
+  // CSV duplicate identity uses numeric wavelengths after nanometre normalization.
+  it.each(["0.1000", "1e-1", "0.1000000000000001"])(
+    "rejects normalized duplicate wavelength %s with the original CSV value",
+    (duplicate) => {
+      expect(
+        parseCustomGlassCsv(
+          new File([], "LF7.csv"),
+          `wl,n\n0.1,1\n0.2,1.1\n0.3,1.2\n${duplicate},1.3`,
+        ),
+      ).toEqual({
+        filename: "LF7.csv",
+        reason: `Duplicate wavelength ${duplicate} found.`,
+      });
+    },
+  );
+
+  it("preserves all pairs and their order in a valid 20,000-row CSV", () => {
+    const pairs = Array.from({ length: 20_000 }, (_, index) => [
+      (20_000 - index) / 100,
+      1.5,
+    ]);
+    const text = [
+      "wl,n",
+      ...pairs.map(
+        ([wavelength, refractiveIndex]) =>
+          `${wavelength / 1000},${refractiveIndex}`,
+      ),
+    ].join("\n");
+
+    expect(parseCustomGlassCsv(new File([], "large.csv"), text)).toEqual({
+      name: "large",
+      pairs,
+    });
+  });
+
   it("ignores blank lines and trims CSV values while preserving row order", () => {
     expect(
       parseCustomGlassCsv(

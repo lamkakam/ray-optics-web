@@ -28,7 +28,8 @@ import {
 /** Live page dependencies shared by the descriptors and visible GUI. */
 export interface CustomGlassWebMcpDependencies {
   readonly proxy: PyodideWorkerAPI | undefined;
-  readonly customGlasses: UserDefinedMaterialsData;
+  /** Undefined until catalog hydration completes; an empty object is a ready catalog. */
+  readonly customGlasses: UserDefinedMaterialsData | undefined;
   readonly storeActions: CustomGlassStoreActions;
   readonly persistInput?: CustomGlassOperationDependencies["persistInput"];
   readonly deletePersisted?: CustomGlassOperationDependencies["deletePersisted"];
@@ -107,6 +108,16 @@ function semanticError(path: string, message: string): never {
   throw new Error(`Invalid input at ${path}: ${message}`);
 }
 
+/** Rejects incomplete catalog hydration before any membership lookup or side effect. */
+function requireCustomGlassCatalog(
+  dependencies: CustomGlassWebMcpDependencies,
+): UserDefinedMaterialsData {
+  if (dependencies.customGlasses === undefined) {
+    throw new Error("Custom-glass catalog is not ready.");
+  }
+  return dependencies.customGlasses;
+}
+
 function operationDependencies(
   dependencies: CustomGlassWebMcpDependencies,
 ): CustomGlassOperationDependencies {
@@ -132,7 +143,12 @@ function requireGlass(
   return glass;
 }
 
-/** Creates the four descriptors in their public registration order. */
+/**
+ * Creates the four descriptors in their public registration order. Each execution
+ * validates input and cancellation, then requires a hydrated catalog before lookups
+ * or mutations. Only own catalog properties count as glass names, including labels
+ * shared with Object.prototype. Stable descriptors observe hydration through source.
+ */
 export function createCustomGlassWebMcpTools(
   source: DependenciesSource,
 ): CustomGlassWebMcpTools {
@@ -145,12 +161,14 @@ export function createCustomGlassWebMcpTools(
       execute: async (input, { signal }) => {
         assertWebMcpInput(validators.get, input);
         assertWebMcpNotCancelled(signal);
-        const customGlasses = currentDependencies(source).customGlasses;
+        const customGlasses = requireCustomGlassCatalog(
+          currentDependencies(source),
+        );
         const { name } = input as GetInput;
         if (name === undefined) return JSON.stringify({ customGlasses });
-        const glass = customGlasses[name];
-        if (glass === undefined)
+        if (!Object.hasOwn(customGlasses, name))
           semanticError("/name", `unknown custom glass ${name}`);
+        const glass = customGlasses[name];
         return JSON.stringify({ customGlasses: { [name]: glass } });
       },
     },
@@ -164,7 +182,8 @@ export function createCustomGlassWebMcpTools(
         assertWebMcpInput(validators.add, input);
         assertWebMcpNotCancelled(signal);
         const dependencies = currentDependencies(source);
-        if (dependencies.customGlasses[input.name] !== undefined) {
+        const customGlasses = requireCustomGlassCatalog(dependencies);
+        if (Object.hasOwn(customGlasses, input.name)) {
           semanticError("/name", "custom glass already exists");
         }
         const result = await addCustomGlass(
@@ -190,7 +209,8 @@ export function createCustomGlassWebMcpTools(
         assertWebMcpInput(validators.update, input);
         assertWebMcpNotCancelled(signal);
         const dependencies = currentDependencies(source);
-        if (dependencies.customGlasses[input.currentName] === undefined) {
+        const customGlasses = requireCustomGlassCatalog(dependencies);
+        if (!Object.hasOwn(customGlasses, input.currentName)) {
           semanticError(
             "/currentName",
             `unknown custom glass ${input.currentName}`,
@@ -198,7 +218,7 @@ export function createCustomGlassWebMcpTools(
         }
         if (
           input.name !== input.currentName &&
-          dependencies.customGlasses[input.name] !== undefined
+          Object.hasOwn(customGlasses, input.name)
         ) {
           semanticError("/name", "custom glass already exists");
         }
@@ -226,7 +246,8 @@ export function createCustomGlassWebMcpTools(
         assertWebMcpInput(validators.delete, input);
         assertWebMcpNotCancelled(signal);
         const dependencies = currentDependencies(source);
-        if (dependencies.customGlasses[input.name] === undefined) {
+        const customGlasses = requireCustomGlassCatalog(dependencies);
+        if (!Object.hasOwn(customGlasses, input.name)) {
           semanticError("/name", `unknown custom glass ${input.name}`);
         }
         const result = await deleteCustomGlasses(

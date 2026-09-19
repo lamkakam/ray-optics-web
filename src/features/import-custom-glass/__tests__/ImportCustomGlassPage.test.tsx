@@ -1,11 +1,17 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { type ReactNode, useEffect } from "react";
+import { createStore } from "zustand";
 import { AppShellProvider } from "@/app/AppShellContext";
 import {
+  GlassMapStoreContext,
   GlassMapStoreProvider,
   useGlassMapStore,
 } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import {
+  createGlassMapSlice,
+  type GlassMapStore,
+} from "@/features/glass-map/stores/glassMapStore";
 import type { UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
 import ImportCustomGlassPage from "@/features/import-custom-glass/ImportCustomGlassPage";
 import {
@@ -271,6 +277,94 @@ describe("ImportCustomGlassPage", () => {
 
     rendered.unmount();
     expect(registrations.every(({ signal }) => signal.aborted)).toBe(true);
+  });
+
+  // The real store ignores custom-glass mutations until catalog hydration completes.
+  it("rejects tools before hydration and uses the original registrations after catalogs load", async () => {
+    const registrations: WebMCP.ModelContextTool[] = [];
+    const registerTool = jest.fn((tool: WebMCP.ModelContextTool) => {
+      registrations.push(tool);
+    });
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: { registerTool },
+    });
+    const store = createStore<GlassMapStore>(createGlassMapSlice);
+    const initialState = store.getState();
+    const proxy = {
+      addUserDefinedGlasses: jest.fn().mockResolvedValue({ NEW: customGlass }),
+      updateUserDefinedGlasses: jest.fn(),
+      deleteUserDefinedGlasses: jest.fn(),
+    };
+    render(
+      <ThemeProvider>
+        <AppShellProvider
+          value={{
+            proxy: proxy as unknown as PyodideWorkerAPI,
+            isReady: true,
+            openErrorModal: jest.fn(),
+          }}
+        >
+          <GlassMapStoreContext.Provider value={store}>
+            <ImportCustomGlassStoreProvider>
+              <ImportCustomGlassPage />
+            </ImportCustomGlassStoreProvider>
+          </GlassMapStoreContext.Provider>
+        </AppShellProvider>
+      </ThemeProvider>,
+    );
+    const [getGlass, addGlass, updateGlass, deleteGlass] = registrations;
+    const signal = new AbortController().signal;
+    const pairs = [
+      [486.13, 1.522],
+      [546.07, 1.518],
+      [587.56, 1.5168],
+      [656.27, 1.514],
+    ];
+    const input = { name: "NEW", pairs };
+
+    for (const [tool, args] of [
+      [getGlass, {}],
+      [addGlass, input],
+      [updateGlass, { ...input, currentName: "EXISTING" }],
+      [deleteGlass, { name: "EXISTING" }],
+    ] as const) {
+      await expect(tool.execute(args, { signal })).rejects.toThrow(
+        "Custom-glass catalog is not ready.",
+      );
+    }
+    expect(proxy.addUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(proxy.updateUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(proxy.deleteUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(mockUpsertPersistedCustomGlass).not.toHaveBeenCalled();
+    expect(mockDeletePersistedCustomGlasses).not.toHaveBeenCalled();
+    expect(store.getState()).toBe(initialState);
+
+    act(() => {
+      store.getState().setCatalogsData({ Custom: {} });
+    });
+    let added: unknown;
+    await act(async () => {
+      added = await addGlass.execute(input, { signal });
+    });
+    expect(added).toBe(JSON.stringify({ name: "NEW", glass: customGlass }));
+    expect(proxy.addUserDefinedGlasses).toHaveBeenCalledTimes(1);
+    expect(proxy.addUserDefinedGlasses).toHaveBeenCalledWith([input]);
+    expect(mockUpsertPersistedCustomGlass).toHaveBeenCalledWith(input);
+    expect(store.getState().catalogsData?.Custom).toEqual({ NEW: customGlass });
+    expect(
+      screen.getByRole("checkbox", { name: "Select NEW" }),
+    ).toBeInTheDocument();
+    await expect(getGlass.execute({ name: "NEW" }, { signal })).resolves.toBe(
+      JSON.stringify({ customGlasses: { NEW: customGlass } }),
+    );
+    expect(registerTool).toHaveBeenCalledTimes(4);
+    expect(registrations).toEqual([
+      getGlass,
+      addGlass,
+      updateGlass,
+      deleteGlass,
+    ]);
   });
 
   it("renders the custom glass table as an AG Grid instance", () => {

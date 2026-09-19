@@ -17,7 +17,6 @@ import type {
 } from "@/features/import-custom-glass/types/customGlassImport";
 import {
   MIN_CUSTOM_GLASS_PAIRS,
-  duplicateCustomGlassWavelengths,
   validateCustomGlassInput,
   validateCustomGlassPairs,
 } from "@/features/import-custom-glass/lib/customGlassValidation";
@@ -163,7 +162,13 @@ function micrometersToNanometers(value: number): number {
   return Number((value * 1000).toFixed(12));
 }
 
-/** Parses refractiveindex.info-style `wl,n` CSV text. The filename supplies the label; rows must contain unique positive finite values, at least four pairs are required, and wavelengths are converted from micrometers to nanometers. */
+/**
+ * Parses refractiveindex.info-style `wl,n` CSV text in linear time, preserving row
+ * order. The filename supplies the label; at least four positive finite pairs are
+ * required. Each wavelength is converted once from micrometers to normalized
+ * nanometers and checked against an incremental set for duplicates. The shared
+ * pair validator checks the completed result before it is returned.
+ */
 export function parseCustomGlassCsv(
   file: File,
   text: string,
@@ -190,6 +195,7 @@ export function parseCustomGlassCsv(
   }
 
   const pairs: [number, number][] = [];
+  const wavelengths = new Set<number>();
   for (const [index, line] of lines.slice(1).entries()) {
     const rowNumber = index + 2;
     const columns = line.split(",").map((column) => column.trim());
@@ -217,25 +223,16 @@ export function parseCustomGlassCsv(
         reason: `Row ${rowNumber} values must be positive.`,
       };
     }
-    if (
-      duplicateCustomGlassWavelengths([
-        ...pairs,
-        [
-          micrometersToNanometers(wavelengthMicrometers),
-          refractiveIndex,
-        ] as const,
-      ]).size > 0
-    ) {
+    const wavelengthNanometers = micrometersToNanometers(wavelengthMicrometers);
+    if (wavelengths.has(wavelengthNanometers)) {
       return {
         filename: file.name,
         reason: `Duplicate wavelength ${columns[0]} found.`,
       };
     }
 
-    pairs.push([
-      micrometersToNanometers(wavelengthMicrometers),
-      refractiveIndex,
-    ]);
+    wavelengths.add(wavelengthNanometers);
+    pairs.push([wavelengthNanometers, refractiveIndex]);
   }
 
   if (pairs.length < MIN_CUSTOM_GLASS_PAIRS) {

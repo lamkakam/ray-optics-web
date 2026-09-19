@@ -68,6 +68,7 @@ export {
  * - IndexedDB failures after successful worker mutations open `Custom Glass Persistence Warning`; they do not roll back the Pyodide runtime or Glass Map store.
  * - The page does not call `getAllGlassCatalogsData()`.
  * - Four custom-glass CRUD WebMCP tools are registered only while this page is mounted. Stable registrations execute against the latest proxy, custom catalog, store, persistence functions, and warning callback, and every registration is aborted on unmount.
+ * - WebMCP receives an unavailable catalog until `catalogsData.Custom` exists, so tools reject startup calls before side effects and become usable through the same registrations after hydration. An empty loaded Custom catalog is ready.
  *
  * ## Import Behavior
  * - JSON imports are parsed and validated by `validateImportedCustomGlassData`.
@@ -144,7 +145,7 @@ export default function ImportCustomGlassPage() {
 
   useCustomGlassWebMCP({
     proxy,
-    customGlasses: custom,
+    customGlasses: customCatalog === undefined ? undefined : custom,
     storeActions: glassMapStore.getState(),
     persistInput: upsertPersistedCustomGlass,
     deletePersisted: deletePersistedCustomGlasses,
