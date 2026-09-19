@@ -408,3 +408,16 @@ describe("optical-system WebMCP tools", () => {
     expect(stores.lensStore.getState().rows).toBe(before);
   });
 });
+
+it("recomputes through WebMCP using the saved application ray count", async () => {
+  const { execute, stores, proxy } = setup();
+  stores.analysisPlotStore.getState().setRayCount("rayFan", 32);
+  await execute("recompute_optical_system", {});
+  expect(proxy.getRayFanData).toHaveBeenCalledWith(
+    expect.anything(),
+    0,
+    "chief_ray",
+    32,
+  );
+  localStorage.clear();
+});

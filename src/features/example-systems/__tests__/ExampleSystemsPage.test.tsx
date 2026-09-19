@@ -207,6 +207,7 @@ function renderPage(overrides?: {
 
 describe("ExampleSystemsPage", () => {
   beforeEach(() => {
+    localStorage.clear();
     _resetAnalysisCache();
     mockPush.mockReset();
     mockScreenBreakpoint = "screenLG";
@@ -520,7 +521,7 @@ describe("ExampleSystemsPage", () => {
     expect(analysisPlotStore.getState().plotLoading).toBe(false);
   });
 
-  it("confirming applies and commits diffraction MTF data after immediate routing", async () => {
+  it("confirming applies diffraction MTF with the application resolution after immediate routing", async () => {
     const diffractionMtfDeferred = createDeferred<DiffractionMtfData>();
     const proxy = makeProxy();
     (proxy.getDiffractionMTFData as jest.Mock).mockReturnValue(
@@ -528,6 +529,7 @@ describe("ExampleSystemsPage", () => {
     );
     const { analysisPlotStore } = renderPage({ proxy });
     analysisPlotStore.getState().setSelectedPlotType("diffractionMTF");
+    analysisPlotStore.getState().setRayCount("diffractionMTF", 256);
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
@@ -540,6 +542,8 @@ describe("ExampleSystemsPage", () => {
       0,
       0,
       "centroid",
+      256,
+      512,
     );
     expect(analysisPlotStore.getState().diffractionMtfData).toBeUndefined();
 

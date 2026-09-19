@@ -13,7 +13,12 @@ from rayoptics_web_utils.analysis._afocal import (
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 
 
-def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
+def get_ray_fan_data(
+    opm: OpticalModel,
+    fi: int,
+    image_point: str = "chief_ray",
+    num_rays: int = 21,
+) -> list[dict]:
     """Return transverse ray-fan data for all wavelengths at field index ``fi``.
 
     Each wavelength result contains `fieldIdx`, `wvlIdx`, `Sagittal`,
@@ -29,6 +34,7 @@ def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
         opm: RayOptics optical model.
         fi: Field index.
         image_point: Image-point reference convention.
+        num_rays: Samples per fan axis and centroid-reference grid dimension; defaults to 21.
 
     Returns:
         Transverse ray-fan data for all wavelengths at field index ``fi``.
@@ -41,7 +47,7 @@ def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
         if ray_pkg[mc.ray] is not None:
             if afocal:
                 if wvl not in references:
-                    references[wvl] = reference_direction(opm, fi, wvl, image_point=image_point)[0]
+                    references[wvl] = reference_direction(opm, fi, wvl, image_point=image_point, num_rays=num_rays)[0]
                 reference = references[wvl]
                 return float(angular_coordinates(output_segment(ray_pkg)[1], reference)[xy])
             image_pt = fld.ref_sphere[0]
@@ -52,8 +58,8 @@ def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
             return t_abr[xy]
         return None
 
-    sagittal_x, sagittal_y = _trace_fan_series(opm, fi, 0, _ray_abr, image_point=image_point)
-    tangential_x, tangential_y = _trace_fan_series(opm, fi, 1, _ray_abr, image_point=image_point)
+    sagittal_x, sagittal_y = _trace_fan_series(opm, fi, 0, _ray_abr, image_point=image_point, num_rays=num_rays)
+    tangential_x, tangential_y = _trace_fan_series(opm, fi, 1, _ray_abr, image_point=image_point, num_rays=num_rays)
 
     data: list[dict] = []
     for wvl_idx in range(len(sagittal_x)):

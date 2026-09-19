@@ -971,6 +971,8 @@ describe("LensEditor", () => {
         0,
         0,
         "centroid",
+        128,
+        256,
       );
     });
     expect(analysisPlotStore.getState().diffractionMtfData).toEqual(

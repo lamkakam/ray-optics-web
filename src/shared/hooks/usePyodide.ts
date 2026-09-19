@@ -66,23 +66,26 @@ export interface PyodideWorkerAPI {
   getSurfaceSemiDiameters(opticalModel: OpticalModel): Promise<number[]>;
   /** Returns a themed base64 lens-layout image. */
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
-  /** Returns transverse ray-fan data for one field and image reference. */
+  /** Returns transverse ray-fan data for one field and image reference. Sampling defaults to 21 per fan axis. */
   getRayFanData(
     opticalModel: OpticalModel,
     fieldIndex: number,
     imagePoint?: ImagePoint,
+    numRays?: number,
   ): Promise<RayFanData>;
-  /** Returns OPD-fan data for one field and image reference. */
+  /** Returns OPD-fan data for one field and image reference. Sampling defaults to 21 per fan axis. */
   getOpdFanData(
     opticalModel: OpticalModel,
     fieldIndex: number,
     imagePoint?: ImagePoint,
+    numRays?: number,
   ): Promise<OpdFanData>;
-  /** Returns spot-diagram points for one field and image reference. */
+  /** Returns spot-diagram points for one field and image reference. Sampling defaults to 21 per grid dimension. */
   getSpotDiagramData(
     opticalModel: OpticalModel,
     fieldIndex: number,
     imagePoint?: ImagePoint,
+    numRays?: number,
   ): Promise<SpotDiagramData>;
   /** Returns field-curvature data for one wavelength. */
   getFieldCurvatureData(
@@ -114,11 +117,12 @@ export interface PyodideWorkerAPI {
     wavelengthSamples?: number,
     numRays?: number,
   ): Promise<StrehlVsWavelengthData>;
-  /** Returns geometric-PSF points. */
+  /** Returns geometric-PSF points. Sampling defaults to 128 per grid dimension. */
   getGeoPSFData(
     opticalModel: OpticalModel,
     fieldIndex: number,
     wvlIndex: number,
+    numRays?: number,
   ): Promise<GeoPsfData>;
   /** Returns a sampled diffraction-PSF grid. */
   getDiffractionPSFData(

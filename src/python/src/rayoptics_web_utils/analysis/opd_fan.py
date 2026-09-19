@@ -16,12 +16,13 @@ def get_opd_fan_data_for_wavelength(
     fi: int,
     wvl_idx: int,
     image_point: str = "chief_ray",
+    num_rays: int = 21,
 ) -> dict:
     """Return OPD fan data for one field and configured wavelength.
 
     The result has the same schema and semantics as one entry returned by
     `get_opd_fan_data`, including `fieldIdx`, `wvlIdx`, sagittal and tangential
-    21-point fans, blocked-sample gaps, and wave units.
+    `num_rays`-point fans (21 by default), blocked-sample gaps, and wave units.
 
     Finite image space uses
     `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)` with a copy of the
@@ -44,13 +45,14 @@ def get_opd_fan_data_for_wavelength(
         fi: Field index.
         wvl_idx: Configured wavelength index.
         image_point: Image-point reference convention.
+        num_rays: Samples per fan axis and centroid-reference grid dimension; defaults to 21.
 
     Returns:
         OPD fan data for one field and wavelength.
     """
 
     return _get_opd_fan_data_for_wavelength(
-        opm, fi, wvl_idx, image_point, reference_wvl_idx=wvl_idx
+        opm, fi, wvl_idx, image_point, reference_wvl_idx=wvl_idx, num_rays=num_rays
     )
 
 
@@ -60,8 +62,9 @@ def _get_opd_fan_data_for_wavelength(
     wvl_idx: int,
     image_point: str,
     reference_wvl_idx: int,
+    num_rays: int = 21,
 ) -> dict:
-    """Trace one OPD fan using explicit monochromatic/reference geometry policy."""
+    """Trace one OPD fan using explicit monochromatic/reference geometry policy and sampling count (21 by default)."""
     afocal = is_afocal_image_space(opm)
     references = {}
     finite_first_order_data = {}
@@ -74,7 +77,7 @@ def _get_opd_fan_data_for_wavelength(
             opm,
             fi=fi,
             wavelength_nm=reference_wavelength,
-            num_rays=21,
+            num_rays=num_rays,
             image_point="centroid",
         )
         if afocal:
@@ -95,7 +98,7 @@ def _get_opd_fan_data_for_wavelength(
                         opm, fi, wvl, image_point="chief_ray"
                     )
                 elif wvl not in references:
-                    reference, chief_pkg = reference_direction(opm, fi, wvl, image_point=image_point)
+                    reference, chief_pkg = reference_direction(opm, fi, wvl, image_point=image_point, num_rays=num_rays)
                     plane_point, _ = exit_pupil_plane(opm, fld, wvl, chief_pkg=chief_pkg)
                     references[wvl] = (reference, chief_pkg, plane_point)
                 else:
@@ -119,6 +122,7 @@ def _get_opd_fan_data_for_wavelength(
         image_point=image_point,
         wvl_idx=wvl_idx,
         finite_reference_point=finite_reference_point,
+        num_rays=num_rays,
     )
     tangential_x, tangential_y = _trace_fan_series(
         opm,
@@ -128,6 +132,7 @@ def _get_opd_fan_data_for_wavelength(
         image_point=image_point,
         wvl_idx=wvl_idx,
         finite_reference_point=finite_reference_point,
+        num_rays=num_rays,
     )
 
     return {
@@ -146,7 +151,12 @@ def _get_opd_fan_data_for_wavelength(
     }
 
 
-def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
+def get_opd_fan_data(
+    opm: OpticalModel,
+    fi: int,
+    image_point: str = "chief_ray",
+    num_rays: int = 21,
+) -> list[dict]:
     """Return OPD fan data for all wavelengths at field index ``fi``.
 
     The public all-wavelength plotting contract is unchanged. Results retain the
@@ -161,6 +171,7 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
         opm: RayOptics optical model.
         fi: Field index.
         image_point: Image-point reference convention.
+        num_rays: Samples per fan axis and centroid-reference grid dimension; defaults to 21.
 
     Returns:
         OPD fan data for all configured wavelengths at field index ``fi``.
@@ -168,7 +179,7 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
     if image_point == "chief_ray":
         return [
             get_opd_fan_data_for_wavelength(
-                opm, fi, wvl_idx, image_point=image_point
+                opm, fi, wvl_idx, image_point=image_point, num_rays=num_rays
             )
             for wvl_idx in range(
                 len(opm.optical_spec.spectral_region.wavelengths)
@@ -183,6 +194,7 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
             wvl_idx,
             image_point,
             reference_wvl_idx=primary_wvl_idx,
+            num_rays=num_rays,
         )
         for wvl_idx in range(len(opm.optical_spec.spectral_region.wavelengths))
     ]

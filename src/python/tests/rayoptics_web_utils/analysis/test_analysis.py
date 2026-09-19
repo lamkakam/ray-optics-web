@@ -160,32 +160,36 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_ray_fan_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point", "num_rays"]
         assert sig.parameters["image_point"].default == "chief_ray"
+        assert sig.parameters["num_rays"].default == 21
 
     def test_get_opd_fan_data_accepts_opm_and_fi(self):
         from rayoptics_web_utils.analysis import get_opd_fan_data
         import inspect
 
         sig = inspect.signature(get_opd_fan_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point", "num_rays"]
         assert sig.parameters["image_point"].default == "chief_ray"
+        assert sig.parameters["num_rays"].default == 21
 
     def test_get_opd_fan_data_for_wavelength_accepts_opm_fi_and_wvl_idx(self):
         from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
         import inspect
 
         sig = inspect.signature(get_opd_fan_data_for_wavelength)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "image_point"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "image_point", "num_rays"]
         assert sig.parameters["image_point"].default == "chief_ray"
+        assert sig.parameters["num_rays"].default == 21
 
     def test_get_spot_data_accepts_opm_and_fi(self):
         from rayoptics_web_utils.analysis import get_spot_data
         import inspect
 
         sig = inspect.signature(get_spot_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point", "num_rays"]
         assert sig.parameters["image_point"].default == "chief_ray"
+        assert sig.parameters["num_rays"].default == 21
 
     def test_get_wavefront_data_accepts_opm_fi_wvl_idx_num_rays(self):
         from rayoptics_web_utils.analysis import get_wavefront_data
@@ -503,7 +507,9 @@ class TestGetOpdFanData:
             image_point="chief_ray",
             wvl_idx=None,
             finite_reference_point=None,
+            num_rays=21,
         ):
+            assert num_rays == 21
             del fan_filter
             calls.append((opm_arg, fi, xy, image_point, wvl_idx, finite_reference_point))
             return [[-1.0, 1.0]], [[float(xy), float(xy + 1)]]
@@ -547,8 +553,9 @@ class TestGetOpdFanData:
         calls = []
 
         def fake_single_wavelength(
-            opm_arg, fi, wvl_idx, image_point, reference_wvl_idx
+            opm_arg, fi, wvl_idx, image_point, reference_wvl_idx, num_rays=21
         ):
+            assert num_rays == 21
             calls.append((opm_arg, fi, wvl_idx, image_point, reference_wvl_idx))
             return {
                 "fieldIdx": fi,

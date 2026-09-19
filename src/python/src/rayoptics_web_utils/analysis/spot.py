@@ -20,14 +20,19 @@ from rayoptics_web_utils.analysis._afocal import (
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 
 
-def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
+def get_spot_data(
+    opm: OpticalModel,
+    fi: int,
+    image_point: str = "chief_ray",
+    num_rays: int = 21,
+) -> list[dict]:
     """Return spot-diagram point clouds for all wavelengths at field index ``fi``.
 
     Each wavelength entry contains `fieldIdx`, `wvlIdx`, coordinates `x` and
     `y`, and their units. Finite image space uses system dimensions; infinite
     image space uses `arcsec` and is independent of the artificial image gap.
 
-    `image_point="chief_ray"` uses `seq_model.trace_grid` with 21 rays and the
+    `image_point="chief_ray"` uses `seq_model.trace_grid` with `num_rays` samples per dimension and the
     historical reference. `"centroid"` uses one valid-ray centroid across all
     wavelengths, with every ray weighted by its configured spectral weight, so
     wavelength-dependent lateral colour is retained. Zero-weight wavelengths
@@ -38,6 +43,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
         opm: RayOptics optical model.
         fi: Field index.
         image_point: Image-point reference convention.
+        num_rays: Samples per grid dimension; defaults to 21.
 
     Returns:
         Spot-diagram point clouds for all wavelengths at field index ``fi``.
@@ -50,7 +56,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
         if ray_pkg is not None:
             if afocal:
                 if wvl not in references:
-                    references[wvl] = reference_direction(opm, fi, wvl, image_point=image_point)[0]
+                    references[wvl] = reference_direction(opm, fi, wvl, image_point=image_point, num_rays=num_rays)[0]
                 reference = references[wvl]
                 return angular_coordinates(output_segment(ray_pkg)[1], reference)
             image_pt = fld.ref_sphere[0]
@@ -62,7 +68,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
         return None
 
     if image_point == "chief_ray" and not afocal:
-        grids, _ = sm.trace_grid(_spot, fi, wl=None, num_rays=21, form="list", append_if_none=False)
+        grids, _ = sm.trace_grid(_spot, fi, wl=None, num_rays=num_rays, form="list", append_if_none=False)
     elif image_point == "centroid":
         osp = opm.optical_spec
         fld = osp.field_of_view.fields[fi]
@@ -70,7 +76,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
         wavelengths = osp.spectral_region.wavelengths
         spectral_weights = osp.spectral_region.spectral_wts
         raw_grids = [
-            sample_valid_rays(opm, fld, wvl, foc, 21) for wvl in wavelengths
+            sample_valid_rays(opm, fld, wvl, foc, num_rays) for wvl in wavelengths
         ]
         if afocal:
             per_wavelength_values = [
@@ -127,7 +133,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
         grids = []
         for wvl in osp.spectral_region.wavelengths:
             vig_bbox = fld.vignetting_bbox(opm["osp"]["pupil"])
-            grid_def = [vig_bbox[0], vig_bbox[1], 21]
+            grid_def = [vig_bbox[0], vig_bbox[1], num_rays]
             ref_sphere, chief_ray = trace.setup_pupil_coords(opm, fld, wvl, foc)
             fld.chief_ray = chief_ray
             fld.ref_sphere = ref_sphere

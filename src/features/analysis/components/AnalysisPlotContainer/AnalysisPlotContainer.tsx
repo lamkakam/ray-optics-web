@@ -17,6 +17,7 @@ import {
   PLOT_TYPE_CONFIG,
   type PlotType,
 } from "@/features/analysis/components/AnalysisPlotView";
+import { ANALYSIS_RAY_COUNT_SETTINGS } from "@/features/analysis/lib/analysisRayCounts";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 interface AnalysisPlotContainerProps {
@@ -36,6 +37,7 @@ interface AnalysisPlotContainerProps {
  *
  *
  * Analysis-plot orchestration shared by user-driven selector changes and image-point refreshes.
+ * Configurable plots reload on mount and resolution changes, including return from Settings. Only the latest request may commit data, errors, or loading state. Irrelevant selector and preference changes do not reload the active plot.
  * Plot loading and store commits use the same centralized cached helpers as the editor submit flow. Cached results are still committed through the matching Zustand setter whenever a plot is selected again.
  */
 export function AnalysisPlotContainer({
@@ -77,8 +79,16 @@ export function AnalysisPlotContainer({
     (s) => s.selectedWavelengthIndex,
   );
   const selectedPlotType = useStore(store, (s) => s.selectedPlotType);
+  const configurablePlot = ANALYSIS_RAY_COUNT_SETTINGS.find(
+    (setting) => setting.plotType === selectedPlotType,
+  )?.plotType;
+  const selectedRayCount = useStore(store, (s) =>
+    configurablePlot === undefined ? undefined : s.rayCounts[configurablePlot],
+  );
+  const requestIdRef = useRef(0);
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
   const hasMountedRef = useRef(false);
-  const previousImagePointRef = useRef(imagePoint);
 
   const specsStore = useSpecsConfiguratorStore();
   useStore(specsStore, (s) => s.committedSpecs);
@@ -91,12 +101,32 @@ export function AnalysisPlotContainer({
    * Loads and commits one analysis result for the committed optical model.
    * Seidel refreshes store the complete cached payload and its exact source
    * model together, avoiding mixed-model results. All other payloads use the
-   * matching analysis-plot store setter.
+   * matching analysis-plot store setter, guarded by request, model, selection, and resolution ownership.
    */
   const loadPlot = useCallback(
     async (plotType: PlotType, fieldIndex: number, wavelengthIndex: number) => {
       if (!proxy || !committedOpticalModel) return;
 
+      const requestId = ++requestIdRef.current;
+      const rayCounts = store.getState().rayCounts;
+      const configurable = ANALYSIS_RAY_COUNT_SETTINGS.find(
+        (setting) => setting.plotType === plotType,
+      )?.plotType;
+      const isCurrent = () => {
+        const state = store.getState();
+        return (
+          requestId === requestIdRef.current &&
+          lensStore.getState().committedOpticalModel ===
+            committedOpticalModel &&
+          state.selectedPlotType === plotType &&
+          (!PLOT_TYPE_CONFIG[plotType].fieldDependent ||
+            state.selectedFieldIndex === fieldIndex) &&
+          (!PLOT_TYPE_CONFIG[plotType].wavelengthDependent ||
+            state.selectedWavelengthIndex === wavelengthIndex) &&
+          (configurable === undefined ||
+            state.rayCounts[configurable] === rayCounts[configurable])
+        );
+      };
       store.getState().setPlotLoading(true);
       try {
         const result = await loadAnalysisPlot({
@@ -106,8 +136,9 @@ export function AnalysisPlotContainer({
           fieldIndex,
           wavelengthIndex,
           imagePoint,
+          rayCounts,
         });
-        if (!result) return;
+        if (!result || !isCurrent()) return;
 
         if (result.kind === "surfaceBySurface3rdOrder") {
           const data = await loadSeidelData({
@@ -115,6 +146,7 @@ export function AnalysisPlotContainer({
             model: committedOpticalModel,
             imagePoint,
           });
+          if (!isCurrent()) return;
           analysisDataStore
             .getState()
             .setSeidelData(data, committedOpticalModel);
@@ -123,74 +155,73 @@ export function AnalysisPlotContainer({
 
         commitAnalysisPlotResult(result, store);
       } catch {
-        onError();
+        if (isCurrent()) onErrorRef.current();
       } finally {
-        store.getState().setPlotLoading(false);
+        if (isCurrent()) store.getState().setPlotLoading(false);
       }
     },
     [
       proxy,
       committedOpticalModel,
       store,
-      onError,
+      lensStore,
       analysisDataStore,
       imagePoint,
     ],
   );
 
-  /** Stores a field selection and reloads only field-dependent plots. */
+  /** Stores the field selection; the effect reloads field-dependent plots and discards superseded requests. */
   const handleFieldChange = useCallback(
-    async (value: number) => {
+    (value: number) => {
       store.getState().setSelectedFieldIndex(value);
-      if (!proxy) return;
-      if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
-      await loadPlot(selectedPlotType, value, selectedWavelengthIndex);
     },
-    [proxy, store, selectedPlotType, selectedWavelengthIndex, loadPlot],
+    [store],
   );
-
-  /** Stores a wavelength selection and reloads only wavelength-dependent plots. */
+  /** Stores the wavelength selection; the effect reloads only wavelength-dependent plots. */
   const handleWavelengthChange = useCallback(
-    async (value: number) => {
+    (value: number) => {
       store.getState().setSelectedWavelengthIndex(value);
-      if (!proxy) return;
-      if (!PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent) return;
-      await loadPlot(selectedPlotType, selectedFieldIndex, value);
     },
-    [proxy, store, selectedPlotType, selectedFieldIndex, loadPlot],
+    [store],
   );
-
-  /** Stores a plot-type selection and loads it unless existing Seidel data is reused. */
+  /** Stores the plot selection; the effect reloads it or reuses existing Seidel data. */
   const handlePlotTypeChange = useCallback(
-    async (plotType: PlotType) => {
+    (plotType: PlotType) => {
       store.getState().setSelectedPlotType(plotType);
-      if (!proxy) return;
-      if (plotType === "surfaceBySurface3rdOrder") return;
-      await loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex);
     },
-    [proxy, store, selectedFieldIndex, selectedWavelengthIndex, loadPlot],
+    [store],
   );
 
+  const effectiveFieldIndex = PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent
+    ? selectedFieldIndex
+    : 0;
+  const effectiveWavelengthIndex = PLOT_TYPE_CONFIG[selectedPlotType]
+    .wavelengthDependent
+    ? selectedWavelengthIndex
+    : 0;
   useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      previousImagePointRef.current = imagePoint;
+    const firstMount = !hasMountedRef.current;
+    hasMountedRef.current = true;
+    if (selectedPlotType === "surfaceBySurface3rdOrder") {
+      store.getState().setPlotLoading(false);
       return;
     }
-    if (previousImagePointRef.current === imagePoint) return;
-    previousImagePointRef.current = imagePoint;
-    if (selectedPlotType === "surfaceBySurface3rdOrder") return;
+    if (firstMount && selectedRayCount === undefined) return;
     void loadPlot(
       selectedPlotType,
-      selectedFieldIndex,
-      selectedWavelengthIndex,
+      effectiveFieldIndex,
+      effectiveWavelengthIndex,
     );
+    return () => {
+      requestIdRef.current += 1;
+    };
   }, [
-    imagePoint,
     selectedPlotType,
-    selectedFieldIndex,
-    selectedWavelengthIndex,
+    effectiveFieldIndex,
+    effectiveWavelengthIndex,
+    selectedRayCount,
     loadPlot,
+    store,
   ]);
 
   return (
