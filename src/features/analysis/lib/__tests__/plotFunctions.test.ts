@@ -1,3 +1,4 @@
+/** Covers typed plot dispatch, resolution-specific caching, and MTF transforms at twice the pupil sampling. */
 import { DEFAULT_ANALYSIS_RAY_COUNTS } from "@/features/analysis/lib/analysisRayCounts";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -629,7 +630,7 @@ describe("configurable plot sampling", () => {
         mockModel,
         ...prefix,
         64,
-        ...dims,
+        ...(plotType === "diffractionMTF" ? [128] : dims),
       );
       expect(await loadAnalysisPlot(params)).toEqual(first);
       expect(proxy[method]).toHaveBeenCalledTimes(2);
@@ -645,23 +646,42 @@ describe("configurable plot sampling", () => {
     },
   );
 
-  it("uses 512 FFT dimensions for a 256-ray MTF grid", async () => {
-    const proxy = makeMockProxy();
-    await loadAnalysisPlot({
-      plotType: "diffractionMTF",
-      proxy,
-      model: mockModel,
-      fieldIndex: 0,
-      wavelengthIndex: 0,
-      rayCounts: { ...DEFAULT_ANALYSIS_RAY_COUNTS, diffractionMTF: 256 },
-    });
-    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
-      mockModel,
-      0,
-      0,
-      "chief_ray",
-      256,
-      512,
-    );
-  });
+  it.each([
+    [32, 64],
+    [64, 128],
+    [128, 256],
+    [256, 512],
+  ])(
+    "uses and caches a %i-ray MTF with %i FFT dimensions",
+    async (count, dims) => {
+      const proxy = makeMockProxy();
+      proxy.getDiffractionMTFData.mockResolvedValue(diffractionMtfData);
+      const params = {
+        plotType: "diffractionMTF" as const,
+        proxy,
+        model: mockModel,
+        fieldIndex: 2,
+        wavelengthIndex: 1,
+        imagePoint: "centroid" as const,
+        rayCounts: { ...DEFAULT_ANALYSIS_RAY_COUNTS, diffractionMTF: count },
+      };
+      const expected = {
+        kind: "diffractionMTF",
+        diffractionMtfData,
+      };
+      expect(
+        await Promise.all([loadAnalysisPlot(params), loadAnalysisPlot(params)]),
+      ).toEqual([expected, expected]);
+      expect(await loadAnalysisPlot(params)).toEqual(expected);
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
+        mockModel,
+        2,
+        1,
+        "centroid",
+        count,
+        dims,
+      );
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledTimes(1);
+    },
+  );
 });

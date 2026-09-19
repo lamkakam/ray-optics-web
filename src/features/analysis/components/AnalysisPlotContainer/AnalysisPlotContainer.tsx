@@ -37,7 +37,7 @@ interface AnalysisPlotContainerProps {
  *
  *
  * Analysis-plot orchestration shared by user-driven selector changes and image-point refreshes.
- * Configurable plots reload on mount and resolution changes, including return from Settings. Only the latest request may commit data, errors, or loading state. Irrelevant selector and preference changes do not reload the active plot.
+ * All active plots load through the cache on mount, except Seidel, which reuses the analysis-data store. Remounts subscribe to pending or completed calculations and finish their own loading lifecycle; rejected calculations retry. Configurable plots also reload on resolution changes, including return from Settings. Only the latest mounted request may commit data, errors, or loading state. Irrelevant selector and preference changes do not reload the active plot.
  * Plot loading and store commits use the same centralized cached helpers as the editor submit flow. Cached results are still committed through the matching Zustand setter whenever a plot is selected again.
  */
 export function AnalysisPlotContainer({
@@ -88,7 +88,6 @@ export function AnalysisPlotContainer({
   const requestIdRef = useRef(0);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
-  const hasMountedRef = useRef(false);
 
   const specsStore = useSpecsConfiguratorStore();
   useStore(specsStore, (s) => s.committedSpecs);
@@ -199,14 +198,12 @@ export function AnalysisPlotContainer({
     .wavelengthDependent
     ? selectedWavelengthIndex
     : 0;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedRayCount triggers reloads; loadPlot reads the current ray-count snapshot from the store.
   useEffect(() => {
-    const firstMount = !hasMountedRef.current;
-    hasMountedRef.current = true;
     if (selectedPlotType === "surfaceBySurface3rdOrder") {
       store.getState().setPlotLoading(false);
       return;
     }
-    if (firstMount && selectedRayCount === undefined) return;
     void loadPlot(
       selectedPlotType,
       effectiveFieldIndex,

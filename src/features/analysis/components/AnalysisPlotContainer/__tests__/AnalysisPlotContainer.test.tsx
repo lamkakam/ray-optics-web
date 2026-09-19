@@ -1,4 +1,4 @@
-/** Covers plot selection/loading, cache reuse, and complete Seidel commits with source ownership. */
+/** Covers plot selection/loading, cached recovery after unmount, and complete Seidel commits with source ownership. */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
@@ -1226,6 +1226,123 @@ describe("AnalysisPlotContainer", () => {
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });
 });
+
+/** Plots without sampling settings recover cached results or retry failures after route remounts. */
+describe.each([
+  [
+    "fieldCurvature",
+    "getFieldCurvatureData",
+    "fieldCurvatureData",
+    "field-curve-chart",
+    fieldCurveData,
+  ],
+  [
+    "astigmatismCurve",
+    "getAstigmatismCurveData",
+    "astigmatismCurveData",
+    "astigmatism-chart",
+    astigmatismCurveData,
+  ],
+  [
+    "longitudinalSphericalAberration",
+    "getLSAData",
+    "longitudinalSphericalAberrationData",
+    "longitudinal-spherical-aberration-chart",
+    longitudinalSphericalAberrationData,
+  ],
+] as const)(
+  "interrupted %s recovery",
+  (plotType, method, dataKey, chartId, data) => {
+    beforeEach(() => {
+      _resetAnalysisCache();
+      localStorage.clear();
+      mockImagePoint = "centroid";
+    });
+
+    it.each(["before", "after"])(
+      "recovers when the worker finishes %s remount",
+      async (completion) => {
+        const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+        let finish!: (value: typeof data) => void;
+        const pending = new Promise<typeof data>((resolve) => {
+          finish = resolve;
+        });
+        const getData = jest.fn().mockReturnValue(pending);
+        const proxy = makeMockProxy({ [method]: getData });
+        const onError = jest.fn();
+        const view = renderComponent(
+          testSpecs,
+          testModel,
+          store,
+          proxy,
+          onError,
+        );
+        await userEvent.selectOptions(
+          screen.getByLabelText("Plot type"),
+          plotType,
+        );
+        expect(getData).toHaveBeenCalledTimes(1);
+        expect(screen.getByText("Loading plot...")).toBeInTheDocument();
+        view.unmount();
+
+        if (completion === "before") {
+          finish(data);
+          await expect(pending).resolves.toEqual(data);
+          expect(store.getState()[dataKey]).toBeUndefined();
+          expect(store.getState().plotLoading).toBe(true);
+        }
+
+        renderComponent(testSpecs, testModel, store, proxy, onError);
+        if (completion === "after") {
+          expect(screen.getByText("Loading plot...")).toBeInTheDocument();
+          await act(async () => finish(data));
+        }
+
+        expect(await screen.findByTestId(chartId)).toBeInTheDocument();
+        expect(store.getState()[dataKey]).toEqual(data);
+        expect(store.getState().plotLoading).toBe(false);
+        expect(screen.queryByText("Loading plot...")).not.toBeInTheDocument();
+        expect(getData).toHaveBeenCalledTimes(1);
+        expect(onError).not.toHaveBeenCalled();
+      },
+    );
+
+    it("retries a calculation that rejects while unmounted without reporting a stale error", async () => {
+      const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+      let reject!: (error: Error) => void;
+      const pending = new Promise<typeof data>((_resolve, rejectPromise) => {
+        reject = rejectPromise;
+      });
+      const getData = jest
+        .fn()
+        .mockReturnValueOnce(pending)
+        .mockResolvedValue(data);
+      const proxy = makeMockProxy({ [method]: getData });
+      const onError = jest.fn();
+      const view = renderComponent(testSpecs, testModel, store, proxy, onError);
+      await userEvent.selectOptions(
+        screen.getByLabelText("Plot type"),
+        plotType,
+      );
+      expect(getData).toHaveBeenCalledTimes(1);
+      view.unmount();
+
+      reject(new Error("interrupted calculation failed"));
+      await expect(pending).rejects.toThrow("interrupted calculation failed");
+      expect(onError).not.toHaveBeenCalled();
+      expect(store.getState()[dataKey]).toBeUndefined();
+      expect(store.getState().plotLoading).toBe(true);
+
+      renderComponent(testSpecs, testModel, store, proxy, onError);
+      expect(await screen.findByTestId(chartId)).toBeInTheDocument();
+      expect(store.getState()[dataKey]).toEqual(data);
+      expect(store.getState().plotLoading).toBe(false);
+      expect(screen.queryByText("Loading plot...")).not.toBeInTheDocument();
+      expect(getData).toHaveBeenCalledTimes(2);
+      expect(onError).not.toHaveBeenCalled();
+    });
+  },
+);
 
 /** Resolution changes and route remounts refresh through the cache without submitting a model. */
 describe("ray-count refresh", () => {

@@ -104,7 +104,7 @@ interface LoadAnalysisPlotParams {
  * - Calls `proxy.getDiffractionPSFData(...)` with `imagePoint` for `diffractionPSF`.
  * - Calls `proxy.getDiffractionMTFData(...)` with `imagePoint` for `diffractionMTF`.
  * - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
- * - Caches serialized worker promises by exact model instance, image point, plot type, effective ray count, FFT dimensions, and only the selectors relevant to that plot. Strehl retains 100 wavelength samples; diffraction PSF uses maxDims=1024 and MTF uses 512 at 256 rays, otherwise 256.
+ * - Caches serialized worker promises by exact model instance, image point, plot type, effective ray count, FFT dimensions, and only the selectors relevant to that plot. Strehl retains 100 wavelength samples; diffraction PSF uses maxDims=1024 and MTF uses twice its ray count so the frequency axis stays aligned with the diffraction cutoff at every resolution.
  * - Shares the complete cached Seidel request with `surfaceBySurface3rdOrder`.
  */
 export async function loadAnalysisPlot({
@@ -263,7 +263,7 @@ export async function loadAnalysisPlot({
   }
 
   if (plotType === "diffractionMTF") {
-    const mtfMaxDims = rayCounts.diffractionMTF === 256 ? 512 : 256;
+    const mtfMaxDims = 2 * rayCounts.diffractionMTF;
     return {
       kind: "diffractionMTF",
       diffractionMtfData: await cached(
