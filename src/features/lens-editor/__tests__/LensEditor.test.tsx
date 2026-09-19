@@ -1,4 +1,6 @@
+/** Covers editor workflows and actual Zernike dialog/tool cache reuse in both directions. */
 import { act, render, screen, waitFor, within } from "@testing-library/react";
+import type { ComponentProps, ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -10,6 +12,7 @@ import type {
   WavefrontMapData,
 } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
+import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import {
   createLensEditorSlice,
@@ -198,19 +201,31 @@ jest.mock("@/features/lens-editor/components/ParaxialDataModal", () => ({
     ) : null,
 }));
 
+let mockUseRealZernikeModal = false;
+jest.mock("better-react-mathjax", () => ({
+  MathJax: ({ children }: { readonly children: ReactNode }) => (
+    <span>{children}</span>
+  ),
+}));
+
 jest.mock("@/features/lens-editor/components/ZernikeTermsModal", () => ({
-  ZernikeTermsModal: ({
-    isOpen,
-    onClose,
-  }: {
-    isOpen: boolean;
-    onClose: () => void;
-  }) =>
-    isOpen ? (
+  ZernikeTermsModal: (
+    props: ComponentProps<
+      typeof import("@/features/lens-editor/components/ZernikeTermsModal").ZernikeTermsModal
+    >,
+  ) => {
+    if (mockUseRealZernikeModal) {
+      const { ZernikeTermsModal } = jest.requireActual<
+        typeof import("@/features/lens-editor/components/ZernikeTermsModal")
+      >("@/features/lens-editor/components/ZernikeTermsModal");
+      return <ZernikeTermsModal {...props} />;
+    }
+    return props.isOpen ? (
       <div data-testid="zernike-modal">
-        <button onClick={onClose}>Close</button>
+        <button onClick={props.onClose}>Close</button>
       </div>
-    ) : null,
+    ) : undefined;
+  },
 }));
 
 const mockSeidelData: SeidelData = {
@@ -427,6 +442,7 @@ function expectButtonsInOrder(buttonNames: string[]) {
 }
 
 beforeEach(() => {
+  mockUseRealZernikeModal = false;
   _resetAnalysisCache();
   jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
   jest
@@ -466,6 +482,9 @@ describe("LensEditor", () => {
       "set_wavelengths",
       "recompute_optical_system",
       "focus_optical_system",
+      "get_paraxial_data",
+      "get_3rd_order_seidel_data",
+      "get_zernike_terms",
     ]);
     const signals = registrations.map(({ options }) => options?.signal);
     expect(signals.every((signal) => signal?.aborted === false)).toBe(true);
@@ -477,6 +496,91 @@ describe("LensEditor", () => {
       value: undefined,
     });
   });
+
+  it.each(["dialog", "tool"])(
+    "reuses Zernike results between the mounted dialog and tool when the %s computes first",
+    async (first) => {
+      mockUseRealZernikeModal = true;
+      const registrations: WebMCP.ModelContextTool[] = [];
+      Object.defineProperty(document, "modelContext", {
+        configurable: true,
+        value: {
+          registerTool: (tool: WebMCP.ModelContextTool) => {
+            registrations.push(tool);
+          },
+        },
+      });
+      const data: ZernikeData = {
+        coefficients: Array.from({ length: 37 }, () => 0.01),
+        rms_normalized_coefficients: Array.from({ length: 37 }, () => 0.005),
+        rms_wfe: 0.05,
+        pv_wfe: 0.18,
+        weighted_mean_wfe: 0.002,
+        fit_residual_rms: 0.001,
+        fit_rank: 37,
+        condition_number: 12,
+        strehl_ratio: 0.89,
+        strehl_assumption: "uniform_scalar_amplitude_at_reference_point",
+        num_terms: 37,
+        field_index: 0,
+        wavelength_nm: 587.6,
+        pupil_space: "entrance",
+        sampling_measure: "uniform_normalized_input_pupil_cells",
+        normalization: "normalized_input_pupil",
+        reference_kind: "finite_reference_sphere",
+        normalization_radius: 1,
+        support_area: 3,
+        support_coverage: 0.99,
+        sample_count: 1200,
+        boundary_resolution: 127,
+        boundary_converged: true,
+      };
+      const proxy = makeProxy();
+      jest.mocked(proxy.getZernikeCoefficients).mockResolvedValue(data);
+      const rendered = renderLensEditor({ proxy });
+      try {
+        act(() => {
+          rendered.lensStore
+            .getState()
+            .setCommittedOpticalModel(testImportModel);
+          rendered.specsStore
+            .getState()
+            .setCommittedSpecs(testImportModel.specs);
+        });
+        const tool = registrations.find(
+          (entry) => entry.name === "get_zernike_terms",
+        )!;
+        const query = () =>
+          tool.execute({}, { signal: new AbortController().signal });
+        if (first === "tool")
+          expect(JSON.parse(String(await query()))).toMatchObject(data);
+        const user = userEvent.setup();
+        await user.click(screen.getByRole("button", { name: "Zernike Terms" }));
+        expect(await screen.findByText("Piston")).toBeInTheDocument();
+        if (first === "dialog")
+          expect(JSON.parse(String(await query()))).toMatchObject(data);
+        expect(proxy.getZernikeCoefficients).toHaveBeenCalledTimes(1);
+        expect(proxy.getZernikeCoefficients).toHaveBeenCalledWith(
+          testImportModel,
+          0,
+          0,
+          "centroid",
+          37,
+          "fringe",
+          "entrance",
+        );
+        expect(jest.mocked(proxy.getZernikeCoefficients).mock.calls[0][0]).toBe(
+          testImportModel,
+        );
+      } finally {
+        rendered.unmount();
+        Object.defineProperty(document, "modelContext", {
+          configurable: true,
+          value: undefined,
+        });
+      }
+    },
+  );
 
   it("keeps the focus overlay and computation loading state through imperative focus", async () => {
     const registrations: WebMCP.ModelContextTool[] = [];

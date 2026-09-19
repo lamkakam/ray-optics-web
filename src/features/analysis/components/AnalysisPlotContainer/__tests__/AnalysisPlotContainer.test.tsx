@@ -1,3 +1,4 @@
+/** Covers plot selection/loading, cache reuse, and complete Seidel commits with source ownership. */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
@@ -43,6 +44,7 @@ import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEdi
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
+import * as plotFunctions from "@/features/analysis/lib/plotFunctions";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -685,6 +687,56 @@ describe("AnalysisPlotContainer", () => {
 
     expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
     expect(store.getState().plotLoading).toBe(false);
+  });
+
+  it("commits the complete cached Seidel payload with its source when the loader returns a Seidel plot", async () => {
+    const analysisDataStore = makeAnalysisDataStore();
+    analysisDataStore.getState().setSeidelData(seidelData, { ...testModel });
+    const newSeidel: SeidelData = {
+      surfaceBySurface: {
+        ...seidelData.surfaceBySurface,
+        surfaceLabels: ["New front", "New rear", "sum"],
+      },
+      transverse: { TSA: 20 },
+      wavefront: { W040: 30 },
+      curvature: { TCV: 40 },
+    };
+    const proxy = makeMockProxy({
+      get3rdOrderSeidelData: jest.fn().mockResolvedValue(newSeidel),
+    });
+    const result = await plotFunctions.loadAnalysisPlot({
+      plotType: "surfaceBySurface3rdOrder",
+      proxy,
+      model: testModel,
+      fieldIndex: 0,
+      wavelengthIndex: 0,
+      imagePoint: "centroid",
+    });
+    // Current selectors reuse stored Seidel data. Supply its real loader result
+    // at the dispatch boundary to exercise the container's Seidel commit path.
+    const loader = jest
+      .spyOn(plotFunctions, "loadAnalysisPlot")
+      .mockResolvedValueOnce(result);
+    try {
+      renderComponent(
+        testSpecs,
+        testModel,
+        store,
+        proxy,
+        jest.fn(),
+        analysisDataStore,
+      );
+      await userEvent.selectOptions(
+        screen.getByLabelText("Plot type"),
+        "opdFan",
+      );
+      await waitFor(() => expect(store.getState().plotLoading).toBe(false));
+      expect(analysisDataStore.getState().seidelData).toEqual(newSeidel);
+      expect(analysisDataStore.getState().seidelDataModel).toBe(testModel);
+      expect(proxy.get3rdOrderSeidelData).toHaveBeenCalledTimes(1);
+    } finally {
+      loader.mockRestore();
+    }
   });
 
   it("handleWavelengthChange: updates selectedWavelengthIndex and calls proxy plot fn", async () => {

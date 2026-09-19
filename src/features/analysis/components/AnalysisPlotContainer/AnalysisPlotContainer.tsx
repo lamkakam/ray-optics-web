@@ -10,6 +10,7 @@ import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlot
 import {
   commitAnalysisPlotResult,
   loadAnalysisPlot,
+  loadSeidelData,
 } from "@/features/analysis/lib/plotFunctions";
 import {
   AnalysisPlotView,
@@ -88,8 +89,9 @@ export function AnalysisPlotContainer({
 
   /**
    * Loads and commits one analysis result for the committed optical model.
-   * Surface-by-surface data is merged into Seidel state; all other payloads use
-   * the matching analysis-plot store setter.
+   * Seidel refreshes store the complete cached payload and its exact source
+   * model together, avoiding mixed-model results. All other payloads use the
+   * matching analysis-plot store setter.
    */
   const loadPlot = useCallback(
     async (plotType: PlotType, fieldIndex: number, wavelengthIndex: number) => {
@@ -108,13 +110,14 @@ export function AnalysisPlotContainer({
         if (!result) return;
 
         if (result.kind === "surfaceBySurface3rdOrder") {
-          const existingSeidelData = analysisDataStore.getState().seidelData;
-          analysisDataStore.getState().setSeidelData({
-            transverse: existingSeidelData?.transverse ?? {},
-            wavefront: existingSeidelData?.wavefront ?? {},
-            curvature: existingSeidelData?.curvature ?? {},
-            surfaceBySurface: result.surfaceBySurface3rdOrderData,
+          const data = await loadSeidelData({
+            proxy,
+            model: committedOpticalModel,
+            imagePoint,
           });
+          analysisDataStore
+            .getState()
+            .setSeidelData(data, committedOpticalModel);
           return;
         }
 

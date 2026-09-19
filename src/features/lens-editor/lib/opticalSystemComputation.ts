@@ -104,7 +104,9 @@ export interface OpticalSystemComputationResult {
 
 /**
  * Validates and computes the draft model, then commits every result atomically
- * from the application’s point of view.
+ * from the application’s point of view. First-order and Seidel results record
+ * the exact model instance committed by this recomputation or focus operation;
+ * failed or cancelled computations retain previous data and ownership.
  *
  * @throws `MissingPrescriptionGlassError` when the existing pre-compute glass
  * validation finds unknown named media; worker and analysis failures propagate.
@@ -178,10 +180,10 @@ export async function computeOpticalSystem({
       clampedWavelengthIndex,
       draft.specs.wavelengths.weights.length,
     );
-  analysisDataStore.getState().setFirstOrderData(firstOrderData);
+  analysisDataStore.getState().setFirstOrderData(firstOrderData, draft.model);
   lensLayoutImageStore.getState().setLayoutImage(layoutImage);
   commitAnalysisPlotResult(plotResult, analysisPlotStore);
-  analysisDataStore.getState().setSeidelData(seidelData);
+  analysisDataStore.getState().setSeidelData(seidelData, draft.model);
   specsStore.getState().setCommittedSpecs(draft.specs);
   lensStore.getState().setCommittedOpticalModel(draft.model);
   if (autoSemiDiameters === undefined) {
