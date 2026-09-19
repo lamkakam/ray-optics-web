@@ -41,8 +41,8 @@ describe("cartesian plot helpers", () => {
 
   it("renders a color bar only when all color-bar data is available", () => {
     const layout = { plotSide: 120, plotLeft: 20, plotTop: 10, yAxisLabelX: 0 };
+    /** Supplies axis geometry through the plot layout, independent of container height. */
     const baseProps = {
-      height: 180,
       layout,
       xAxisTicks: [-1, 0, 1],
       yAxisTicks: [-1, 0, 1],

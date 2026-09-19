@@ -45,6 +45,7 @@ const DECK_VIEW_ID = "wavefront-map-view";
  * - Resets the controlled view state when the prepared extent or plot side changes.
  * - Computes initial zoom as `log2(plotSide / (2 * axisExtent * 1.12))` so the full wavefront extent fits in the square viewport.
  * - Draws x-axis, y-axis, tick labels, axis labels, and a vertical color bar as an SVG overlay aligned to the deck.gl viewport.
+ * - Keeps the x-axis label centered beneath the plotted axis with a fixed baseline gap as the plot resizes.
  * - Computes SVG x/y tick labels from the currently controlled orthographic viewport, so pan and zoom keep axes on the frame while labels reflect the visible physical coordinate range.
  * - Uses `currentColor` for SVG strokes and text fills so chart chrome inherits the chart container's theme-aware text color.
  * - Labels the color bar with `unitZ` when provided, falling back to `waves`, with endpoint labels from finite min/max wavefront samples.
@@ -161,7 +162,6 @@ export function WavefrontMapChart({
           </div>
         ) : undefined}
         <CartesianSvgOverlay
-          height={size.height}
           layout={layout}
           xAxisTicks={xAxisTicks}
           yAxisTicks={yAxisTicks}

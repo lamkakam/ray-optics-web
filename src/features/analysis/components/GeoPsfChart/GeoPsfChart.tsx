@@ -39,6 +39,7 @@ const DECK_VIEW_ID = "geo-psf-view";
  * - Keeps deck.gl view state controlled so pan and zoom updates drive live SVG tick labels.
  * - Renders PSF samples through `ScatterplotLayer` with `COORDINATE_SYSTEM.CARTESIAN`.
  * - Renders theme-aware SVG x/y axes, ticks, and axis labels without a color bar.
+ * - Keeps the x-axis label centered beneath the plotted axis with a fixed baseline gap as the plot resizes.
  * - Keeps `data-testid="geo-psf-chart"` and `aria-label="Geometric PSF plot"`.
  */
 export function GeoPsfChart({ geoPsfData, autoHeight }: GeoPsfChartProps) {
@@ -143,7 +144,6 @@ export function GeoPsfChart({ geoPsfData, autoHeight }: GeoPsfChartProps) {
           </div>
         ) : undefined}
         <CartesianSvgOverlay
-          height={size.height}
           layout={layout}
           xAxisTicks={xAxisTicks}
           yAxisTicks={yAxisTicks}
