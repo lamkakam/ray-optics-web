@@ -1469,6 +1469,31 @@ describe("validateImportedCustomGlassData", () => {
     ).toBe(false);
   });
 
+  it("rejects blank labels and duplicate wavelengths", () => {
+    expect(
+      validateImportedCustomGlassData({
+        ...validPayload,
+        Custom: { "   ": validPayload.Custom.CUSTOM_A },
+      }),
+    ).toBe(false);
+    expect(
+      validateImportedCustomGlassData({
+        ...validPayload,
+        Custom: {
+          CUSTOM_A: {
+            ...validPayload.Custom.CUSTOM_A,
+            data: [
+              [486.13, 1.5224],
+              [546.07, 1.5187],
+              [587.56, 1.5168],
+              [486.13, 1.5143],
+            ],
+          },
+        },
+      }),
+    ).toBe(false);
+  });
+
   it.each([
     [
       [

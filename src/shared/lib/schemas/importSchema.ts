@@ -4,8 +4,11 @@
  */
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import {
+  createCustomGlassAjv,
+  customGlassMaterialSchema,
+} from "@/features/import-custom-glass/lib/customGlassValidation";
+import {
   createPrescriptionAjv,
-  positiveFiniteNumberSchema,
   objectPrescriptionSchema,
   imagePrescriptionSchema,
   surfaceSchema,
@@ -44,26 +47,6 @@ const importedLensDataSchema = {
   },
 };
 
-/** Tabulated custom glass with at least four positive wavelength/index pairs. */
-const customGlassMaterialSchema = {
-  type: "object",
-  required: ["type", "data"],
-  additionalProperties: false,
-  properties: {
-    type: { type: "string", const: "tabulated" },
-    data: {
-      type: "array",
-      minItems: 4,
-      items: {
-        type: "array",
-        minItems: 2,
-        maxItems: 2,
-        items: positiveFiniteNumberSchema,
-      },
-    },
-  },
-};
-
 /** Strict version-1.0 custom-glass import envelope. */
 const importedCustomGlassDataSchema = {
   type: "object",
@@ -73,6 +56,7 @@ const importedCustomGlassDataSchema = {
     version: { type: "string", pattern: "^\\d+\\.\\d+$", const: "1.0" },
     Custom: {
       type: "object",
+      propertyNames: { pattern: ".*\\S.*" },
       additionalProperties: customGlassMaterialSchema,
     },
   },
@@ -88,7 +72,7 @@ const validateImportedLensData = ajv.compile<OpticalModel>(
 /**
  * Validates strict version-1.0 custom-glass imports and exposes AJV errors on failure.
  */
-const validateImportedCustomGlassData = ajv.compile(
+const validateImportedCustomGlassData = createCustomGlassAjv().compile(
   importedCustomGlassDataSchema,
 );
 
