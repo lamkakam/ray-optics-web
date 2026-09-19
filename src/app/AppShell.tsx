@@ -12,6 +12,7 @@ import { AppInitializationOverlay } from "@/app/AppInitializationOverlay";
 import { UnappliedOptimizationResultModal } from "@/app/UnappliedOptimizationResultModal";
 import { useAppShellNavigation } from "@/app/hooks/useAppShellNavigation";
 import { useAppShellGlassCatalogs } from "@/app/hooks/useAppShellGlassCatalogs";
+import { useGlassCatalogWebMCP } from "@/app/hooks/useGlassCatalogWebMCP";
 
 /** Routed content rendered inside the shared application chrome. */
 interface AppShellProps {
@@ -20,7 +21,8 @@ interface AppShellProps {
 
 /**
  * Composes the persistent client shell with one usePyodide call, shared runtime
- * and catalog providers, MathJax, and Layout. Navigation and catalog hooks own
+ * and catalog providers, MathJax, and Layout. Registers the read-only global
+ * glass WebMCP query on every route. Navigation and catalog hooks own
  * their lifecycles; the shell wires their modal/overlay state alongside its generic
  * error modal. ClientApplication supplies stores and ClientOnlyApplication keeps
  * this shell and routed content out of server rendering.
@@ -38,6 +40,7 @@ export default function AppShell({ children }: AppShellProps) {
     quarantinedCustomGlassLabels,
     dismissQuarantineWarning,
   } = useAppShellGlassCatalogs(isReady, proxy);
+  useGlassCatalogWebMCP();
   const contextValue = useMemo(
     () => ({ proxy, isReady, openErrorModal }),
     [proxy, isReady, openErrorModal],

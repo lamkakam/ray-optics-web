@@ -1,6 +1,6 @@
 "use client";
 
-/** Composition hook that registers all eleven imperative Lens Editor WebMCP tools and forwards focus/computation lifecycle callbacks to the editor. */
+/** Composition hook that registers all fourteen imperative Lens Editor WebMCP tools and forwards focus/computation lifecycle callbacks to the editor. */
 import { useMemo } from "react";
 import type { StoreApi } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -14,6 +14,7 @@ import type { ImagePoint } from "@/shared/components/providers/ImagePointProvide
 import { createLensPrescriptionTools } from "@/features/lens-editor/lib/lensPrescriptionWebMcp";
 import { createSystemSpecsTools } from "@/features/lens-editor/lib/systemSpecsWebMcp";
 import { createOpticalSystemTools } from "@/features/lens-editor/lib/opticalSystemWebMcp";
+import { createAnalysisTools } from "@/features/lens-editor/lib/analysisWebMcp";
 import { useWebMCP } from "@/shared/hooks/useWebMCP";
 
 /** Provider-backed dependencies for the complete Lens Editor WebMCP surface. */
@@ -39,7 +40,7 @@ export interface LensEditorWebMCPDependencies {
   readonly onError?: (error: unknown) => void;
 }
 
-/** Registers prescription, System Specs, recomputation, and focus tools in order. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
+/** Registers prescription, System Specs, recomputation, focus, and committed-analysis tools in order. Analysis descriptors use current worker/image-reference dependencies without re-registering, and share the editor's stores and Zernike cache. All registrations end on unmount. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
 export function useLensEditorWebMCP({
   lensStore,
   specsStore,
@@ -100,6 +101,12 @@ export function useLensEditorWebMCP({
     ],
   );
 
+  const analysisTools = useMemo(
+    () =>
+      createAnalysisTools({ lensStore, analysisDataStore, proxy, imagePoint }),
+    [lensStore, analysisDataStore, proxy, imagePoint],
+  );
+
   useWebMCP(prescriptionTools.getLensPrescription, [lensStore]);
   useWebMCP(prescriptionTools.setLensPrescription, [lensStore]);
   useWebMCP(prescriptionTools.insertLensSurface, [lensStore]);
@@ -128,4 +135,7 @@ export function useLensEditorWebMCP({
     onComputationEnd,
     onError,
   ]);
+  useWebMCP(analysisTools.getParaxialData, [analysisDataStore]);
+  useWebMCP(analysisTools.get3rdOrderSeidelData, [analysisDataStore]);
+  useWebMCP(analysisTools.getZernikeTerms, [lensStore]);
 }

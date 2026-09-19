@@ -1,7 +1,9 @@
+/** Covers all fourteen editor tools, registration lifetime, and live dependencies. */
 import { renderHook } from "@testing-library/react";
 import { createStore } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import {
   createAnalysisDataSlice,
   type AnalysisDataState,
@@ -22,7 +24,10 @@ import {
   createSpecsConfiguratorSlice,
   type SpecsConfiguratorState,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import { useLensEditorWebMCP } from "@/features/lens-editor/hooks/useLensEditorWebMCP";
+import {
+  useLensEditorWebMCP,
+  type LensEditorWebMCPDependencies,
+} from "@/features/lens-editor/hooks/useLensEditorWebMCP";
 
 const lookupMaps: GlassLookupMaps = {
   manufacturerMap: new Map(),
@@ -53,7 +58,23 @@ function makeDependencies() {
 }
 
 describe("useLensEditorWebMCP", () => {
-  it("registers all eleven tools after the five prescription tools", () => {
+  afterEach(() => {
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
+  it("renders without WebMCP support", () => {
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: undefined,
+    });
+    expect(() =>
+      renderHook(() => useLensEditorWebMCP(makeDependencies())),
+    ).not.toThrow();
+  });
+  it("registers all fourteen tools after the five prescription tools", () => {
     const registrations: WebMCP.ModelContextTool[] = [];
     const registerTool = jest.fn(
       (
@@ -83,6 +104,9 @@ describe("useLensEditorWebMCP", () => {
       "set_wavelengths",
       "recompute_optical_system",
       "focus_optical_system",
+      "get_paraxial_data",
+      "get_3rd_order_seidel_data",
+      "get_zernike_terms",
     ]);
     unmount();
     expect(
@@ -98,13 +122,24 @@ describe("useLensEditorWebMCP", () => {
     });
   });
 
-  it("updates descriptor execution inputs without unnecessary re-registration", () => {
+  it("updates descriptor execution inputs without unnecessary re-registration", async () => {
     const registerTool = jest.fn((tool: WebMCP.ModelContextTool) => tool);
     Object.defineProperty(document, "modelContext", {
       configurable: true,
       value: { registerTool },
     });
-    const initial = makeDependencies();
+    const initial: LensEditorWebMCPDependencies = makeDependencies();
+    const model: OpticalModel = {
+      object: { distance: 1e10, medium: "air", manufacturer: "" },
+      surfaces: [],
+      image: { curvatureRadius: 0 },
+      setAutoAperture: "manualAperture",
+      specs: initial.specsStore.getState().toOpticalSpecs(),
+    };
+    initial.lensStore.getState().setCommittedOpticalModel(model);
+    const getZernikeCoefficients = jest
+      .fn()
+      .mockRejectedValue(new Error("Current worker reached"));
     const { rerender, unmount } = renderHook(
       ({ dependencies }) => useLensEditorWebMCP(dependencies),
       { initialProps: { dependencies: initial } },
@@ -113,12 +148,28 @@ describe("useLensEditorWebMCP", () => {
     rerender({
       dependencies: {
         ...initial,
-        proxy: makeProxy(),
+        proxy: { getZernikeCoefficients } as unknown as PyodideWorkerAPI,
         isDark: true,
+        imagePoint: "centroid",
       },
     });
 
-    expect(registerTool).toHaveBeenCalledTimes(11);
+    expect(registerTool).toHaveBeenCalledTimes(14);
+    const zernikeTool = registerTool.mock.calls.find(
+      ([tool]) => tool.name === "get_zernike_terms",
+    )![0];
+    await expect(
+      zernikeTool.execute({}, { signal: new AbortController().signal }),
+    ).rejects.toThrow("Current worker reached");
+    expect(getZernikeCoefficients).toHaveBeenCalledWith(
+      model,
+      0,
+      model.specs.wavelengths.referenceIndex,
+      "centroid",
+      37,
+      "fringe",
+      "entrance",
+    );
     unmount();
     Object.defineProperty(document, "modelContext", {
       configurable: true,
