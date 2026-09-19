@@ -296,7 +296,7 @@ describe("_getRayFanData", () => {
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain(
-      "json.dumps(get_ray_fan_data(_build_opm(), 1, image_point='centroid'))",
+      "json.dumps(get_ray_fan_data(_build_opm(), 1, image_point='centroid', num_rays=21))",
     );
     expect(result).toEqual(mockData);
   });
@@ -313,7 +313,7 @@ describe("_getRayFanData", () => {
     );
 
     expect(pythonScript).toContain(
-      "get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')",
+      "get_ray_fan_data(_build_opm(), 0, image_point='chief_ray', num_rays=21)",
     );
   });
 
@@ -377,7 +377,7 @@ describe("_getOpdFanData", () => {
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain(
-      "json.dumps(get_opd_fan_data(_build_opm(), 1, image_point='centroid'))",
+      "json.dumps(get_opd_fan_data(_build_opm(), 1, image_point='centroid', num_rays=21))",
     );
     expect(result).toEqual(mockData);
   });
@@ -394,7 +394,7 @@ describe("_getOpdFanData", () => {
     );
 
     expect(pythonScript).toContain(
-      "get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')",
+      "get_opd_fan_data(_build_opm(), 0, image_point='chief_ray', num_rays=21)",
     );
   });
 
@@ -463,7 +463,7 @@ describe("analysis Python generation defaults", () => {
     expect(scripts).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
-          "get_spot_data(_build_opm(), 0, image_point='chief_ray')",
+          "get_spot_data(_build_opm(), 0, image_point='chief_ray', num_rays=21)",
         ),
         expect.stringContaining(
           "get_wavefront_data(_build_opm(), 0, 0, num_rays=64, image_point='chief_ray')",
@@ -515,7 +515,7 @@ describe("_getSpotDiagramData", () => {
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain(
-      "json.dumps(get_spot_data(_build_opm(), 1, image_point='centroid'))",
+      "json.dumps(get_spot_data(_build_opm(), 1, image_point='centroid', num_rays=21))",
     );
     expect(result).toEqual(mockData);
   });
@@ -1320,13 +1320,13 @@ describe("public worker guards before initialization", () => {
     expect(scripts).toEqual(
       expect.arrayContaining([
         expect.stringContaining(
-          "get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')",
+          "get_ray_fan_data(_build_opm(), 0, image_point='chief_ray', num_rays=21)",
         ),
         expect.stringContaining(
-          "get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')",
+          "get_opd_fan_data(_build_opm(), 0, image_point='chief_ray', num_rays=21)",
         ),
         expect.stringContaining(
-          "get_spot_data(_build_opm(), 0, image_point='chief_ray')",
+          "get_spot_data(_build_opm(), 0, image_point='chief_ray', num_rays=21)",
         ),
         expect.stringContaining(
           "get_wavefront_data(_build_opm(), 0, 0, num_rays=128, image_point='chief_ray')",
@@ -1479,4 +1479,45 @@ describe("Pyodide computation executor lifecycle", () => {
     expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);
     expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
   });
+});
+
+/** New sampling arguments reach Python through injectable and public worker entrypoints. */
+describe("fan and spot ray counts", () => {
+  afterEach(() => _resetPyodideForTesting());
+  it.each([
+    [_getRayFanData, getRayFanData, "get_ray_fan_data"],
+    [_getOpdFanData, getOpdFanData, "get_opd_fan_data"],
+    [_getSpotDiagramData, getSpotDiagramData, "get_spot_data"],
+  ] as const)(
+    "forwards default and explicit counts for %s",
+    async (injected, publicMethod, pythonName) => {
+      const runPython = jest
+        .fn<Promise<string>, [code: string, options?: unknown]>()
+        .mockResolvedValue("[]");
+      await injected(runPython, allSphericalOpticalModel, 0);
+      expect(runPython).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          `${pythonName}(_build_opm(), 0, image_point='chief_ray', num_rays=21)`,
+        ),
+      );
+      await injected(runPython, allSphericalOpticalModel, 1, "centroid", 32);
+      expect(runPython).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          `${pythonName}(_build_opm(), 1, image_point='centroid', num_rays=32)`,
+        ),
+      );
+      _setPyodideForTesting({
+        runPython: jest.fn(() => ({ destroy: jest.fn() })),
+        runPythonAsync: runPython,
+        ffi: { PyProxy: { [Symbol.hasInstance]: () => false } },
+      });
+      await publicMethod(allSphericalOpticalModel, 1, "centroid", 64);
+      expect(runPython).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          `${pythonName}(_build_opm(), 1, image_point='centroid', num_rays=64)`,
+        ),
+        expect.objectContaining({ globals: expect.anything() }),
+      );
+    },
+  );
 });

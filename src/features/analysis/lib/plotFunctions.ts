@@ -3,6 +3,11 @@
  * shared by editor submission, example-system application, and interactive
  * analysis-panel changes.
  */
+import {
+  ANALYSIS_RAY_COUNT_SETTINGS,
+  DEFAULT_ANALYSIS_RAY_COUNTS,
+  type AnalysisRayCounts,
+} from "@/features/analysis/lib/analysisRayCounts";
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -70,7 +75,9 @@ export type AnalysisPlotLoadResult =
       readonly diffractionMtfData: DiffractionMtfData;
     };
 
+/** Plot selectors and optional app-wide sampling preferences, defaulting to historical resolutions. */
 interface LoadAnalysisPlotParams {
+  readonly rayCounts?: AnalysisRayCounts;
   readonly plotType: PlotType;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly model: OpticalModel | undefined;
@@ -84,10 +91,10 @@ interface LoadAnalysisPlotParams {
  *
  * @remarks
  * - Returns `undefined` when `proxy` or `model` is missing.
- * - Calls `proxy.getRayFanData(model, fi, imagePoint)` for `rayFan`.
+ * - Calls `proxy.getRayFanData(model, fi, imagePoint, numRays)` for `rayFan`.
  * - Calls `proxy.get3rdOrderSeidelData(model)` for `surfaceBySurface3rdOrder` and returns `surfaceBySurface`.
- * - Calls `proxy.getOpdFanData(model, fi, imagePoint)` for `opdFan`.
- * - Calls `proxy.getSpotDiagramData(model, fi, imagePoint)` for `spotDiagram`.
+ * - Calls `proxy.getOpdFanData(model, fi, imagePoint, numRays)` for `opdFan`.
+ * - Calls `proxy.getSpotDiagramData(model, fi, imagePoint, numRays)` for `spotDiagram`.
  * - Calls `proxy.getFieldCurvatureData(model, wavelengthIndex)` for `fieldCurvature`.
  * - Calls `proxy.getAstigmatismCurveData(model, wavelengthIndex)` for `astigmatismCurve`.
  * - Calls `proxy.getLSAData(model)` for `longitudinalSphericalAberration`; the worker returns all wavelength series, so no field or wavelength selector index is used.
@@ -97,10 +104,11 @@ interface LoadAnalysisPlotParams {
  * - Calls `proxy.getDiffractionPSFData(...)` with `imagePoint` for `diffractionPSF`.
  * - Calls `proxy.getDiffractionMTFData(...)` with `imagePoint` for `diffractionMTF`.
  * - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
- * - Caches serialized worker promises by exact model instance, image point, plot type, and only the selectors relevant to that plot.
+ * - Caches serialized worker promises by exact model instance, image point, plot type, effective ray count, FFT dimensions, and only the selectors relevant to that plot. Strehl retains 100 wavelength samples; diffraction PSF uses maxDims=1024 and MTF uses twice its ray count so the frequency axis stays aligned with the diffraction cutoff at every resolution.
  * - Shares the complete cached Seidel request with `surfaceBySurface3rdOrder`.
  */
 export async function loadAnalysisPlot({
+  rayCounts = DEFAULT_ANALYSIS_RAY_COUNTS,
   plotType,
   proxy,
   model,
@@ -116,8 +124,8 @@ export async function loadAnalysisPlot({
   if (plotType === "rayFan") {
     return {
       kind: "rayFan",
-      rayFanData: await cached(`rayFan:${fieldIndex}`, () =>
-        proxy.getRayFanData(model, fieldIndex, imagePoint),
+      rayFanData: await cached(`rayFan:${fieldIndex}:${rayCounts.rayFan}`, () =>
+        proxy.getRayFanData(model, fieldIndex, imagePoint, rayCounts.rayFan),
       ),
     };
   }
@@ -135,13 +143,14 @@ export async function loadAnalysisPlot({
     return {
       kind: "wavefrontMap",
       wavefrontMapData: await cached(
-        `wavefrontMap:${fieldIndex}:${wavelengthIndex}`,
+        `wavefrontMap:${fieldIndex}:${wavelengthIndex}:${rayCounts.wavefrontMap}`,
         () =>
           proxy.getWavefrontData(
             model,
             fieldIndex,
             wavelengthIndex,
             imagePoint,
+            rayCounts.wavefrontMap,
           ),
       ),
     };
@@ -151,8 +160,15 @@ export async function loadAnalysisPlot({
     return {
       kind: "strehlVsWavelength",
       strehlVsWavelengthData: await cached(
-        `strehlVsWavelength:${fieldIndex}`,
-        () => proxy.getStrehlVsWavelengthData(model, fieldIndex, imagePoint),
+        `strehlVsWavelength:${fieldIndex}:100:${rayCounts.strehlVsWavelength}`,
+        () =>
+          proxy.getStrehlVsWavelengthData(
+            model,
+            fieldIndex,
+            imagePoint,
+            100,
+            rayCounts.strehlVsWavelength,
+          ),
       ),
     };
   }
@@ -160,8 +176,8 @@ export async function loadAnalysisPlot({
   if (plotType === "opdFan") {
     return {
       kind: "opdFan",
-      opdFanData: await cached(`opdFan:${fieldIndex}`, () =>
-        proxy.getOpdFanData(model, fieldIndex, imagePoint),
+      opdFanData: await cached(`opdFan:${fieldIndex}:${rayCounts.opdFan}`, () =>
+        proxy.getOpdFanData(model, fieldIndex, imagePoint, rayCounts.opdFan),
       ),
     };
   }
@@ -169,8 +185,15 @@ export async function loadAnalysisPlot({
   if (plotType === "spotDiagram") {
     return {
       kind: "spotDiagram",
-      spotDiagramData: await cached(`spotDiagram:${fieldIndex}`, () =>
-        proxy.getSpotDiagramData(model, fieldIndex, imagePoint),
+      spotDiagramData: await cached(
+        `spotDiagram:${fieldIndex}:${rayCounts.spotDiagram}`,
+        () =>
+          proxy.getSpotDiagramData(
+            model,
+            fieldIndex,
+            imagePoint,
+            rayCounts.spotDiagram,
+          ),
       ),
     };
   }
@@ -208,8 +231,15 @@ export async function loadAnalysisPlot({
   if (plotType === "geoPSF") {
     return {
       kind: "geoPSF",
-      geoPsfData: await cached(`geoPSF:${fieldIndex}:${wavelengthIndex}`, () =>
-        proxy.getGeoPSFData(model, fieldIndex, wavelengthIndex),
+      geoPsfData: await cached(
+        `geoPSF:${fieldIndex}:${wavelengthIndex}:${rayCounts.geoPSF}`,
+        () =>
+          proxy.getGeoPSFData(
+            model,
+            fieldIndex,
+            wavelengthIndex,
+            rayCounts.geoPSF,
+          ),
       ),
     };
   }
@@ -218,29 +248,34 @@ export async function loadAnalysisPlot({
     return {
       kind: "diffractionPSF",
       diffractionPsfData: await cached(
-        `diffractionPSF:${fieldIndex}:${wavelengthIndex}`,
+        `diffractionPSF:${fieldIndex}:${wavelengthIndex}:${rayCounts.diffractionPSF}:1024`,
         () =>
           proxy.getDiffractionPSFData(
             model,
             fieldIndex,
             wavelengthIndex,
             imagePoint,
+            rayCounts.diffractionPSF,
+            1024,
           ),
       ),
     };
   }
 
   if (plotType === "diffractionMTF") {
+    const mtfMaxDims = 2 * rayCounts.diffractionMTF;
     return {
       kind: "diffractionMTF",
       diffractionMtfData: await cached(
-        `diffractionMTF:${fieldIndex}:${wavelengthIndex}`,
+        `diffractionMTF:${fieldIndex}:${wavelengthIndex}:${rayCounts.diffractionMTF}:${mtfMaxDims}`,
         () =>
           proxy.getDiffractionMTFData(
             model,
             fieldIndex,
             wavelengthIndex,
             imagePoint,
+            rayCounts.diffractionMTF,
+            mtfMaxDims,
           ),
       ),
     };
@@ -316,6 +351,7 @@ export function loadZernikeData({
  *
  * @remarks
  * - No-ops when `plotResult` is `undefined`.
+ * - When a requested ray-count snapshot is supplied, discards results whose plot resolution changed while loading.
  * - No-ops for `"surfaceBySurface3rdOrder"` because Seidel surface-by-surface data is committed through `AnalysisDataState`.
  * - Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"longitudinalSphericalAberration"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"diffractionPSF"`, and `"diffractionMTF"`.
  * - Uses an exhaustive `switch` so future `AnalysisPlotLoadResult` variants must be handled explicitly.
@@ -323,8 +359,19 @@ export function loadZernikeData({
 export function commitAnalysisPlotResult(
   plotResult: AnalysisPlotLoadResult | undefined,
   analysisPlotStore: StoreApi<AnalysisPlotState>,
+  requestedRayCounts?: AnalysisRayCounts,
 ): void {
   if (plotResult === undefined) return;
+  const configurable = ANALYSIS_RAY_COUNT_SETTINGS.find(
+    (setting) => setting.plotType === plotResult.kind,
+  )?.plotType;
+  if (
+    requestedRayCounts !== undefined &&
+    configurable !== undefined &&
+    requestedRayCounts[configurable] !==
+      analysisPlotStore.getState().rayCounts[configurable]
+  )
+    return;
 
   switch (plotResult.kind) {
     case "surfaceBySurface3rdOrder":

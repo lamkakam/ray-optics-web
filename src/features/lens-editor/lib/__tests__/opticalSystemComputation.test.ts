@@ -141,6 +141,7 @@ describe("computeOpticalSystem", () => {
       expect.objectContaining({ specs: model.specs }),
       2,
       "chief_ray",
+      21,
     );
     expect(result).toEqual(
       expect.objectContaining({
@@ -244,4 +245,40 @@ describe("computeOpticalSystem", () => {
     ).rejects.toMatchObject({ name: "AbortError" });
     expect(stores.lensStore.getState().committedOpticalModel).toBeUndefined();
   });
+});
+
+it("uses application ray-count preferences in shared Update System and WebMCP computation", async () => {
+  const stores = makeStores();
+  const proxy = makeProxy();
+  stores.analysisPlotStore.getState().setRayCount("rayFan", 64);
+  const result = await computeOpticalSystem(dependencies(stores, proxy));
+  expect(proxy.getRayFanData).toHaveBeenCalledWith(
+    result.model,
+    2,
+    "chief_ray",
+    64,
+  );
+  expect(stores.analysisPlotStore.getState().rayCounts.rayFan).toBe(64);
+  expect(result.model).not.toHaveProperty("rayCounts");
+  localStorage.clear();
+});
+
+it("does not commit a superseded ray count after shared recomputation finishes", async () => {
+  localStorage.clear();
+  const stores = makeStores();
+  let finish!: (data: never[]) => void;
+  const proxy = makeProxy({
+    getRayFanData: jest.fn(
+      () =>
+        new Promise<never[]>((resolve) => {
+          finish = resolve;
+        }),
+    ),
+  });
+  const pending = computeOpticalSystem(dependencies(stores, proxy));
+  stores.analysisPlotStore.getState().setRayCount("rayFan", 64);
+  finish([]);
+  await pending;
+  expect(stores.analysisPlotStore.getState().rayFanData).toBeUndefined();
+  localStorage.clear();
 });

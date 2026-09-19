@@ -48,7 +48,8 @@ class TestSpotFiniteChiefRay:
         signature = inspect.signature(spot.get_spot_data)
         assert signature.parameters["image_point"].default == "chief_ray"
 
-    def test_chief_ray_projects_the_last_segment_and_builds_payload(self, monkeypatch):
+    @pytest.mark.parametrize("count", [21, 32])
+    def test_chief_ray_projects_the_last_segment_and_builds_payload(self, monkeypatch, count):
         import rayoptics.optical.model_constants as mc
         import rayoptics_web_utils.analysis.spot as module
 
@@ -73,13 +74,13 @@ class TestSpotFiniteChiefRay:
         opm.seq_model = FakeSequentialModel()
         monkeypatch.setattr(module, "is_afocal_image_space", lambda model: False)
 
-        result = module.get_spot_data(opm, 0)
+        result = module.get_spot_data(opm, 0, num_rays=count)
 
         assert len(trace_calls) == 1
         assert trace_calls[0][1] == 0
         assert trace_calls[0][2] == {
             "wl": None,
-            "num_rays": 21,
+            "num_rays": count,
             "form": "list",
             "append_if_none": False,
         }
@@ -98,8 +99,9 @@ class TestSpotFiniteChiefRay:
 class TestSpotCentroid:
     """Verify weighted finite and afocal centroid cloud construction."""
 
+    @pytest.mark.parametrize("count", [21, 32])
     def test_finite_centroid_flattens_points_and_repeats_spectral_weights(
-        self, monkeypatch
+        self, monkeypatch, count
     ):
         import rayoptics_web_utils.analysis.spot as module
 
@@ -128,11 +130,11 @@ class TestSpotCentroid:
         monkeypatch.setattr(module, "projected_image_points", fake_project)
         monkeypatch.setattr(module, "weighted_centroid", fake_centroid)
 
-        result = module.get_spot_data(opm, 0, image_point="centroid")
+        result = module.get_spot_data(opm, 0, image_point="centroid", num_rays=count)
 
         assert sample_calls == [
-            (opm, field, 500.0, 2.5, 21),
-            (opm, field, 600.0, 2.5, 21),
+            (opm, field, 500.0, 2.5, count),
+            (opm, field, 600.0, 2.5, count),
         ]
         assert point_calls == [(raw_grids[500.0], 2.5), (raw_grids[600.0], 2.5)]
         assert len(centroid_calls) == 1
@@ -255,7 +257,8 @@ class TestSpotCentroid:
 class TestSpotAfocalChiefRay:
     """Verify afocal chief-ray tracing uses one angular cloud per wavelength."""
 
-    def test_afocal_chief_ray_forwards_setup_and_grid_options(self, monkeypatch):
+    @pytest.mark.parametrize("count", [21, 32])
+    def test_afocal_chief_ray_forwards_setup_and_grid_options(self, monkeypatch, count):
         import rayoptics.optical.model_constants as mc
         import rayoptics_web_utils.analysis.spot as module
 
@@ -304,7 +307,7 @@ class TestSpotAfocalChiefRay:
             ),
         )
 
-        result = module.get_spot_data(opm, 0, image_point="chief_ray")
+        result = module.get_spot_data(opm, 0, image_point="chief_ray", num_rays=count)
 
         assert setup_calls == [
             (opm, field, 500.0, 2.5),
@@ -313,7 +316,7 @@ class TestSpotAfocalChiefRay:
         assert len(grid_calls) == 2
         np.testing.assert_allclose(grid_calls[0][1][0], [-2.0, -3.0])
         np.testing.assert_allclose(grid_calls[0][1][1], [4.0, 5.0])
-        assert grid_calls[0][1][2] == 21
+        assert grid_calls[0][1][2] == count
         assert [call[3] for call in grid_calls] == [500.0, 600.0]
         assert grid_calls[0][4] == 2.5
         assert grid_calls[0][5] == {
@@ -324,7 +327,7 @@ class TestSpotAfocalChiefRay:
         }
         assert len(reference_calls) == 2
         assert [call[2] for call in reference_calls] == [500.0, 600.0]
-        assert all(call[3] == {"image_point": "chief_ray"} for call in reference_calls)
+        assert all(call[3] == {"image_point": "chief_ray", "num_rays": count} for call in reference_calls)
         assert field.chief_ray == ("chief", 600.0)
         assert field.ref_sphere == ("sphere", 600.0)
         assert len(angular_calls) == 2

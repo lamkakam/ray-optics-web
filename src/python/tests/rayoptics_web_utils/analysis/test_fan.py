@@ -301,8 +301,8 @@ class TestRayFanPayload:
         result = module.get_ray_fan_data(opm, 4, image_point="centroid")
 
         assert calls == [
-            (opm, 4, 0, {"image_point": "centroid"}),
-            (opm, 4, 1, {"image_point": "centroid"}),
+            (opm, 4, 0, {"image_point": "centroid", "num_rays": 21}),
+            (opm, 4, 1, {"image_point": "centroid", "num_rays": 21}),
         ]
         assert result == [
             {
@@ -352,7 +352,7 @@ class TestRayFanPayload:
 
         assert len(reference_calls) == 1
         assert reference_calls[0][2] == 550.0
-        assert reference_calls[0][3] == {"image_point": "centroid"}
+        assert reference_calls[0][3] == {"image_point": "centroid", "num_rays": 21}
         assert len(angular_calls) == 4
         assert result[0]["Sagittal"]["y"] == [11.0, 11.0]
         assert result[0]["Tangential"]["y"] == [22.0, 22.0]

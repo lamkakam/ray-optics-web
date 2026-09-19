@@ -20,7 +20,7 @@
  * collected after execution; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.32.1` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.33.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -338,7 +338,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
       ]);
 
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.32.1-py3-none-any.whl`;
+      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.33.0-py3-none-any.whl`;
 
       await _init(createInitializationExecutor(pyodide), wheelUrl, onProgress);
       await emitInitProgress(onProgress, 100, "Ready");
@@ -427,52 +427,55 @@ export async function _plotLensLayout(
   )) as string;
 }
 
-/** Loads transverse ray-fan data with injected execution and normalizes blocked ordinates to `undefined` gaps. */
+/** Loads transverse ray-fan data with injected execution and normalizes blocked ordinates to `undefined` gaps. Sampling defaults to 21 per fan axis. */
 export async function _getRayFanData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
+  numRays: number = 21,
 ): Promise<RayFanData> {
   const json = (await runPython(
     buildScript(
       opticalModel,
       (opm) =>
-        `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`,
+        `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}', num_rays=${numRays}))`,
     ),
   )) as string;
   return normalizeFanData<RayFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
-/** Loads OPD-fan data with injected execution and normalizes blocked ordinates to `undefined` gaps. */
+/** Loads OPD-fan data with injected execution and normalizes blocked ordinates to `undefined` gaps. Sampling defaults to 21 per fan axis. */
 export async function _getOpdFanData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
+  numRays: number = 21,
 ): Promise<OpdFanData> {
   const json = (await runPython(
     buildScript(
       opticalModel,
       (opm) =>
-        `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`,
+        `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}', num_rays=${numRays}))`,
     ),
   )) as string;
   return normalizeFanData<OpdFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
-/** Loads and parses per-wavelength spot-diagram points with injected execution. */
+/** Loads and parses per-wavelength spot-diagram points with injected execution. Sampling defaults to 21 per grid dimension. */
 export async function _getSpotDiagramData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
+  numRays: number = 21,
 ): Promise<SpotDiagramData> {
   const json = (await runPython(
     buildScript(
       opticalModel,
       (opm) =>
-        `json.dumps(get_spot_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`,
+        `json.dumps(get_spot_data(${opm}, ${fieldIndex}, image_point='${imagePoint}', num_rays=${numRays}))`,
     ),
   )) as string;
   return JSON.parse(json) as SpotDiagramData;
@@ -1081,45 +1084,51 @@ export async function plotLensLayout(
   return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
 }
 
-/** Returns all-wavelength transverse ray-fan series with blocked samples represented as gaps. */
+/** Returns all-wavelength transverse ray-fan series with blocked samples represented as gaps. Sampling defaults to 21 per fan axis. */
 export async function getRayFanData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
+  numRays: number = 21,
 ): Promise<RayFanData> {
   return await _getRayFanData(
     requirePyodide(),
     opticalModel,
     fieldIndex,
     imagePoint,
+    numRays,
   );
 }
 
-/** Returns all-wavelength OPD-fan series with blocked samples represented as gaps. */
+/** Returns all-wavelength OPD-fan series with blocked samples represented as gaps. Sampling defaults to 21 per fan axis. */
 export async function getOpdFanData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
+  numRays: number = 21,
 ): Promise<OpdFanData> {
   return await _getOpdFanData(
     requirePyodide(),
     opticalModel,
     fieldIndex,
     imagePoint,
+    numRays,
   );
 }
 
-/** Returns per-wavelength spot-diagram point clouds. */
+/** Returns per-wavelength spot-diagram point clouds. Sampling defaults to 21 per grid dimension. */
 export async function getSpotDiagramData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   imagePoint: ImagePoint = "chief_ray",
+  numRays: number = 21,
 ): Promise<SpotDiagramData> {
   return await _getSpotDiagramData(
     requirePyodide(),
     opticalModel,
     fieldIndex,
     imagePoint,
+    numRays,
   );
 }
 
@@ -1226,7 +1235,7 @@ export async function getDiffractionPSFData(
   );
 }
 
-/** Returns diffraction-MTF sagittal and tangential series, using 128 rays and a 1024-pixel maximum dimension by default. */
+/** Returns diffraction-MTF sagittal and tangential series, using 128 rays and a 256-pixel maximum dimension by default. */
 export async function getDiffractionMTFData(
   opticalModel: OpticalModel,
   fieldIndex: number,

@@ -1,4 +1,4 @@
-/** Covers plot selection/loading, cache reuse, and complete Seidel commits with source ownership. */
+/** Covers plot selection/loading, cached recovery after unmount, and complete Seidel commits with source ownership. */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
@@ -435,6 +435,7 @@ describe("AnalysisPlotContainer", () => {
   beforeEach(() => {
     _resetAnalysisCache();
     jest.clearAllMocks();
+    localStorage.clear();
     mockImagePoint = "centroid";
     store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
   });
@@ -487,6 +488,7 @@ describe("AnalysisPlotContainer", () => {
         testModel,
         1,
         "centroid",
+        21,
       );
     });
     expect(store.getState().rayFanData).toEqual(rayFanData);
@@ -495,21 +497,23 @@ describe("AnalysisPlotContainer", () => {
   it("handleFieldChange: sets plotLoading true then clears it after plot", async () => {
     let resolveProxy!: (value: RayFanData) => void;
     const proxy = makeMockProxy({
-      getRayFanData: jest.fn().mockImplementation(
-        () =>
-          new Promise<RayFanData>((resolve) => {
-            resolveProxy = resolve;
-          }),
-      ),
+      getRayFanData: jest
+        .fn()
+        .mockResolvedValueOnce(rayFanData)
+        .mockImplementation(
+          () =>
+            new Promise<RayFanData>((resolve) => {
+              resolveProxy = resolve;
+            }),
+        ),
     });
     renderComponent(testSpecs, testModel, store, proxy);
     const fieldSelect = screen.getByLabelText("Half-Field");
-    const selectPromise = userEvent.selectOptions(fieldSelect, "1");
-
-    await waitFor(() => expect(store.getState().plotLoading).toBe(true));
+    await waitFor(() => expect(store.getState().plotLoading).toBe(false));
+    await userEvent.selectOptions(fieldSelect, "1");
+    expect(store.getState().plotLoading).toBe(true);
     await act(async () => {
       resolveProxy(rayFanData);
-      await selectPromise;
     });
     await waitFor(() => expect(store.getState().plotLoading).toBe(false));
   });
@@ -753,6 +757,7 @@ describe("AnalysisPlotContainer", () => {
         0,
         2,
         "centroid",
+        128,
       );
     });
   });
@@ -769,6 +774,7 @@ describe("AnalysisPlotContainer", () => {
         0,
         2,
         "centroid",
+        128,
       );
     });
 
@@ -779,6 +785,7 @@ describe("AnalysisPlotContainer", () => {
         1,
         2,
         "centroid",
+        128,
       );
     });
   });
@@ -795,6 +802,7 @@ describe("AnalysisPlotContainer", () => {
         1,
         0,
         "centroid",
+        128,
       );
     });
 
@@ -805,6 +813,7 @@ describe("AnalysisPlotContainer", () => {
         1,
         2,
         "centroid",
+        128,
       );
     });
   });
@@ -822,12 +831,18 @@ describe("AnalysisPlotContainer", () => {
         1,
         2,
         "centroid",
+        128,
       );
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Plot type"), "geoPSF");
     await waitFor(() => {
-      expect(proxy.getGeoPSFData).toHaveBeenLastCalledWith(testModel, 1, 2);
+      expect(proxy.getGeoPSFData).toHaveBeenLastCalledWith(
+        testModel,
+        1,
+        2,
+        128,
+      );
     });
   });
 
@@ -843,6 +858,7 @@ describe("AnalysisPlotContainer", () => {
         testModel,
         0,
         "centroid",
+        21,
       );
     });
     expect(store.getState().spotDiagramData).toEqual(spotDiagramData);
@@ -855,7 +871,13 @@ describe("AnalysisPlotContainer", () => {
     const proxy = makeMockProxy();
     const { rerender } = renderComponent(testSpecs, testModel, store, proxy);
 
-    expect(proxy.getRayFanData).not.toHaveBeenCalled();
+    await waitFor(() => expect(store.getState().plotLoading).toBe(false));
+    expect(proxy.getRayFanData).toHaveBeenCalledWith(
+      testModel,
+      1,
+      "chief_ray",
+      21,
+    );
 
     mockImagePoint = "centroid";
     rerender(
@@ -875,9 +897,10 @@ describe("AnalysisPlotContainer", () => {
         testModel,
         1,
         "centroid",
+        21,
       );
     });
-    expect(proxy.getRayFanData).toHaveBeenCalledTimes(1);
+    expect(proxy.getRayFanData).toHaveBeenCalledTimes(2);
     expect(proxy.getFirstOrderData).not.toHaveBeenCalled();
     expect(proxy.plotLensLayout).not.toHaveBeenCalled();
     expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
@@ -931,6 +954,7 @@ describe("AnalysisPlotContainer", () => {
         testModel,
         0,
         "centroid",
+        21,
       );
     });
     expect(store.getState().opdFanData).toEqual(opdFanData);
@@ -944,7 +968,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("geoPSF");
     await waitFor(() => {
-      expect(proxy.getGeoPSFData).toHaveBeenCalledWith(testModel, 0, 0);
+      expect(proxy.getGeoPSFData).toHaveBeenCalledWith(testModel, 0, 0, 128);
     });
     expect(store.getState().geoPsfData).toEqual(geoPsfData);
   });
@@ -1035,6 +1059,8 @@ describe("AnalysisPlotContainer", () => {
         0,
         0,
         "centroid",
+        128,
+        1024,
       );
     });
     expect(store.getState().diffractionPsfData).toEqual(diffractionPsfData);
@@ -1053,6 +1079,8 @@ describe("AnalysisPlotContainer", () => {
         0,
         0,
         "centroid",
+        128,
+        256,
       );
     });
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
@@ -1072,6 +1100,8 @@ describe("AnalysisPlotContainer", () => {
         0,
         2,
         "centroid",
+        128,
+        256,
       );
     });
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
@@ -1090,6 +1120,7 @@ describe("AnalysisPlotContainer", () => {
         0,
         0,
         "centroid",
+        128,
       );
     });
     expect(store.getState().wavefrontMapData).toEqual(wavefrontMapData);
@@ -1108,6 +1139,8 @@ describe("AnalysisPlotContainer", () => {
         testModel,
         1,
         "centroid",
+        100,
+        21,
       );
     });
     expect(store.getState().strehlVsWavelengthData).toEqual(
@@ -1118,7 +1151,10 @@ describe("AnalysisPlotContainer", () => {
   it("onError called when proxy throws on field change", async () => {
     const onError = jest.fn();
     const proxy = makeMockProxy({
-      getRayFanData: jest.fn().mockRejectedValue(new Error("fail")),
+      getRayFanData: jest
+        .fn()
+        .mockResolvedValueOnce(rayFanData)
+        .mockRejectedValue(new Error("fail")),
     });
     renderComponent(testSpecs, testModel, store, proxy, onError);
     const fieldSelect = screen.getByLabelText("Half-Field");
@@ -1130,7 +1166,10 @@ describe("AnalysisPlotContainer", () => {
     store.getState().setSelectedPlotType("wavefrontMap");
     const onError = jest.fn();
     const proxy = makeMockProxy({
-      getWavefrontData: jest.fn().mockRejectedValue(new Error("fail")),
+      getWavefrontData: jest
+        .fn()
+        .mockResolvedValueOnce(wavefrontMapData)
+        .mockRejectedValue(new Error("fail")),
     });
     renderComponent(testSpecs, testModel, store, proxy, onError);
     const wlSelect = screen.getByLabelText("Wavelength");
@@ -1181,8 +1220,227 @@ describe("AnalysisPlotContainer", () => {
         testModel,
         1,
         "centroid",
+        21,
       );
     });
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });
+});
+
+/** Plots without sampling settings recover cached results or retry failures after route remounts. */
+describe.each([
+  [
+    "fieldCurvature",
+    "getFieldCurvatureData",
+    "fieldCurvatureData",
+    "field-curve-chart",
+    fieldCurveData,
+  ],
+  [
+    "astigmatismCurve",
+    "getAstigmatismCurveData",
+    "astigmatismCurveData",
+    "astigmatism-chart",
+    astigmatismCurveData,
+  ],
+  [
+    "longitudinalSphericalAberration",
+    "getLSAData",
+    "longitudinalSphericalAberrationData",
+    "longitudinal-spherical-aberration-chart",
+    longitudinalSphericalAberrationData,
+  ],
+] as const)(
+  "interrupted %s recovery",
+  (plotType, method, dataKey, chartId, data) => {
+    beforeEach(() => {
+      _resetAnalysisCache();
+      localStorage.clear();
+      mockImagePoint = "centroid";
+    });
+
+    it.each(["before", "after"])(
+      "recovers when the worker finishes %s remount",
+      async (completion) => {
+        const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+        let finish!: (value: typeof data) => void;
+        const pending = new Promise<typeof data>((resolve) => {
+          finish = resolve;
+        });
+        const getData = jest.fn().mockReturnValue(pending);
+        const proxy = makeMockProxy({ [method]: getData });
+        const onError = jest.fn();
+        const view = renderComponent(
+          testSpecs,
+          testModel,
+          store,
+          proxy,
+          onError,
+        );
+        await userEvent.selectOptions(
+          screen.getByLabelText("Plot type"),
+          plotType,
+        );
+        expect(getData).toHaveBeenCalledTimes(1);
+        expect(screen.getByText("Loading plot...")).toBeInTheDocument();
+        view.unmount();
+
+        if (completion === "before") {
+          finish(data);
+          await expect(pending).resolves.toEqual(data);
+          expect(store.getState()[dataKey]).toBeUndefined();
+          expect(store.getState().plotLoading).toBe(true);
+        }
+
+        renderComponent(testSpecs, testModel, store, proxy, onError);
+        if (completion === "after") {
+          expect(screen.getByText("Loading plot...")).toBeInTheDocument();
+          await act(async () => finish(data));
+        }
+
+        expect(await screen.findByTestId(chartId)).toBeInTheDocument();
+        expect(store.getState()[dataKey]).toEqual(data);
+        expect(store.getState().plotLoading).toBe(false);
+        expect(screen.queryByText("Loading plot...")).not.toBeInTheDocument();
+        expect(getData).toHaveBeenCalledTimes(1);
+        expect(onError).not.toHaveBeenCalled();
+      },
+    );
+
+    it("retries a calculation that rejects while unmounted without reporting a stale error", async () => {
+      const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+      let reject!: (error: Error) => void;
+      const pending = new Promise<typeof data>((_resolve, rejectPromise) => {
+        reject = rejectPromise;
+      });
+      const getData = jest
+        .fn()
+        .mockReturnValueOnce(pending)
+        .mockResolvedValue(data);
+      const proxy = makeMockProxy({ [method]: getData });
+      const onError = jest.fn();
+      const view = renderComponent(testSpecs, testModel, store, proxy, onError);
+      await userEvent.selectOptions(
+        screen.getByLabelText("Plot type"),
+        plotType,
+      );
+      expect(getData).toHaveBeenCalledTimes(1);
+      view.unmount();
+
+      reject(new Error("interrupted calculation failed"));
+      await expect(pending).rejects.toThrow("interrupted calculation failed");
+      expect(onError).not.toHaveBeenCalled();
+      expect(store.getState()[dataKey]).toBeUndefined();
+      expect(store.getState().plotLoading).toBe(true);
+
+      renderComponent(testSpecs, testModel, store, proxy, onError);
+      expect(await screen.findByTestId(chartId)).toBeInTheDocument();
+      expect(store.getState()[dataKey]).toEqual(data);
+      expect(store.getState().plotLoading).toBe(false);
+      expect(screen.queryByText("Loading plot...")).not.toBeInTheDocument();
+      expect(getData).toHaveBeenCalledTimes(2);
+      expect(onError).not.toHaveBeenCalled();
+    });
+  },
+);
+
+/** Resolution changes and route remounts refresh through the cache without submitting a model. */
+describe("ray-count refresh", () => {
+  beforeEach(() => {
+    _resetAnalysisCache();
+    localStorage.clear();
+    mockImagePoint = "centroid";
+  });
+
+  it("loads on mount, applies settings on return, and reuses a previous resolution", async () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+    const proxy = makeMockProxy();
+    const view = renderComponent(testSpecs, testModel, store, proxy);
+    await waitFor(() =>
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        "centroid",
+        21,
+      ),
+    );
+    view.unmount();
+    store.getState().setRayCount("rayFan", 32);
+    renderComponent(testSpecs, testModel, store, proxy);
+    await waitFor(() =>
+      expect(proxy.getRayFanData).toHaveBeenLastCalledWith(
+        testModel,
+        0,
+        "centroid",
+        32,
+      ),
+    );
+    act(() => store.getState().setRayCount("rayFan", 21));
+    await waitFor(() => expect(store.getState().plotLoading).toBe(false));
+    expect(proxy.getRayFanData).toHaveBeenCalledTimes(2);
+    act(() => store.getState().setRayCount("opdFan", 64));
+    expect(proxy.getRayFanData).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([true, false])(
+    "ignores superseded resolution results (old finishes first: %s)",
+    async (oldFirst) => {
+      const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+      let finishOld!: (data: RayFanData) => void;
+      let finishNew!: (data: RayFanData) => void;
+      const proxy = makeMockProxy({
+        getRayFanData: jest
+          .fn()
+          .mockImplementationOnce(
+            () =>
+              new Promise<RayFanData>((resolve) => {
+                finishOld = resolve;
+              }),
+          )
+          .mockImplementationOnce(
+            () =>
+              new Promise<RayFanData>((resolve) => {
+                finishNew = resolve;
+              }),
+          ),
+      });
+      renderComponent(testSpecs, testModel, store, proxy);
+      await waitFor(() => expect(proxy.getRayFanData).toHaveBeenCalledTimes(1));
+      act(() => store.getState().setRayCount("rayFan", 64));
+      await waitFor(() => expect(proxy.getRayFanData).toHaveBeenCalledTimes(2));
+      if (oldFirst) {
+        await act(async () => finishOld(rayFanData));
+        expect(store.getState().rayFanData).toBeUndefined();
+        expect(store.getState().plotLoading).toBe(true);
+      }
+      await act(async () => finishNew([]));
+      if (!oldFirst) await act(async () => finishOld(rayFanData));
+      expect(store.getState().rayFanData).toEqual([]);
+      expect(store.getState().plotLoading).toBe(false);
+    },
+  );
+});
+
+it("clears loading when switching from a pending configurable plot to existing Seidel data", async () => {
+  _resetAnalysisCache();
+  localStorage.clear();
+  const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+  const proxy = makeMockProxy({
+    getRayFanData: jest.fn(() => new Promise<RayFanData>(() => {})),
+  });
+  renderComponent(
+    testSpecs,
+    testModel,
+    store,
+    proxy,
+    jest.fn(),
+    makeAnalysisDataStore(seidelData),
+  );
+  expect(store.getState().plotLoading).toBe(true);
+  await userEvent.selectOptions(
+    screen.getByLabelText("Plot type"),
+    "surfaceBySurface3rdOrder",
+  );
+  expect(store.getState().plotLoading).toBe(false);
+  expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
 });

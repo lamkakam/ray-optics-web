@@ -877,3 +877,77 @@ describe("analysisPlotStore", () => {
     });
   });
 });
+
+/** Preferences persist independently of transient plot state and tolerate storage failures. */
+describe("analysis ray count preferences", () => {
+  const key = "ray-optics-web-analysis-ray-counts";
+  const defaults = {
+    rayFan: 21,
+    opdFan: 21,
+    spotDiagram: 21,
+    strehlVsWavelength: 21,
+    wavefrontMap: 128,
+    geoPSF: 128,
+    diffractionPSF: 128,
+    diffractionMTF: 128,
+  };
+  beforeEach(() => localStorage.clear());
+  afterEach(() => jest.restoreAllMocks());
+
+  it("restores valid entries and defaults invalid or absent entries individually", () => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        rayFan: 64,
+        opdFan: "32",
+        wavefrontMap: 21,
+        diffractionMTF: 256,
+        selectedPlotType: "opdFan",
+      }),
+    );
+    const store = makeStore();
+    expect(store.getState().rayCounts).toEqual({
+      ...defaults,
+      rayFan: 64,
+      diffractionMTF: 256,
+    });
+    expect(store.getState().selectedPlotType).toBe("rayFan");
+  });
+
+  it.each(["not json", "null", "[]", "42"])(
+    "defaults malformed storage %s",
+    (raw) => {
+      localStorage.setItem(key, raw);
+      expect(makeStore().getState().rayCounts).toEqual(defaults);
+    },
+  );
+
+  it("validates updates and persists only ray counts", () => {
+    const store = makeStore();
+    store.getState().setRayCount("rayFan", 32);
+    store.getState().setRayCount("wavefrontMap", 21);
+    store.getState().setRayCount("opdFan", 32.5);
+    store.getState().setSelectedPlotType("opdFan");
+    expect(store.getState().rayCounts).toEqual({ ...defaults, rayFan: 32 });
+    expect(JSON.parse(localStorage.getItem(key)!)).toEqual({
+      ...defaults,
+      rayFan: 32,
+    });
+    expect(makeStore().getState().rayCounts).toEqual(
+      store.getState().rayCounts,
+    );
+  });
+
+  it("keeps session preferences usable when storage is unavailable", () => {
+    jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("full");
+    });
+    const store = makeStore();
+    expect(store.getState().rayCounts).toEqual(defaults);
+    store.getState().setRayCount("geoPSF", 256);
+    expect(store.getState().rayCounts.geoPSF).toBe(256);
+  });
+});

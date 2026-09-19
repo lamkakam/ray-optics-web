@@ -1,3 +1,5 @@
+/** Covers typed plot dispatch, resolution-specific caching, and MTF transforms at twice the pupil sampling. */
+import { DEFAULT_ANALYSIS_RAY_COUNTS } from "@/features/analysis/lib/analysisRayCounts";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
@@ -204,6 +206,7 @@ describe("loadAnalysisPlot", () => {
       1,
       2,
       "centroid",
+      128,
     );
     expect(result).toEqual({
       kind: "wavefrontMap",
@@ -222,7 +225,12 @@ describe("loadAnalysisPlot", () => {
       imagePoint: "centroid",
     });
 
-    expect(proxy.getRayFanData).toHaveBeenCalledWith(mockModel, 1, "centroid");
+    expect(proxy.getRayFanData).toHaveBeenCalledWith(
+      mockModel,
+      1,
+      "centroid",
+      21,
+    );
     expect(result).toEqual({
       kind: "rayFan",
       rayFanData: [
@@ -255,7 +263,12 @@ describe("loadAnalysisPlot", () => {
       imagePoint: "centroid",
     });
 
-    expect(proxy.getOpdFanData).toHaveBeenCalledWith(mockModel, 1, "centroid");
+    expect(proxy.getOpdFanData).toHaveBeenCalledWith(
+      mockModel,
+      1,
+      "centroid",
+      21,
+    );
     expect(result).toEqual({
       kind: "opdFan",
       opdFanData: [
@@ -293,6 +306,8 @@ describe("loadAnalysisPlot", () => {
       2,
       1,
       "centroid",
+      128,
+      1024,
     );
     expect(result).toEqual({
       kind: "diffractionPSF",
@@ -316,6 +331,8 @@ describe("loadAnalysisPlot", () => {
       2,
       1,
       "centroid",
+      128,
+      256,
     );
     expect(result).toEqual({
       kind: "diffractionMTF",
@@ -338,6 +355,8 @@ describe("loadAnalysisPlot", () => {
       mockModel,
       1,
       "centroid",
+      100,
+      21,
     );
     expect(result).toEqual({
       kind: "strehlVsWavelength",
@@ -355,7 +374,7 @@ describe("loadAnalysisPlot", () => {
       wavelengthIndex: 1,
     });
 
-    expect(proxy.getGeoPSFData).toHaveBeenCalledWith(mockModel, 0, 1);
+    expect(proxy.getGeoPSFData).toHaveBeenCalledWith(mockModel, 0, 1, 128);
     expect(result).toEqual({
       kind: "geoPSF",
       geoPsfData: {
@@ -384,6 +403,7 @@ describe("loadAnalysisPlot", () => {
       mockModel,
       0,
       "centroid",
+      21,
     );
     expect(result).toEqual({
       kind: "spotDiagram",
@@ -556,4 +576,112 @@ describe("commitAnalysisPlotResult", () => {
 
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
+});
+
+/** All configurable plots pass effective counts and separate cached resolutions. */
+describe("configurable plot sampling", () => {
+  beforeEach(() => _resetAnalysisCache());
+  const cases = [
+    ["rayFan", "getRayFanData", 21, [1, "centroid"]],
+    ["opdFan", "getOpdFanData", 21, [1, "centroid"]],
+    ["spotDiagram", "getSpotDiagramData", 21, [1, "centroid"]],
+    [
+      "strehlVsWavelength",
+      "getStrehlVsWavelengthData",
+      21,
+      [1, "centroid", 100],
+    ],
+    ["wavefrontMap", "getWavefrontData", 128, [1, 2, "centroid"]],
+    ["geoPSF", "getGeoPSFData", 128, [1, 2]],
+    ["diffractionPSF", "getDiffractionPSFData", 128, [1, 2, "centroid"]],
+    ["diffractionMTF", "getDiffractionMTFData", 128, [1, 2, "centroid"]],
+  ] as const;
+
+  it.each(cases)(
+    "passes default and explicit counts and reuses %s cache",
+    async (plotType, method, defaultCount, prefix) => {
+      const proxy = makeMockProxy();
+      const params = {
+        plotType,
+        proxy,
+        model: mockModel,
+        fieldIndex: 1,
+        wavelengthIndex: 2,
+        imagePoint: "centroid" as const,
+      };
+      const dims =
+        plotType === "diffractionPSF"
+          ? [1024]
+          : plotType === "diffractionMTF"
+            ? [256]
+            : [];
+      const first = await loadAnalysisPlot(params);
+      expect(proxy[method]).toHaveBeenLastCalledWith(
+        mockModel,
+        ...prefix,
+        defaultCount,
+        ...dims,
+      );
+      await loadAnalysisPlot({
+        ...params,
+        rayCounts: { ...DEFAULT_ANALYSIS_RAY_COUNTS, [plotType]: 64 },
+      });
+      expect(proxy[method]).toHaveBeenLastCalledWith(
+        mockModel,
+        ...prefix,
+        64,
+        ...(plotType === "diffractionMTF" ? [128] : dims),
+      );
+      expect(await loadAnalysisPlot(params)).toEqual(first);
+      expect(proxy[method]).toHaveBeenCalledTimes(2);
+      await loadAnalysisPlot({
+        ...params,
+        rayCounts: {
+          ...DEFAULT_ANALYSIS_RAY_COUNTS,
+          [plotType]: defaultCount,
+          [plotType === "rayFan" ? "geoPSF" : "rayFan"]: 32,
+        },
+      });
+      expect(proxy[method]).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each([
+    [32, 64],
+    [64, 128],
+    [128, 256],
+    [256, 512],
+  ])(
+    "uses and caches a %i-ray MTF with %i FFT dimensions",
+    async (count, dims) => {
+      const proxy = makeMockProxy();
+      proxy.getDiffractionMTFData.mockResolvedValue(diffractionMtfData);
+      const params = {
+        plotType: "diffractionMTF" as const,
+        proxy,
+        model: mockModel,
+        fieldIndex: 2,
+        wavelengthIndex: 1,
+        imagePoint: "centroid" as const,
+        rayCounts: { ...DEFAULT_ANALYSIS_RAY_COUNTS, diffractionMTF: count },
+      };
+      const expected = {
+        kind: "diffractionMTF",
+        diffractionMtfData,
+      };
+      expect(
+        await Promise.all([loadAnalysisPlot(params), loadAnalysisPlot(params)]),
+      ).toEqual([expected, expected]);
+      expect(await loadAnalysisPlot(params)).toEqual(expected);
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
+        mockModel,
+        2,
+        1,
+        "centroid",
+        count,
+        dims,
+      );
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledTimes(1);
+    },
+  );
 });

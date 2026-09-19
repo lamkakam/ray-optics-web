@@ -9,6 +9,13 @@
  * - `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `LongitudinalSphericalAberrationData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
  */
 import type { StateCreator } from "zustand";
+import {
+  type AnalysisRayCounts,
+  type ConfigurableAnalysisPlot,
+  isAnalysisRayCount,
+  persistAnalysisRayCounts,
+  restoreAnalysisRayCounts,
+} from "@/features/analysis/lib/analysisRayCounts";
 import type { PlotType } from "@/features/analysis/components";
 import type {
   AstigmatismCurveData,
@@ -25,6 +32,10 @@ import type {
 } from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {
+  /** Independent application preferences restored from browser storage at store creation. */
+  rayCounts: AnalysisRayCounts;
+  /** Validates a dropdown count, updates just that plot, and persists only preferences. */
+  setRayCount: (plotType: ConfigurableAnalysisPlot, count: number) => void;
   /** Ray Fan chart payload, initially `undefined`. */
   rayFanData: RayFanData | undefined;
   /** OPD Fan chart payload, initially `undefined`. */
@@ -92,9 +103,20 @@ export interface AnalysisPlotState {
   setSelectedPlotType: (plotType: PlotType) => void;
 }
 
+/** Creates transient plot state and persistent ray-count preferences; storage failure is nonfatal. */
 export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
   set,
 ) => ({
+  rayCounts: restoreAnalysisRayCounts(),
+  setRayCount: (plotType, count) => {
+    if (!isAnalysisRayCount(plotType, count)) return;
+    set((state) => {
+      if (state.rayCounts[plotType] === count) return state;
+      const rayCounts = { ...state.rayCounts, [plotType]: count };
+      persistAnalysisRayCounts(rayCounts);
+      return { rayCounts };
+    });
+  },
   rayFanData: undefined,
   opdFanData: undefined,
   spotDiagramData: undefined,

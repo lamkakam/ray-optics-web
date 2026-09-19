@@ -15,6 +15,7 @@ def _trace_fan_series(
     image_point: str = "chief_ray",
     wvl_idx: int | None = None,
     finite_reference_point=None,
+    num_rays: int = 21,
 ) -> tuple[list[list[float]], list[list[float | None]]]:
     """Trace one pupil fan at one or every configured wavelength.
 
@@ -34,6 +35,7 @@ def _trace_fan_series(
         image_point: Image-point reference convention.
         wvl_idx: Optional configured wavelength index to trace exclusively.
         finite_reference_point: Optional complete finite image reference point.
+        num_rays: Samples per fan axis and centroid grid dimension; defaults to 21.
 
     Returns:
         Tuple of x-axis values and pupil-fan series for the selected wavelength set.
@@ -62,7 +64,7 @@ def _trace_fan_series(
     fan_stop = np.array([0.0, 0.0])
     fan_start[xy] = -1.0
     fan_stop[xy] = 1.0
-    fan_def = [fan_start, fan_stop, 21]
+    fan_def = [fan_start, fan_stop, num_rays]
 
     fans_x: list[list[float]] = []
     fans_y: list[list[float | None]] = []
@@ -77,7 +79,7 @@ def _trace_fan_series(
                 fi=fi,
                 wavelength_nm=wavelength_nm,
                 foc=foc,
-                num_rays=21,
+                num_rays=num_rays,
                 image_point=image_point,
             )
             )
