@@ -1,4 +1,4 @@
-/** Verifies persistent glass-tool registrations and current store reads. */
+/** Verifies persistent registrations return direct catalog lookups from the current store. */
 import type { ReactNode } from "react";
 import { renderHook } from "@testing-library/react";
 import { createStore } from "zustand";
@@ -42,7 +42,16 @@ describe("useGlassCatalogWebMCP", () => {
     rerender();
     expect(
       await tool.execute({}, { signal: new AbortController().signal }),
-    ).toBe('{"glasses":[]}');
+    ).toEqual({
+      CDGM: {},
+      Hikari: {},
+      Hoya: {},
+      Ohara: {},
+      Schott: {},
+      Sumita: {},
+      Special: {},
+      Custom: {},
+    });
     store.getState().toggleCatalog("Schott");
     rerender();
     expect(registerTool).toHaveBeenCalledTimes(1);
