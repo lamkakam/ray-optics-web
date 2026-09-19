@@ -1,588 +1,47 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { useCallback, useMemo, useState } from "react";
 import { MathJaxContext } from "better-react-mathjax";
-import { usePathname, useRouter } from "next/navigation";
-import { useStore } from "zustand";
 import { usePyodide } from "@/shared/hooks/usePyodide";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
-import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
-import { Progress } from "@/shared/components/primitives/Progress";
 import { Layout } from "@/shared/components/layout/Layout";
-import { AppShellProvider } from "@/app/AppShellContext";
-import { UnappliedOptimizationResultModal } from "@/app/UnappliedOptimizationResultModal";
-import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
-import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
-import { useOptimizationStore } from "@/features/optimization/providers/OptimizationStoreProvider";
-import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { applyOptimizationModelToEditor } from "@/features/optimization/lib/applyOptimizationModelToEditor";
 import { GlassCatalogProvider } from "@/shared/components/providers/GlassCatalogProvider";
-import { loadGlassCatalogs } from "@/features/glass-map/lib/glassCatalogLoader";
-import {
-  getPageDefinition,
-  getPageDefinitionForPathname,
-  type PageKey,
-} from "@/shared/lib/navigation/pageDefinitions";
-import {
-  createPageNavigationTools,
-  type OptimizationNavigationAction,
-  type OptimizationNavigationResult,
-  type PageNavigationResult,
-} from "@/app/pageNavigationWebMcp";
-import { useWebMCP } from "@/shared/hooks/useWebMCP";
-import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
-import {
-  isPersistedCustomGlassRow,
-  quarantinePersistedCustomGlass,
-  quarantineStoredCustomGlassRow,
-  readStoredCustomGlassRows,
-} from "@/features/import-custom-glass/lib/customGlassStorage";
-import type {
-  CompleteGlassCatalogsData,
-  UserDefinedMaterialsData,
-} from "@/features/glass-map/types/glassMap";
+import { AppShellProvider } from "@/app/AppShellContext";
+import { AppInitializationOverlay } from "@/app/AppInitializationOverlay";
+import { UnappliedOptimizationResultModal } from "@/app/UnappliedOptimizationResultModal";
+import { useAppShellNavigation } from "@/app/hooks/useAppShellNavigation";
+import { useAppShellGlassCatalogs } from "@/app/hooks/useAppShellGlassCatalogs";
 
 /** Routed content rendered inside the shared application chrome. */
 interface AppShellProps {
   readonly children: React.ReactNode;
 }
 
-/** Returns the current path, query, and hash without the origin. */
-function getCurrentWindowHref() {
-  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
-}
-
-/** Resolves a possibly relative history URL to its pathname. */
-function getPathnameFromHref(href: string) {
-  return new URL(href, window.location.origin).pathname;
-}
-
-/** Full tracked browser-history entry, including Next.js router state. */
-interface HistoryEntry {
-  readonly href: string;
-  readonly state: unknown;
-}
-
-/** Shell-local initial catalog preload lifecycle. */
-type GlassCatalogPreloadStatus = "loading" | "loaded" | "error";
-
 /**
- * Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wide glass-catalog preloading, the global error modal, the loading overlay, Optimization leave guards, `MathJaxContext`, and common app chrome for all routed pages.
- *
- * @remarks
- * ## Responsibilities
- * - Calls `usePyodide()` once for the app tree
- * - Displays determinate initialization progress from `usePyodide().initProgress`
- * - Loads normalized glass catalog data via `loadGlassCatalogs()` when `GlassMapStore.catalogsData` is not already available
- * - Hydrates valid persisted custom glass rows from IndexedDB into Pyodide after built-in catalog loading succeeds and before catalog preload is marked loaded
- * - Quarantines invalid or worker-rejected persisted custom glass rows and reports one warning after initialization
- * - Owns glass-catalog preload status/error locally and commits only successful data into `GlassMapStore`
- * - Registers an app-wide `beforeunload` guard for reload, tab close, typed URL, and external navigation
- * - Registers the global `set_active_page`, `get_active_page`, and `resolve_optimization_navigation` WebMCP tools for the persistent client-side shell
- * - Uses the shared WebMCP validation and cancellation helpers used by page-scoped tools, keeping shell navigation and feature tools on one error-path contract
- * - Allows browser back/forward navigation between app routes without native confirmation, while keeping the Optimization unapplied-result modal as the browser-history guard for unapplied results
- * - Guards in-app SideNav navigation away from `/optimization` when an optimized result has not been applied to the Editor
- * - Provides `proxy`, `isReady`, and `openErrorModal` through `AppShellProvider`
- * - Injects app-wide glass catalog state through `GlassCatalogProvider`, combining local preload status/error with successful store data
- * - Renders the shared `Layout` shell around route content
- * - Renders `ErrorModal` and `LoadingOverlay` outside the routed content area
- * - Renders `UnappliedOptimizationResultModal` outside routed content so the warning can be shown even while leaving the Optimization route
- * - Shows the glass-catalog preload as the `90%` initialization milestone while the initial catalog preload is in flight
- *
- * ## Detailed Navigation and Preload Contract
- * Guarded Optimization navigation awaits the same atomic editor synchronization helper as the page Apply button. It navigates and marks the result applied only on success; failures retain state and open the existing error modal.
- *
- * ## Rendered Structure
- * ```tsx
- * <MathJaxContext>
- * <AppShellProvider value={{ proxy, isReady, openErrorModal }}>
- * <GlassCatalogProvider value={{ catalogs, lookupMaps, error, isLoaded, isLoading, preload }}>
- * <Layout onNavigate={guardedNavigate}>{children}</Layout>
- * </GlassCatalogProvider>
- * <ErrorModal ... />
- * <UnappliedOptimizationResultModal ... />
- * {showLoadingOverlay && (
- * <LoadingOverlay
- * contents={
- * <>
- * <span>{overlayProgress.status}</span>
- * <Progress value={overlayProgress.value} ariaLabel="Initialization progress" />
- * </>
- * }
- * />
- * )}
- * </AppShellProvider>
- * </MathJaxContext>
- * ```
- *
- * ## Notes
- * - `app/ClientApplication.tsx` owns the app-wide providers, and `app/ClientOnlyApplication.tsx` prevents this shell and routed content from being server-rendered.
- * - This replaces the former route-group shell so the public URLs remain unchanged after flattening the routes.
- * - The loading overlay stays visible until both Pyodide is ready and the initial glass-catalog preload has completed successfully.
- * - While Pyodide initializes, the overlay uses the milestone state supplied by `usePyodide`.
- * - Once Pyodide is ready and catalog preload begins, the overlay displays `"Preloading glass catalogs"` at `90%`; the overlay is removed after catalog preload succeeds.
- * - The catalog preload remains blocking while persisted custom glasses are replayed into `addUserDefinedGlasses` one row at a time.
- * - Accepted persisted rows are merged into `catalogsData.Custom` before `GlassMapStore.setCatalogsData(...)` is called.
- * - Malformed persisted rows, unsupported row types, and rows rejected by the worker are moved from `customGlasses` to `quarantinedCustomGlasses` when possible.
- * - After startup completes, AppShell reports one warning listing the quarantined row count and labels.
- * - If catalog preload fails, the overlay remains blocking and displays the AppShell-local catalog error. The failed result is not committed into `GlassMapStore`.
- * - `GlassMapStore.catalogsData` is the source of truth for already loaded catalogs; AppShell does not read settled data from the loader.
- * - `GlassCatalogProvider.error`, `isLoaded`, and `isLoading` are derived from AppShell-local preload status plus `GlassMapStore.catalogsData`; `catalogs` and `lookupMaps` come from `GlassMapStore`.
- * - `beforeunload` always calls `preventDefault()` and sets `event.returnValue` so reload, typed URL, tab close, and external navigation show the native browser prompt anywhere in the app.
- * - In-app navigation away from `/optimization` opens a non-dismissible `UnappliedOptimizationResultModal` instead of pushing the requested route immediately.
- * - `Stay` clears the pending route and remains on Optimization.
- * - `Leave` pushes the pending route without applying the Optimization-local model.
- * - `Apply to Editor` applies the Optimization-local optical model through `applyOptimizationModelToEditor()`, clears the optimization store's unapplied-result marker, then pushes the pending route.
- * - The global page WebMCP tools use canonical page keys and paths from the shared page-definition module; query strings and hashes are ignored for active-page lookup, and page-tool navigation uses canonical paths.
- * - `set_active_page` returns either a direct-navigation result or `pending_optimization_confirmation` with the current and requested page keys. `get_active_page` exposes the current key and any pending destination. `resolve_optimization_navigation` delegates Stay, Leave, and Apply to the same callbacks rendered by the modal.
- * - The browser-history guard tracks the complete active Optimization history entry: its full URL (including query and hash) and its original `history.state`, including Next.js App Router's `__NA` state. It listens for `popstate` in capture phase and, when navigation leaves `/optimization` with an unapplied result, stops immediate propagation before Next.js handles the event, restores that exact entry with `history.pushState(...)`, stores the attempted destination, and synchronously shows the same React warning modal without starting a router transition. Reusing the original Next history state prevents Next's patched `pushState` from dispatching a router restore.
- * - Browser back/forward navigation outside that Optimization modal path leaves the full history destination, including path, query, and hash, in place without calling `window.confirm`, and updates the tracked current URL for subsequent history navigation.
+ * Composes the persistent client shell with one usePyodide call, shared runtime
+ * and catalog providers, MathJax, and Layout. Navigation and catalog hooks own
+ * their lifecycles; the shell wires their modal/overlay state alongside its generic
+ * error modal. ClientApplication supplies stores and ClientOnlyApplication keeps
+ * this shell and routed content out of server rendering.
  */
 export default function AppShell({ children }: AppShellProps) {
-  const router = useRouter();
-  const pathname = usePathname();
   const { proxy, isReady, initProgress } = usePyodide();
-  const lensStore = useLensEditorStore();
-  const specsStore = useSpecsConfiguratorStore();
-  const optimizationStore = useOptimizationStore();
-  const glassMapStore = useGlassMapStore();
-  const catalogsData = useStore(glassMapStore, (state) => state.catalogsData);
-  const lookupMaps = useStore(glassMapStore, (state) => state.lookupMaps);
-  const hasUnappliedOptimizationResult = useStore(
-    optimizationStore,
-    (state) => state.hasUnappliedOptimizationResult,
-  );
-  /** Visibility of the shell-owned generic error modal. */
   const [errorModalOpen, setErrorModalOpen] = useState(false);
-  /** Route deferred by the unapplied-optimization navigation guard. */
-  const [pendingNavigationHref, setPendingNavigationHref] = useState<
-    string | undefined
-  >();
-  /** Immediate pending-navigation snapshot shared by modal and imperative tool callbacks. */
-  const pendingNavigationHrefRef = useRef<string | undefined>(undefined);
-  /** Initial catalog preload lifecycle after Pyodide becomes ready. */
-  const [glassCatalogPreloadStatus, setGlassCatalogPreloadStatus] = useState<
-    GlassCatalogPreloadStatus | undefined
-  >();
-  /** Blocking catalog preload error displayed by the initialization overlay. */
-  const [glassCatalogPreloadError, setGlassCatalogPreloadError] = useState<
-    string | undefined
-  >();
-  /** Persisted custom-glass labels quarantined during startup hydration. */
-  const [quarantinedCustomGlassLabels, setQuarantinedCustomGlassLabels] =
-    useState<readonly string[]>([]);
-  /** Complete active Optimization history entry restored when guarded popstate navigation is intercepted. */
-  const activeHistoryEntryRef = useRef<HistoryEntry>({
-    href: pathname,
-    state: undefined,
-  });
-  /** Whether catalog preload must keep the blocking overlay visible. */
-  const glassCatalogsLoading =
-    isReady &&
-    proxy !== undefined &&
-    catalogsData === undefined &&
-    glassCatalogPreloadStatus !== "loaded" &&
-    glassCatalogPreloadStatus !== "error";
-  /** Whether catalogs are available from the store or completed initial preload. */
-  const glassCatalogsLoaded =
-    catalogsData !== undefined || glassCatalogPreloadStatus === "loaded";
-
-  /** Returns whether a target route must be deferred behind the unapplied-result modal. */
-  const shouldWarnBeforeLeavingOptimization = useCallback(
-    (targetHref: string) =>
-      pathname === "/optimization" &&
-      getPathnameFromHref(targetHref) !== "/optimization" &&
-      hasUnappliedOptimizationResult,
-    [hasUnappliedOptimizationResult, pathname],
+  const openErrorModal = useCallback(() => setErrorModalOpen(true), []);
+  const { guardedNavigate, confirmationModalProps } = useAppShellNavigation(
+    proxy,
+    openErrorModal,
   );
-
-  /** Clears pending navigation and pushes an accepted route. */
-  const proceedToHref = useCallback(
-    (href: string) => {
-      pendingNavigationHrefRef.current = undefined;
-      setPendingNavigationHref(undefined);
-      router.push(href);
-    },
-    [router],
-  );
-
-  /** Resolves a supported page key through the same guard used by SideNav. */
-  const requestPageNavigation = useCallback(
-    (page: PageKey): PageNavigationResult => {
-      const definition = getPageDefinition(page);
-      if (definition === undefined) {
-        throw new Error(`Unknown application page: ${page}`);
-      }
-
-      if (shouldWarnBeforeLeavingOptimization(definition.path)) {
-        pendingNavigationHrefRef.current = definition.path;
-        setPendingNavigationHref(definition.path);
-        const currentPage = getPageDefinitionForPathname(pathname);
-        if (currentPage === undefined) {
-          throw new Error(`Unknown application pathname: ${pathname}`);
-        }
-        return {
-          status: "pending_optimization_confirmation",
-          currentPage: currentPage.key,
-          requestedPage: page,
-        };
-      }
-
-      proceedToHref(definition.path);
-      return { status: "navigated", page };
-    },
-    [pathname, proceedToHref, shouldWarnBeforeLeavingOptimization],
-  );
-
-  /** Intercepts in-app navigation away from an unapplied Optimization result. */
-  const guardedNavigate = useCallback(
-    (href: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
-      event?.preventDefault();
-      const targetPage = getPageDefinitionForPathname(
-        getPathnameFromHref(href),
-      );
-      if (targetPage !== undefined) {
-        return requestPageNavigation(targetPage.key).status === "navigated";
-      }
-
-      if (shouldWarnBeforeLeavingOptimization(href)) {
-        pendingNavigationHrefRef.current = href;
-        setPendingNavigationHref(href);
-        return false;
-      }
-
-      proceedToHref(href);
-      return true;
-    },
-    [proceedToHref, requestPageNavigation, shouldWarnBeforeLeavingOptimization],
-  );
-
-  /** Reads the shell's canonical current page for `get_active_page`. */
-  const getCurrentPage = useCallback((): PageKey => {
-    const page = getPageDefinitionForPathname(pathname);
-    if (page === undefined) {
-      throw new Error(`Unknown application pathname: ${pathname}`);
-    }
-    return page.key;
-  }, [pathname]);
-
-  /** Resolves the shell's pending href to a canonical page key when possible. */
-  const getPendingNavigation = useCallback(() => {
-    const pendingHref = pendingNavigationHrefRef.current;
-    if (pendingHref === undefined) {
-      return undefined;
-    }
-    return getPageDefinitionForPathname(getPathnameFromHref(pendingHref))?.key;
-  }, []);
-
-  /** Shared Stay/Leave/Apply implementation. Forwards cancellation to the editor commit boundary so a cancelled pending Apply retains the result and destination without mutating editor/specs stores or navigating. */
-  const resolveOptimizationNavigation = useCallback(
-    async (
-      action: OptimizationNavigationAction,
-      signal?: AbortSignal,
-    ): Promise<OptimizationNavigationResult> => {
-      const href = pendingNavigationHrefRef.current;
-      if (href === undefined) {
-        return { status: "no_pending_navigation" };
-      }
-
-      assertWebMcpNotCancelled(signal);
-      const destinationPage = getPageDefinitionForPathname(
-        getPathnameFromHref(href),
-      )?.key;
-
-      if (action === "stay") {
-        pendingNavigationHrefRef.current = undefined;
-        setPendingNavigationHref(undefined);
-        return { status: "stayed" };
-      }
-
-      if (action === "leave") {
-        proceedToHref(href);
-        return {
-          status: "left",
-          ...(destinationPage === undefined ? {} : { page: destinationPage }),
-        } as OptimizationNavigationResult;
-      }
-
-      const model = optimizationStore.getState().optimizationModel;
-      if (model === undefined) {
-        pendingNavigationHrefRef.current = undefined;
-        setPendingNavigationHref(undefined);
-        return { status: "no_pending_navigation" };
-      }
-      if (proxy === undefined) {
-        return { status: "no_pending_navigation" };
-      }
-
-      try {
-        await applyOptimizationModelToEditor({
-          model,
-          lensStore,
-          specsStore,
-          proxy,
-          signal,
-        });
-        assertWebMcpNotCancelled(signal);
-        optimizationStore.getState().markOptimizationResultAppliedToEditor();
-        proceedToHref(href);
-        return {
-          status: "applied_and_left",
-          ...(destinationPage === undefined ? {} : { page: destinationPage }),
-        } as OptimizationNavigationResult;
-      } catch (error: unknown) {
-        if (!signal?.aborted) {
-          setErrorModalOpen(true);
-        }
-        throw error;
-      }
-    },
-    [lensStore, optimizationStore, proceedToHref, proxy, specsStore],
-  );
-
-  /** Dismisses the warning while remaining on Optimization. */
-  const handleStayOnOptimization = useCallback(() => {
-    void resolveOptimizationNavigation("stay").catch(() => undefined);
-  }, [resolveOptimizationNavigation]);
-
-  /** Leaves without applying the Optimization-local model. */
-  const handleLeaveOptimization = useCallback(() => {
-    void resolveOptimizationNavigation("leave").catch(() => undefined);
-  }, [resolveOptimizationNavigation]);
-
-  /** Atomically applies the optimized model and navigates only after success. */
-  const handleApplyOptimizationToEditorAndLeave = useCallback(() => {
-    void resolveOptimizationNavigation("apply_to_editor").catch(
-      () => undefined,
-    );
-  }, [resolveOptimizationNavigation]);
-
-  /** Global page tools remain mounted with the persistent application shell. */
-  const pageNavigationTools = useMemo(
-    () =>
-      createPageNavigationTools({
-        getCurrentPage,
-        getPendingNavigation,
-        navigateToPage: requestPageNavigation,
-        resolveOptimizationNavigation,
-      }),
-    [
-      getCurrentPage,
-      getPendingNavigation,
-      requestPageNavigation,
-      resolveOptimizationNavigation,
-    ],
-  );
-  useWebMCP(pageNavigationTools.setActivePage);
-  useWebMCP(pageNavigationTools.getActivePage);
-  useWebMCP(pageNavigationTools.resolveOptimizationNavigation);
-
-  useEffect(() => {
-    const handler = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
-
-  useEffect(() => {
-    activeHistoryEntryRef.current = {
-      href: getCurrentWindowHref(),
-      state: window.history.state,
-    };
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: PopStateEvent) => {
-      const nextHref = getCurrentWindowHref();
-      const activeEntry = activeHistoryEntryRef.current;
-      const previousPathname = getPathnameFromHref(activeEntry.href);
-      const nextPathname = getPathnameFromHref(nextHref);
-      if (
-        previousPathname === "/optimization" &&
-        nextPathname !== "/optimization" &&
-        optimizationStore.getState().hasUnappliedOptimizationResult
-      ) {
-        event.stopImmediatePropagation();
-        window.history.pushState(activeEntry.state, "", activeEntry.href);
-        pendingNavigationHrefRef.current = nextHref;
-        flushSync(() => setPendingNavigationHref(nextHref));
-        return;
-      }
-
-      activeHistoryEntryRef.current = {
-        href: nextHref,
-        state: event.state,
-      };
-    };
-
-    window.addEventListener("popstate", handler, { capture: true });
-    return () =>
-      window.removeEventListener("popstate", handler, { capture: true });
-  }, [optimizationStore]);
-
-  useEffect(() => {
-    if (!isReady || proxy === undefined) {
-      return;
-    }
-
-    if (catalogsData !== undefined) {
-      return;
-    }
-
-    if (glassCatalogPreloadStatus !== undefined) {
-      return;
-    }
-
-    let cancelled = false;
-
-    void (async () => {
-      const result = await loadGlassCatalogs(proxy);
-      if (cancelled) {
-        return;
-      }
-
-      if (result.error === undefined) {
-        const hydratedData: CompleteGlassCatalogsData = {
-          ...result.data,
-          Custom: { ...result.data.Custom },
-        };
-        const quarantinedLabels: string[] = [];
-        const storedRows = await readStoredCustomGlassRows().catch(() => []);
-        for (const row of storedRows) {
-          if (!isPersistedCustomGlassRow(row)) {
-            const label =
-              typeof row === "object" &&
-              row !== null &&
-              "label" in row &&
-              typeof row.label === "string"
-                ? row.label
-                : "unlabeled";
-            quarantinedLabels.push(label);
-            await quarantineStoredCustomGlassRow(row, label).catch(
-              () => undefined,
-            );
-            continue;
-          }
-
-          try {
-            const added: UserDefinedMaterialsData =
-              await proxy.addUserDefinedGlasses([
-                {
-                  name: row.label,
-                  pairs: row.pairs,
-                },
-              ]);
-            hydratedData.Custom = {
-              ...hydratedData.Custom,
-              ...added,
-            };
-          } catch {
-            quarantinedLabels.push(row.label);
-            await quarantinePersistedCustomGlass(row).catch(() => undefined);
-          }
-        }
-
-        if (quarantinedLabels.length > 0) {
-          setQuarantinedCustomGlassLabels(quarantinedLabels);
-        }
-        glassMapStore.getState().setCatalogsData(hydratedData);
-        setGlassCatalogPreloadStatus("loaded");
-        setGlassCatalogPreloadError(undefined);
-        return;
-      }
-
-      setGlassCatalogPreloadStatus("error");
-      setGlassCatalogPreloadError(result.error);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [catalogsData, glassCatalogPreloadStatus, glassMapStore, isReady, proxy]);
-
-  /** Stable runtime context value shared by routed pages. */
+  const {
+    glassCatalogContextValue,
+    quarantinedCustomGlassLabels,
+    dismissQuarantineWarning,
+  } = useAppShellGlassCatalogs(isReady, proxy);
   const contextValue = useMemo(
-    () => ({
-      proxy,
-      isReady,
-      openErrorModal: () => setErrorModalOpen(true),
-    }),
-    [proxy, isReady],
+    () => ({ proxy, isReady, openErrorModal }),
+    [proxy, isReady, openErrorModal],
   );
-  /** Stable catalog context combining store data with shell-local preload state. */
-  const glassCatalogContextValue = useMemo(
-    () => ({
-      catalogs: catalogsData,
-      lookupMaps,
-      error: glassCatalogPreloadError,
-      isLoaded: glassCatalogsLoaded,
-      isLoading: glassCatalogsLoading,
-      preload: async () => {
-        if (proxy === undefined) {
-          return undefined;
-        }
-
-        if (catalogsData !== undefined) {
-          setGlassCatalogPreloadStatus("loaded");
-          setGlassCatalogPreloadError(undefined);
-          return { data: catalogsData, error: undefined };
-        }
-
-        setGlassCatalogPreloadStatus("loading");
-        setGlassCatalogPreloadError(undefined);
-        const result = await loadGlassCatalogs(proxy);
-        if (result.error === undefined) {
-          glassMapStore.getState().setCatalogsData(result.data);
-          setGlassCatalogPreloadStatus("loaded");
-          setGlassCatalogPreloadError(undefined);
-        } else {
-          setGlassCatalogPreloadStatus("error");
-          setGlassCatalogPreloadError(result.error);
-        }
-        return result;
-      },
-    }),
-    [
-      catalogsData,
-      glassCatalogPreloadError,
-      glassCatalogsLoaded,
-      glassCatalogsLoading,
-      glassMapStore,
-      lookupMaps,
-      proxy,
-    ],
-  );
-  /** Whether Pyodide or catalog initialization still blocks the application. */
-  const showLoadingOverlay =
-    !isReady ||
-    (proxy !== undefined &&
-      (glassCatalogsLoading || glassCatalogPreloadError !== undefined));
-  /** Active Pyodide milestone or the fixed catalog-preload milestone. */
-  const overlayProgress =
-    isReady && proxy !== undefined && glassCatalogsLoading
-      ? { value: 90, status: "Preloading glass catalogs" }
-      : initProgress;
-  /** Status or error content rendered inside the blocking overlay. */
-  const overlayContents =
-    isReady && proxy !== undefined && glassCatalogPreloadError !== undefined ? (
-      <span className="text-center text-sm text-red-600 dark:text-red-400">
-        {glassCatalogPreloadError}
-      </span>
-    ) : (
-      <div className="flex w-72 max-w-[70vw] flex-col items-center gap-2">
-        <span className="text-center text-sm text-gray-700 dark:text-gray-300">
-          {overlayProgress.status}
-        </span>
-        <Progress
-          value={overlayProgress.value}
-          ariaLabel="Initialization progress"
-        />
-      </div>
-    );
 
   return (
     <MathJaxContext>
@@ -594,25 +53,21 @@ export default function AppShell({ children }: AppShellProps) {
           isOpen={errorModalOpen}
           onClose={() => setErrorModalOpen(false)}
         />
-        <UnappliedOptimizationResultModal
-          isOpen={pendingNavigationHref !== undefined}
-          onStay={handleStayOnOptimization}
-          onLeave={handleLeaveOptimization}
-          onApplyToEditor={handleApplyOptimizationToEditorAndLeave}
-        />
+        <UnappliedOptimizationResultModal {...confirmationModalProps} />
         {quarantinedCustomGlassLabels.length > 0 && (
           <ErrorModal
             isOpen
             message={`${quarantinedCustomGlassLabels.length} persisted custom glass entr${quarantinedCustomGlassLabels.length === 1 ? "y was" : "ies were"} quarantined: ${quarantinedCustomGlassLabels.join(", ")}`}
-            onClose={() => setQuarantinedCustomGlassLabels([])}
+            onClose={dismissQuarantineWarning}
           />
         )}
-        {showLoadingOverlay && (
-          <LoadingOverlay
-            title="Initializing Ray Optics"
-            contents={overlayContents}
-          />
-        )}
+        <AppInitializationOverlay
+          isReady={isReady}
+          hasProxy={proxy !== undefined}
+          initProgress={initProgress}
+          glassCatalogsLoading={glassCatalogContextValue.isLoading}
+          glassCatalogPreloadError={glassCatalogContextValue.error}
+        />
       </AppShellProvider>
     </MathJaxContext>
   );
