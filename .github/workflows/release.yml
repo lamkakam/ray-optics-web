@@ -16,6 +16,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      release_artifact_name: release-distribution-${{ github.run_id }}-${{ github.run_attempt }}
+      cloudflare_artifact_name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
     env:
       ARCHIVE_NAME: ray-optics-web-${{ github.ref_name }}-dist.zip
     steps:
@@ -62,7 +65,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v7
         with:
-          name: release-distribution-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.build.outputs.release_artifact_name }}
       - name: Create or update GitHub release
         run: |
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
@@ -82,7 +85,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v7
         with:
-          name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.build.outputs.cloudflare_artifact_name }}
           path: cloudflare-pages
       - name: Initialize Cloudflare Pages project
         env:

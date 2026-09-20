@@ -19,6 +19,19 @@ The compiled archive and Cloudflare directory are uploaded as workflow
 artifacts before release publication. Publishing is idempotent: a missing
 release is created, while an existing release receives a replacement archive.
 
+Artifact names include the build's workflow run ID and attempt number. The
+build exports these names as job outputs, which release publication and
+Cloudflare deployment use to download their artifacts. Retrying either
+downstream job reuses the successful build's artifact names even when the
+retry has a higher attempt number. Rerunning the entire workflow builds and
+selects new artifacts for the new attempt.
+
+Downstream retries require the original artifacts to remain available. The
+Cloudflare artifact is retained for one day; the release-distribution artifact
+uses the repository's default artifact retention period. If an artifact has
+expired or been deleted, rerun the entire workflow to rebuild it before
+publication or deployment.
+
 The root-path export is also copied to a short-lived `cloudflare-pages`
 workflow artifact. `npm run prepare:cloudflare` applies the same clean-copy
 policy and adds a Cloudflare Pages `_headers` file containing
