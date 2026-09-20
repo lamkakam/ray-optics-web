@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  deployments: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -73,7 +74,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   deploy-cloudflare:
-    if: ${{ false }}
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -84,8 +84,49 @@ jobs:
         with:
           name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: cloudflare-pages
+      - name: Initialize Cloudflare Pages project
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          project_url="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/ray-optics-web"
+          status=$(curl --silent --show-error --output project.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "$project_url")
+          if [ "$status" = 404 ]; then
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              --header 'Content-Type: application/json' \
+              --data '{"name":"ray-optics-web","production_branch":"main"}' \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects"
+          elif [ "$status" != 200 ]; then
+            cat project.json
+            exit 1
+          fi
       - uses: cloudflare/wrangler-action@v4
         with:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: pages deploy cloudflare-pages --project-name=ray-optics-web --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attach Cloudflare Pages custom domain
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          domain_url="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/ray-optics-web/domains/ray-optics-web.vestibulum.xyz"
+          status=$(curl --silent --show-error --output domain.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "$domain_url")
+          if [ "$status" = 404 ]; then
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              --header 'Content-Type: application/json' \
+              --data '{"name":"ray-optics-web.vestibulum.xyz"}' \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/ray-optics-web/domains"
+          elif [ "$status" != 200 ]; then
+            cat domain.json
+            exit 1
+          fi

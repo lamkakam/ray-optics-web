@@ -28,8 +28,8 @@ Functions. See Cloudflare's documentation for [static header
 rules](https://developers.cloudflare.com/pages/configuration/headers/) and
 [Direct Upload from continuous
 integration](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
-The deployment job remains disabled until the Direct Upload project has been
-created.
+The deployment job initializes the Direct Upload project when it is missing,
+deploys the prepared artifact, and attaches the custom domain when needed.
 
 The GitHub Pages workflow in `.github/workflows/deploy.yml` performs a separate
 build with `NEXT_PUBLIC_BASE_PATH=/ray-optics-web`. Its service-worker manifest
@@ -51,10 +51,10 @@ of truth for which refs produce releases and deployments.
 
 ## One-time Cloudflare setup
 
-Create a Direct Upload Pages project named `ray-optics-web`, configure `main`
-as its production branch, and attach the custom domain
-`ray-optics-web.vestibulum.xyz`. Subsequent matching tags deploy the prepared
-static directory through `cloudflare/wrangler-action`.
+The release workflow creates the Direct Upload Pages project named
+`ray-optics-web` with `main` as its production branch when it is missing. It
+then deploys the prepared static directory through `cloudflare/wrangler-action`
+and attaches the custom domain `ray-optics-web.vestibulum.xyz` when needed.
 
 ## Local verification
 
