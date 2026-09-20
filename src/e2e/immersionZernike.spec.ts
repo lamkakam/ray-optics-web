@@ -1,9 +1,10 @@
 /**
  * Real Pyodide regression for the unchanged manual-aperture immersion objective.
  * At its exact relative fields sqrt(1/2) and 1 (0.3125 mm maximum), the
- * chief-ray reference projection rejects orientation reversals. Each failure
- * must stop loading, clear results, and allow recovery to the on-axis field
- * without an uncaught promise or closing the Zernike dialog.
+ * explicitly selected Reference sphere (projected) coordinates reject
+ * orientation reversals. Each failure must show the approved fold message,
+ * stop loading, clear results, and allow recovery to the on-axis field without
+ * an uncaught promise or closing the Zernike dialog.
  */
 import { expect, test } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
@@ -37,12 +38,16 @@ test("recovers from immersion objective Zernike folds at both off-axis fields", 
   const dialog = page.getByRole("dialog", { name: "Zernike Terms" });
   await expect(dialog.getByRole("table")).toBeVisible({ timeout: 120_000 });
   await expect(dialog.getByLabel("Wavelength")).toHaveValue("0");
+  await dialog.getByLabel("Zernike fit coordinates").selectOption("exit");
+  await expect(dialog.getByText("Loading…")).toBeHidden({ timeout: 120_000 });
+  await expect(dialog.getByRole("table")).toBeVisible();
   for (const field of ["1", "2"]) {
     await dialog.getByLabel("Half-Field").selectOption(field);
     const error = page.getByRole("dialog", { name: "Error", exact: true });
     await expect(error).toBeVisible({ timeout: 120_000 });
-    await expect(error).toContainText("Zernike calculation failed");
-    await expect(error).toContainText("fold or orientation reversal");
+    await expect(error).toContainText(
+      "Projected-pupil mapping contains a fold or orientation reversal.",
+    );
     await expect(dialog.getByRole("table")).toBeHidden();
     await expect(dialog.getByText("Loading…")).toBeHidden();
     await error.getByRole("button", { name: "OK", exact: true }).click();
