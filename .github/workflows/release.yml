@@ -57,6 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ARCHIVE_NAME: ray-optics-web-${{ github.ref_name }}-dist.zip
+      GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/download-artifact@v7
         with:
