@@ -1,0 +1,68 @@
+name: Release and deploy to Cloudflare Pages
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    env:
+      ARCHIVE_NAME: ray-optics-web-${{ github.ref_name }}-dist.zip
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: bash scripts/init-python-venv.sh
+      - run: bash scripts/build-python-wheel.sh
+      - run: npm ci
+      - name: Fetch lens data fixtures
+        run: bash scripts/fetch-lens-data.sh
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run test
+      - run: npm run build
+      - run: npm run prepare:cloudflare
+      - name: Package static export
+        working-directory: out
+        run: zip -r "$GITHUB_WORKSPACE/$ARCHIVE_NAME" .
+      - name: Create GitHub release
+        run: gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" --generate-notes --title "$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: cloudflare-pages
+          retention-days: 1
+
+  deploy-cloudflare:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    environment:
+      name: cloudflare-pages
+      url: https://ray-optics-web.vestibulum.xyz/
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: cloudflare-pages
+      - uses: cloudflare/wrangler-action@v4
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: pages deploy cloudflare-pages --project-name=ray-optics-web --branch=main

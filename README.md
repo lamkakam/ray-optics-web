@@ -98,6 +98,10 @@ npm run build
 npm run serve
 ```
 
+Production releases and both static hosting targets are driven by version
+tags. See [Releases and deployments](./DEPLOYMENT.md) for the tag format,
+separate build paths, Cloudflare requirements, and local verification steps.
+
 The tracked root-level reports are refreshed explicitly with `npm run generate:third-party-licenses`; this requires `src/python/.venv` to have been initialized first and refreshes both `THIRD-PARTY-LICENSES.md` and `THIRD-PARTY-PYTHON-LICENSES.md`. To refresh only the tracked Python report, run `npm run generate:python-third-party-licenses` after initializing the venv; it updates only `THIRD-PARTY-PYTHON-LICENSES.md`. The production build also generates deployment copies at `out/THIRD-PARTY-LICENSES.md` and `out/THIRD-PARTY-PYTHON-LICENSES.md` through `postbuild`.
 
 ### Local mutation testing
