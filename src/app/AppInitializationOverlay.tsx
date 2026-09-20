@@ -9,6 +9,8 @@ interface AppInitializationOverlayProps {
   readonly isReady: boolean;
   readonly hasProxy: boolean;
   readonly initProgress: InitProgress;
+  /** Approved initialization failure text supplied by usePyodide. */
+  readonly initializationError?: string;
   readonly glassCatalogsLoading: boolean;
   readonly glassCatalogPreloadError: string | undefined;
 }
@@ -16,13 +18,14 @@ interface AppInitializationOverlayProps {
 /**
  * Blocks the application until runtime and initial catalog loading finish.
  * Uses runtime milestones before readiness, then the 90% catalog milestone.
- * A catalog failure replaces progress with its error while retaining the overlay;
+ * Initialization or catalog failures replace progress with safe text while retaining the overlay;
  * catalog state only blocks a ready runtime when its worker proxy is available.
  */
 export function AppInitializationOverlay({
   isReady,
   hasProxy,
   initProgress,
+  initializationError,
   glassCatalogsLoading,
   glassCatalogPreloadError,
 }: AppInitializationOverlayProps) {
@@ -38,10 +41,13 @@ export function AppInitializationOverlay({
     isReady && hasProxy && glassCatalogsLoading
       ? { value: 90, status: "Preloading glass catalogs" }
       : initProgress;
+  const failureMessage =
+    initializationError ??
+    (isReady && hasProxy ? glassCatalogPreloadError : undefined);
   const overlayContents =
-    isReady && hasProxy && glassCatalogPreloadError !== undefined ? (
+    failureMessage !== undefined ? (
       <span className="text-center text-sm text-red-600 dark:text-red-400">
-        {glassCatalogPreloadError}
+        {failureMessage}
       </span>
     ) : (
       <div className="flex w-72 max-w-[70vw] flex-col items-center gap-2">

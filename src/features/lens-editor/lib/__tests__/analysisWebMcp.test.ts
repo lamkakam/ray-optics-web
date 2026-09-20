@@ -707,3 +707,57 @@ describe("analysis WebMCP tools", () => {
     expect(s.getZernikeCoefficients).toHaveBeenCalledTimes(2);
   });
 });
+
+it("shares one safe projected-pupil rejection between the GUI loader and WebMCP", async () => {
+  const {
+    runPyodideOperation,
+    getPyodideErrorMessage,
+    withPyodideErrorHandling,
+  } = await import("@/shared/lib/pyodideErrors");
+  const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+  _resetAnalysisCache();
+  const s = setup();
+  const message =
+    "Projected-pupil mapping contains a fold or orientation reversal.";
+  const original = new Error(
+    `Traceback (most recent call last):\n  File "/private/model.py", line 1\nProjectedPupilGeometryError: ${message}`,
+  );
+  const calculate = jest.fn(() =>
+    runPyodideOperation("getZernikeCoefficients", () => {
+      throw original;
+    }),
+  );
+  const proxy = withPyodideErrorHandling({
+    getZernikeCoefficients: calculate,
+  }) as unknown as PyodideWorkerAPI;
+  const tools = createAnalysisTools({ ...s, proxy, imagePoint: "centroid" });
+  try {
+    const gui = loadZernikeData({
+      proxy,
+      model,
+      fieldIndex: 0,
+      wavelengthIndex: 1,
+      ordering: "fringe",
+      numTerms: 37,
+      pupilSpace: "entrance",
+      imagePoint: "centroid",
+    }).catch((reason: unknown) => reason);
+    const web = Promise.resolve(
+      tools.getZernikeTerms.execute(
+        {},
+        { signal: new AbortController().signal },
+      ),
+    ).catch((reason: unknown) => reason);
+    const [guiError, webError] = await Promise.all([gui, web]);
+    expect(getPyodideErrorMessage(guiError)).toBe(message);
+    expect(getPyodideErrorMessage(webError)).toBe(message);
+    expect(calculate).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      "[Pyodide:getZernikeCoefficients]",
+      original,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+  } finally {
+    jest.restoreAllMocks();
+  }
+});

@@ -24,7 +24,8 @@ interface AnalysisPlotContainerProps {
   /** Pyodide worker proxy; handlers no-op if `undefined` */
   readonly proxy: PyodideWorkerAPI | undefined;
   /** Called when any async plot call throws */
-  readonly onError: () => void;
+  /** Forwards the failure to the shell for shared safe-message presentation. */
+  readonly onError: (error?: unknown) => void;
   /** Forwarded to `AnalysisPlotView` */
   readonly autoHeight?: boolean;
 }
@@ -153,8 +154,8 @@ export function AnalysisPlotContainer({
         }
 
         commitAnalysisPlotResult(result, store);
-      } catch {
-        if (isCurrent()) onErrorRef.current();
+      } catch (error) {
+        if (isCurrent()) onErrorRef.current(error);
       } finally {
         if (isCurrent()) store.getState().setPlotLoading(false);
       }

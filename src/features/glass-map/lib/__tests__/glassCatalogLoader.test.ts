@@ -71,7 +71,7 @@ describe("loadGlassCatalogs", () => {
 
     await expect(loadGlassCatalogs(proxy)).resolves.toEqual({
       data: undefined,
-      error: "Catalog preload failed",
+      error: "The calculation could not be completed. Please try again.",
     });
   });
 
@@ -99,7 +99,7 @@ describe("loadGlassCatalogs", () => {
 
     await expect(loadGlassCatalogs(proxy)).resolves.toEqual({
       data: undefined,
-      error: "Temporary failure",
+      error: "The calculation could not be completed. Please try again.",
     });
     await expect(loadGlassCatalogs(proxy)).resolves.toEqual({
       data: expect.objectContaining({ Schott: {} }),

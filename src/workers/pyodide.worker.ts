@@ -2,6 +2,10 @@
  * Long-lived Pyodide module worker for off-main-thread RayOptics computation.
  *
  * @remarks
+ * Every public RPC logs original failures through the shared error policy before
+ * returning stack-free safe errors. Optimization report diagnostics are logged and
+ * stripped at the same boundary; numerical results and rollback state are preserved.
+ *
  * Public computations are stateless: each builds an optical model inside one
  * `runPython` call using a disposable copy of the initialized Python globals. The
  * singleton owns only the initialized runtime, imports, user-defined material
@@ -20,7 +24,7 @@
  * collected after execution; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.33.0` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.33.1` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -32,6 +36,7 @@
  * parsing, and transport failures may still reject. Stop requests affect only the
  * matching active run id.
  */
+import { runPyodideOperation } from "@/shared/lib/pyodideErrors";
 import { expose, releaseProxy } from "comlink";
 import { loadPyodide, version } from "pyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -307,49 +312,54 @@ from rayoptics_web_utils.optimization.failure_reports import (
  * Repeated calls are no-ops except for reporting the ready milestone.
  */
 export async function init(onProgress?: InitProgressCallback): Promise<void> {
-  try {
-    if (pyodide) {
-      await emitInitProgress(onProgress, 100, "Ready");
-      return;
-    }
+  return runPyodideOperation("init", async () => {
     try {
-      await emitInitProgress(onProgress, 0, "Starting worker");
-      await emitInitProgress(onProgress, 10, "Loading Pyodide loader");
-      await emitInitProgress(onProgress, 25, "Starting Pyodide runtime");
-      const createPyodideModule = await loadPyodideModule(CDN);
-      pyodide = await loadPyodide({
-        indexURL: `${CDN}/`,
-        createPyodideModule,
-      });
+      if (pyodide) {
+        await emitInitProgress(onProgress, 100, "Ready");
+        return;
+      }
+      try {
+        await emitInitProgress(onProgress, 0, "Starting worker");
+        await emitInitProgress(onProgress, 10, "Loading Pyodide loader");
+        await emitInitProgress(onProgress, 25, "Starting Pyodide runtime");
+        const createPyodideModule = await loadPyodideModule(CDN);
+        pyodide = await loadPyodide({
+          indexURL: `${CDN}/`,
+          createPyodideModule,
+        });
 
-      await emitInitProgress(onProgress, 40, "Loading Pyodide packages");
-      await pyodide.loadPackage([
-        "micropip",
-        "numpy",
-        "scipy",
-        "matplotlib",
-        "pandas",
-        "xlrd",
-        "traitlets",
-        "packaging",
-        "pyyaml",
-        "requests",
-        "deprecation",
-      ]);
+        await emitInitProgress(onProgress, 40, "Loading Pyodide packages");
+        await pyodide.loadPackage([
+          "micropip",
+          "numpy",
+          "scipy",
+          "matplotlib",
+          "pandas",
+          "xlrd",
+          "traitlets",
+          "packaging",
+          "pyyaml",
+          "requests",
+          "deprecation",
+        ]);
 
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.33.0-py3-none-any.whl`;
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+        const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.33.1-py3-none-any.whl`;
 
-      await _init(createInitializationExecutor(pyodide), wheelUrl, onProgress);
-      await emitInitProgress(onProgress, 100, "Ready");
-    } catch (err) {
-      pyodide = null;
-      console.error(err);
-      throw err;
+        await _init(
+          createInitializationExecutor(pyodide),
+          wheelUrl,
+          onProgress,
+        );
+        await emitInitProgress(onProgress, 100, "Ready");
+      } catch (err) {
+        pyodide = null;
+        throw err;
+      }
+    } finally {
+      releaseCallbackProxy(onProgress);
     }
-  } finally {
-    releaseCallbackProxy(onProgress);
-  }
+  });
 }
 
 // ─── End of DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
@@ -1066,14 +1076,18 @@ export async function _requestOptimizationStop(
 export async function getFirstOrderData(
   opticalModel: OpticalModel,
 ): Promise<Record<string, number>> {
-  return await _getFirstOrderData(requirePyodide(), opticalModel);
+  return runPyodideOperation("getFirstOrderData", async () => {
+    return await _getFirstOrderData(requirePyodide(), opticalModel);
+  });
 }
 
 /** Builds and updates the model, then returns ordered surface semi-diameters. */
 export async function getSurfaceSemiDiameters(
   opticalModel: OpticalModel,
 ): Promise<number[]> {
-  return await _getSurfaceSemiDiameters(requirePyodide(), opticalModel);
+  return runPyodideOperation("getSurfaceSemiDiameters", async () => {
+    return await _getSurfaceSemiDiameters(requirePyodide(), opticalModel);
+  });
 }
 
 /** Returns a base64 lens-layout PNG with theme and diffraction overlays applied. */
@@ -1081,7 +1095,9 @@ export async function plotLensLayout(
   opticalModel: OpticalModel,
   isDark: boolean,
 ): Promise<string> {
-  return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
+  return runPyodideOperation("plotLensLayout", async () => {
+    return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
+  });
 }
 
 /** Returns all-wavelength transverse ray-fan series with blocked samples represented as gaps. Sampling defaults to 21 per fan axis. */
@@ -1091,13 +1107,15 @@ export async function getRayFanData(
   imagePoint: ImagePoint = "chief_ray",
   numRays: number = 21,
 ): Promise<RayFanData> {
-  return await _getRayFanData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    imagePoint,
-    numRays,
-  );
+  return runPyodideOperation("getRayFanData", async () => {
+    return await _getRayFanData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      imagePoint,
+      numRays,
+    );
+  });
 }
 
 /** Returns all-wavelength OPD-fan series with blocked samples represented as gaps. Sampling defaults to 21 per fan axis. */
@@ -1107,13 +1125,15 @@ export async function getOpdFanData(
   imagePoint: ImagePoint = "chief_ray",
   numRays: number = 21,
 ): Promise<OpdFanData> {
-  return await _getOpdFanData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    imagePoint,
-    numRays,
-  );
+  return runPyodideOperation("getOpdFanData", async () => {
+    return await _getOpdFanData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      imagePoint,
+      numRays,
+    );
+  });
 }
 
 /** Returns per-wavelength spot-diagram point clouds. Sampling defaults to 21 per grid dimension. */
@@ -1123,13 +1143,15 @@ export async function getSpotDiagramData(
   imagePoint: ImagePoint = "chief_ray",
   numRays: number = 21,
 ): Promise<SpotDiagramData> {
-  return await _getSpotDiagramData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    imagePoint,
-    numRays,
-  );
+  return runPyodideOperation("getSpotDiagramData", async () => {
+    return await _getSpotDiagramData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      imagePoint,
+      numRays,
+    );
+  });
 }
 
 /** Returns sagittal and tangential field-curvature data for one wavelength. */
@@ -1137,11 +1159,13 @@ export async function getFieldCurvatureData(
   opticalModel: OpticalModel,
   wavelengthIndex: number,
 ): Promise<FieldCurveData> {
-  return await _getFieldCurvatureData(
-    requirePyodide(),
-    opticalModel,
-    wavelengthIndex,
-  );
+  return runPyodideOperation("getFieldCurvatureData", async () => {
+    return await _getFieldCurvatureData(
+      requirePyodide(),
+      opticalModel,
+      wavelengthIndex,
+    );
+  });
 }
 
 /** Returns the astigmatic-separation curve for one wavelength. */
@@ -1149,18 +1173,22 @@ export async function getAstigmatismCurveData(
   opticalModel: OpticalModel,
   wavelengthIndex: number,
 ): Promise<AstigmatismCurveData> {
-  return await _getAstigmatismCurveData(
-    requirePyodide(),
-    opticalModel,
-    wavelengthIndex,
-  );
+  return runPyodideOperation("getAstigmatismCurveData", async () => {
+    return await _getAstigmatismCurveData(
+      requirePyodide(),
+      opticalModel,
+      wavelengthIndex,
+    );
+  });
 }
 
 /** Returns longitudinal spherical aberration series for all wavelengths. */
 export async function getLSAData(
   opticalModel: OpticalModel,
 ): Promise<LongitudinalSphericalAberrationData> {
-  return await _getLSAData(requirePyodide(), opticalModel);
+  return runPyodideOperation("getLSAData", async () => {
+    return await _getLSAData(requirePyodide(), opticalModel);
+  });
 }
 
 /** Returns a wavefront-map grid for one field, wavelength, and image reference. */
@@ -1171,14 +1199,16 @@ export async function getWavefrontData(
   imagePoint: ImagePoint = "chief_ray",
   numRays: number = 128,
 ): Promise<WavefrontMapData> {
-  return await _getWavefrontData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    wavelengthIndex,
-    imagePoint,
-    numRays,
-  );
+  return runPyodideOperation("getWavefrontData", async () => {
+    return await _getWavefrontData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      wavelengthIndex,
+      imagePoint,
+      numRays,
+    );
+  });
 }
 
 /** Returns sampled Strehl values across wavelength for one field, using 100 wavelength samples and 21 rays by default. */
@@ -1189,14 +1219,16 @@ export async function getStrehlVsWavelengthData(
   wavelengthSamples: number = 100,
   numRays: number = 21,
 ): Promise<StrehlVsWavelengthData> {
-  return await _getStrehlVsWavelengthData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    imagePoint,
-    wavelengthSamples,
-    numRays,
-  );
+  return runPyodideOperation("getStrehlVsWavelengthData", async () => {
+    return await _getStrehlVsWavelengthData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      imagePoint,
+      wavelengthSamples,
+      numRays,
+    );
+  });
 }
 
 /** Returns geometric-PSF points for one field and wavelength. */
@@ -1206,13 +1238,15 @@ export async function getGeoPSFData(
   wavelengthIndex: number,
   numRays: number = 128,
 ): Promise<GeoPsfData> {
-  return await _getGeoPSFData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    wavelengthIndex,
-    numRays,
-  );
+  return runPyodideOperation("getGeoPSFData", async () => {
+    return await _getGeoPSFData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      wavelengthIndex,
+      numRays,
+    );
+  });
 }
 
 /** Returns the cropped central diffraction-PSF grid, using 128 rays and a 1024-pixel maximum dimension by default. */
@@ -1224,15 +1258,17 @@ export async function getDiffractionPSFData(
   numRays: number = 128,
   maxDims: number = 1024,
 ): Promise<DiffractionPsfData> {
-  return await _getDiffractionPSFData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    wavelengthIndex,
-    imagePoint,
-    numRays,
-    maxDims,
-  );
+  return runPyodideOperation("getDiffractionPSFData", async () => {
+    return await _getDiffractionPSFData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      wavelengthIndex,
+      imagePoint,
+      numRays,
+      maxDims,
+    );
+  });
 }
 
 /** Returns diffraction-MTF sagittal and tangential series, using 128 rays and a 256-pixel maximum dimension by default. */
@@ -1244,22 +1280,26 @@ export async function getDiffractionMTFData(
   numRays: number = 128,
   maxDims: number = 256,
 ): Promise<DiffractionMtfData> {
-  return await _getDiffractionMTFData(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    wavelengthIndex,
-    imagePoint,
-    numRays,
-    maxDims,
-  );
+  return runPyodideOperation("getDiffractionMTFData", async () => {
+    return await _getDiffractionMTFData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      wavelengthIndex,
+      imagePoint,
+      numRays,
+      maxDims,
+    );
+  });
 }
 
 /** Returns third-order Seidel aberration data for the model. */
 export async function get3rdOrderSeidelData(
   opticalModel: OpticalModel,
 ): Promise<SeidelData> {
-  return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
+  return runPyodideOperation("get3rdOrderSeidelData", async () => {
+    return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
+  });
 }
 
 /** Returns explicitly ordered Zernike coefficients, defaulting to 37 Noll terms sampled in Entrance pupil space. */
@@ -1272,16 +1312,18 @@ export async function getZernikeCoefficients(
   ordering?: ZernikeOrdering,
   pupilSpace?: ZernikePupilSpace,
 ): Promise<ZernikeData> {
-  return await _getZernikeCoefficients(
-    requirePyodide(),
-    opticalModel,
-    fieldIndex,
-    wvlIndex,
-    imagePoint,
-    numTerms,
-    ordering,
-    pupilSpace,
-  );
+  return runPyodideOperation("getZernikeCoefficients", async () => {
+    return await _getZernikeCoefficients(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      wvlIndex,
+      imagePoint,
+      numTerms,
+      ordering,
+      pupilSpace,
+    );
+  });
 }
 
 /** Focuses by minimizing monochromatic RMS spot radius. */
@@ -1289,7 +1331,13 @@ export async function focusByMonoRmsSpot(
   opticalModel: OpticalModel,
   fieldIndex: number,
 ): Promise<FocusingResult> {
-  return await _focusByMonoRmsSpot(requirePyodide(), opticalModel, fieldIndex);
+  return runPyodideOperation("focusByMonoRmsSpot", async () => {
+    return await _focusByMonoRmsSpot(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+    );
+  });
 }
 
 /** Focuses by maximizing monochromatic Strehl ratio. */
@@ -1297,7 +1345,9 @@ export async function focusByMonoStrehl(
   opticalModel: OpticalModel,
   fieldIndex: number,
 ): Promise<FocusingResult> {
-  return await _focusByMonoStrehl(requirePyodide(), opticalModel, fieldIndex);
+  return runPyodideOperation("focusByMonoStrehl", async () => {
+    return await _focusByMonoStrehl(requirePyodide(), opticalModel, fieldIndex);
+  });
 }
 
 /** Focuses by minimizing polychromatic RMS spot radius. */
@@ -1305,7 +1355,13 @@ export async function focusByPolyRmsSpot(
   opticalModel: OpticalModel,
   fieldIndex: number,
 ): Promise<FocusingResult> {
-  return await _focusByPolyRmsSpot(requirePyodide(), opticalModel, fieldIndex);
+  return runPyodideOperation("focusByPolyRmsSpot", async () => {
+    return await _focusByPolyRmsSpot(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+    );
+  });
 }
 
 /** Focuses by maximizing polychromatic Strehl ratio. */
@@ -1313,56 +1369,72 @@ export async function focusByPolyStrehl(
   opticalModel: OpticalModel,
   fieldIndex: number,
 ): Promise<FocusingResult> {
-  return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
+  return runPyodideOperation("focusByPolyStrehl", async () => {
+    return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
+  });
 }
 
 /** Returns normalized data for every built-in glass catalog. */
 export async function getAllGlassCatalogsData(): Promise<AllGlassCatalogsData> {
-  return await _getAllGlassCatalogsData(requirePyodide());
+  return runPyodideOperation("getAllGlassCatalogsData", async () => {
+    return await _getAllGlassCatalogsData(requirePyodide());
+  });
 }
 
 /** Adds prevalidated user-defined materials and returns their serialized data. */
 export async function addUserDefinedGlasses(
   materials: readonly UserDefinedGlassInput[],
 ): Promise<UserDefinedMaterialsData> {
-  return await _addUserDefinedGlasses(requirePyodide(), materials);
+  return runPyodideOperation("addUserDefinedGlasses", async () => {
+    return await _addUserDefinedGlasses(requirePyodide(), materials);
+  });
 }
 
 /** Deletes user-defined materials after verifying that every name exists. */
 export async function deleteUserDefinedGlasses(
   names: readonly string[],
 ): Promise<void> {
-  await _deleteUserDefinedGlasses(requirePyodide(), names);
+  return runPyodideOperation("deleteUserDefinedGlasses", async () => {
+    await _deleteUserDefinedGlasses(requirePyodide(), names);
+  });
 }
 
 /** Replaces existing user-defined materials and returns their serialized data. */
 export async function updateUserDefinedGlasses(
   materials: readonly UserDefinedGlassInput[],
 ): Promise<UserDefinedMaterialsData> {
-  return await _updateUserDefinedGlasses(requirePyodide(), materials);
+  return runPyodideOperation("updateUserDefinedGlasses", async () => {
+    return await _updateUserDefinedGlasses(requirePyodide(), materials);
+  });
 }
 
 /** Returns serialized data for named user-defined materials. */
 export async function getUserDefinedGlasses(
   names: readonly string[],
 ): Promise<UserDefinedMaterialsData> {
-  return await _getUserDefinedGlasses(requirePyodide(), names);
+  return runPyodideOperation("getUserDefinedGlasses", async () => {
+    return await _getUserDefinedGlasses(requirePyodide(), names);
+  });
 }
 
 /** Reports whether Pyodide and the browser support shared-buffer interruption. */
 export async function canInterruptOptimization(): Promise<boolean> {
-  return (
-    pyodide !== null &&
-    typeof pyodide.setInterruptBuffer === "function" &&
-    typeof SharedArrayBuffer !== "undefined"
-  );
+  return runPyodideOperation("canInterruptOptimization", async () => {
+    return (
+      pyodide !== null &&
+      typeof pyodide.setInterruptBuffer === "function" &&
+      typeof SharedArrayBuffer !== "undefined"
+    );
+  });
 }
 
 /** Signals only the matching active optimization run. */
 export async function requestOptimizationStop(
   runId: string,
 ): Promise<{ readonly signaled: boolean }> {
-  return await _requestOptimizationStop(runId);
+  return runPyodideOperation("requestOptimizationStop", async () => {
+    return await _requestOptimizationStop(runId);
+  });
 }
 
 /** Evaluates and returns the optimization residual report without running SciPy. */
@@ -1371,12 +1443,14 @@ export async function evaluateOptimizationProblem(
   config: OptimizationConfig,
   imagePoint: ImagePoint = "chief_ray",
 ): Promise<OptimizationReport> {
-  return await _evaluateOptimizationProblem(
-    requirePyodide(),
-    opticalModel,
-    config,
-    imagePoint,
-  );
+  return runPyodideOperation("evaluateOptimizationProblem", async () => {
+    return await _evaluateOptimizationProblem(
+      requirePyodide(),
+      opticalModel,
+      config,
+      imagePoint,
+    );
+  });
 }
 
 /** Runs optimization with optional streamed progress and per-run interruption. */
@@ -1390,15 +1464,17 @@ export async function optimizeOpm(
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport> {
-  return await _optimizeOpm(
-    requirePyodide(),
-    opticalModel,
-    config,
-    imagePoint,
-    onProgress,
-    runId,
-    interruptBuffer,
-  );
+  return runPyodideOperation("optimizeOpm", async () => {
+    return await _optimizeOpm(
+      requirePyodide(),
+      opticalModel,
+      config,
+      imagePoint,
+      onProgress,
+      runId,
+      interruptBuffer,
+    );
+  });
 }
 
 /** Runs mixed glass/continuous optimization with optional progress and interruption. */
@@ -1412,15 +1488,17 @@ export async function optimizeGlasses(
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<GlassOptimizationReport> {
-  return await _optimizeGlasses(
-    requirePyodide(),
-    opticalModel,
-    config,
-    imagePoint,
-    onProgress,
-    runId,
-    interruptBuffer,
-  );
+  return runPyodideOperation("optimizeGlasses", async () => {
+    return await _optimizeGlasses(
+      requirePyodide(),
+      opticalModel,
+      config,
+      imagePoint,
+      onProgress,
+      runId,
+      interruptBuffer,
+    );
+  });
 }
 
 expose({

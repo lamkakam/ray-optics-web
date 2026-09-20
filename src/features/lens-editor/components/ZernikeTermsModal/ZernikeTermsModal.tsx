@@ -1,3 +1,4 @@
+import { getPyodideErrorMessage } from "@/shared/lib/pyodideErrors";
 import type React from "react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { MathJax } from "better-react-mathjax";
@@ -67,7 +68,7 @@ interface ZernikeTermsModalProps {
  * - On any dropdown change (field, wavelength, ordering, or fit coordinates): fetches data with the new selection.
  * - After opening, the Wavelength dropdown is user-controlled; later committed-spec changes do not reset the selection until the modal is closed and reopened.
  * - All requests share error handling: latest failures clear results and loading and
- *   show calculation context in ErrorModal. Dismissal preserves usable selectors;
+ *   show the shared approved message in ErrorModal without repeating boundary diagnostics. Dismissal preserves usable selectors;
  *   a new request clears the error. Stale successes/failures and completions after
  *   unmount are ignored through an invalidated request counter.
  * - Renders Zernike terms in a scrollable table; row count and index scheme depend on the frontend ordering selection:
@@ -169,15 +170,7 @@ function ZernikeTermsModalContent({
       } catch (reason: unknown) {
         if (requestCounter.current !== requestId) return;
         setData(undefined);
-        const detail =
-          reason instanceof Error
-            ? reason.message
-            : typeof reason === "string"
-              ? reason
-              : "Unknown calculation failure.";
-        setError(
-          `Zernike calculation failed (field index ${fieldIndex}, wavelength index ${wvlIndex}, ${ordering}): ${detail}`,
-        );
+        setError(getPyodideErrorMessage(reason));
       } finally {
         if (requestCounter.current === requestId) setLoading(false);
       }

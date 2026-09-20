@@ -29,7 +29,8 @@ interface BottomDrawerContainerProps {
   /** Pyodide worker proxy */
   readonly proxy: PyodideWorkerAPI | undefined;
   /** Called when an async operation throws */
-  readonly onError: () => void;
+  /** Forwards the failure to the shell for shared safe-message presentation. */
+  readonly onError: (error?: unknown) => void;
   /** Whether the drawer is draggable (true for LG layout, false for SM) */
   readonly draggable: boolean;
 }

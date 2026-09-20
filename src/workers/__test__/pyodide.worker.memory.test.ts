@@ -21,6 +21,10 @@ import { loadPyodide } from 'pyodide';
 const runtime = await loadPyodide({ indexURL: './node_modules/pyodide/' });
 let script = '';
 const exports = {};
+const policy = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/shared/lib/pyodideErrors.ts', 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS }
+}).outputText, { exports: policy, console });
 const code = ts.transpileModule(fs.readFileSync('src/workers/pyodide.worker.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS }
 }).outputText;
@@ -28,6 +32,7 @@ vm.runInNewContext(code, {
   exports, console, process,
   require: (name) => name === 'comlink' ? { expose: () => {}, releaseProxy: Symbol() }
     : name === 'pyodide' ? { version: runtime.version }
+    : name.endsWith('/pyodideErrors') ? policy
     : name.endsWith('/pythonScript') ? { buildScript: () => script } : {}
 });
 exports._setPyodideForTesting(runtime);
@@ -47,7 +52,7 @@ for (const fails of [false, true]) {
   for (let i = 0; i < 3; i++) {
     try { await exports.getFirstOrderData({}); }
     catch (error) {
-      if (!fails || !error.message.includes('original failure')) throw error;
+      if (!fails || error.message !== 'The calculation could not be completed. Please try again.') throw error;
       errors++;
     }
     survivors.push(runtime.runPython('sum(r() is not None for r in refs)'));

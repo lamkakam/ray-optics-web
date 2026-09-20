@@ -117,3 +117,20 @@ describe("AppInitializationOverlay", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+it("displays a sanitized initialization failure instead of indefinite progress", () => {
+  const message =
+    "The calculation engine could not start. Please reload the page and try again.";
+  render(
+    <AppInitializationOverlay
+      isReady={false}
+      hasProxy={false}
+      initProgress={runtimeProgress}
+      initializationError={message}
+      glassCatalogsLoading={false}
+      glassCatalogPreloadError={undefined}
+    />,
+  );
+  expect(screen.getByText(message)).toBeInTheDocument();
+  expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+});

@@ -1,4 +1,8 @@
 "use client";
+import {
+  getPyodideErrorMessage,
+  OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE,
+} from "@/shared/lib/pyodideErrors";
 
 import {
   useCallback,
@@ -66,7 +70,8 @@ import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
-  readonly onError: () => void;
+  /** Forwards the failure to the shell for shared safe-message presentation. */
+  readonly onError: (error?: unknown) => void;
   readonly onApplyToEditor?: (model: OpticalModel) => Promise<void> | void;
 }
 
@@ -74,9 +79,6 @@ const ZERO_WEIGHT_WARNING_MESSAGE =
   "At least one effective optimization weight must be non-zero.";
 const INITIAL_GUESS_OUTSIDE_BOUNDS_MESSAGE =
   "Initial guess is outside of provided bounds";
-const OPERAND_EVALUATION_FAILED_MESSAGE = "Operand evaluation failed.";
-const OPTIMIZATION_FAILED_MESSAGE = "Optimization failed.";
-const OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE = "Optimization did not converge.";
 const LG_EVALUATION_RESERVED_HEIGHT_FALLBACK = 333;
 const PYODIDE_INTERRUPT_SIGNAL = 2;
 
@@ -157,7 +159,7 @@ function buildCurrentEditorModel(
  * - Whenever the committed optimization config changes, the component immediately marks Operand Evaluation pending, clears the prior report, debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
  * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, and `apply_optimization_to_editor` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
  * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, and application call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, and confirmed Apply action. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
- * - A resolved failed evaluation report clears stale rows and surfaces only the approved `Initial guess is outside of provided bounds` validation message. Other failed reports and rejected worker calls are logged with their full diagnostic object while Operand Evaluation shows `Operand evaluation failed.`; a later successful evaluation clears either warning.
+ * - A resolved failed evaluation report clears stale rows and displays the shared approved failure message. Initial-guess bounds validation retains its rollback report; a later successful evaluation clears warnings. Worker diagnostics are logged once at the boundary.
  * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
  * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
  * - When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` reports the thrown error message through the page-local warning callback instead of filtering to one hardcoded `lm` warning.
@@ -172,7 +174,7 @@ function buildCurrentEditorModel(
  * - `Optimize` is disabled until the current Operand Evaluation succeeds without a displayed error or warning, while any Optimization AG Grid cell edit is active, while a post-edit Operand Evaluation refresh is pending, and while Operand Evaluation is currently evaluating.
  * - Page-level AG Grid edit lifecycle tracking increments on `onCellEditingStarted`, decrements on `onCellEditingStopped`, increments an edit-stop revision so even no-op edits schedule a refresh, and marks the committed post-edit state as pending until the next debounced Operand Evaluation request settles; invalid config or missing worker prerequisites clear that pending gate without running an evaluation.
  * - `Optimize` does not blur active AG Grid editors to force a commit. If the handler is triggered programmatically while editing, waiting for post-edit evaluation, evaluating, invalid, or zero-contribution, it returns without calling either optimizer RPC.
- * - `Optimize` validates the store state against the live catalog snapshot, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id and optional interrupt buffer, branches between `proxy.optimizeOpm` and `proxy.optimizeGlasses`, and streams merit-history updates into the modal chart through a Comlink progress callback. Rejected calls and resolved `status: "error"` reports are logged in full but render only `Optimization failed.`; unsuccessful completed solver reports render `Optimization did not converge.`. Locally generated configuration warnings remain specific.
+ * - `Optimize` validates the store state against the live catalog snapshot, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id and optional interrupt buffer, branches between `proxy.optimizeOpm` and `proxy.optimizeGlasses`, and streams merit-history updates into the modal chart through a Comlink progress callback. Rejected calls and resolved `status: "error"` reports display shared approved messages; unsuccessful completed solver reports display `Optimization did not converge.`. Logging belongs to the worker boundary. Locally generated configuration warnings remain specific.
  * - The page checks `proxy.canInterruptOptimization()` and disables the progress modal Stop control when Pyodide interrupt support or `SharedArrayBuffer` is unavailable.
  * - Clicking Stop is idempotent for the active run: it writes Pyodide's interrupt signal into the shared interrupt buffer immediately, calls `proxy.requestOptimizationStop(activeRunId)` for worker-side run validation, disables the Stop button while the run is settling, and leaves the progress modal open.
  * - A stopped report with `status: "stopped"` is treated as a successful partial optimization result: the page applies its `final_values`, preserves the final chart history, switches the modal to completed `OK` controls in the normal `finally` path, and does not show a warning for that user-requested status.
@@ -694,9 +696,8 @@ export function OptimizationPage({
             return report;
           }
 
-          console.error(OPERAND_EVALUATION_FAILED_MESSAGE, report);
           setEvaluationReport(undefined);
-          setOptimizationWarningMessage(OPERAND_EVALUATION_FAILED_MESSAGE);
+          setOptimizationWarningMessage(getPyodideErrorMessage(report.message));
           return report;
         }
 
@@ -709,9 +710,8 @@ export function OptimizationPage({
         if (evaluationRequestIdRef.current === requestId) {
           const errorName = error instanceof Error ? error.name : undefined;
           if (errorName !== "AbortError") {
-            console.error(OPERAND_EVALUATION_FAILED_MESSAGE, error);
             setEvaluationReport(undefined);
-            setOptimizationWarningMessage(OPERAND_EVALUATION_FAILED_MESSAGE);
+            setOptimizationWarningMessage(getPyodideErrorMessage(error));
           }
         }
         throw error;
@@ -967,12 +967,10 @@ export function OptimizationPage({
             ));
         setOptimizationProgress(report.optimization_progress ?? []);
         if (report.status === "error") {
-          console.error(OPTIMIZATION_FAILED_MESSAGE, report);
-          setOptimizationWarningMessage(OPTIMIZATION_FAILED_MESSAGE);
+          setOptimizationWarningMessage(getPyodideErrorMessage(report.message));
         } else {
           optimizationStore.getState().applyOptimizationResult(report);
           if (!report.success && report.status !== "stopped") {
-            console.error(OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE, report);
             setOptimizationWarningMessage(
               OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE,
             );
@@ -984,9 +982,8 @@ export function OptimizationPage({
         if (signal.aborted) {
           throw new DOMException("Tool execution was cancelled", "AbortError");
         }
-        console.error(OPTIMIZATION_FAILED_MESSAGE, error);
-        setOptimizationWarningMessage(OPTIMIZATION_FAILED_MESSAGE);
-        onError();
+        setOptimizationWarningMessage(getPyodideErrorMessage(error));
+        onError(error);
         throw error;
       } finally {
         signal.removeEventListener("abort", abortHandler);
@@ -1062,8 +1059,8 @@ export function OptimizationPage({
   const handleApplyToEditor = useCallback(async () => {
     try {
       await applyOptimizationOperation(new AbortController().signal);
-    } catch {
-      onError();
+    } catch (error) {
+      onError(error);
     }
   }, [applyOptimizationOperation, onError]);
 

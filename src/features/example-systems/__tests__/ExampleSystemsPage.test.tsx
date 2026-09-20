@@ -656,10 +656,8 @@ describe("ExampleSystemsPage", () => {
     });
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
-    expect(consoleLog).toHaveBeenCalledWith(
-      "Apply example system failed:",
-      error,
-    );
+    expect(onError).toHaveBeenCalledWith(error);
+    expect(consoleLog).not.toHaveBeenCalled();
     consoleLog.mockRestore();
   });
 });

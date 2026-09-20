@@ -154,3 +154,31 @@ def test_glass_failure_report_uses_safe_settings_and_empty_state_before_initiali
     assert report["final_glasses"] == []
     assert report["residuals"] == []
     assert report["merit_function"]["sum_of_squares"] == 1e10
+
+
+@pytest.mark.parametrize("builder_name", [
+    "build_optimization_failure_report",
+    "build_glass_optimization_failure_report",
+])
+def test_failure_reports_include_chained_exception_diagnostics(builder_name):
+    """Transport metadata keeps causes, traceback frames and notes for the console."""
+    from rayoptics_web_utils.optimization import failure_reports
+
+    try:
+        try:
+            raise ValueError("original diagnostic")
+        except ValueError as cause:
+            error = RuntimeError("outer diagnostic")
+            error.add_note("private diagnostic note")
+            raise error from cause
+    except RuntimeError as error:
+        report = getattr(failure_reports, builder_name)(error, {})
+
+    diagnostic = report["diagnostic"]
+    assert diagnostic["exception_type"] == "RuntimeError"
+    assert diagnostic["message"] == "outer diagnostic"
+    assert "ValueError: original diagnostic" in diagnostic["traceback"]
+    assert "RuntimeError: outer diagnostic" in diagnostic["traceback"]
+    assert "direct cause" in diagnostic["traceback"]
+    assert "private diagnostic note" in diagnostic["traceback"]
+    assert "test_failure_reports_include_chained_exception_diagnostics" in diagnostic["traceback"]

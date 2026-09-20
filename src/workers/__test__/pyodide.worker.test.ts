@@ -1161,11 +1161,12 @@ describe("init", () => {
     } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
 
     await expect(init()).rejects.toThrow(
-      "Pyodide initialization returned an unexpected PyProxy result",
+      "The calculation engine could not start. Please reload the page and try again.",
     );
 
     expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);
     expect(consoleError).toHaveBeenCalledWith(
+      "[Pyodide:init]",
       expect.objectContaining({
         message: "Pyodide initialization returned an unexpected PyProxy result",
       }),
@@ -1187,8 +1188,10 @@ describe("init", () => {
           .spyOn(console, "error")
           .mockImplementation(() => undefined);
         jest.mocked(loadPyodide).mockRejectedValueOnce(error);
-        await expect(init(onProgress)).rejects.toThrow("load failed");
-        expect(consoleError).toHaveBeenCalledWith(error);
+        await expect(init(onProgress)).rejects.toThrow(
+          "The calculation engine could not start. Please reload the page and try again.",
+        );
+        expect(consoleError).toHaveBeenCalledWith("[Pyodide:init]", error);
         consoleError.mockRestore();
       } else {
         await init(onProgress);
@@ -1251,7 +1254,7 @@ describe("public worker guards before initialization", () => {
 
     for (const call of calls) {
       await expect(call()).rejects.toThrow(
-        "Pyodide not initialized. Call init() first.",
+        "The calculation could not be completed. Please try again.",
       );
     }
   });
@@ -1288,6 +1291,15 @@ describe("public worker guards before initialization", () => {
             unitZ: "",
           });
         }
+        if (
+          code.includes("_optimization_report") ||
+          code.includes("evaluate_optimization_problem")
+        )
+          return JSON.stringify({
+            success: true,
+            status: "evaluated",
+            message: "Done",
+          });
         return "{}";
       });
     _setPyodideForTesting({
@@ -1385,9 +1397,12 @@ describe("Pyodide computation executor lifecycle", () => {
       });
 
       if (fails) {
-        await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toBe(
-          error,
-        );
+        await expect(
+          getFirstOrderData(allSphericalOpticalModel),
+        ).rejects.toMatchObject({
+          name: "PyodideFatalError",
+          message: "The calculation could not be completed. Please try again.",
+        });
       } else {
         await expect(
           getFirstOrderData(allSphericalOpticalModel),
@@ -1473,7 +1488,7 @@ describe("Pyodide computation executor lifecycle", () => {
     });
 
     await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toThrow(
-      "Pyodide computation returned an unexpected PyProxy result",
+      "The calculation could not be completed. Please try again.",
     );
 
     expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);

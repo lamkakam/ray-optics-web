@@ -1,8 +1,14 @@
-/** Verifies store ownership, automatic hydration, quarantine, and distinct manual preload behavior. */
+/** Verifies startup preserves saved glasses on runtime failures, quarantines invalid data, ignores late hydration, and retains manual preload behavior. */
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { createStore } from "zustand/vanilla";
 import { useAppShellGlassCatalogs } from "@/app/hooks/useAppShellGlassCatalogs";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import {
+  CALCULATION_FAILED_MESSAGE,
+  INITIALIZATION_FAILED_MESSAGE,
+  DUPLICATE_GLASS_MESSAGE,
+  withPyodideErrorHandling,
+} from "@/shared/lib/pyodideErrors";
 import { createGlassMapSlice } from "@/features/glass-map/stores/glassMapStore";
 import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 import type {
@@ -57,7 +63,11 @@ const quarantineValid = jest.mocked(quarantinePersistedCustomGlass);
 const quarantineInvalid = jest.mocked(quarantineStoredCustomGlassRow);
 
 describe("useAppShellGlassCatalogs", () => {
+  let warn: jest.SpyInstance;
+  let error: jest.SpyInstance;
   beforeEach(() => {
+    warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    error = jest.spyOn(console, "error").mockImplementation(() => {});
     mockGlassMapStore = createStore(createGlassMapSlice);
     getAllGlassCatalogsData.mockReset().mockResolvedValue(catalogs);
     addUserDefinedGlasses.mockReset().mockResolvedValue({ PERSISTED: glass });
@@ -69,6 +79,7 @@ describe("useAppShellGlassCatalogs", () => {
     quarantineValid.mockReset().mockResolvedValue(undefined);
     quarantineInvalid.mockReset().mockResolvedValue(undefined);
   });
+  afterEach(() => jest.restoreAllMocks());
 
   it("waits for both runtime readiness and a proxy before loading", async () => {
     const { result, rerender } = renderHook(
@@ -140,13 +151,17 @@ describe("useAppShellGlassCatalogs", () => {
     expect(catalogs.Custom).toEqual({ BUILT_IN: glass });
   });
 
-  it("quarantines invalid and rejected rows in order while retaining accepted rows and allowing dismissal", async () => {
+  it("quarantines invalid rows and normalized business rejections in order while retaining accepted rows and allowing dismissal", async () => {
     const invalid = { label: "BAD_TYPE", type: "sellmeier", pairs: [] };
     const rejected = { ...persisted, label: "REJECTED" };
     readRows.mockResolvedValue([invalid, persisted, rejected, {}]);
     addUserDefinedGlasses
       .mockResolvedValueOnce({ PERSISTED: glass })
-      .mockRejectedValueOnce(new Error("Rejected"));
+      .mockRejectedValueOnce(
+        Object.assign(new Error(DUPLICATE_GLASS_MESSAGE), {
+          name: "PyodideBusinessError",
+        }),
+      );
     quarantineValid.mockRejectedValue(new Error("Storage unavailable"));
     quarantineInvalid.mockRejectedValue(new Error("Storage unavailable"));
     const { result } = renderHook(() => useAppShellGlassCatalogs(true, proxy));
@@ -173,7 +188,101 @@ describe("useAppShellGlassCatalogs", () => {
     expect(mockGlassMapStore.getState().catalogsData?.Custom.PERSISTED).toEqual(
       glass,
     );
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
   });
+
+  it.each(["error", "messageerror"])(
+    "preserves saved glasses and blocks startup when the worker emits %s during hydration",
+    async (type) => {
+      readRows.mockResolvedValue([
+        persisted,
+        { ...persisted, label: "SECOND" },
+      ]);
+      addUserDefinedGlasses.mockReturnValue(new Promise(() => {}));
+      const endpoint = new EventTarget();
+      const worker = withPyodideErrorHandling(
+        { ...proxy, init: async () => {} },
+        endpoint,
+      );
+      await worker.init();
+      const { result } = renderHook(() =>
+        useAppShellGlassCatalogs(true, worker),
+      );
+      await waitFor(() =>
+        expect(addUserDefinedGlasses).toHaveBeenCalledTimes(1),
+      );
+
+      await act(async () => {
+        endpoint.dispatchEvent(new Event(type));
+      });
+
+      expect(quarantineValid).not.toHaveBeenCalled();
+      expect(quarantineInvalid).not.toHaveBeenCalled();
+      expect(addUserDefinedGlasses).toHaveBeenCalledTimes(1);
+      expect(addUserDefinedGlasses).toHaveBeenCalledWith([
+        { name: persisted.label, pairs },
+      ]);
+      expect(result.current.glassCatalogContextValue.error).toBe(
+        CALCULATION_FAILED_MESSAGE,
+      );
+      expect(result.current.glassCatalogContextValue.isLoaded).toBe(false);
+      expect(result.current.glassCatalogContextValue.isLoading).toBe(false);
+      expect(mockGlassMapStore.getState().catalogsData).toBeUndefined();
+      expect(result.current.quarantinedCustomGlassLabels).toEqual([]);
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(warn).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    [
+      Object.assign(new Error(CALCULATION_FAILED_MESSAGE), {
+        name: "PyodideFatalError",
+      }),
+      CALCULATION_FAILED_MESSAGE,
+    ],
+    [
+      Object.assign(new Error(INITIALIZATION_FAILED_MESSAGE), {
+        name: "PyodideFatalError",
+      }),
+      INITIALIZATION_FAILED_MESSAGE,
+    ],
+    [new Error("Private worker failure"), CALCULATION_FAILED_MESSAGE],
+    [undefined, CALCULATION_FAILED_MESSAGE],
+    [
+      Object.assign(new Error("Unapproved message"), {
+        name: "PyodideBusinessError",
+      }),
+      CALCULATION_FAILED_MESSAGE,
+    ],
+    [new Error(DUPLICATE_GLASS_MESSAGE), DUPLICATE_GLASS_MESSAGE],
+  ])(
+    "preserves saved glasses and stops hydration on a fatal or unclassified rejection: %p",
+    async (failure, message) => {
+      readRows.mockResolvedValue([
+        persisted,
+        { ...persisted, label: "SECOND" },
+      ]);
+      addUserDefinedGlasses.mockRejectedValueOnce(failure);
+      const { result } = renderHook(() =>
+        useAppShellGlassCatalogs(true, proxy),
+      );
+      await waitFor(() =>
+        expect(result.current.glassCatalogContextValue.isLoading).toBe(false),
+      );
+
+      expect(quarantineValid).not.toHaveBeenCalled();
+      expect(quarantineInvalid).not.toHaveBeenCalled();
+      expect(addUserDefinedGlasses).toHaveBeenCalledTimes(1);
+      expect(result.current.glassCatalogContextValue.error).toBe(message);
+      expect(result.current.glassCatalogContextValue.isLoaded).toBe(false);
+      expect(mockGlassMapStore.getState().catalogsData).toBeUndefined();
+      expect(result.current.quarantinedCustomGlassLabels).toEqual([]);
+      expect(warn).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+    },
+  );
 
   it("allows startup to complete when persisted storage cannot be read", async () => {
     readRows.mockRejectedValue(new Error("Storage unavailable"));
@@ -246,7 +355,7 @@ describe("useAppShellGlassCatalogs", () => {
     const { result } = renderHook(() => useAppShellGlassCatalogs(true, proxy));
     await waitFor(() =>
       expect(result.current.glassCatalogContextValue.error).toBe(
-        "Catalog preload failed",
+        "The calculation could not be completed. Please try again.",
       ),
     );
     expect(result.current.glassCatalogContextValue.isLoaded).toBe(false);
@@ -271,9 +380,12 @@ describe("useAppShellGlassCatalogs", () => {
     await act(async () => {
       loaded = await result.current.glassCatalogContextValue.preload();
     });
-    expect(loaded).toEqual({ data: undefined, error: "Manual preload failed" });
+    expect(loaded).toEqual({
+      data: undefined,
+      error: "The calculation could not be completed. Please try again.",
+    });
     expect(result.current.glassCatalogContextValue.error).toBe(
-      "Manual preload failed",
+      "The calculation could not be completed. Please try again.",
     );
     expect(result.current.glassCatalogContextValue.isLoaded).toBe(false);
     expect(mockGlassMapStore.getState().catalogsData).toBeUndefined();
@@ -294,4 +406,52 @@ describe("useAppShellGlassCatalogs", () => {
     expect(mockGlassMapStore.getState().catalogsData).toBeUndefined();
     expect(readRows).not.toHaveBeenCalled();
   });
+
+  it.each(["completion", "business rejection", "fatal rejection"])(
+    "ignores hydration %s after effect cleanup",
+    async (outcome) => {
+      readRows.mockResolvedValue([persisted]);
+      let finish!: (data: UserDefinedMaterialsData) => void;
+      let fail!: (reason: Error) => void;
+      addUserDefinedGlasses.mockReturnValueOnce(
+        new Promise((resolve, reject) => {
+          finish = resolve;
+          fail = reject;
+        }),
+      );
+      const { result, rerender } = renderHook(
+        ({ isReady }) => useAppShellGlassCatalogs(isReady, proxy),
+        { initialProps: { isReady: true } },
+      );
+      await waitFor(() =>
+        expect(addUserDefinedGlasses).toHaveBeenCalledTimes(1),
+      );
+      rerender({ isReady: false });
+
+      await act(async () => {
+        if (outcome === "completion") {
+          finish({ PERSISTED: glass });
+        } else if (outcome === "business rejection") {
+          fail(
+            Object.assign(new Error(DUPLICATE_GLASS_MESSAGE), {
+              name: "PyodideBusinessError",
+            }),
+          );
+        } else {
+          fail(
+            Object.assign(new Error(CALCULATION_FAILED_MESSAGE), {
+              name: "PyodideFatalError",
+            }),
+          );
+        }
+      });
+
+      expect(mockGlassMapStore.getState().catalogsData).toBeUndefined();
+      expect(result.current.glassCatalogContextValue.isLoaded).toBe(false);
+      expect(result.current.glassCatalogContextValue.error).toBeUndefined();
+      expect(result.current.quarantinedCustomGlassLabels).toEqual([]);
+      expect(warn).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+    },
+  );
 });

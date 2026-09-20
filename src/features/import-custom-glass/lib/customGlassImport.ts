@@ -1,3 +1,7 @@
+import {
+  getPyodideErrorMessage,
+  DUPLICATE_GLASS_MESSAGE,
+} from "@/shared/lib/pyodideErrors";
 /**
  * Custom-glass conversion plus browser, worker, persistence, and store orchestration.
  * Row ids are allocated monotonically so editable grid rows remain stable.
@@ -113,10 +117,9 @@ export function getUserDefinedCustomGlasses(
   );
 }
 
-/** Checks whether an unknown worker failure reports an existing user-defined label. */
+/** Recognizes the shared duplicate-glass message, including normalized Comlink failures. */
 export function isUserDefinedGlassAlreadyExistsError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.includes("User-defined glass already exists:");
+  return getPyodideErrorMessage(error) === DUPLICATE_GLASS_MESSAGE;
 }
 
 /** Compatibility wrapper over the shared add/update/rename orchestration. */

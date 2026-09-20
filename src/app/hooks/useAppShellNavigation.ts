@@ -144,7 +144,8 @@ function usePageNavigationWebMcp({
  */
 export function useAppShellNavigation(
   proxy: PyodideWorkerAPI | undefined,
-  openErrorModal: () => void,
+  /** Receives worker failures for sanitized shell presentation. */
+  openErrorModal: (error?: unknown) => void,
 ) {
   const router = useRouter();
   const pathname = usePathname();
@@ -321,7 +322,7 @@ export function useAppShellNavigation(
         } as OptimizationNavigationResult;
       } catch (error: unknown) {
         if (!signal?.aborted) {
-          openErrorModal();
+          openErrorModal(error);
         }
         throw error;
       }

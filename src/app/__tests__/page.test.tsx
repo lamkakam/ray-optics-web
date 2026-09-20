@@ -44,6 +44,7 @@ import type {
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { DUPLICATE_GLASS_MESSAGE } from "@/shared/lib/pyodideErrors";
 import type {
   ZernikeData,
   ZernikeOrdering,
@@ -1058,9 +1059,11 @@ describe("app shell routes", () => {
       </>,
     );
 
-    expect(await screen.findAllByText("Catalog preload failed")).toHaveLength(
-      2,
-    );
+    expect(
+      await screen.findAllByText(
+        "The calculation could not be completed. Please try again.",
+      ),
+    ).toHaveLength(2);
     expect(screen.getByText("Initializing Ray Optics")).toBeInTheDocument();
     expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent(
       "not-loaded",
@@ -1069,7 +1072,7 @@ describe("app shell routes", () => {
       "not-loading",
     );
     expect(screen.getByTestId("catalogs-error")).toHaveTextContent(
-      "Catalog preload failed",
+      "The calculation could not be completed. Please try again.",
     );
     expect(screen.getByTestId("schott-count")).toHaveTextContent("0");
     expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
@@ -1086,7 +1089,9 @@ describe("app shell routes", () => {
       </RerenderableAppShellHarness>,
     );
 
-    await screen.findAllByText("Catalog preload failed");
+    await screen.findAllByText(
+      "The calculation could not be completed. Please try again.",
+    );
     mockUsePyodide.mockReturnValue({
       proxy: undefined,
       isReady: false,
@@ -1112,7 +1117,9 @@ describe("app shell routes", () => {
       </RerenderableAppShellHarness>,
     );
 
-    await screen.findAllByText("Catalog preload failed");
+    await screen.findAllByText(
+      "The calculation could not be completed. Please try again.",
+    );
     mockUsePyodide.mockReturnValue({
       proxy: mockProxy,
       isReady: false,
@@ -1138,7 +1145,9 @@ describe("app shell routes", () => {
       </RerenderableAppShellHarness>,
     );
 
-    await screen.findAllByText("Catalog preload failed");
+    await screen.findAllByText(
+      "The calculation could not be completed. Please try again.",
+    );
     mockUsePyodide.mockReturnValue({
       proxy: undefined,
       isReady: true,
@@ -1151,7 +1160,7 @@ describe("app shell routes", () => {
       screen.queryByText("Initializing Ray Optics"),
     ).not.toBeInTheDocument();
     expect(screen.getByTestId("catalogs-error")).toHaveTextContent(
-      "Catalog preload failed",
+      "The calculation could not be completed. Please try again.",
     );
   });
 
@@ -1818,7 +1827,8 @@ describe("app shell routes", () => {
     expect(screen.getByTestId("custom-count")).toHaveTextContent("2");
   });
 
-  it("quarantines worker-rejected persisted glasses and dismisses the plural warning", async () => {
+  /** Only normalized business rejections produce the dismissible startup quarantine warning. */
+  it("quarantines persisted glasses rejected with a business error and dismisses the warning", async () => {
     const persistedRow = {
       label: "REJECTED",
       type: "tabulated",
@@ -1832,7 +1842,9 @@ describe("app shell routes", () => {
     mockStoredCustomGlassRows = [persistedRow];
     mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce(loadedCatalogsData);
     mockProxy.addUserDefinedGlasses.mockRejectedValueOnce(
-      new Error("worker rejected row"),
+      Object.assign(new Error(DUPLICATE_GLASS_MESSAGE), {
+        name: "PyodideBusinessError",
+      }),
     );
 
     const user = userEvent.setup();
@@ -2080,7 +2092,11 @@ describe("app shell routes", () => {
     await user.click(screen.getByRole("button", { name: "Preload catalogs" }));
     rejectCatalogs?.(new Error("Manual preload failed"));
 
-    expect(await screen.findAllByText("Manual preload failed")).toHaveLength(2);
+    expect(
+      await screen.findAllByText(
+        "The calculation could not be completed. Please try again.",
+      ),
+    ).toHaveLength(2);
     expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent(
       "not-loaded",
     );
@@ -2088,7 +2104,7 @@ describe("app shell routes", () => {
       "not-loading",
     );
     expect(screen.getByTestId("catalogs-error")).toHaveTextContent(
-      "Manual preload failed",
+      "The calculation could not be completed. Please try again.",
     );
     expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
   });
@@ -2428,23 +2444,33 @@ describe("app shell routes", () => {
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument();
   });
 
-  it("opens the shared error modal when the lens editor reports a worker error", async () => {
-    const error = new Error("bad input");
-    const consoleLog = jest
-      .spyOn(console, "log")
-      .mockImplementation(() => undefined);
-    mockGetFirstOrderData.mockRejectedValueOnce(error);
-    renderInAppShell(<HomePage />);
+  it.each([
+    ["bad input", "The calculation could not be completed. Please try again."],
+    [
+      "Traceback (most recent call last):\nProjectedPupilGeometryError: Projected-pupil mapping contains a fold or orientation reversal.",
+      "Projected-pupil mapping contains a fold or orientation reversal.",
+    ],
+  ])(
+    "opens the shared error modal with safe text for %s",
+    async (raw, message) => {
+      const error = new Error(raw);
+      const consoleLog = jest
+        .spyOn(console, "log")
+        .mockImplementation(() => undefined);
+      mockGetFirstOrderData.mockRejectedValueOnce(error);
+      renderInAppShell(<HomePage />);
 
-    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
-    await userEvent.click(
-      screen.getByRole("button", { name: "Update System" }),
-    );
+      await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "Update System" }),
+      );
 
-    await waitFor(() => {
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
-    });
-    expect(consoleLog).toHaveBeenCalledWith("Update System failed:", error);
-    consoleLog.mockRestore();
-  });
+      await waitFor(() => {
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+      });
+      expect(screen.getByRole("dialog")).toHaveTextContent(message);
+      expect(consoleLog).not.toHaveBeenCalled();
+      consoleLog.mockRestore();
+    },
+  );
 });
