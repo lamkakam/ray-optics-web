@@ -32,6 +32,11 @@ import { getCachedAnalysis } from "@/features/analysis/lib/analysisCache";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
 import { wrap } from "comlink";
+import {
+  CALCULATION_FAILED_MESSAGE,
+  INITIALIZATION_FAILED_MESSAGE,
+  normalizePyodideError,
+} from "@/shared/lib/pyodideErrors";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -89,7 +94,7 @@ describe("usePyodide", () => {
     const { result } = renderHook(() => usePyodide());
 
     await waitFor(() => {
-      expect(result.current.error).toBe("init failed");
+      expect(result.current.error).toBe(INITIALIZATION_FAILED_MESSAGE);
     });
     expect(result.current.isReady).toBe(false);
   });
@@ -99,7 +104,7 @@ describe("usePyodide", () => {
     const { result } = renderHook(() => usePyodide());
 
     await waitFor(() => {
-      expect(result.current.error).toBe("Unknown error");
+      expect(result.current.error).toBe(INITIALIZATION_FAILED_MESSAGE);
     });
   });
 
@@ -189,5 +194,64 @@ describe("usePyodide", () => {
     await getCachedAnalysis(model, "chief_ray", "firstOrder", load);
 
     expect(load).toHaveBeenCalledTimes(4);
+  });
+});
+
+/** Worker creation and shared cached transport failures use one sanitized boundary. */
+describe("client error fallback", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("catches synchronous worker creation failure once for every mounted consumer", async () => {
+    const original = new Error("private worker creation detail");
+    jest.mocked(createPyodideWorker).mockImplementationOnce(() => {
+      throw original;
+    });
+    const log = jest.spyOn(console, "error").mockImplementation(() => {});
+    const first = renderHook(() => usePyodide());
+    const second = renderHook(() => usePyodide());
+    await waitFor(() =>
+      expect(first.result.current.error).toBe(INITIALIZATION_FAILED_MESSAGE),
+    );
+    expect(second.result.current.error).toBe(INITIALIZATION_FAILED_MESSAGE);
+    expect(log).toHaveBeenCalledWith("[Pyodide:init]", original);
+    expect(log).toHaveBeenCalledTimes(1);
+  });
+
+  it("logs shared cached transport rejection once and exposes only safe text", async () => {
+    const log = jest.spyOn(console, "error").mockImplementation(() => {});
+    const original = new Error("private transport fault");
+    mockProxy.getFirstOrderData.mockRejectedValueOnce(original);
+    const { result } = renderHook(() => usePyodide());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    const request = () =>
+      result.current.proxy!.getFirstOrderData({} as OpticalModel);
+    const model = {} as OpticalModel;
+    const first = getCachedAnalysis(model, "chief_ray", "safe-error", request);
+    const second = getCachedAnalysis(model, "chief_ray", "safe-error", request);
+    expect(first).toBe(second);
+    await expect(first).rejects.toMatchObject({
+      name: "PyodideFatalError",
+      message: CALCULATION_FAILED_MESSAGE,
+    });
+    expect(log).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not log an already normalized worker rejection again", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const log = jest.spyOn(console, "error").mockImplementation(() => {});
+    const safe = normalizePyodideError(
+      new Error(
+        "ProjectedPupilGeometryError: Projected-pupil mapping contains a fold or orientation reversal.",
+      ),
+      "getFirstOrderData",
+    );
+    mockProxy.getFirstOrderData.mockRejectedValueOnce(safe);
+    const { result } = renderHook(() => usePyodide());
+    await waitFor(() => expect(result.current.isReady).toBe(true));
+    await expect(
+      result.current.proxy!.getFirstOrderData({} as OpticalModel),
+    ).rejects.toBe(safe);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(log).not.toHaveBeenCalled();
   });
 });

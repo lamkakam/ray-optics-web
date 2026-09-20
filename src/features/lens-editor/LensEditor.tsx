@@ -52,7 +52,8 @@ export interface LensEditorProps {
   /** Whether Pyodide is initialised */
   readonly isReady: boolean;
   /** Called on submit or imperative focus compute error; opens page-level error modal */
-  readonly onError: () => void;
+  /** Forwards the failure to the shell for shared safe-message presentation. */
+  readonly onError: (error?: unknown) => void;
 }
 
 /**
@@ -83,7 +84,7 @@ export interface LensEditorProps {
  * - ParaxialDataModal, SeidelAberrModal, ZernikeTermsModal
  *
  * ## Notes
- * - `onError` delegates submit and imperative focus failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
+ * - `onError` delegates submit and imperative focus failures to `app/AppShell.tsx`, which owns the shared sanitized `ErrorModal`
  * - Missing prescription glasses from submit or imperative focus are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
  * - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
  * - `handleSubmit` delegates to the throwing `computeOpticalSystem` core, so submit-time first-order, Seidel, plot, layout, selection, specs, model, and auto-aperture updates use one complete commit pipeline shared with WebMCP.
@@ -172,8 +173,7 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
       if (isMissingPrescriptionGlassError(error)) {
         setValidationErrorMessage(error.message);
       } else {
-        console.log("Focus failed:", error);
-        onError();
+        onError(error);
       }
     },
     [onError],
@@ -251,8 +251,7 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
       if (isMissingPrescriptionGlassError(err)) {
         setValidationErrorMessage(err.message);
       } else {
-        console.log("Update System failed:", err);
-        onError();
+        onError(err);
       }
     } finally {
       handleComputationEnd();

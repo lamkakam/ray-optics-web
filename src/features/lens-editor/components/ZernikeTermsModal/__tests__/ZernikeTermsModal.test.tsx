@@ -834,10 +834,9 @@ describe("Zernike calculation failures", () => {
         <ZernikeTermsModal {...defaultProps} onFetchData={fetch} />,
       );
       const error = await screen.findByRole("dialog", { name: "Error" });
-      expect(error).toHaveTextContent("Zernike calculation failed");
-      if (reason instanceof Error)
-        expect(error).toHaveTextContent(reason.message);
-      if (typeof reason === "string") expect(error).toHaveTextContent(reason);
+      expect(error).toHaveTextContent(
+        "The calculation could not be completed. Please try again.",
+      );
       expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
       await user.click(within(error).getByRole("button", { name: "OK" }));
       expect(

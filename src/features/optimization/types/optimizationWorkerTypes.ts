@@ -343,10 +343,9 @@ export type OptimizationStatus =
 /**
  * Python optimization report with snake_case keys preserved for direct JSON
  * parsing. `status: "error"` is a resolved rollback report, not a rejected
- * worker transport call. Evaluation uses that shape for the expected bounded
- * `trf` initial-guess validation failure; customer UI must allowlist its stable
- * validation message and replace other Python, solver, or transport details
- * with customer-safe fallback copy while retaining the report for diagnostics.
+ * worker transport call. The worker logs and strips Python diagnostic metadata
+ * and replaces failure messages with approved shared text before transport.
+ * Rollback values, progress, solver status and numerical data are preserved.
  */
 export interface OptimizationReport {
   readonly success: boolean;

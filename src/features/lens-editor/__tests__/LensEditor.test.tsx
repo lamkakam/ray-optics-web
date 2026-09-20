@@ -891,7 +891,8 @@ describe("LensEditor", () => {
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
     expect(lensStore.getState().autoSemiDiameters).toEqual({ old: 9 });
-    expect(consoleLog).toHaveBeenCalledWith("Update System failed:", error);
+    expect(onError).toHaveBeenCalledWith(error);
+    expect(consoleLog).not.toHaveBeenCalled();
     consoleLog.mockRestore();
   });
 
@@ -1037,7 +1038,8 @@ describe("LensEditor", () => {
     const user = userEvent.setup();
     await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() => expect(onError).toHaveBeenCalled());
-    expect(consoleLog).toHaveBeenCalledWith("Update System failed:", error);
+    expect(onError).toHaveBeenCalledWith(error);
+    expect(consoleLog).not.toHaveBeenCalled();
     consoleLog.mockRestore();
   });
 

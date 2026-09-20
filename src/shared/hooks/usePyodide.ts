@@ -42,6 +42,11 @@ import type {
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
 import {
+  getPyodideErrorMessage,
+  runPyodideOperation,
+  withPyodideErrorHandling,
+} from "@/shared/lib/pyodideErrors";
+import {
   clearAnalysisCache,
   _resetAnalysisCache,
 } from "@/features/analysis/lib/analysisCache";
@@ -54,7 +59,7 @@ export interface InitProgress {
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
 
-/** Typed Comlink surface exposed by the Pyodide worker. */
+/** Typed Comlink surface: failures expose approved text without diagnostic stacks or causes. */
 export interface PyodideWorkerAPI {
   /** Initializes the worker and optionally reports deterministic startup milestones. */
   init(onProgress?: InitProgressCallback): Promise<void>;
@@ -272,7 +277,10 @@ function getProxy(): PyodideWorkerAPI {
   if (!singletonProxy) {
     const worker = createPyodideWorker();
     singletonProxy = withAnalysisCacheInvalidation(
-      wrap<PyodideWorkerAPI>(worker),
+      withPyodideErrorHandling(
+        wrap<PyodideWorkerAPI>(worker),
+        typeof worker.addEventListener === "function" ? worker : undefined,
+      ),
     );
   }
   return singletonProxy;
@@ -280,14 +288,18 @@ function getProxy(): PyodideWorkerAPI {
 
 function initOnce(): Promise<void> {
   if (!singletonInitPromise) {
-    const proxy = getProxy();
-    singletonInitPromise = proxy.init(
-      comlinkProxy((progress: InitProgress) => {
-        singletonInitProgress = progress;
-        initProgressListeners.forEach((listener) => {
-          listener(progress);
-        });
-      }),
+    singletonInitPromise = runPyodideOperation(
+      "init",
+      () =>
+        getProxy().init(
+          comlinkProxy((progress: InitProgress) => {
+            singletonInitProgress = progress;
+            initProgressListeners.forEach((listener) => {
+              listener(progress);
+            });
+          }),
+        ),
+      "transport",
     );
   }
   return singletonInitPromise;
@@ -306,7 +318,10 @@ function initOnce(): Promise<void> {
  * - Fans worker progress callbacks out to all mounted hook instances.
  * 2. When the init promise resolves, `isReady` becomes `true` and `proxy` is returned.
  * 3. Subsequent hook instances (e.g. in sibling components) reuse `singletonProxy` and `singletonInitPromise` — `init()` is never called more than once.
- * 4. If `init()` rejects, `error` is set to the error message string and `proxy` remains `undefined`.
+ * 4. Initialization and worker creation failures share one logged, sanitized rejection;
+ *    `error` contains approved initialization text and `proxy` remains `undefined`.
+ *    Later transport faults are sanitized by the singleton proxy. Worker-normalized
+ *    errors pass through without duplicate logs, including shared cached requests.
  * 5. `initProgress` starts as `{ value: 0, status: "Starting worker" }` and updates as the worker emits initialization milestones.
  *
  * ## Edge Cases / Error Handling
@@ -347,8 +362,7 @@ export function usePyodide(): {
       initOnce()
         .then(() => setIsReady(true))
         .catch((err: unknown) => {
-          const message = err instanceof Error ? err.message : "Unknown error";
-          setError(message);
+          setError(getPyodideErrorMessage(err));
         });
     }
 

@@ -457,7 +457,18 @@ class ProblemEvaluation(TypedDict):
     optimization_progress: list[OptimizationProgressEntry]
 
 
+class FailureDiagnostic(TypedDict):
+    """Optional failure details for worker logging; never returned to UI consumers."""
+
+    exception_type: str
+    message: str
+    traceback: str
+
+
 class OptimizationReport(ProblemEvaluation):
+    """Numerical report with optional console-only Python failure diagnostics."""
+
+    diagnostic: NotRequired[FailureDiagnostic]
     success: bool
     status: OptimizationStatus
     message: str

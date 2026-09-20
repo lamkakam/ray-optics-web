@@ -1500,3 +1500,27 @@ describe("ImportCustomGlassPage", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+it("shows a safe message when deleting custom glass fails and retains the selection", async () => {
+  const user = userEvent.setup();
+  const deleteUserDefinedGlasses = jest
+    .fn()
+    .mockRejectedValue(
+      new Error(
+        "Traceback (most recent call last):\nRuntimeError: private mutation detail",
+      ),
+    );
+  renderPage({ deleteUserDefinedGlasses });
+  await user.click(screen.getByRole("checkbox", { name: "Select CUSTOM_A" }));
+  await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+  await user.click(screen.getByRole("button", { name: "Delete" }));
+  expect(
+    await screen.findByText(
+      "The calculation could not be completed. Please try again.",
+    ),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/private mutation detail/)).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("checkbox", { name: "Select CUSTOM_A" }),
+  ).toBeChecked();
+});

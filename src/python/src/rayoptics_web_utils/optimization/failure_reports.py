@@ -11,9 +11,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 import math
+import traceback
 from typing import TYPE_CHECKING, cast
 
 from ._types import (
+    FailureDiagnostic,
     GlassOptimizationConfig,
     GlassOptimizationReport,
     OptimizationConfig,
@@ -32,6 +34,15 @@ from .targets import target_key
 if TYPE_CHECKING:
     from .glass_optimizer import GlassExpertOptimizer
     from .problem import OptimizationProblem
+
+
+def _failure_diagnostic(error: Exception) -> FailureDiagnostic:
+    """Keep exception type, message, chained frames and notes for worker logging only."""
+    return {
+        "exception_type": type(error).__name__,
+        "message": str(error),
+        "traceback": "".join(traceback.format_exception(error)),
+    }
 
 
 def _config_mapping(value: object) -> dict[str, object]:
@@ -139,6 +150,8 @@ def build_optimization_failure_report(
 
     Returns:
         JSON-safe report with ``success == False`` and ``status == "error"``.
+        Diagnostic metadata includes chained tracebacks for the TypeScript boundary
+        to log and remove before returning the report to GUI or WebMCP consumers.
     """
     progress = _progress_for_problem(problem)
     restored_initial, restored_final, pickups = _restored_problem_state(
@@ -187,6 +200,7 @@ def build_optimization_failure_report(
             "success": False,
             "status": "error",
             "message": str(error),
+            "diagnostic": _failure_diagnostic(error),
             "optimizer": optimizer_summary,
             "initial_values": restored_initial,
             "final_values": restored_final,
@@ -268,7 +282,8 @@ def build_glass_optimization_failure_report(
 
     Returns:
         JSON-safe glass report with ``success == False`` and
-        ``status == "error"``.
+        ``status == "error"`` and console-only diagnostic metadata, removed by
+        the TypeScript boundary before the report reaches GUI or WebMCP consumers.
     """
     if optimizer is None:
         progress: list[OptimizationProgressEntry] = []
@@ -301,6 +316,7 @@ def build_glass_optimization_failure_report(
             "success": False,
             "status": "error",
             "message": str(error),
+            "diagnostic": _failure_diagnostic(error),
             "optimizer": {
                 "kind": "glass_expert",
                 "method": "L-BFGS-B",

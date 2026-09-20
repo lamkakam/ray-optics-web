@@ -10,8 +10,8 @@ interface AppShellContextValue {
   readonly proxy: PyodideWorkerAPI | undefined;
   /** Whether the shared Pyodide runtime is ready. */
   readonly isReady: boolean;
-  /** Opens the shell-owned worker/setup error modal. */
-  readonly openErrorModal: () => void;
+  /** Opens the shell-owned modal using the shared safe message for the supplied failure. */
+  readonly openErrorModal: (error?: unknown) => void;
 }
 
 /** Client-only context for app routes rendered inside the shared shell. Exposes shared Pyodide state and shell-level UI actions without prop drilling through every page. */

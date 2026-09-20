@@ -246,7 +246,7 @@ describe("useAppShellGlassCatalogs", () => {
     const { result } = renderHook(() => useAppShellGlassCatalogs(true, proxy));
     await waitFor(() =>
       expect(result.current.glassCatalogContextValue.error).toBe(
-        "Catalog preload failed",
+        "The calculation could not be completed. Please try again.",
       ),
     );
     expect(result.current.glassCatalogContextValue.isLoaded).toBe(false);
@@ -271,9 +271,12 @@ describe("useAppShellGlassCatalogs", () => {
     await act(async () => {
       loaded = await result.current.glassCatalogContextValue.preload();
     });
-    expect(loaded).toEqual({ data: undefined, error: "Manual preload failed" });
+    expect(loaded).toEqual({
+      data: undefined,
+      error: "The calculation could not be completed. Please try again.",
+    });
     expect(result.current.glassCatalogContextValue.error).toBe(
-      "Manual preload failed",
+      "The calculation could not be completed. Please try again.",
     );
     expect(result.current.glassCatalogContextValue.isLoaded).toBe(false);
     expect(mockGlassMapStore.getState().catalogsData).toBeUndefined();

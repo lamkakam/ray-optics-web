@@ -1,4 +1,6 @@
 "use client";
+import { getPyodideErrorMessage } from "@/shared/lib/pyodideErrors";
+
 /**
  * Deduplicates concurrent catalog loads per worker proxy without retaining settled
  * data or errors; durable catalog ownership remains in `GlassMapStore`.
@@ -18,8 +20,9 @@ let inFlightLoads = new WeakMap<
   Promise<GlassCatalogsLoadResult>
 >();
 
+/** Uses the shared presentation policy without repeating worker diagnostics. */
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Failed to load glass data";
+  return getPyodideErrorMessage(error);
 }
 
 /**

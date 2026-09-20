@@ -26,7 +26,8 @@ interface FocusingContainerProps {
   readonly onFocusEnd: () => void;
   readonly getOpticalModel: () => OpticalModel;
   readonly onUpdateSystem: () => Promise<void>;
-  readonly onError: () => void;
+  /** Forwards the failure to the shell for shared safe-message presentation. */
+  readonly onError: (error?: unknown) => void;
 }
 
 /**
@@ -40,7 +41,7 @@ interface FocusingContainerProps {
  * 2. Dispatches through the shared four-way `dispatchFocusing` helper based on `chromaticity` × `metric`.
  * 3. Applies the returned delta through the shared `applyFocusingDelta` helper to the last physical surface, using `optimizationSyncPolicy: "preserveOptimizationModes"` so Optimization keeps existing prescription variable/pickup modes.
  * 4. Calls `onUpdateSystem()` to recompute layout and plots.
- * 5. On any error, calls `onError()`.
+ * 5. On any error, forwards it through `onError(error)` for safe shell presentation.
  * 6. Calls `onFocusEnd` in `finally`.
  *
  * The controlled `focusing` and `computing` props both participate in the
@@ -104,8 +105,8 @@ export function FocusingContainer({
       applyFocusingDelta(lensStore, result);
 
       await onUpdateSystem();
-    } catch {
-      onError();
+    } catch (error) {
+      onError(error);
     } finally {
       onFocusEnd();
     }

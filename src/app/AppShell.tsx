@@ -13,6 +13,7 @@ import { UnappliedOptimizationResultModal } from "@/app/UnappliedOptimizationRes
 import { useAppShellNavigation } from "@/app/hooks/useAppShellNavigation";
 import { useAppShellGlassCatalogs } from "@/app/hooks/useAppShellGlassCatalogs";
 import { useGlassCatalogWebMCP } from "@/app/hooks/useGlassCatalogWebMCP";
+import { getPyodideErrorMessage } from "@/shared/lib/pyodideErrors";
 
 /** Routed content rendered inside the shared application chrome. */
 interface AppShellProps {
@@ -23,14 +24,18 @@ interface AppShellProps {
  * Composes the persistent client shell with one usePyodide call, shared runtime
  * and catalog providers, MathJax, and Layout. Registers the read-only global
  * glass WebMCP query on every route. Navigation and catalog hooks own
- * their lifecycles; the shell wires their modal/overlay state alongside its generic
- * error modal. ClientApplication supplies stores and ClientOnlyApplication keeps
+ * their lifecycles; the shell presents shared safe computation and initialization
+ * messages without repeating boundary diagnostics. ClientApplication supplies stores and ClientOnlyApplication keeps
  * this shell and routed content out of server rendering.
  */
 export default function AppShell({ children }: AppShellProps) {
-  const { proxy, isReady, initProgress } = usePyodide();
+  const { proxy, isReady, initProgress, error } = usePyodide();
   const [errorModalOpen, setErrorModalOpen] = useState(false);
-  const openErrorModal = useCallback(() => setErrorModalOpen(true), []);
+  const [errorMessage, setErrorMessage] = useState<string>();
+  const openErrorModal = useCallback((failure?: unknown) => {
+    setErrorMessage(getPyodideErrorMessage(failure));
+    setErrorModalOpen(true);
+  }, []);
   const { guardedNavigate, confirmationModalProps } = useAppShellNavigation(
     proxy,
     openErrorModal,
@@ -54,6 +59,7 @@ export default function AppShell({ children }: AppShellProps) {
         </GlassCatalogProvider>
         <ErrorModal
           isOpen={errorModalOpen}
+          message={errorMessage}
           onClose={() => setErrorModalOpen(false)}
         />
         <UnappliedOptimizationResultModal {...confirmationModalProps} />
@@ -68,6 +74,7 @@ export default function AppShell({ children }: AppShellProps) {
           isReady={isReady}
           hasProxy={proxy !== undefined}
           initProgress={initProgress}
+          initializationError={error}
           glassCatalogsLoading={glassCatalogContextValue.isLoading}
           glassCatalogPreloadError={glassCatalogContextValue.error}
         />

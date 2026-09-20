@@ -34,7 +34,8 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 interface ExampleSystemsPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
-  readonly onError: () => void;
+  /** Forwards the failure to the shell for shared safe-message presentation. */
+  readonly onError: (error?: unknown) => void;
 }
 
 /**
@@ -165,8 +166,7 @@ export function ExampleSystemsPage({
       lensLayoutImageStore,
     })
       .catch((error: unknown) => {
-        console.log("Apply example system failed:", error);
-        onError();
+        onError(error);
       })
       .finally(() => {
         if (mountedRef.current) {

@@ -1,4 +1,6 @@
 "use client";
+import { getPyodideErrorMessage } from "@/shared/lib/pyodideErrors";
+import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 
 import { useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
@@ -86,10 +88,16 @@ export {
  * - Confirmation modals preserve the visible labels and titles used by the previous implementation.
  * - `Custom Glass Persistence Warning` is shown when the session state changed successfully but IndexedDB could not save/delete the persisted rows for future visits.
  *
+ * Worker mutation failures retain the current selection and drafts and show shared
+ * approved messages above any active edit or confirmation dialog.
+ *
  * ## Compatibility Exports
  * - Re-exports `EMPTY_CUSTOM_GLASSES`, `getUserDefinedCustomGlasses`, `isUserDefinedGlassAlreadyExistsError`, `parseCustomGlassCsv`, and `saveCustomGlass` from `lib/customGlassImport` so existing external imports keep working during the refactor.
  */
 export default function ImportCustomGlassPage() {
+  const [workerError, setWorkerError] = useState<string>();
+  const showWorkerError = (error: unknown) =>
+    setWorkerError(getPyodideErrorMessage(error));
   const { proxy } = useAppShell();
   const glassMapStore = useGlassMapStore();
   const customCatalog = useStore(
@@ -313,10 +321,10 @@ export default function ImportCustomGlassPage() {
         csvFileInputRef={csvFileInputRef}
         selectedCount={checkedLabels.length}
         onJsonFileSelected={(file) => {
-          void handleJsonImport(file);
+          void handleJsonImport(file).catch(showWorkerError);
         }}
         onCsvFilesSelected={(files) => {
-          void handleCsvImport(files);
+          void handleCsvImport(files).catch(showWorkerError);
         }}
         onAdd={() => setModalMode("add")}
         onEdit={openEdit}
@@ -338,7 +346,7 @@ export default function ImportCustomGlassPage() {
           initialRows={initialModalRows}
           onCancel={() => setModalMode(undefined)}
           onSubmit={(label, modalRows) => {
-            void handleSubmit(label, modalRows);
+            void handleSubmit(label, modalRows).catch(showWorkerError);
           }}
         />
       )}
@@ -359,7 +367,7 @@ export default function ImportCustomGlassPage() {
                 variant="danger"
                 aria-label="Delete"
                 onClick={() => {
-                  void confirmDelete();
+                  void confirmDelete().catch(showWorkerError);
                 }}
               >
                 Delete
@@ -394,7 +402,9 @@ export default function ImportCustomGlassPage() {
                 variant="danger"
                 aria-label="Overwrite"
                 onClick={() => {
-                  void importMaterials(pendingImport, rejectedCsvFiles);
+                  void importMaterials(pendingImport, rejectedCsvFiles).catch(
+                    showWorkerError,
+                  );
                 }}
               >
                 Overwrite
@@ -486,6 +496,11 @@ export default function ImportCustomGlassPage() {
             </p>
           </Modal>
         )}
+      <ErrorModal
+        isOpen={workerError !== undefined}
+        message={workerError}
+        onClose={() => setWorkerError(undefined)}
+      />
     </main>
   );
 }

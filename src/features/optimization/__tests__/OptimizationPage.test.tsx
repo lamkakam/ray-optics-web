@@ -1429,7 +1429,7 @@ describe("OptimizationPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("logs rejected evaluation diagnostics but renders only customer-safe copy", async () => {
+  it("renders safe evaluation copy without duplicate diagnostics", async () => {
     const diagnostic = new Error(
       'Traceback (most recent call last):\n  File "/lib/python3.13/site-packages/rayoptics_web_utils/optimization/optimization.py", line 134, in evaluate_optimization_problem\nValueError: private evaluation detail',
     );
@@ -1450,20 +1450,19 @@ describe("OptimizationPage", () => {
     });
 
     expect(
-      await screen.findByText("Operand evaluation failed."),
+      await screen.findByText(
+        "The calculation could not be completed. Please try again.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
     expect(screen.queryByText(/optimization\.py/)).not.toBeInTheDocument();
     expect(screen.queryByText(/ValueError/)).not.toBeInTheDocument();
     expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
-    expect(consoleError).toHaveBeenCalledWith(
-      "Operand evaluation failed.",
-      diagnostic,
-    );
+    expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 
-  it("logs unexpected resolved evaluation reports but renders only customer-safe copy", async () => {
+  it("renders safe resolved evaluation failures without duplicate diagnostics", async () => {
     const internalReport = {
       ...makeEvaluationReport(),
       success: false,
@@ -1489,16 +1488,15 @@ describe("OptimizationPage", () => {
     });
 
     expect(
-      await screen.findByText("Operand evaluation failed."),
+      await screen.findByText(
+        "The calculation could not be completed. Please try again.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
     expect(screen.queryByText(/problem\.py/)).not.toBeInTheDocument();
     expect(screen.queryByText(/RuntimeError/)).not.toBeInTheDocument();
     expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
-    expect(consoleError).toHaveBeenCalledWith(
-      "Operand evaluation failed.",
-      internalReport,
-    );
+    expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 
@@ -2241,7 +2239,11 @@ describe("OptimizationPage", () => {
       | undefined;
     expect(yAxis?.axisLabel?.formatter?.(0)).toBe("1e-9");
 
-    expect(screen.queryByText("Optimization failed.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "The calculation could not be completed. Please try again.",
+      ),
+    ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "OK" }));
     expect(
       screen.queryByRole("dialog", { name: "Optimization Progress" }),
@@ -2526,10 +2528,7 @@ describe("OptimizationPage", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText("private solver detail")).not.toBeInTheDocument();
-    expect(consoleError).toHaveBeenCalledWith(
-      "Optimization did not converge.",
-      failedReport,
-    );
+    expect(consoleError).not.toHaveBeenCalled();
     expect(
       optimizationStore.getState().optimizationModel?.surfaces[0]
         .curvatureRadius,
@@ -2538,7 +2537,7 @@ describe("OptimizationPage", () => {
     consoleError.mockRestore();
   });
 
-  it("logs a returned Python error but renders only customer-safe copy without mutating the model", async () => {
+  it("renders a safe Python error without duplicate logging or model mutation", async () => {
     const onError = jest.fn();
     const consoleError = jest
       .spyOn(console, "error")
@@ -2595,17 +2594,14 @@ describe("OptimizationPage", () => {
     expect(evaluationPanel).not.toBeNull();
     expect(
       await within(evaluationPanel as HTMLElement).findByText(
-        "Optimization failed.",
+        "The calculation could not be completed. Please try again.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
     expect(screen.queryByText(/problem\.py/)).not.toBeInTheDocument();
     expect(screen.queryByText(/RuntimeError/)).not.toBeInTheDocument();
     expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
-    expect(consoleError).toHaveBeenCalledWith(
-      "Optimization failed.",
-      errorReport,
-    );
+    expect(consoleError).not.toHaveBeenCalled();
     expect(
       optimizationStore.getState().optimizationModel?.surfaces[0]
         .curvatureRadius,
@@ -2614,7 +2610,7 @@ describe("OptimizationPage", () => {
     consoleError.mockRestore();
   });
 
-  it("logs rejected optimization diagnostics, renders safe copy, and allows the progress modal to close", async () => {
+  it("renders safe optimization failures without duplicate logging and allows the progress modal to close", async () => {
     const onError = jest.fn();
     const diagnostic = new Error(
       'Traceback (most recent call last):\n  File "/lib/python3.13/site-packages/rayoptics_web_utils/optimization/solvers.py"\nRuntimeError: private worker detail',
@@ -2633,15 +2629,16 @@ describe("OptimizationPage", () => {
     await clickOptimizeAfterEvaluation(user);
 
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
-    expect(screen.getByText("Optimization failed.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The calculation could not be completed. Please try again.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Traceback/)).not.toBeInTheDocument();
     expect(screen.queryByText(/solvers\.py/)).not.toBeInTheDocument();
     expect(screen.queryByText(/RuntimeError/)).not.toBeInTheDocument();
     expect(screen.queryByText(/site-packages/)).not.toBeInTheDocument();
-    expect(consoleError).toHaveBeenCalledWith(
-      "Optimization failed.",
-      diagnostic,
-    );
+    expect(consoleError).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "OK" }));
