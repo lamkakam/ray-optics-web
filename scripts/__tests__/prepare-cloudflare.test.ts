@@ -12,17 +12,27 @@ describe("prepare-cloudflare", () => {
     const fixtureDir = await mkdtemp(path.join(tmpdir(), "prepare-cloudflare-"));
     const outDir = path.join(fixtureDir, "out");
     const destinationDir = path.join(fixtureDir, "cloudflare-pages");
+    const currentWheel = "rayoptics_web_utils-0.33.1-py3-none-any.whl";
 
     await mkdir(path.join(outDir, "_next/static/chunks"), { recursive: true });
     await mkdir(path.join(outDir, "nested/route"), { recursive: true });
+    await mkdir(path.join(outDir, "nested/__tests__"), { recursive: true });
     await mkdir(destinationDir, { recursive: true });
     await writeFile(path.join(outDir, "index.html"), "root");
     await writeFile(path.join(outDir, "_next/static/chunks/app.js"), "chunk");
     await writeFile(path.join(outDir, "nested/route/index.html"), "nested");
+    await writeFile(path.join(outDir, currentWheel), "current wheel");
+    await writeFile(path.join(outDir, "nested/__tests__/worker.ts"), "test");
+    await writeFile(path.join(outDir, "worker.spec.js"), "spec");
+    await writeFile(path.join(outDir, "serve.json.md"), "sidecar");
+    await writeFile(
+      path.join(outDir, "rayoptics_web_utils-0.33.0-py3-none-any.whl"),
+      "obsolete wheel",
+    );
     await writeFile(path.join(destinationDir, "stale.txt"), "stale");
     await writeFile(path.join(destinationDir, "_headers"), "stale headers");
 
-    await prepareCloudflarePages(outDir, destinationDir);
+    await prepareCloudflarePages(outDir, destinationDir, currentWheel);
 
     await expect(readFile(path.join(destinationDir, "index.html"), "utf8")).resolves.toBe(
       "root"
@@ -34,6 +44,27 @@ describe("prepare-cloudflare", () => {
       readFile(path.join(destinationDir, "nested/route/index.html"), "utf8")
     ).resolves.toBe("nested");
     await expect(readFile(path.join(destinationDir, "stale.txt"), "utf8")).rejects.toThrow();
+    await expect(
+      readFile(path.join(destinationDir, "nested/__tests__/worker.ts"), "utf8"),
+    ).rejects.toThrow();
+    await expect(
+      readFile(path.join(destinationDir, "worker.spec.js"), "utf8"),
+    ).rejects.toThrow();
+    await expect(
+      readFile(path.join(destinationDir, "serve.json.md"), "utf8"),
+    ).rejects.toThrow();
+    await expect(
+      readFile(
+        path.join(
+          destinationDir,
+          "rayoptics_web_utils-0.33.0-py3-none-any.whl",
+        ),
+        "utf8",
+      ),
+    ).rejects.toThrow();
+    await expect(
+      readFile(path.join(destinationDir, currentWheel), "utf8"),
+    ).resolves.toBe("current wheel");
     await expect(readFile(path.join(destinationDir, "_headers"), "utf8")).resolves.toBe(
       CLOUDFLARE_HEADERS
     );

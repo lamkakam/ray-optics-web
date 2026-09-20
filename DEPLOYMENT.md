@@ -9,19 +9,27 @@ required to match `package.json` or the internal Python package version.
 
 The release workflow in `.github/workflows/release.yml` uses Node 24 and Python
 3.12, runs the same type-check, lint, format, unit-test, and static-build gates
-as CI, and creates a root-path static export. It publishes that export as
-`ray-optics-web-<tag>-dist.zip` on a GitHub Release with generated release
-notes.
+as CI, and creates a root-path static export. `npm run prepare:release` copies
+the export to a clean staging directory without tests, specification sidecars,
+or obsolete wheels. The workflow packages the staging directory's contents at
+the archive root and publishes `ray-optics-web-<tag>-dist.zip` on a GitHub
+Release with generated release notes.
+
+The compiled archive and Cloudflare directory are uploaded as workflow
+artifacts before release publication. Publishing is idempotent: a missing
+release is created, while an existing release receives a replacement archive.
 
 The root-path export is also copied to a short-lived `cloudflare-pages`
-workflow artifact. `npm run prepare:cloudflare` cleans the destination, copies
-the complete `out` tree, and adds a Cloudflare Pages `_headers` file containing
+workflow artifact. `npm run prepare:cloudflare` applies the same clean-copy
+policy and adds a Cloudflare Pages `_headers` file containing
 the COOP, COEP, and `Permissions-Policy: tools=(self)` response headers. These
 headers preserve `SharedArrayBuffer` support without a server or Pages
 Functions. See Cloudflare's documentation for [static header
 rules](https://developers.cloudflare.com/pages/configuration/headers/) and
 [Direct Upload from continuous
 integration](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
+The deployment job remains disabled until the Direct Upload project has been
+created.
 
 The GitHub Pages workflow in `.github/workflows/deploy.yml` performs a separate
 build with `NEXT_PUBLIC_BASE_PATH=/ray-optics-web`. Its service-worker manifest
@@ -52,8 +60,9 @@ static directory through `cloudflare/wrangler-action`.
 
 Initialize and activate `src/python/.venv` before either build. Run `npm run
 build` without `NEXT_PUBLIC_BASE_PATH` to inspect the release/Cloudflare export,
-then run `npm run prepare:cloudflare`. For the GitHub Pages variant, remove the
-previous `out` directory through a normal clean build and run:
+then run `npm run prepare:release` and `npm run prepare:cloudflare`. For the
+GitHub Pages variant, remove the previous `out` directory through a normal clean
+build and run:
 
 ```bash
 NEXT_PUBLIC_BASE_PATH=/ray-optics-web npm run build

@@ -2,10 +2,10 @@
  * Jest configuration for canonical source tests.
  *
  * Generated static exports under `out/` are deployment artifacts rather than
- * canonical test inputs, even when the export contains copied test files.
- * Stryker sandboxes are excluded relative to this config's root so ordinary Jest
- * runs skip copied tests and modules (including manual mocks), while Jest inside
- * a mutation sandbox can run its suite without duplicate-module collisions.
+ * canonical test inputs. Stryker sandboxes are excluded relative to this
+ * config's root so ordinary Jest runs skip copied tests and modules (including
+ * manual mocks), while Jest inside a mutation sandbox can run its suite without
+ * duplicate-module collisions.
  */
 import type { Config } from "jest";
 

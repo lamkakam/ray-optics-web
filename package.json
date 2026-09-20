@@ -10,6 +10,7 @@
     "dev": "next dev --webpack",
     "prebuild": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "build": "next build --webpack",
+    "prepare:release": "node scripts/prepare-release.js",
     "prepare:cloudflare": "node scripts/prepare-cloudflare.js",
     "generate:python-third-party-licenses": "src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=THIRD-PARTY-PYTHON-LICENSES.md",
     "generate:third-party-licenses": "license-checker-rseidelsohn --production --markdown --excludePackages=ray-optics-web --out THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && npm run generate:python-third-party-licenses",
