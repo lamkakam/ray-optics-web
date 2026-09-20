@@ -2,19 +2,32 @@ name: CI
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
+permissions:
+  contents: read
 jobs:
-  ci:
+  changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      non_markdown: ${{ steps.changed-files.outputs.non_markdown }}
+      python: ${{ steps.changed-files.outputs.python }}
     steps:
-      - uses: actions/checkout@v6
       - id: changed-files
         uses: dorny/paths-filter@v4
         with:
           filters: |
+            non_markdown:
+              - '!**/*.md'
             python:
               - '**/*.py'
+  validate:
+    needs: changes
+    if: needs.changes.outputs.non_markdown == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -23,7 +36,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: bash scripts/init-python-venv.sh
-      - if: steps.changed-files.outputs.python == 'true'
+      - if: needs.changes.outputs.python == 'true'
         run: bash scripts/run-python-tests.sh
       - run: bash scripts/build-python-wheel.sh
       - run: npm ci
@@ -36,3 +49,32 @@ jobs:
       - run: npm run build
         env:
           NEXT_PUBLIC_BASE_PATH: /ray-optics-web
+  ci:
+    needs: [changes, validate]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require successful validation or an intentional Markdown-only skip
+        shell: bash
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          NON_MARKDOWN: ${{ needs.changes.outputs.non_markdown }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+        run: |
+          if [[ "$CHANGES_RESULT" != "success" ]]; then
+            echo "::error::Change detection did not succeed ($CHANGES_RESULT)."
+            exit 1
+          fi
+          case "$NON_MARKDOWN:$VALIDATE_RESULT" in
+            true:success)
+              echo "Validation passed."
+              ;;
+            false:skipped)
+              echo "Markdown-only change; validation intentionally skipped."
+              ;;
+            *)
+              echo "::error::Unexpected validation result ($VALIDATE_RESULT) for non_markdown=$NON_MARKDOWN."
+              exit 1
+              ;;
+          esac

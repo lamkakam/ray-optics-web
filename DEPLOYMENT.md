@@ -5,6 +5,53 @@ Production releases are fully static and are created only by tags that match
 non-version tags do not start either deployment workflow. A tag version is not
 required to match `package.json` or the internal Python package version.
 
+## Required CI check
+
+Every pull request targeting `main` starts `.github/workflows/ci.yml`, including
+Markdown-only changes. The `changes` job detects non-Markdown and Python file
+changes, including deletions and both paths of renames. The `validate` job runs
+the existing checks and the GitHub Pages production build for any non-Markdown
+change; Python tests run conditionally when a `.py` file changes.
+
+The final `ci` job always evaluates both jobs. It passes only after successful
+change detection and either successful validation for non-Markdown changes or
+an intentional validation skip for Markdown-only changes. Failed or cancelled
+jobs, missing outputs, and unexpected skips fail the gate. `main-protection`
+continues to require exactly the `ci` check from GitHub Actions and zero
+approving reviews.
+
+## Release tag protection
+
+Only repository administrators may create `v*` tags. Two active, importable
+definitions in `.github/rulesets/` enforce separate rules:
+
+- `release-tag-creation.json` restricts creation with the repository administrator
+  role (`RepositoryRole`, ID `5`) as its only bypass actor.
+- `release-tag-immutability.json` restricts updates and deletions with no bypass
+  actors, including administrators. Existing `v*` tags are protected too;
+  corrections require a new version tag.
+
+Keeping these rulesets separate prevents the administrator creation bypass from
+also allowing tag changes. The protection pattern `refs/tags/v*` is broader than
+the deployment trigger: a prerelease tag is protected but does not deploy.
+Committing these JSON files does not configure GitHub automatically. Import
+them in repository settings or apply their exact contents with the repository
+rulesets API, then read the rulesets back to verify active enforcement and bypass
+actors. Preserve `main-protection` and the existing environment policies.
+
+Administrators must tag a merged commit. Both deployment workflows check out the
+tagged commit with full history, fetch `main`, and require
+`git merge-base --is-ancestor HEAD origin/main` before installing dependencies,
+building, or publishing. The current `main` commit and older ancestors are
+allowed; an unmerged branch commit or a failed fetch stops the workflow.
+After a squash merge, tag the resulting commit on `main`, not the original PR
+commit. Lightweight and annotated tags follow the same ancestry requirement.
+
+Workflow guards take effect when their PR is merged and are present in the
+tagged commit's workflow files. Older commits retain their historical workflow
+definitions; administrators must account for this when releasing an older
+ancestor. Tag rulesets take effect as soon as they are applied on GitHub.
+
 ## Release outputs
 
 The release workflow in `.github/workflows/release.yml` uses Node 24 and Python
