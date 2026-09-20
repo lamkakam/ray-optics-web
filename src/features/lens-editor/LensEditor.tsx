@@ -70,6 +70,7 @@ export interface LensEditorProps {
  *
  * ### LG (`isLG === true`)
  * - Controls row: always rendered so config actions are available before any optical system has been computed. Row order is `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional `Paraxial Data`, optional `3rd Order Seidel Aberr.`, and optional `Zernike Terms`; `border-b` is applied here when `firstOrderData` is undefined. The Paraxial control is guarded by `firstOrderData`, the Seidel control by `seidelData`, and the Zernike control by `committedOpticalModel`.
+ * - The controls row and config toolbar stay mounted as analysis controls appear, preserving pending imports and their confirmation dialogs when the first results arrive.
  * - First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
  * - Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
  * - BottomDrawerContainer (`draggable={true}`)
@@ -350,10 +351,6 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
       isUpdateSystemDisabled={!isReady || computing || focusing}
     />
   );
-  /** Whether at least one analysis modal control can be rendered. */
-  const hasAnalysisControls = Boolean(
-    firstOrderData || seidelData || committedOpticalModel,
-  );
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
 
   const lensLayoutPanel = (
@@ -410,23 +407,14 @@ export function LensEditor({ proxy, isReady, onError }: LensEditorProps) {
 
   const lgContent = (
     <>
-      {hasAnalysisControls && (
-        <div
-          className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}
-        >
-          {configToolbar}
-          {paraxialDataButton}
-          {seidelButton}
-          {zernikeButton}
-        </div>
-      )}
-      {!hasAnalysisControls && (
-        <div
-          className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}
-        >
-          {configToolbar}
-        </div>
-      )}
+      <div
+        className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}
+      >
+        {configToolbar}
+        {paraxialDataButton}
+        {seidelButton}
+        {zernikeButton}
+      </div>
       {firstOrderData && (
         <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
           {firstOrderChips}

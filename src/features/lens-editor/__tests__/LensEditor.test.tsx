@@ -1,4 +1,4 @@
-/** Covers editor workflows and actual Zernike dialog/tool cache reuse in both directions. */
+/** Covers editor workflows, pending imports across initial analysis results, and actual Zernike dialog/tool cache reuse in both directions. */
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
@@ -1392,6 +1392,41 @@ describe("LensEditor", () => {
 
     expect(lensStore.getState().autoAperture).toBe(true);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  /** First analysis results must preserve the desktop toolbar's pending import. */
+  it("LG: preserves import confirmation when first analysis results arrive", async () => {
+    const { container, lensStore, specsStore, analysisDataStore } =
+      renderLensEditor();
+    const user = userEvent.setup();
+    const fileInput = container.querySelector(
+      'input[accept=".json"]',
+    ) as HTMLInputElement;
+    await user.upload(
+      fileInput,
+      new File([JSON.stringify(testImportModel)], "lens.json", {
+        type: "application/json",
+      }),
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Load Config" });
+
+    act(() => {
+      analysisDataStore.getState().setFirstOrderData({ efl: 100 });
+    });
+
+    expect(dialog).toBeVisible();
+    await user.click(within(dialog).getByRole("button", { name: "Load" }));
+
+    expect(lensStore.getState().rows).toEqual(
+      surfacesToGridRows(testImportModel),
+    );
+    expect(lensStore.getState().autoAperture).toBe(true);
+    expect(specsStore.getState().toOpticalSpecs()).toMatchObject(
+      testImportModel.specs,
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Load Config" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows an error dialog when a non-txt file is selected for Photons to Photos import", async () => {
