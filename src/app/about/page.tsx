@@ -3,6 +3,7 @@
 import { ExternalLink } from "@/shared/components/primitives/ExternalLink";
 import { Header } from "@/shared/components/primitives/Header";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
+import { version } from "../../../package.json";
 
 const LICENSE_TEXT = `BSD 3-Clause License
 
@@ -38,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ## Behaviour
  * - Renders the About heading and explanatory text inline in the route file
+ * - Displays `Version: <version>` directly below the heading using the root package version bundled at build time
  * - Describes Ray Optics Web as a browser-based optical design GUI
  * - Mentions the RayOptics library and Pyodide (Python to WebAssembly)
  * - Notes that all computation is local and no server-side processing occurs
@@ -54,6 +56,7 @@ export default function AboutPage() {
         About
       </Header>
       <div className="space-y-4">
+        <Paragraph>Version: {version}</Paragraph>
         <Paragraph>
           Ray Optics Web is a browser-based graphical interface for optical
           system design and analysis. It uses RayOptics, a Python library for
