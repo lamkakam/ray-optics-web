@@ -29,18 +29,37 @@ Do not put HTML, route `.txt` payloads, or other mutable resources in `next-stat
 
 ## Understand deployment
 
-GitHub Pages deployment is fully client-side and has no backend:
+Deployments are fully client-side and have no backend. Read
+[`DEPLOYMENT.md`](../../../DEPLOYMENT.md) for release outputs, tag protection,
+environments, and retry behavior:
 
-1. A push to `main` with a non-Markdown change triggers `.github/workflows/deploy.yml`. Pages deployments are serialized and are not cancelled in progress.
-2. The job installs Node and Python, initializes `src/python/.venv`, builds the local wheel, and runs `npm ci`.
-3. `npm run build` runs the Next static export with `NEXT_PUBLIC_BASE_PATH=/ray-optics-web`; `postbuild` injects the manifest and writes license reports into `out`.
-4. The workflow uploads only `out` as a uniquely named Pages artifact, then deploys that artifact.
+1. A push of a tag matching `v[0-9]+.[0-9]+.[0-9]+` triggers both `.github/workflows/deploy.yml` and `.github/workflows/release.yml`. A push to `main` alone does not deploy. GitHub Pages deployments are serialized and are not cancelled in progress.
+2. Both workflows check out the tagged commit with full history and fetch `main`. They require `git merge-base --is-ancestor HEAD origin/main` before installing dependencies or building. Current and older `main` ancestors are allowed; fetch failures and unmerged commits stop the workflow.
+3. The jobs install Node and Python, initialize `src/python/.venv`, build the local wheel, and run `npm ci`.
+4. The GitHub Pages build uses `NEXT_PUBLIC_BASE_PATH=/ray-optics-web`; `postbuild` injects the manifest and writes license reports into `out`. The workflow uploads only `out` as a uniquely named Pages artifact, then deploys it.
+5. The release workflow runs the CI checks and a root-path build, prepares the release archive and Cloudflare directory, and uploads them before downstream publication and deployment. Preserve the build's exported artifact names on downstream retries; rerun the full workflow if those artifacts have expired. Existing releases receive a replacement archive on retry.
 
-Pull requests run the corresponding checks in `.github/workflows/ci.yml`, including a base-path production build. Markdown-only changes are ignored by both workflows, so do not claim CI or deployment ran for a skill/documentation-only commit.
+Every PR targeting `main` runs `.github/workflows/ci.yml`. Its `changes` job uses
+read permissions to classify files; `validate` runs checks and the base-path
+production build for any non-Markdown change, with conditional Python testing.
+The required `ci` job always evaluates detection and validation, accepting only
+successful validation or an intentional Markdown-only skip after successful
+detection. Preserve this single check's name and GitHub Actions identity. A
+Markdown-only PR runs the gate but skips validation and the build.
+
+The active tag rulesets in `.github/rulesets/` target `refs/tags/v*`. Only
+repository administrators bypass creation restrictions; updates and deletions
+have no bypass actors, so corrections require a new version tag. Keep the two
+rulesets separate and preserve `main-protection`, its zero-review requirement,
+and environment policies. Administrators must tag a merged commit; after a
+squash merge, use the resulting commit on `main`. A tag runs the workflow files
+from its target commit, so older ancestors may predate the ancestry guards.
 
 ## Change safely with TDD
 
-Before implementation, add failing tests for the behavior being changed. Use these existing suites:
+For application behavior changes, add failing tests before implementation.
+Configuration-only workflow changes do not require TDD. Use these existing suites
+when changing service-worker behavior:
 
 - `src/shared/lib/config/__tests__/swCachePolicy.test.ts`: URL origin, exact path, and base-path classification.
 - `scripts/__tests__/generate-next-static-sw.test.ts`: deterministic enumeration, URL escaping, base paths, injection, and failure modes.
