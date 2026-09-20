@@ -2,9 +2,11 @@
 
 A web-based GUI for [RayOptics v0.9.8](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). Pyodide is served from [jsDelivr](https://www.jsdelivr.com/); RayOptics and its dependencies are served from [Python Hosted](https://pythonhosted.org/).
 
-**Live demo:** [https://lamkakam.github.io/ray-optics-web/](https://lamkakam.github.io/ray-optics-web/)
+**Live demo with full functionalities:** [https://ray-optics-web.vestibulum.xyz](https://ray-optics-web.vestibulum.xyz)
 
-> **Note:** Many RayOptics functionalities are not yet included in this interface.
+**Live demo on GitHub Page:** [https://lamkakam.github.io/ray-optics-web/](https://lamkakam.github.io/ray-optics-web/)
+
+> **Note:** This webapp requires to have HTTP COOP header set with `same-origin` and COEP header with `require-corp` for the functionality of aborting long optical system optimization.
 
 ## Disclaimer
 
