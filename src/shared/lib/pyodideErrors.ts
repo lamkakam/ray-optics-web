@@ -173,12 +173,25 @@ export function getPyodideErrorMessage(error: unknown): string {
   return classify(error).message;
 }
 
-/** Recognizes only our names and approved messages after Comlink reconstructs the Error. */
+/**
+ * Recognizes only normalized business errors with approved messages, including
+ * Errors reconstructed by Comlink. Raw exceptions and message text alone do not
+ * establish a business rejection; this check neither normalizes nor logs.
+ */
+export function isPyodideBusinessError(error: unknown): boolean {
+  const value = record(error);
+  return (
+    value?.name === "PyodideBusinessError" &&
+    typeof value.message === "string" &&
+    businessMessages.has(value.message)
+  );
+}
+
+/** Recognizes normalized business or fatal errors after Comlink reconstructs the Error. */
 function isNormalized(error: unknown): error is Error {
   const value = record(error);
   return (
-    (value?.name === "PyodideBusinessError" &&
-      businessMessages.has(value.message as string)) ||
+    isPyodideBusinessError(error) ||
     (value?.name === "PyodideFatalError" &&
       [CALCULATION_FAILED_MESSAGE, INITIALIZATION_FAILED_MESSAGE].includes(
         value.message as string,

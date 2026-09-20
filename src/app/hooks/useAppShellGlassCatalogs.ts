@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore } from "zustand";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import {
+  getPyodideErrorMessage,
+  isPyodideBusinessError,
+} from "@/shared/lib/pyodideErrors";
 import type { GlassCatalogContextValue } from "@/shared/components/providers/GlassCatalogProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { loadGlassCatalogs } from "@/features/glass-map/lib/glassCatalogLoader";
@@ -20,8 +24,10 @@ import type {
 /**
  * Replays persisted custom glasses into the worker one row at a time, merging
  * accepted rows into a copy of Custom without changing loader-owned data.
- * Invalid/unsupported rows and worker rejections are quarantined when possible;
- * warning labels retain row order and use "unlabeled" when no label is available.
+ * Invalid/unsupported rows and normalized business rejections are quarantined
+ * when possible; warning labels retain row order and use "unlabeled" when no
+ * label is available. Fatal, transport and unclassified failures stop hydration
+ * immediately, preserving the failed row and all subsequent stored rows.
  * Storage read/quarantine failures do not prevent built-in catalogs from loading.
  */
 async function hydratePersistedCustomGlasses(
@@ -61,7 +67,10 @@ async function hydratePersistedCustomGlasses(
         ...hydratedData.Custom,
         ...added,
       };
-    } catch {
+    } catch (error) {
+      if (!isPyodideBusinessError(error)) {
+        throw error;
+      }
       quarantinedLabels.push(row.label);
       await quarantinePersistedCustomGlass(row).catch(() => undefined);
     }
@@ -77,9 +86,11 @@ type GlassCatalogPreloadStatus = "loading" | "loaded" | "error";
  * Owns preload status/errors while GlassMapStore owns successful data and lookup
  * maps. Automatic startup waits for a ready runtime and proxy, reuses store data,
  * and otherwise loads catalogs then hydrates persisted glasses before committing.
- * A load response received after effect cleanup is ignored before hydration.
- * Startup failures remain local and block initialization; quarantined labels are
- * exposed for one dismissible shell warning after hydration finishes.
+ * Catalog responses and hydration completion/failure after cleanup are ignored.
+ * Runtime hydration failures leave catalogs uncommitted and block initialization
+ * with the shared safe error message, without repeating boundary diagnostics.
+ * Invalid data and business rejections allow startup to finish with quarantined
+ * labels exposed for one dismissible shell warning.
  *
  * Manual preload intentionally needs only a proxy: it returns current store data
  * or loads and commits catalogs without persisted-glass hydration. Both paths
@@ -139,6 +150,10 @@ export function useAppShellGlassCatalogs(
         const { hydratedData, quarantinedLabels } =
           await hydratePersistedCustomGlasses(proxy, result.data);
 
+        if (cancelled) {
+          return;
+        }
+
         if (quarantinedLabels.length > 0) {
           setQuarantinedCustomGlassLabels(quarantinedLabels);
         }
@@ -150,7 +165,13 @@ export function useAppShellGlassCatalogs(
 
       setGlassCatalogPreloadStatus("error");
       setGlassCatalogPreloadError(result.error);
-    })();
+    })().catch((error: unknown) => {
+      if (cancelled) {
+        return;
+      }
+      setGlassCatalogPreloadStatus("error");
+      setGlassCatalogPreloadError(getPyodideErrorMessage(error));
+    });
 
     return () => {
       cancelled = true;

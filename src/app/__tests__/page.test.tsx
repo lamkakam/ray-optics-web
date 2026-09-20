@@ -44,6 +44,7 @@ import type {
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { DUPLICATE_GLASS_MESSAGE } from "@/shared/lib/pyodideErrors";
 import type {
   ZernikeData,
   ZernikeOrdering,
@@ -1826,7 +1827,8 @@ describe("app shell routes", () => {
     expect(screen.getByTestId("custom-count")).toHaveTextContent("2");
   });
 
-  it("quarantines worker-rejected persisted glasses and dismisses the plural warning", async () => {
+  /** Only normalized business rejections produce the dismissible startup quarantine warning. */
+  it("quarantines persisted glasses rejected with a business error and dismisses the warning", async () => {
     const persistedRow = {
       label: "REJECTED",
       type: "tabulated",
@@ -1840,7 +1842,9 @@ describe("app shell routes", () => {
     mockStoredCustomGlassRows = [persistedRow];
     mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce(loadedCatalogsData);
     mockProxy.addUserDefinedGlasses.mockRejectedValueOnce(
-      new Error("worker rejected row"),
+      Object.assign(new Error(DUPLICATE_GLASS_MESSAGE), {
+        name: "PyodideBusinessError",
+      }),
     );
 
     const user = userEvent.setup();

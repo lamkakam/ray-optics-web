@@ -1,8 +1,10 @@
-/** Shared boundary policy keeps full diagnostics in the console and safe messages in RPCs. */
+/** Shared boundary policy keeps diagnostics in the console and distinguishes normalized business errors from runtime failures. */
 import {
   CALCULATION_FAILED_MESSAGE,
   INITIALIZATION_FAILED_MESSAGE,
+  DUPLICATE_GLASS_MESSAGE,
   getPyodideErrorMessage,
+  isPyodideBusinessError,
   normalizePyodideError,
   normalizeOptimizationReport,
   runPyodideOperation,
@@ -20,6 +22,37 @@ describe("Pyodide error policy", () => {
     error = jest.spyOn(console, "error").mockImplementation(() => {});
   });
   afterEach(() => jest.restoreAllMocks());
+
+  it.each([fold, DUPLICATE_GLASS_MESSAGE])(
+    "recognizes normalized business errors without logging: %s",
+    (message) => {
+      const normalized = normalizePyodideError(new Error(message), "analysis");
+      warn.mockClear();
+      expect(isPyodideBusinessError(normalized)).toBe(true);
+      expect(warn).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    new Error(fold),
+    fold,
+    { message: fold },
+    { name: "PyodideFatalError", message: fold },
+    { name: "PyodideFatalError", message: CALCULATION_FAILED_MESSAGE },
+    { name: "PyodideBusinessError", message: "Unapproved message" },
+    { name: "PyodideBusinessError", message: CALCULATION_FAILED_MESSAGE },
+    { name: "PyodideBusinessError", message: 42 },
+    { name: "PyodideBusinessError" },
+    undefined,
+  ])(
+    "does not treat unnormalized or unapproved errors as business errors: %p",
+    (failure) => {
+      expect(isPyodideBusinessError(failure)).toBe(false);
+      expect(warn).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+    },
+  );
 
   it("warns once with the original traceback and retains the exact fold message", () => {
     const original = new Error(traceback);
