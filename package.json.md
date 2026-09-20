@@ -18,6 +18,13 @@ packages remain reportable if they are introduced as third-party dependencies.
 
 Running the manifest generator first ensures a deployment cannot complete without its immutable Next asset list.
 
+`npm run prepare:cloudflare` replaces `cloudflare-pages` with a complete copy
+of the root-path export in `out`, then adds Cloudflare Pages' `_headers` file.
+The generated headers preserve the cross-origin isolation required for
+`SharedArrayBuffer` and grant the same origin access to the Tools API. Run this
+command only after a root-path `npm run build`; the GitHub Pages subpath build
+is deployed directly from `out` and must not be used as its input.
+
 ## Lint behavior
 
 `npm run lint` regenerates the Python export helpers and then runs Biome with

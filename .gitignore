@@ -12,6 +12,7 @@ stryker.log
 # next.js
 .next/
 out/
+cloudflare-pages/
 
 # production
 build/
