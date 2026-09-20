@@ -18,12 +18,17 @@ packages remain reportable if they are introduced as third-party dependencies.
 
 Running the manifest generator first ensures a deployment cannot complete without its immutable Next asset list.
 
-`npm run prepare:cloudflare` replaces `cloudflare-pages` with a complete copy
-of the root-path export in `out`, then adds Cloudflare Pages' `_headers` file.
-The generated headers preserve the cross-origin isolation required for
-`SharedArrayBuffer` and grant the same origin access to the Tools API. Run this
-command only after a root-path `npm run build`; the GitHub Pages subpath build
-is deployed directly from `out` and must not be used as its input.
+`npm run prepare:release` replaces `release-dist` with a clean copy of the
+root-path export in `out`. It excludes test files and directories,
+specification sidecars, and every wheel except the version declared by the
+internal Python package.
+
+`npm run prepare:cloudflare` applies the same clean-copy policy to
+`cloudflare-pages`, then adds Cloudflare Pages' `_headers` file. The generated
+headers preserve the cross-origin isolation required for `SharedArrayBuffer`
+and grant the same origin access to the Tools API. Run these commands only
+after a root-path `npm run build`; the GitHub Pages subpath build is deployed
+directly from `out` and must not be used as their input.
 
 ## Lint behavior
 

@@ -44,7 +44,7 @@ Before implementation, add failing tests for the behavior being changed. Use the
 
 - `src/shared/lib/config/__tests__/swCachePolicy.test.ts`: URL origin, exact path, and base-path classification.
 - `scripts/__tests__/generate-next-static-sw.test.ts`: deterministic enumeration, URL escaping, base paths, injection, and failure modes.
-- `public/__tests__/pyodide-sw.test.ts`: install, fetch, runtime caching, multi-deployment retention, and activation cleanup.
+- `__tests__/pyodide-sw.test.ts`: install, fetch, runtime caching, multi-deployment retention, and activation cleanup.
 - `src/shared/hooks/__tests__/useServiceWorkerRegistration.test.ts`: registration URL and options.
 
 When changing source, update its adjacent specification. Review `package.json.md` for postbuild ordering, `public/pyodide-sw.js.md` for cache policy, and `scripts/generate-next-static-sw.js.md` for generation behavior.

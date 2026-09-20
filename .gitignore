@@ -13,9 +13,11 @@ stryker.log
 .next/
 out/
 cloudflare-pages/
+release-dist/
 
 # production
 build/
+ray-optics-web-v*-dist.zip
 
 # misc
 *.pem

@@ -9,19 +9,40 @@ required to match `package.json` or the internal Python package version.
 
 The release workflow in `.github/workflows/release.yml` uses Node 24 and Python
 3.12, runs the same type-check, lint, format, unit-test, and static-build gates
-as CI, and creates a root-path static export. It publishes that export as
-`ray-optics-web-<tag>-dist.zip` on a GitHub Release with generated release
-notes.
+as CI, and creates a root-path static export. `npm run prepare:release` copies
+the export to a clean staging directory without tests, specification sidecars,
+or obsolete wheels. The workflow packages the staging directory's contents at
+the archive root and publishes `ray-optics-web-<tag>-dist.zip` on a GitHub
+Release with generated release notes.
+
+The compiled archive and Cloudflare directory are uploaded as workflow
+artifacts before release publication. Publishing is idempotent: a missing
+release is created, while an existing release receives a replacement archive.
+
+Artifact names include the build's workflow run ID and attempt number. The
+build exports these names as job outputs, which release publication and
+Cloudflare deployment use to download their artifacts. Retrying either
+downstream job reuses the successful build's artifact names even when the
+retry has a higher attempt number. Rerunning the entire workflow builds and
+selects new artifacts for the new attempt.
+
+Downstream retries require the original artifacts to remain available. The
+Cloudflare artifact is retained for one day; the release-distribution artifact
+uses the repository's default artifact retention period. If an artifact has
+expired or been deleted, rerun the entire workflow to rebuild it before
+publication or deployment.
 
 The root-path export is also copied to a short-lived `cloudflare-pages`
-workflow artifact. `npm run prepare:cloudflare` cleans the destination, copies
-the complete `out` tree, and adds a Cloudflare Pages `_headers` file containing
+workflow artifact. `npm run prepare:cloudflare` applies the same clean-copy
+policy and adds a Cloudflare Pages `_headers` file containing
 the COOP, COEP, and `Permissions-Policy: tools=(self)` response headers. These
 headers preserve `SharedArrayBuffer` support without a server or Pages
 Functions. See Cloudflare's documentation for [static header
 rules](https://developers.cloudflare.com/pages/configuration/headers/) and
 [Direct Upload from continuous
 integration](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
+The deployment job initializes the Direct Upload project when it is missing,
+deploys the prepared artifact, and attaches the custom domain when needed.
 
 The GitHub Pages workflow in `.github/workflows/deploy.yml` performs a separate
 build with `NEXT_PUBLIC_BASE_PATH=/ray-optics-web`. Its service-worker manifest
@@ -43,17 +64,18 @@ of truth for which refs produce releases and deployments.
 
 ## One-time Cloudflare setup
 
-Create a Direct Upload Pages project named `ray-optics-web`, configure `main`
-as its production branch, and attach the custom domain
-`ray-optics-web.vestibulum.xyz`. Subsequent matching tags deploy the prepared
-static directory through `cloudflare/wrangler-action`.
+The release workflow creates the Direct Upload Pages project named
+`ray-optics-web` with `main` as its production branch when it is missing. It
+then deploys the prepared static directory through `cloudflare/wrangler-action`
+and attaches the custom domain `ray-optics-web.vestibulum.xyz` when needed.
 
 ## Local verification
 
 Initialize and activate `src/python/.venv` before either build. Run `npm run
 build` without `NEXT_PUBLIC_BASE_PATH` to inspect the release/Cloudflare export,
-then run `npm run prepare:cloudflare`. For the GitHub Pages variant, remove the
-previous `out` directory through a normal clean build and run:
+then run `npm run prepare:release` and `npm run prepare:cloudflare`. For the
+GitHub Pages variant, remove the previous `out` directory through a normal clean
+build and run:
 
 ```bash
 NEXT_PUBLIC_BASE_PATH=/ray-optics-web npm run build

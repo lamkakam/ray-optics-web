@@ -1,4 +1,4 @@
-name: Release and deploy to Cloudflare Pages
+name: Release and prepare Cloudflare Pages
 
 on:
   push:
@@ -7,14 +7,18 @@ on:
 
 permissions:
   contents: write
+  deployments: write
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      release_artifact_name: release-distribution-${{ github.run_id }}-${{ github.run_attempt }}
+      cloudflare_artifact_name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
     env:
       ARCHIVE_NAME: ray-optics-web-${{ github.ref_name }}-dist.zip
     steps:
@@ -36,22 +40,44 @@ jobs:
       - run: npm run format:check
       - run: npm run test
       - run: npm run build
+      - run: npm run prepare:release
       - run: npm run prepare:cloudflare
       - name: Package static export
-        working-directory: out
+        working-directory: release-dist
         run: zip -r "$GITHUB_WORKSPACE/$ARCHIVE_NAME" .
-      - name: Create GitHub release
-        run: gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" --generate-notes --title "$GITHUB_REF_NAME"
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-distribution-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.ARCHIVE_NAME }}
+          if-no-files-found: error
       - uses: actions/upload-artifact@v6
         with:
           name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: cloudflare-pages
           retention-days: 1
 
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      ARCHIVE_NAME: ray-optics-web-${{ github.ref_name }}-dist.zip
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.build.outputs.release_artifact_name }}
+      - name: Create or update GitHub release
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$ARCHIVE_NAME" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" --generate-notes --title "$GITHUB_REF_NAME"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   deploy-cloudflare:
-    needs: build-and-release
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: cloudflare-pages
@@ -59,10 +85,51 @@ jobs:
     steps:
       - uses: actions/download-artifact@v7
         with:
-          name: cloudflare-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.build.outputs.cloudflare_artifact_name }}
           path: cloudflare-pages
+      - name: Initialize Cloudflare Pages project
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          project_url="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/ray-optics-web"
+          status=$(curl --silent --show-error --output project.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "$project_url")
+          if [ "$status" = 404 ]; then
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              --header 'Content-Type: application/json' \
+              --data '{"name":"ray-optics-web","production_branch":"main"}' \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects"
+          elif [ "$status" != 200 ]; then
+            cat project.json
+            exit 1
+          fi
       - uses: cloudflare/wrangler-action@v4
         with:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: pages deploy cloudflare-pages --project-name=ray-optics-web --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attach Cloudflare Pages custom domain
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          domain_url="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/ray-optics-web/domains/ray-optics-web.vestibulum.xyz"
+          status=$(curl --silent --show-error --output domain.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "$domain_url")
+          if [ "$status" = 404 ]; then
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              --header 'Content-Type: application/json' \
+              --data '{"name":"ray-optics-web.vestibulum.xyz"}' \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/ray-optics-web/domains"
+          elif [ "$status" != 200 ]; then
+            cat domain.json
+            exit 1
+          fi
