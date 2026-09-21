@@ -1,3 +1,4 @@
+/** Covers plot selection, placeholders, and committed wavelength metadata passed to charts. */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AnalysisPlotView } from "@/features/analysis/components/AnalysisPlotView";
@@ -191,9 +192,9 @@ describe("AnalysisPlotView", () => {
   ];
 
   const wavelengthOptions = [
-    { label: "486.1nm", value: 0 },
-    { label: "587.6nm", value: 1 },
-    { label: "656.3nm", value: 2 },
+    { label: "486.1nm", value: 0, weight: 1 },
+    { label: "587.6nm", value: 1, weight: 2 },
+    { label: "656.3nm", value: 2, weight: 0.5 },
   ];
 
   const surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData = {
@@ -538,6 +539,41 @@ describe("AnalysisPlotView", () => {
     );
 
     expect(screen.getByTestId("spot-diagram-chart")).toBeInTheDocument();
+    expect(mockSpotDiagramChart).toHaveBeenCalledWith(
+      expect.objectContaining({ wavelengthWeights: { 0: 1, 1: 2, 2: 0.5 } }),
+    );
+  });
+
+  it("indexes spot weights by wavelength option value", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="spotDiagram"
+        spotDiagramData={[]}
+        wavelengthOptions={[wavelengthOptions[2], wavelengthOptions[0]]}
+      />,
+    );
+    expect(mockSpotDiagramChart).toHaveBeenCalledWith(
+      expect.objectContaining({ wavelengthWeights: { 0: 1, 2: 0.5 } }),
+    );
+  });
+
+  it("omits the spot chart and chips during loading or when data is absent", () => {
+    const { rerender } = render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="spotDiagram"
+        spotDiagramData={[]}
+        loading
+      />,
+    );
+    expect(screen.getByText("Loading plot...")).toBeInTheDocument();
+    expect(mockSpotDiagramChart).not.toHaveBeenCalled();
+    rerender(
+      <AnalysisPlotView {...defaultProps} selectedPlotType="spotDiagram" />,
+    );
+    expect(screen.getByText("No plot available")).toBeInTheDocument();
+    expect(mockSpotDiagramChart).not.toHaveBeenCalled();
   });
 
   it("renders a field curvature chart when data is provided", () => {

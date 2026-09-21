@@ -1,4 +1,4 @@
-/** Covers plot selection/loading, cached recovery after unmount, and complete Seidel commits with source ownership. */
+/** Covers plot selection/loading, committed spectral weights, cached recovery after unmount, and complete Seidel commits with source ownership. */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
@@ -474,6 +474,49 @@ describe("AnalysisPlotContainer", () => {
     expect(wlSelect).toContainHTML("486.1 nm");
     expect(wlSelect).toContainHTML("587.6 nm");
     expect(wlSelect).toContainHTML("656.3 nm");
+  });
+
+  it("uses committed spectral weights for spot radii and ignores draft edits", async () => {
+    store.getState().setSelectedPlotType("spotDiagram");
+    const specsStore = makeSpecsStore(testSpecs);
+    const data: SpotDiagramData = [
+      { fieldIdx: 0, wvlIdx: 0, x: [3], y: [4], unitX: "µm", unitY: "µm" },
+      { fieldIdx: 0, wvlIdx: 1, x: [0], y: [10], unitX: "µm", unitY: "µm" },
+    ];
+    renderComponent(
+      testSpecs,
+      testModel,
+      store,
+      makeMockProxy({ getSpotDiagramData: jest.fn().mockResolvedValue(data) }),
+      jest.fn(),
+      makeAnalysisDataStore(),
+      specsStore,
+    );
+    expect(await screen.findByText("RMS radius: 8.7 µm")).toBeInTheDocument();
+    act(() => {
+      specsStore.getState().setWavelengths({
+        weights: [
+          [486.1, 1],
+          [587.6, 0],
+        ],
+        referenceIndex: 0,
+      });
+    });
+    expect(screen.getByText("RMS radius: 8.7 µm")).toBeInTheDocument();
+    act(() => {
+      specsStore.getState().setCommittedSpecs({
+        ...testSpecs,
+        wavelengths: {
+          weights: [
+            [486.1, 1],
+            [587.6, 0],
+          ],
+          referenceIndex: 0,
+        },
+      });
+    });
+    expect(screen.getByText("GEO radius: 5 µm")).toBeInTheDocument();
+    expect(screen.getByText("RMS radius: 5 µm")).toBeInTheDocument();
   });
 
   it("handleFieldChange: updates selectedFieldIndex in store and calls getRayFanData for ray fan", async () => {

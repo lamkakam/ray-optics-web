@@ -1,3 +1,4 @@
+/** Covers chart rendering and radius chip updates from data and spectral weights. */
 import { render, screen } from "@testing-library/react";
 import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
@@ -79,6 +80,7 @@ describe("SpotDiagramChart", () => {
       <SpotDiagramChart
         spotDiagramData={spotDiagramData}
         wavelengthLabels={["486.1 nm", "587.6 nm", "656.3 nm"]}
+        wavelengthWeights={[1, 1, 1]}
       />,
     );
 
@@ -93,5 +95,52 @@ describe("SpotDiagramChart", () => {
       globalTokens.echarts.text.light,
     );
     expect(mockSetOption).toHaveBeenCalled();
+    expect(screen.getByText("GEO radius: 22 µm")).toBeInTheDocument();
+    expect(screen.getByText("RMS radius: 18 µm")).toBeInTheDocument();
+  });
+
+  it("updates chips when weights or data change and shows N/A for unavailable radii", () => {
+    const data = [
+      { ...spotDiagramData[0], x: [0.003], y: [0.004] },
+      { ...spotDiagramData[0], wvlIdx: 1, x: [0], y: [0.01] },
+    ];
+    const { rerender } = render(
+      <SpotDiagramChart
+        spotDiagramData={data}
+        wavelengthLabels={[]}
+        wavelengthWeights={[1, 0]}
+      />,
+    );
+    expect(screen.getByText("GEO radius: 5 µm")).toBeInTheDocument();
+    expect(screen.getByText("RMS radius: 5 µm")).toBeInTheDocument();
+    rerender(
+      <SpotDiagramChart
+        spotDiagramData={data}
+        wavelengthLabels={[]}
+        wavelengthWeights={[1, 3]}
+      />,
+    );
+    expect(screen.getByText("GEO radius: 10 µm")).toBeInTheDocument();
+    expect(screen.getByText("RMS radius: 9 µm")).toBeInTheDocument();
+    rerender(
+      <SpotDiagramChart
+        spotDiagramData={[
+          { ...data[0], x: [3], y: [4], unitX: "arcsec", unitY: "arcsec" },
+        ]}
+        wavelengthLabels={[]}
+        wavelengthWeights={[1]}
+      />,
+    );
+    expect(screen.getByText("GEO radius: 5 arcsec")).toBeInTheDocument();
+    expect(screen.getByText("RMS radius: 5 arcsec")).toBeInTheDocument();
+    rerender(
+      <SpotDiagramChart
+        spotDiagramData={[]}
+        wavelengthLabels={[]}
+        wavelengthWeights={[1]}
+      />,
+    );
+    expect(screen.getByText("GEO radius: N/A")).toBeInTheDocument();
+    expect(screen.getByText("RMS radius: N/A")).toBeInTheDocument();
   });
 });

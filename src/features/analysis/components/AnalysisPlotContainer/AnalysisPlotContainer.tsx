@@ -91,11 +91,17 @@ export function AnalysisPlotContainer({
   onErrorRef.current = onError;
 
   const specsStore = useSpecsConfiguratorStore();
-  useStore(specsStore, (s) => s.committedSpecs);
+  const committedSpecs = useStore(specsStore, (s) => s.committedSpecs);
   /** Half-field options recomputed whenever the subscribed committed specs change. */
   const fieldOptions = specsStore.getState().getFieldOptions();
-  /** Wavelength options recomputed whenever the subscribed committed specs change. */
-  const wavelengthOptions = specsStore.getState().getWavelengthOptions();
+  /** Wavelength options carry committed spectral weights for reference-based spot radii; draft edits do not affect them. */
+  const wavelengthOptions = specsStore
+    .getState()
+    .getWavelengthOptions()
+    .map((option) => ({
+      ...option,
+      weight: committedSpecs.wavelengths.weights[option.value][1],
+    }));
 
   /**
    * Loads and commits one analysis result for the committed optical model.

@@ -1,3 +1,4 @@
+/** Covers chart sizing, optional accessible footer content, and a stable ECharts lifecycle. */
 import { act, render, screen } from "@testing-library/react";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { globalTokens } from "@/shared/tokens/styleTokens";
@@ -78,6 +79,42 @@ describe("createAnalysisChartComponent", () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it("inserts, updates, and removes extra content outside the image without recreating the chart", () => {
+    const TestChart = createAnalysisChartComponent<TestChartProps, string>({
+      displayName: "TestChart",
+      testId: "test-chart",
+      ariaLabel: "Test chart",
+      debounceMs: 500,
+      getBuilderArgs: ({ data }) => data,
+      getChartHeight: ({ parentHeight }) => parentHeight,
+      buildOption: () => ({ series: [] }),
+    });
+    const { rerender, unmount } = render(<TestChart data="a" />);
+    jest.advanceTimersByTime(500);
+    const chart = screen.getByRole("img", { name: "Test chart" });
+    rerender(
+      <TestChart {...{ data: "a", extraContent: <span>First metric</span> }} />,
+    );
+    expect(screen.getByText("First metric")).toBeInTheDocument();
+    expect(chart).not.toContainElement(screen.getByText("First metric"));
+    rerender(
+      <TestChart
+        {...{ data: "b", extraContent: <span>Updated metric</span> }}
+      />,
+    );
+    expect(screen.queryByText("First metric")).not.toBeInTheDocument();
+    expect(screen.getByText("Updated metric")).toBeInTheDocument();
+    rerender(<TestChart data="c" />);
+    jest.advanceTimersByTime(500);
+    expect(screen.queryByText("Updated metric")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Test chart" })).toBe(chart);
+    expect(mockEchartsInit).toHaveBeenCalledTimes(1);
+    expect(mockSetOption).toHaveBeenCalledTimes(2);
+    expect(mockDispose).not.toHaveBeenCalled();
+    unmount();
+    expect(mockDispose).toHaveBeenCalledTimes(1);
   });
 
   it("uses the injected sizing policy to measure the chart and build the option", () => {
@@ -180,13 +217,16 @@ describe("createAnalysisChartComponent", () => {
     });
 
     render(
-      <div style={{ width: "640px", height: "480px" }}>
+      <div
+        data-testid="sizing-parent"
+        style={{ width: "640px", height: "480px" }}
+      >
         <TestChart data="series-d" />
       </div>,
     );
 
     const chart = screen.getByTestId("test-chart");
-    const chartParent = chart.parentElement as HTMLDivElement;
+    const chartParent = screen.getByTestId("sizing-parent");
     Object.defineProperty(chartParent, "clientWidth", {
       configurable: true,
       value: 640,
@@ -230,7 +270,10 @@ describe("createAnalysisChartComponent", () => {
     });
 
     render(
-      <div style={{ width: "640px", height: "480px" }}>
+      <div
+        data-testid="sizing-parent"
+        style={{ width: "640px", height: "480px" }}
+      >
         <TestChart data="series-e" />
       </div>,
     );
@@ -240,7 +283,7 @@ describe("createAnalysisChartComponent", () => {
     });
 
     const chart = screen.getByTestId("test-chart");
-    const chartParent = chart.parentElement as HTMLDivElement;
+    const chartParent = screen.getByTestId("sizing-parent");
     Object.defineProperty(chartParent, "clientWidth", {
       configurable: true,
       value: 640,
