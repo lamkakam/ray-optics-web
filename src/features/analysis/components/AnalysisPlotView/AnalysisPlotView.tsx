@@ -48,7 +48,8 @@ export type PlotType =
   | "diffractionMTF";
 
 type FieldOption = SelectOption & { readonly value: number };
-type WavelengthOption = FieldOption;
+/** A wavelength index/label and its committed model weight. */
+type WavelengthOption = FieldOption & { readonly weight: number };
 
 interface AnalysisPlotViewProps {
   /** Selectable field points for the Half-Field dropdown */
@@ -253,6 +254,12 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
       <SpotDiagramChart
         spotDiagramData={spotDiagramData}
         wavelengthLabels={props.wavelengthOptions.map((option) => option.label)}
+        wavelengthWeights={Object.fromEntries(
+          props.wavelengthOptions.map((option) => [
+            option.value,
+            option.weight,
+          ]),
+        )}
         autoHeight={props.autoHeight}
       />
     ),
@@ -365,7 +372,7 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
  * - `surfaceBySurface3rdOrder` renders `SurfaceBySurface3rdOrderChart` only when `surfaceBySurface3rdOrderData` is present. The chart uses the Seidel `surfaceBySurface` payload already fetched from the worker instead of the old PNG.
  * - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
  * - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
- * - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
+ * - `spotDiagram` renders `SpotDiagramChart` only when data is present and loading has finished, passing wavelength labels and committed weights indexed by option value for its radius chips.
  * - `fieldCurvature` renders `FieldCurveChart` only when `fieldCurvatureData` is present and shows the wavelength selector without a Half-Field selector.
  * - `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a Half-Field selector.
  * - `longitudinalSphericalAberration` renders `LongitudinalSphericalAberrationChart` only when `longitudinalSphericalAberrationData` is present, passes wavelength labels to name each series, and hides both field and wavelength selectors because the worker always traces field 0 for all wavelengths.

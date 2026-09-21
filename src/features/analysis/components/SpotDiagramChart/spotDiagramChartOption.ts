@@ -21,8 +21,10 @@ echarts.use([
 
 const SPOT_DIAGRAM_GRID_TOP = 48;
 const SPOT_DIAGRAM_GRID_BOTTOM = 56;
-const SPOT_DIAGRAM_GRID_LEFT = 72;
-const SPOT_DIAGRAM_GRID_RIGHT = 32;
+/** Shared plot-band insets keep the legend, square plot, and radius footer centered together. */
+export const SPOT_DIAGRAM_HORIZONTAL_INSETS = { left: 72, right: 32 } as const;
+const { left: SPOT_DIAGRAM_GRID_LEFT, right: SPOT_DIAGRAM_GRID_RIGHT } =
+  SPOT_DIAGRAM_HORIZONTAL_INSETS;
 const SPOT_DIAGRAM_POINT_SIZE = 5;
 const SPOT_DIAGRAM_POINT_OPACITY = 0.8;
 function parseWavelengthLabel(

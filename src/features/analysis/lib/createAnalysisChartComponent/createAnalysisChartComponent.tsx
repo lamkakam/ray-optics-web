@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
@@ -30,6 +30,11 @@ type CreateAnalysisChartComponentConfig<
   readonly testId: string;
   readonly ariaLabel: string;
   readonly debounceMs: number;
+  /** Pixel insets for content beneath the canvas; each defaults to zero. */
+  readonly extraContentInsets?: {
+    readonly left?: number;
+    readonly right?: number;
+  };
   readonly useRuntimeContext?: () => RuntimeContext;
   readonly getBuilderArgs: (
     props: Props,
@@ -59,6 +64,9 @@ const DEFAULT_DIMENSION_VALIDATION = ({
  * ## Key Behaviors
  *
  * - Measures the parent element with `ResizeObserver`.
+ * - Accepts optional `extraContent` below the canvas, outside its image role, in a stable outer wrapper.
+ * - Observes the footer's measured height (including wrapping) and reserves it before fixed-height sizing; automatic-height charts grow with the footer. Omitted content takes no space.
+ * - Applies optional horizontal footer insets to align content with a chart's plot band.
  * - Optionally calls `useRuntimeContext()` inside the generated component so chart implementations can derive hook-based context such as responsive breakpoints.
  * - Passes the runtime context into `getBuilderArgs(...)` and `getChartHeight(...)`.
  * - Delegates chart height calculation to the injected `getChartHeight(...)` arrow function.
@@ -78,16 +86,25 @@ export function createAnalysisChartComponent<
   testId,
   ariaLabel,
   debounceMs,
+  extraContentInsets,
   useRuntimeContext,
   getBuilderArgs,
   getChartHeight,
   buildOption,
   isDimensionValid = DEFAULT_DIMENSION_VALIDATION,
 }: CreateAnalysisChartComponentConfig<Props, BuilderArgs, RuntimeContext>) {
-  function AnalysisChartComponent(props: Props) {
+  function AnalysisChartComponent(
+    props: Props & { readonly extraContent?: ReactNode },
+  ) {
     const { theme } = useTheme();
     const runtimeContext = useRuntimeContext?.() as RuntimeContext;
     const chartContainerRef = useRef<HTMLDivElement | null>(null);
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const extraContentRef = useRef<HTMLDivElement | null>(null);
+    const hasExtraContent =
+      props.extraContent !== undefined &&
+      props.extraContent !== null &&
+      props.extraContent !== false;
     const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(
       undefined,
     );
@@ -129,26 +146,34 @@ export function createAnalysisChartComponent<
       );
 
     useEffect(() => {
-      const container = chartContainerRef.current;
-      const parent = container?.parentElement;
-      if (!container || !parent) return undefined;
+      const parent = wrapperRef.current?.parentElement;
+      if (!parent) return undefined;
+      const extraContent = hasExtraContent
+        ? extraContentRef.current
+        : undefined;
 
       const updateChartDimensions = () => {
         const nextWidth = parent.clientWidth;
         const nextHeight = getChartHeight(
           {
             parentWidth: nextWidth,
-            parentHeight: parent.clientHeight,
+            parentHeight: props.autoHeight
+              ? parent.clientHeight
+              : Math.max(
+                  0,
+                  parent.clientHeight - (extraContent?.offsetHeight ?? 0),
+                ),
             autoHeight: props.autoHeight,
           },
           runtimeContext,
         );
 
         if (isDimensionValid({ width: nextWidth, height: nextHeight })) {
-          setChartDimensions({
-            width: nextWidth,
-            height: nextHeight,
-          });
+          setChartDimensions((previous) =>
+            previous?.width === nextWidth && previous.height === nextHeight
+              ? previous
+              : { width: nextWidth, height: nextHeight },
+          );
           return;
         }
 
@@ -162,11 +187,12 @@ export function createAnalysisChartComponent<
       });
 
       resizeObserver.observe(parent);
+      if (extraContent) resizeObserver.observe(extraContent);
 
       return () => {
         resizeObserver.disconnect();
       };
-    }, [props.autoHeight, runtimeContext]);
+    }, [props.autoHeight, hasExtraContent, runtimeContext]);
 
     useEffect(() => {
       const container = chartContainerRef.current;
@@ -204,20 +230,37 @@ export function createAnalysisChartComponent<
 
     return (
       <div
-        role="img"
-        ref={chartContainerRef}
-        data-testid={testId}
-        aria-label={ariaLabel}
-        className="max-w-full shrink-0 overflow-hidden"
-        style={
-          chartDimensions === undefined
-            ? undefined
-            : {
-                width: `${chartDimensions.width}px`,
-                height: `${chartDimensions.height}px`,
-              }
-        }
-      />
+        ref={wrapperRef}
+        className="flex w-full min-w-0 shrink-0 flex-col items-center"
+      >
+        <div
+          role="img"
+          ref={chartContainerRef}
+          data-testid={testId}
+          aria-label={ariaLabel}
+          className="max-w-full shrink-0 overflow-hidden"
+          style={
+            chartDimensions === undefined
+              ? undefined
+              : {
+                  width: `${chartDimensions.width}px`,
+                  height: `${chartDimensions.height}px`,
+                }
+          }
+        />
+        {hasExtraContent && (
+          <div
+            ref={extraContentRef}
+            className="w-full min-w-0"
+            style={{
+              paddingLeft: extraContentInsets?.left ?? 0,
+              paddingRight: extraContentInsets?.right ?? 0,
+            }}
+          >
+            {props.extraContent}
+          </div>
+        )}
+      </div>
     );
   }
 
