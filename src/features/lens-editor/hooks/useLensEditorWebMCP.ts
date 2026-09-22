@@ -1,6 +1,6 @@
 "use client";
 
-/** Composition hook that registers all fourteen imperative Lens Editor WebMCP tools and forwards focus/computation lifecycle callbacks to the editor. */
+/** Composition hook that registers all twenty-four imperative Lens Editor WebMCP tools and forwards focus/computation lifecycle callbacks to the editor. */
 import { useMemo } from "react";
 import type { StoreApi } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -40,7 +40,7 @@ export interface LensEditorWebMCPDependencies {
   readonly onError?: (error: unknown) => void;
 }
 
-/** Registers prescription, System Specs, recomputation, focus, and committed-analysis tools in order. Analysis descriptors use current worker/image-reference dependencies without re-registering, and share the editor's stores and Zernike cache. All registrations end on unmount. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
+/** Registers prescription, System Specs, recomputation, focus, and thirteen committed-analysis tools in order. Analysis descriptors use current worker/image-reference dependencies without re-registering, read sampling preferences at invocation, and share the editor's plot and Zernike caches without modifying chart state. Unsupported browsers are skipped; all registrations end on unmount. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
 export function useLensEditorWebMCP({
   lensStore,
   specsStore,
@@ -103,8 +103,14 @@ export function useLensEditorWebMCP({
 
   const analysisTools = useMemo(
     () =>
-      createAnalysisTools({ lensStore, analysisDataStore, proxy, imagePoint }),
-    [lensStore, analysisDataStore, proxy, imagePoint],
+      createAnalysisTools({
+        lensStore,
+        analysisDataStore,
+        analysisPlotStore,
+        proxy,
+        imagePoint,
+      }),
+    [lensStore, analysisDataStore, analysisPlotStore, proxy, imagePoint],
   );
 
   useWebMCP(prescriptionTools.getLensPrescription, [lensStore]);
@@ -138,4 +144,29 @@ export function useLensEditorWebMCP({
   useWebMCP(analysisTools.getParaxialData, [analysisDataStore]);
   useWebMCP(analysisTools.get3rdOrderSeidelData, [analysisDataStore]);
   useWebMCP(analysisTools.getZernikeTerms, [lensStore]);
+  useWebMCP(analysisTools.getRayFanData, [lensStore, analysisPlotStore]);
+  useWebMCP(analysisTools.getOpdFanData, [lensStore, analysisPlotStore]);
+  useWebMCP(analysisTools.getSpotDiagramData, [lensStore, analysisPlotStore]);
+  useWebMCP(analysisTools.getFieldCurvatureData, [
+    lensStore,
+    analysisPlotStore,
+  ]);
+  useWebMCP(analysisTools.getAstigmatismData, [lensStore, analysisPlotStore]);
+  useWebMCP(analysisTools.getLongitudinalSphericalAberrationData, [
+    lensStore,
+    analysisPlotStore,
+  ]);
+  useWebMCP(analysisTools.getStrehlVsWavelengthData, [
+    lensStore,
+    analysisPlotStore,
+  ]);
+  useWebMCP(analysisTools.getWavefrontMapData, [lensStore, analysisPlotStore]);
+  useWebMCP(analysisTools.getDiffractionPsfData, [
+    lensStore,
+    analysisPlotStore,
+  ]);
+  useWebMCP(analysisTools.getDiffractionMtfData, [
+    lensStore,
+    analysisPlotStore,
+  ]);
 }
