@@ -44,8 +44,10 @@ beforeEach(() => {
 
 afterEach(() => {
   _resetSingleton();
+  jest.restoreAllMocks();
 });
 
+/** Hook startup exposes safe errors and records each expected initialization failure once. */
 describe("usePyodide", () => {
   it("returns isReady=false initially", async () => {
     const { result } = renderHook(() => usePyodide());
@@ -90,22 +92,32 @@ describe("usePyodide", () => {
   });
 
   it("sets error state when init fails", async () => {
-    mockInit.mockRejectedValueOnce(new Error("init failed"));
+    const failure = new Error("init failed");
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    mockInit.mockRejectedValueOnce(failure);
     const { result } = renderHook(() => usePyodide());
 
     await waitFor(() => {
       expect(result.current.error).toBe(INITIALIZATION_FAILED_MESSAGE);
     });
     expect(result.current.isReady).toBe(false);
+    expect(console.error).toHaveBeenCalledWith("[Pyodide:init]", failure);
+    expect(console.error).toHaveBeenCalledTimes(1);
   });
 
   it("uses a stable fallback message for non-Error initialization failures", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
     mockInit.mockRejectedValueOnce("plain failure");
     const { result } = renderHook(() => usePyodide());
 
     await waitFor(() => {
       expect(result.current.error).toBe(INITIALIZATION_FAILED_MESSAGE);
     });
+    expect(console.error).toHaveBeenCalledWith(
+      "[Pyodide:init]",
+      "plain failure",
+    );
+    expect(console.error).toHaveBeenCalledTimes(1);
   });
 
   it("creates only one worker (singleton) across multiple hook instances", async () => {
@@ -199,8 +211,6 @@ describe("usePyodide", () => {
 
 /** Worker creation and shared cached transport failures use one sanitized boundary. */
 describe("client error fallback", () => {
-  afterEach(() => jest.restoreAllMocks());
-
   it("catches synchronous worker creation failure once for every mounted consumer", async () => {
     const original = new Error("private worker creation detail");
     jest.mocked(createPyodideWorker).mockImplementationOnce(() => {

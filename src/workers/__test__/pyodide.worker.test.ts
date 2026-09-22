@@ -972,8 +972,8 @@ describe("_init", () => {
 
 /**
  * Runtime initialization contract: loader inputs, package dependencies, wheel
- * location, retry state, progress milestones, and callback cleanup are all
- * observable at the worker boundary.
+ * location, retry state, progress milestones, callback cleanup, and expected
+ * failure diagnostics are all observable at the worker boundary.
  */
 describe("init", () => {
   afterEach(() => {
@@ -1171,7 +1171,7 @@ describe("init", () => {
         message: "Pyodide initialization returned an unexpected PyProxy result",
       }),
     );
-    consoleError.mockRestore();
+    expect(consoleError).toHaveBeenCalledTimes(1);
   });
 
   it.each(["success", "failure"] as const)(
@@ -1192,7 +1192,7 @@ describe("init", () => {
           "The calculation engine could not start. Please reload the page and try again.",
         );
         expect(consoleError).toHaveBeenCalledWith("[Pyodide:init]", error);
-        consoleError.mockRestore();
+        expect(consoleError).toHaveBeenCalledTimes(1);
       } else {
         await init(onProgress);
       }
@@ -1205,58 +1205,122 @@ describe("init", () => {
 /**
  * Public computation contract: every RPC that needs Python must reject with the
  * same initialization error until the singleton has completed `init`; status
- * queries and stop requests remain safe no-ops before a run exists.
+ * queries and stop requests remain safe no-ops before a run exists. Each
+ * rejected RPC logs one diagnostic with its operation name.
  */
 describe("public worker guards before initialization", () => {
   afterEach(() => {
     _resetPyodideForTesting();
+    jest.restoreAllMocks();
   });
 
   it("rejects every public computation before initialization", async () => {
-    const calls: ReadonlyArray<() => Promise<unknown>> = [
-      () => getFirstOrderData(allSphericalOpticalModel),
-      () => getSurfaceSemiDiameters(allSphericalOpticalModel),
-      () => plotLensLayout(allSphericalOpticalModel, false),
-      () => getRayFanData(allSphericalOpticalModel, 0),
-      () => getOpdFanData(allSphericalOpticalModel, 0),
-      () => getSpotDiagramData(allSphericalOpticalModel, 0),
-      () => getFieldCurvatureData(allSphericalOpticalModel, 0),
-      () => getAstigmatismCurveData(allSphericalOpticalModel, 0),
-      () => getLSAData(allSphericalOpticalModel),
-      () => getWavefrontData(allSphericalOpticalModel, 0, 0),
-      () => getStrehlVsWavelengthData(allSphericalOpticalModel, 0),
-      () => getGeoPSFData(allSphericalOpticalModel, 0, 0),
-      () => getDiffractionPSFData(allSphericalOpticalModel, 0, 0),
-      () => getDiffractionMTFData(allSphericalOpticalModel, 0, 0),
-      () => get3rdOrderSeidelData(allSphericalOpticalModel),
-      () => getZernikeCoefficients(allSphericalOpticalModel, 0, 0),
-      () => focusByMonoRmsSpot(allSphericalOpticalModel, 0),
-      () => focusByMonoStrehl(allSphericalOpticalModel, 0),
-      () => focusByPolyRmsSpot(allSphericalOpticalModel, 0),
-      () => focusByPolyStrehl(allSphericalOpticalModel, 0),
-      () => getAllGlassCatalogsData(),
-      () => addUserDefinedGlasses([]),
-      () => deleteUserDefinedGlasses([]),
-      () => updateUserDefinedGlasses([]),
-      () => getUserDefinedGlasses([]),
-      () =>
-        evaluateOptimizationProblem(
-          allSphericalOpticalModel,
-          minimalOptimizationConfig,
-        ),
-      () => optimizeOpm(allSphericalOpticalModel, minimalOptimizationConfig),
-      () =>
-        optimizeGlasses(
-          allSphericalOpticalModel,
-          minimalGlassOptimizationConfig,
-        ),
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const calls: ReadonlyArray<readonly [string, () => Promise<unknown>]> = [
+      ["getFirstOrderData", () => getFirstOrderData(allSphericalOpticalModel)],
+      [
+        "getSurfaceSemiDiameters",
+        () => getSurfaceSemiDiameters(allSphericalOpticalModel),
+      ],
+      ["plotLensLayout", () => plotLensLayout(allSphericalOpticalModel, false)],
+      ["getRayFanData", () => getRayFanData(allSphericalOpticalModel, 0)],
+      ["getOpdFanData", () => getOpdFanData(allSphericalOpticalModel, 0)],
+      [
+        "getSpotDiagramData",
+        () => getSpotDiagramData(allSphericalOpticalModel, 0),
+      ],
+      [
+        "getFieldCurvatureData",
+        () => getFieldCurvatureData(allSphericalOpticalModel, 0),
+      ],
+      [
+        "getAstigmatismCurveData",
+        () => getAstigmatismCurveData(allSphericalOpticalModel, 0),
+      ],
+      ["getLSAData", () => getLSAData(allSphericalOpticalModel)],
+      [
+        "getWavefrontData",
+        () => getWavefrontData(allSphericalOpticalModel, 0, 0),
+      ],
+      [
+        "getStrehlVsWavelengthData",
+        () => getStrehlVsWavelengthData(allSphericalOpticalModel, 0),
+      ],
+      ["getGeoPSFData", () => getGeoPSFData(allSphericalOpticalModel, 0, 0)],
+      [
+        "getDiffractionPSFData",
+        () => getDiffractionPSFData(allSphericalOpticalModel, 0, 0),
+      ],
+      [
+        "getDiffractionMTFData",
+        () => getDiffractionMTFData(allSphericalOpticalModel, 0, 0),
+      ],
+      [
+        "get3rdOrderSeidelData",
+        () => get3rdOrderSeidelData(allSphericalOpticalModel),
+      ],
+      [
+        "getZernikeCoefficients",
+        () => getZernikeCoefficients(allSphericalOpticalModel, 0, 0),
+      ],
+      [
+        "focusByMonoRmsSpot",
+        () => focusByMonoRmsSpot(allSphericalOpticalModel, 0),
+      ],
+      [
+        "focusByMonoStrehl",
+        () => focusByMonoStrehl(allSphericalOpticalModel, 0),
+      ],
+      [
+        "focusByPolyRmsSpot",
+        () => focusByPolyRmsSpot(allSphericalOpticalModel, 0),
+      ],
+      [
+        "focusByPolyStrehl",
+        () => focusByPolyStrehl(allSphericalOpticalModel, 0),
+      ],
+      ["getAllGlassCatalogsData", () => getAllGlassCatalogsData()],
+      ["addUserDefinedGlasses", () => addUserDefinedGlasses([])],
+      ["deleteUserDefinedGlasses", () => deleteUserDefinedGlasses([])],
+      ["updateUserDefinedGlasses", () => updateUserDefinedGlasses([])],
+      ["getUserDefinedGlasses", () => getUserDefinedGlasses([])],
+      [
+        "evaluateOptimizationProblem",
+        () =>
+          evaluateOptimizationProblem(
+            allSphericalOpticalModel,
+            minimalOptimizationConfig,
+          ),
+      ],
+      [
+        "optimizeOpm",
+        () => optimizeOpm(allSphericalOpticalModel, minimalOptimizationConfig),
+      ],
+      [
+        "optimizeGlasses",
+        () =>
+          optimizeGlasses(
+            allSphericalOpticalModel,
+            minimalGlassOptimizationConfig,
+          ),
+      ],
     ];
 
-    for (const call of calls) {
+    for (const [index, [operation, call]] of calls.entries()) {
       await expect(call()).rejects.toThrow(
         "The calculation could not be completed. Please try again.",
       );
+      expect(consoleError).toHaveBeenNthCalledWith(
+        index + 1,
+        `[Pyodide:${operation}]`,
+        expect.objectContaining({
+          message: "Pyodide not initialized. Call init() first.",
+        }),
+      );
     }
+    expect(consoleError).toHaveBeenCalledTimes(calls.length);
   });
 
   it("reports unsupported interruption and ignores a stop without an active run", async () => {
@@ -1376,9 +1440,11 @@ describe("public worker guards before initialization", () => {
   });
 });
 
+/** Executor failures log once while copied globals and Python roots are released. */
 describe("Pyodide computation executor lifecycle", () => {
   afterEach(() => {
     _resetPyodideForTesting();
+    jest.restoreAllMocks();
   });
 
   /** Request cleanup breaks globals cycles and clears traceback roots before collecting Python garbage. */
@@ -1388,6 +1454,9 @@ describe("Pyodide computation executor lifecycle", () => {
       const scopedGlobals = { destroy: jest.fn() };
       const runPython = jest.fn().mockReturnValue(scopedGlobals);
       const error = new Error("original Python failure");
+      const consoleError = fails
+        ? jest.spyOn(console, "error").mockImplementation(() => undefined)
+        : undefined;
       _setPyodideForTesting({
         runPython,
         runPythonAsync: fails
@@ -1403,6 +1472,11 @@ describe("Pyodide computation executor lifecycle", () => {
           name: "PyodideFatalError",
           message: "The calculation could not be completed. Please try again.",
         });
+        expect(consoleError).toHaveBeenCalledWith(
+          "[Pyodide:getFirstOrderData]",
+          error,
+        );
+        expect(consoleError).toHaveBeenCalledTimes(1);
       } else {
         await expect(
           getFirstOrderData(allSphericalOpticalModel),
@@ -1454,9 +1528,13 @@ describe("Pyodide computation executor lifecycle", () => {
     "destroys copied globals when %s rejects",
     async (failure) => {
       const scopedGlobals = { destroy: jest.fn() };
+      const error = new Error("python failed");
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
       const runPythonAsync =
         failure === "execution"
-          ? jest.fn().mockRejectedValue(new Error("python failed"))
+          ? jest.fn().mockRejectedValue(error)
           : jest.fn().mockResolvedValue("not json");
       _setPyodideForTesting({
         runPython: jest.fn().mockReturnValue(scopedGlobals),
@@ -1471,10 +1549,18 @@ describe("Pyodide computation executor lifecycle", () => {
       ).rejects.toThrow();
 
       expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        "[Pyodide:getFirstOrderData]",
+        failure === "execution" ? error : expect.any(SyntaxError),
+      );
+      expect(consoleError).toHaveBeenCalledTimes(1);
     },
   );
 
   it("destroys and rejects an unexpected computation PyProxy result", async () => {
+    const consoleError = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const scopedGlobals = { destroy: jest.fn() };
     const unexpectedResult = { destroy: jest.fn() };
     _setPyodideForTesting({
@@ -1493,6 +1579,13 @@ describe("Pyodide computation executor lifecycle", () => {
 
     expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);
     expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(
+      "[Pyodide:getFirstOrderData]",
+      expect.objectContaining({
+        message: "Pyodide computation returned an unexpected PyProxy result",
+      }),
+    );
+    expect(consoleError).toHaveBeenCalledTimes(1);
   });
 });
 
