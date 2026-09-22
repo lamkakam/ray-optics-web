@@ -199,7 +199,17 @@ const herschelReflector: OpticalModel = {
   },
 
   object: { distance: 1e10, medium: "air", manufacturer: "" },
-  image: { curvatureRadius: -1.2e4 },
+  image: {
+    curvatureRadius: -1.2e4,
+    decenter: {
+      coordinateSystemStrategy: "dec and return",
+      alpha: -2.214,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0,
+    },
+  },
   surfaces: [
     {
       label: "Default",
@@ -2483,6 +2493,95 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
   ],
 };
 
+const polychromaticQuadrupletRefractor: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  specs: {
+    pupil: {
+      space: "object",
+      type: "epd",
+      value: 100,
+    },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.5,
+      fields: [0, Math.SQRT1_2, 1],
+      isRelative: true,
+      isWideAngle: false,
+    },
+    wavelengths: {
+      weights: [
+        [546.073, 1],
+        [486.133, 1],
+        [656.273, 1],
+        [435.835, 1],
+        [365.015, 1],
+        [852.11, 1],
+        [1013.98, 1],
+      ],
+      referenceIndex: 0,
+    },
+  },
+  object: {
+    distance: 10000000000,
+    medium: "air",
+    manufacturer: "",
+  },
+  image: {
+    curvatureRadius: 0,
+  },
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: 415.35,
+      thickness: 8,
+      medium: "N-BAK1",
+      manufacturer: "Schott",
+      semiDiameter: 52,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 260.6,
+      thickness: 16,
+      medium: "CaF2",
+      manufacturer: "",
+      semiDiameter: 52,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -379.38,
+      thickness: 10,
+      medium: "LLF1",
+      manufacturer: "Schott",
+      semiDiameter: 52,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -297.18,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 52,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -301.22,
+      thickness: 8,
+      medium: "N-BAK1",
+      manufacturer: "Schott",
+      semiDiameter: 52,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -1131.2,
+      thickness: 972.6083,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 52,
+    },
+  ],
+};
+
 /** Canonical bundled example optical models keyed by display name. */
 export const ExampleSystemList = {
   "Sasian Triplet": SasianTriplet,
@@ -2516,6 +2615,8 @@ export const ExampleSystemList = {
     superachromaticHighNAImmersionMicroscopeObjective,
   "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)":
     superachromaticAirMicroscopeObjective,
+  "Polychromatic Quadruplet Refractor DE 10 2016 123 732 A1 Example 6 (2017)":
+    polychromaticQuadrupletRefractor,
 } as const satisfies { [key: string]: OpticalModel };
 
 /** Canonical bundled example-system name. */
