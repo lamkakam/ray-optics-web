@@ -2,7 +2,7 @@
  * Exercises the AppShell navigation callback at its public Layout boundary.
  * The boundary mock intentionally invokes the callback both with and without
  * a mouse event so its return value and optional event handling are observable.
- * It also exercises global page and glass WebMCP registrations and confirms
+ * It also exercises global page, glass, and version WebMCP registrations and confirms
  * that they share the shell's Optimization confirmation state machine.
  * Cancelled Apply requests exercise the real helper and leave editor/specs
  * stores, the unapplied result, and the pending destination intact.
@@ -255,7 +255,7 @@ describe("AppShell navigation callback", () => {
     ["/privacy-policy", "privacy_policy"],
     ["/about", "about"],
   ] as const)(
-    "registers global page tools on the %s route and cleans them up",
+    "registers global tools on the %s route and cleans them up",
     (path, _page) => {
       mockPathname = path;
       const registerTool = jest.fn().mockResolvedValue(undefined);
@@ -267,13 +267,18 @@ describe("AppShell navigation callback", () => {
         </AppShell>,
       );
 
-      expect(registerTool).toHaveBeenCalledTimes(4);
+      expect(registerTool).toHaveBeenCalledTimes(5);
       expect(registerTool.mock.calls.map(([tool]) => tool.name)).toEqual([
         "set_active_page",
         "get_active_page",
         "resolve_optimization_navigation",
         "get_all_glasses",
+        "get_app_version",
       ]);
+      const versionTool = registerTool.mock.calls.find(
+        ([tool]) => tool.name === "get_app_version",
+      )?.[0] as WebMCP.ModelContextTool | undefined;
+      expect(versionTool).toBeDefined();
       const signals = registerTool.mock.calls.map(
         ([, options]) =>
           (options as WebMCP.ModelContextRegisterToolOptions).signal,

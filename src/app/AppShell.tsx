@@ -13,6 +13,8 @@ import { UnappliedOptimizationResultModal } from "@/app/UnappliedOptimizationRes
 import { useAppShellNavigation } from "@/app/hooks/useAppShellNavigation";
 import { useAppShellGlassCatalogs } from "@/app/hooks/useAppShellGlassCatalogs";
 import { useGlassCatalogWebMCP } from "@/app/hooks/useGlassCatalogWebMCP";
+import { getAppVersionTool } from "@/app/appVersionWebMcp";
+import { useWebMCP } from "@/shared/hooks/useWebMCP";
 import { getPyodideErrorMessage } from "@/shared/lib/pyodideErrors";
 
 /** Routed content rendered inside the shared application chrome. */
@@ -23,7 +25,7 @@ interface AppShellProps {
 /**
  * Composes the persistent client shell with one usePyodide call, shared runtime
  * and catalog providers, MathJax, and Layout. Registers the read-only global
- * glass WebMCP query on every route. Navigation and catalog hooks own
+ * glass and version WebMCP queries on every route. Navigation and catalog hooks own
  * their lifecycles; the shell presents shared safe computation and initialization
  * messages without repeating boundary diagnostics. ClientApplication supplies stores and ClientOnlyApplication keeps
  * this shell and routed content out of server rendering.
@@ -46,6 +48,7 @@ export default function AppShell({ children }: AppShellProps) {
     dismissQuarantineWarning,
   } = useAppShellGlassCatalogs(isReady, proxy);
   useGlassCatalogWebMCP();
+  useWebMCP(getAppVersionTool);
   const contextValue = useMemo(
     () => ({ proxy, isReady, openErrorModal }),
     [proxy, isReady, openErrorModal],
