@@ -641,7 +641,7 @@ describe("FieldConfigModal", () => {
       const input = getGridValueInputs()[1];
       await user.clear(input);
       await user.type(input, value);
-      await user.keyboard("{Enter}");
+      await user.tab();
 
       expect(
         screen.getByText("Relative field values must be between -1 and 1."),
@@ -696,13 +696,13 @@ describe("FieldConfigModal", () => {
     const input = getGridValueInputs()[1];
     await user.clear(input);
     await user.type(input, "1.01");
-    await user.keyboard("{Enter}");
+    await user.tab();
     expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
 
     const correctedInput = getGridValueInputs()[1];
     await user.clear(correctedInput);
     await user.type(correctedInput, "0.5");
-    await user.keyboard("{Enter}");
+    await user.tab();
 
     expect(
       screen.queryByText("Relative field values must be between -1 and 1."),
