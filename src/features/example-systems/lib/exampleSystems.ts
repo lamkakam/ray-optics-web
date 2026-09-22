@@ -199,7 +199,17 @@ const herschelReflector: OpticalModel = {
   },
 
   object: { distance: 1e10, medium: "air", manufacturer: "" },
-  image: { curvatureRadius: -1.2e4 },
+  image: {
+    curvatureRadius: -1.2e4,
+    decenter: {
+      coordinateSystemStrategy: "dec and return",
+      alpha: -2.214,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0,
+    },
+  },
   surfaces: [
     {
       label: "Default",
