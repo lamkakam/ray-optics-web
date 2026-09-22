@@ -5,7 +5,9 @@ import { execFileSync } from "node:child_process";
  * process, avoiding Jest's Pyodide mock and requiring no package downloads.
  * Only script construction and unrelated worker imports are stubbed. Weakrefs
  * detect retained Python objects with automatic GC disabled, including cycles
- * and exception tracebacks; initialized globals must remain usable.
+ * and exception tracebacks; initialized globals must remain usable. Worker
+ * diagnostics are captured as strings and checked without printing tracebacks
+ * or retaining the original exceptions.
  */
 it("reclaims request cycles and exception roots in real Pyodide", () => {
   const output = execFileSync(
@@ -22,14 +24,21 @@ const runtime = await loadPyodide({ indexURL: './node_modules/pyodide/' });
 let script = '';
 const exports = {};
 const policy = {};
+const diagnostics = [];
+const diagnosticConsole = Object.fromEntries(
+  ['debug', 'info', 'log', 'warn', 'error', 'trace'].map(level => [
+    level,
+    (...args) => diagnostics.push({ level, args: args.map(String) }),
+  ])
+);
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/shared/lib/pyodideErrors.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS }
-}).outputText, { exports: policy, console });
+}).outputText, { exports: policy, console: diagnosticConsole });
 const code = ts.transpileModule(fs.readFileSync('src/workers/pyodide.worker.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS }
 }).outputText;
 vm.runInNewContext(code, {
-  exports, console, process,
+  exports, console: diagnosticConsole, process,
   require: (name) => name === 'comlink' ? { expose: () => {}, releaseProxy: Symbol() }
     : name === 'pyodide' ? { version: runtime.version }
     : name.endsWith('/pyodideErrors') ? policy
@@ -59,7 +68,7 @@ for (const fails of [false, true]) {
   }
 }
 console.log(JSON.stringify({
-  survivors, errors,
+  survivors, errors, diagnostics,
   roots: JSON.parse(runtime.runPython('json.dumps([name for name in ("last_exc", "last_type", "last_value", "last_traceback") if hasattr(sys, name)])')),
   preserved: runtime.runPython('sentinel is not None'),
 }));
@@ -73,5 +82,12 @@ console.log(JSON.stringify({
     errors: 3,
     roots: [],
     preserved: true,
+    diagnostics: Array.from({ length: 3 }, () => ({
+      level: "error",
+      args: [
+        "[Pyodide:getFirstOrderData]",
+        expect.stringContaining("ValueError: original failure"),
+      ],
+    })),
   });
 }, 35_000);

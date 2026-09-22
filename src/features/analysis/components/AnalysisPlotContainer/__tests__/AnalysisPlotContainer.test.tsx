@@ -1,4 +1,4 @@
-/** Covers plot selection/loading, committed spectral weights, cache reuse with WebMCP and after unmount, and complete Seidel commits with source ownership. */
+/** Covers plot selection/loading, committed spectral weights, cache reuse with WebMCP and after unmount, and complete Seidel commits with source ownership. Selector, rendering, and existing-loading checks omit the worker proxy so they do not start unrelated async plot loads. */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
@@ -442,13 +442,13 @@ describe("AnalysisPlotContainer", () => {
   });
 
   it("renders AnalysisPlotView (smoke test)", () => {
-    renderComponent(testSpecs, testModel, store, makeMockProxy());
+    renderComponent(testSpecs, testModel, store, undefined);
     expect(screen.getByLabelText("Half-Field")).toBeInTheDocument();
     expect(screen.getByLabelText("Plot type")).toBeInTheDocument();
   });
 
   it("derives fieldOptions from committedSpecs with angle type", () => {
-    renderComponent(testSpecs, testModel, store, makeMockProxy());
+    renderComponent(testSpecs, testModel, store, undefined);
     const fieldSelect = screen.getByLabelText(
       "Half-Field",
     ) as HTMLSelectElement;
@@ -458,7 +458,7 @@ describe("AnalysisPlotContainer", () => {
   });
 
   it("derives fieldOptions from committedSpecs with height type", () => {
-    renderComponent(testSpecsHeight, testModel, store, makeMockProxy());
+    renderComponent(testSpecsHeight, testModel, store, undefined);
     const fieldSelect = screen.getByLabelText(
       "Half-Field",
     ) as HTMLSelectElement;
@@ -470,7 +470,7 @@ describe("AnalysisPlotContainer", () => {
   it("derives wavelengthOptions from committedSpecs", async () => {
     // Switch to wavefrontMap so wavelength select is visible
     store.getState().setSelectedPlotType("wavefrontMap");
-    renderComponent(testSpecs, testModel, store, makeMockProxy());
+    renderComponent(testSpecs, testModel, store, undefined);
     const wlSelect = screen.getByLabelText("Wavelength") as HTMLSelectElement;
     expect(wlSelect).toContainHTML("486.1 nm");
     expect(wlSelect).toContainHTML("587.6 nm");
@@ -564,7 +564,7 @@ describe("AnalysisPlotContainer", () => {
 
   it("passes an existing plot-loading state to AnalysisPlotView", () => {
     store.getState().setPlotLoading(true);
-    renderComponent(testSpecs, testModel, store, makeMockProxy());
+    renderComponent(testSpecs, testModel, store, undefined);
 
     expect(screen.getByText("Loading plot...")).toBeInTheDocument();
   });
@@ -575,7 +575,7 @@ describe("AnalysisPlotContainer", () => {
       testSpecs,
       testModel,
       store,
-      makeMockProxy(),
+      undefined,
       jest.fn(),
       makeAnalysisDataStore(),
       specsStore,
