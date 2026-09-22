@@ -2516,11 +2516,11 @@ const polychromaticQuadrupletRefractor: OpticalModel = {
         [656.273, 1],
         [435.835, 1],
         [365.015, 1],
-        [852.110, 1],
+        [852.11, 1],
         [1013.98, 1],
       ],
       referenceIndex: 0,
-    }
+    },
   },
   object: {
     distance: 10000000000,
@@ -2578,10 +2578,9 @@ const polychromaticQuadrupletRefractor: OpticalModel = {
       medium: "air",
       manufacturer: "",
       semiDiameter: 52,
-    }
-  ]
+    },
+  ],
 };
-
 
 /** Canonical bundled example optical models keyed by display name. */
 export const ExampleSystemList = {

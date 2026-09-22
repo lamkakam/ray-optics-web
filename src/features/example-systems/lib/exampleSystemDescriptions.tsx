@@ -689,42 +689,42 @@ const DESCRIPTIONS_BY_NAME = {
     <>
       <DescriptionParagraph>
         Uwe Laux disclosed a quadruplet (four-element) refractive telescope
-        objective in DE 10 2016 123 732 A1. Exemplar 6 (Table 7) is a
-        100 mm-aperture, f/10 design intended to achieve diffraction-limited image
-        quality over a much wider wavelength range than conventional apochromats.
-        Whereas conventional apochromats are typically corrected over
-        approximately 436–656 nm, this design is optimized from the near-UV to
-        the near-IR, approximately 365–1014 nm. The patent therefore describes
-        it as a polychromatic objective.
+        objective in DE 10 2016 123 732 A1. Exemplar 6 (Table 7) is a 100
+        mm-aperture, f/10 design intended to achieve diffraction-limited image
+        quality over a much wider wavelength range than conventional
+        apochromats. Whereas conventional apochromats are typically corrected
+        over approximately 436–656 nm, this design is optimized from the near-UV
+        to the near-IR, approximately 365–1014 nm. The patent therefore
+        describes it as a polychromatic objective.
       </DescriptionParagraph>
       <DescriptionParagraph>
         The layout differs from conventional four-element arrangements such as
         Petzval-type objectives, which use two separated lens groups. In
-        Exemplar 6, the first three elements form a oiled triplet,
-        followed by a negative fourth lens separated by only a 2 mm air gap.
-        The triplet uses N-BAK1 / fluorite / N-LLF1, followed by an N-BAK1 negative lens.
-        The triplet provides most of the optical power and chromatic correction,
-        while the separated fourth element introduces additional degrees of freedom for
-        controlling residual spherical aberration and its wavelength dependence
-        (spherochromatism). Because the aberration contribution of a powered surface
-        depends on ray height, placing the fourth lens slightly away from the triplet
-        provides additional control of the marginal rays.
+        Exemplar 6, the first three elements form a oiled triplet, followed by a
+        negative fourth lens separated by only a 2 mm air gap. The triplet uses
+        N-BAK1 / fluorite / N-LLF1, followed by an N-BAK1 negative lens. The
+        triplet provides most of the optical power and chromatic correction,
+        while the separated fourth element introduces additional degrees of
+        freedom for controlling residual spherical aberration and its wavelength
+        dependence (spherochromatism). Because the aberration contribution of a
+        powered surface depends on ray height, placing the fourth lens slightly
+        away from the triplet provides additional control of the marginal rays.
       </DescriptionParagraph>
       <DescriptionParagraph>
         The patent mentions that the oiled gaps in the triplet should be very
         small (about 1-15 microns, preferably smaller than 10 microns and more
-        preferably smaller than 5 microns). The influence of the gaps on the
-        ray path is essentially negligible.
+        preferably smaller than 5 microns). The influence of the gaps on the ray
+        path is essentially negligible.
       </DescriptionParagraph>
       <DescriptionParagraph>
         The patent can be read on Google Patents:
       </DescriptionParagraph>
       <DescriptionExternalLink
-          href="https://patents.google.com/patent/DE102016123732A1"
-          aria-label="Google Patents webpage for DE 10 2016 123 732 A1"
-        >
-          Link to Google Patents for DE 10 2016 123 732 A1
-        </DescriptionExternalLink>
+        href="https://patents.google.com/patent/DE102016123732A1"
+        aria-label="Google Patents webpage for DE 10 2016 123 732 A1"
+      >
+        Link to Google Patents for DE 10 2016 123 732 A1
+      </DescriptionExternalLink>
     </>
   ),
 } satisfies Record<ExampleSystemName, ReactNode>;
