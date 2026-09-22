@@ -1,5 +1,6 @@
 import type { StoreApi } from "zustand";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
+import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -7,7 +8,13 @@ import type {
   ZernikeOrdering,
   ZernikePupilSpace,
 } from "@/features/lens-editor/types/zernikeData";
-import { loadZernikeData } from "@/features/analysis/lib/plotFunctions";
+import {
+  loadAnalysisPlot,
+  loadZernikeData,
+  type AnalysisPlotLoadResult,
+} from "@/features/analysis/lib/plotFunctions";
+import { ANALYSIS_RAY_COUNT_SETTINGS } from "@/features/analysis/lib/analysisRayCounts";
+import { calculateSpotDiagramRadii } from "@/features/analysis/lib/calculateSpotDiagramRadii";
 import {
   classicalName,
   NUM_FRINGE_TERMS,
@@ -70,11 +77,45 @@ interface ZernikeInput {
   readonly pupilSpace?: ZernikePupilSpace;
 }
 
+/** Plot tools expose only selectors relevant to their shared-loader cache key. */
+const plotInputSchemas = {
+  field: {
+    ...emptyInputSchema,
+    properties: { fieldIndex: zernikeInputSchema.properties.fieldIndex },
+  },
+  wavelength: {
+    ...emptyInputSchema,
+    properties: {
+      wavelengthIndex: zernikeInputSchema.properties.wavelengthIndex,
+    },
+  },
+  both: {
+    ...emptyInputSchema,
+    properties: {
+      fieldIndex: zernikeInputSchema.properties.fieldIndex,
+      wavelengthIndex: zernikeInputSchema.properties.wavelengthIndex,
+    },
+  },
+  none: { ...emptyInputSchema, properties: {} },
+} as const;
+
+/** Optional committed selectors; every plot's schema rejects unsupported keys. */
+interface PlotInput {
+  readonly fieldIndex?: number;
+  readonly wavelengthIndex?: number;
+}
+
 const validators = (() => {
   const ajv = createPrescriptionAjv();
   return {
     empty: ajv.compile(emptyInputSchema),
     zernike: ajv.compile<ZernikeInput>(zernikeInputSchema),
+    plot: {
+      field: ajv.compile<PlotInput>(plotInputSchemas.field),
+      wavelength: ajv.compile<PlotInput>(plotInputSchemas.wavelength),
+      both: ajv.compile<PlotInput>(plotInputSchemas.both),
+      none: ajv.compile<PlotInput>(plotInputSchemas.none),
+    },
   };
 })();
 
@@ -82,15 +123,43 @@ const validators = (() => {
 export interface AnalysisWebMcpDependencies {
   readonly lensStore: StoreApi<LensEditorState>;
   readonly analysisDataStore: StoreApi<AnalysisDataState>;
+  readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly imagePoint?: ImagePoint;
 }
 
-/** Named handles for the three read-only, Lens Editor-scoped analysis tools. */
+/** Named handles for thirteen read-only, Lens Editor-scoped analysis tools. */
 export interface AnalysisTools {
   readonly getParaxialData: WebMCP.ModelContextTool;
   readonly get3rdOrderSeidelData: WebMCP.ModelContextTool;
   readonly getZernikeTerms: WebMCP.ModelContextTool;
+  readonly getRayFanData: WebMCP.ModelContextTool;
+  readonly getOpdFanData: WebMCP.ModelContextTool;
+  readonly getSpotDiagramData: WebMCP.ModelContextTool;
+  readonly getFieldCurvatureData: WebMCP.ModelContextTool;
+  readonly getAstigmatismData: WebMCP.ModelContextTool;
+  readonly getLongitudinalSphericalAberrationData: WebMCP.ModelContextTool;
+  readonly getStrehlVsWavelengthData: WebMCP.ModelContextTool;
+  readonly getWavefrontMapData: WebMCP.ModelContextTool;
+  readonly getDiffractionPsfData: WebMCP.ModelContextTool;
+  readonly getDiffractionMtfData: WebMCP.ModelContextTool;
+}
+
+/** Cached plot kinds exposed by dedicated tools; Seidel retains its stored getter. */
+type ToolPlotKind = Exclude<
+  AnalysisPlotLoadResult["kind"],
+  "surfaceBySurface3rdOrder" | "geoPSF"
+>;
+
+/** Associates each plot with its strict selectors and complete, typed worker payload. */
+interface PlotToolDefinition<K extends ToolPlotKind> {
+  readonly name: string;
+  readonly description: string;
+  readonly plotType: K;
+  readonly selectors: keyof typeof plotInputSchemas;
+  readonly data: (
+    result: Extract<AnalysisPlotLoadResult, { kind: K }>,
+  ) => unknown;
 }
 
 /**
@@ -110,14 +179,191 @@ export interface AnalysisTools {
  * one-based j, n, m, name, coefficient, and rmsNormalizedCoefficient without
  * rounding. Cancellation is checked before loading and after awaiting; it does
  * not interrupt computation shared with the dialog or another tool caller.
+ *
+ * Ten plot tools use loadAnalysisPlot and its unchanged model-identity/image-point
+ * LRU, selector/sampling/FFT keys, shared promises, and failure eviction. Each call
+ * snapshots the committed model, app ray counts, and current image reference;
+ * defaults are field 0 and the committed reference wavelength, never UI selection.
+ * Only relevant selectors are accepted as nonnegative integers in committed bounds.
+ * Results contain the complete unrounded worker `data`, applicable resolved
+ * selectors, imagePoint, and numRays for configurable plots. Fans, spots, and LSA
+ * retain every wavelength; Strehl retains the loader's wavelength sampling.
+ * Spot results also include unrounded GEO/RMS `radii` from all positive committed
+ * spectral weights about the supplied reference origin, in µm or afocal arcsec.
+ * Unavailable radii are omitted without discarding point data. Tools never commit
+ * chart data, selections, loading flags, or preferences; pending edits require
+ * explicit recomputation. Cancellation only rejects the requesting caller.
  */
 export function createAnalysisTools({
   lensStore,
   analysisDataStore,
+  analysisPlotStore,
   proxy,
   imagePoint = "chief_ray",
 }: AnalysisWebMcpDependencies): AnalysisTools {
+  /** Builds read-only descriptors whose invocation snapshots survive shared async loading. */
+  function createPlotTool<K extends ToolPlotKind>({
+    name,
+    description,
+    plotType,
+    selectors,
+    data: readData,
+  }: PlotToolDefinition<K>): WebMCP.ModelContextTool {
+    const hasField = selectors === "field" || selectors === "both";
+    const hasWavelength = selectors === "wavelength" || selectors === "both";
+    const setting = ANALYSIS_RAY_COUNT_SETTINGS.find(
+      (entry) => entry.plotType === plotType,
+    );
+    return {
+      name,
+      description: `${description} Uses the current app image reference and sampling settings. Optional selectors default to field 0 and the committed reference wavelength where applicable. ${committedSystemDescription}`,
+      inputSchema: plotInputSchemas[selectors],
+      annotations: { readOnlyHint: true, untrustedContentHint: false },
+      execute: async (input, { signal }) => {
+        assertWebMcpInput(validators.plot[selectors], input);
+        assertWebMcpNotCancelled(signal);
+        const model = lensStore.getState().committedOpticalModel;
+        if (model === undefined)
+          throw new Error(
+            "No computed optical system. Call recompute_optical_system first.",
+          );
+        const {
+          fieldIndex = 0,
+          wavelengthIndex = model.specs.wavelengths.referenceIndex,
+        } = input as PlotInput;
+        if (hasField && fieldIndex >= model.specs.field.fields.length)
+          throw new Error(
+            `Invalid input at /fieldIndex: ${fieldIndex} is outside the committed field range`,
+          );
+        if (
+          hasWavelength &&
+          wavelengthIndex >= model.specs.wavelengths.weights.length
+        )
+          throw new Error(
+            `Invalid input at /wavelengthIndex: ${wavelengthIndex} is outside the committed wavelength range`,
+          );
+        if (proxy === undefined)
+          throw new Error(
+            `Pyodide not ready. Wait for app initialization to finish, then retry ${name}.`,
+          );
+        const { rayCounts } = analysisPlotStore.getState();
+        const numRays =
+          setting === undefined ? undefined : rayCounts[setting.plotType];
+        const wavelengthWeights = model.specs.wavelengths.weights.map(
+          ([, weight]) => weight,
+        );
+        const result = await loadAnalysisPlot({
+          proxy,
+          model,
+          plotType,
+          fieldIndex,
+          wavelengthIndex,
+          imagePoint,
+          rayCounts,
+        });
+        assertWebMcpNotCancelled(signal);
+        if (result?.kind !== plotType)
+          throw new Error(
+            `No ${plotType} data returned for the committed optical system.`,
+          );
+        return JSON.stringify({
+          // The loader's discriminant is checked above before narrowing the generic result.
+          data: readData(
+            result as Extract<AnalysisPlotLoadResult, { kind: K }>,
+          ),
+          ...(hasField ? { fieldIndex } : {}),
+          ...(hasWavelength ? { wavelengthIndex } : {}),
+          imagePoint,
+          numRays,
+          ...(result.kind === "spotDiagram"
+            ? {
+                radii: calculateSpotDiagramRadii(
+                  result.spotDiagramData,
+                  wavelengthWeights,
+                ),
+              }
+            : {}),
+        });
+      },
+    };
+  }
+
   return {
+    getRayFanData: createPlotTool({
+      name: "get_ray_fan_data",
+      description: "Read complete Ray Fan data for all wavelengths.",
+      plotType: "rayFan",
+      selectors: "field",
+      data: (result) => result.rayFanData,
+    }),
+    getOpdFanData: createPlotTool({
+      name: "get_opd_fan_data",
+      description: "Read complete OPD Fan data for all wavelengths.",
+      plotType: "opdFan",
+      selectors: "field",
+      data: (result) => result.opdFanData,
+    }),
+    getSpotDiagramData: createPlotTool({
+      name: "get_spot_diagram_data",
+      description:
+        "Read complete Spot Diagram points for all wavelengths and unrounded GEO/RMS radii in µm or afocal arcsec using positive committed spectral weights. Radii are omitted when unavailable; point data is preserved.",
+      plotType: "spotDiagram",
+      selectors: "field",
+      data: (result) => result.spotDiagramData,
+    }),
+    getFieldCurvatureData: createPlotTool({
+      name: "get_field_curvature_data",
+      description:
+        "Read complete sagittal and tangential Field Curvature data.",
+      plotType: "fieldCurvature",
+      selectors: "wavelength",
+      data: (result) => result.fieldCurvatureData,
+    }),
+    getAstigmatismData: createPlotTool({
+      name: "get_astigmatism_data",
+      description: "Read complete Astigmatism data across the field.",
+      plotType: "astigmatismCurve",
+      selectors: "wavelength",
+      data: (result) => result.astigmatismCurveData,
+    }),
+    getLongitudinalSphericalAberrationData: createPlotTool({
+      name: "get_longitudinal_spherical_aberration_data",
+      description:
+        "Read complete Longitudinal Spherical Aberration data for all wavelengths.",
+      plotType: "longitudinalSphericalAberration",
+      selectors: "none",
+      data: (result) => result.longitudinalSphericalAberrationData,
+    }),
+    getStrehlVsWavelengthData: createPlotTool({
+      name: "get_strehl_vs_wavelength_data",
+      description:
+        "Read complete Strehl vs Wavelength data with the shared loader's wavelength sampling.",
+      plotType: "strehlVsWavelength",
+      selectors: "field",
+      data: (result) => result.strehlVsWavelengthData,
+    }),
+    getWavefrontMapData: createPlotTool({
+      name: "get_wavefront_map_data",
+      description: "Read the complete Wavefront Map grid and units.",
+      plotType: "wavefrontMap",
+      selectors: "both",
+      data: (result) => result.wavefrontMapData,
+    }),
+    getDiffractionPsfData: createPlotTool({
+      name: "get_diffraction_psf_data",
+      description: "Read the complete Diffraction PSF grid and units.",
+      plotType: "diffractionPSF",
+      selectors: "both",
+      data: (result) => result.diffractionPsfData,
+    }),
+    getDiffractionMtfData: createPlotTool({
+      name: "get_diffraction_mtf_data",
+      description:
+        "Read complete measured and ideal Diffraction MTF series, cutoffs, scaling metadata, and units.",
+      plotType: "diffractionMTF",
+      selectors: "both",
+      data: (result) => result.diffractionMtfData,
+    }),
     getParaxialData: {
       name: "get_paraxial_data",
       description: `Read the complete first-order data shown by the Paraxial Data dialog. ${committedSystemDescription} ${storedResultDescription}`,

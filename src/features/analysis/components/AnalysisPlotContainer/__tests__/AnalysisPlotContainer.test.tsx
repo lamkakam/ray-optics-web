@@ -1,4 +1,4 @@
-/** Covers plot selection/loading, committed spectral weights, cached recovery after unmount, and complete Seidel commits with source ownership. */
+/** Covers plot selection/loading, committed spectral weights, cache reuse with WebMCP and after unmount, and complete Seidel commits with source ownership. */
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
@@ -45,6 +45,7 @@ import { AnalysisDataStoreContext } from "@/features/analysis/providers/Analysis
 import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 import * as plotFunctions from "@/features/analysis/lib/plotFunctions";
+import { createAnalysisTools } from "@/features/lens-editor/lib/analysisWebMcp";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
@@ -696,6 +697,65 @@ describe("AnalysisPlotContainer", () => {
       );
 
       expect(screen.getByTestId(testId)).toBeInTheDocument();
+    },
+  );
+
+  it.each(["chart", "tool"])(
+    "shares diffraction MTF data with WebMCP when the mounted %s computes first",
+    async (first) => {
+      store.getState().setSelectedPlotType("diffractionMTF");
+      store.getState().setSelectedWavelengthIndex(1);
+      store.getState().setRayCount("diffractionMTF", 64);
+      const proxy = makeMockProxy();
+      const lensStore = makeLensStore(testModel);
+      const analysisDataStore = makeAnalysisDataStore();
+      const { getDiffractionMtfData } = createAnalysisTools({
+        lensStore,
+        analysisDataStore,
+        analysisPlotStore: store,
+        proxy,
+        imagePoint: "centroid",
+      });
+      const query = async () => {
+        const before = store.getState();
+        const result = await getDiffractionMtfData.execute(
+          {},
+          { signal: new AbortController().signal },
+        );
+        expect(JSON.parse(String(result))).toEqual({
+          data: diffractionMtfData,
+          fieldIndex: 0,
+          wavelengthIndex: 1,
+          imagePoint: "centroid",
+          numRays: 64,
+        });
+        expect(store.getState()).toBe(before);
+      };
+      if (first === "tool") await query();
+      renderComponent(
+        testSpecs,
+        testModel,
+        store,
+        proxy,
+        jest.fn(),
+        analysisDataStore,
+        makeSpecsStore(testSpecs),
+        lensStore,
+      );
+      expect(
+        await screen.findByTestId("diffraction-mtf-chart"),
+      ).toBeInTheDocument();
+      await waitFor(() => expect(store.getState().plotLoading).toBe(false));
+      if (first === "chart") await query();
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledTimes(1);
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        1,
+        "centroid",
+        64,
+        128,
+      );
     },
   );
 

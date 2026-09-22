@@ -1,4 +1,4 @@
-/** Covers editor workflows, pending imports across initial analysis results, and actual Zernike dialog/tool cache reuse in both directions. */
+/** Covers editor workflows, all twenty-four tool registrations, pending imports across initial analysis results, and actual Zernike dialog/tool cache reuse in both directions. */
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
@@ -485,6 +485,16 @@ describe("LensEditor", () => {
       "get_paraxial_data",
       "get_3rd_order_seidel_data",
       "get_zernike_terms",
+      "get_ray_fan_data",
+      "get_opd_fan_data",
+      "get_spot_diagram_data",
+      "get_field_curvature_data",
+      "get_astigmatism_data",
+      "get_longitudinal_spherical_aberration_data",
+      "get_strehl_vs_wavelength_data",
+      "get_wavefront_map_data",
+      "get_diffraction_psf_data",
+      "get_diffraction_mtf_data",
     ]);
     const signals = registrations.map(({ options }) => options?.signal);
     expect(signals.every((signal) => signal?.aborted === false)).toBe(true);

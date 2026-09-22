@@ -1,4 +1,4 @@
-/** Covers analysis freshness across computation and optimization Apply, Zernike selectors, and shared caches. */
+/** Covers analysis freshness across computation and optimization Apply, Zernike selectors, and shared caches with live plot-store dependencies. */
 import { createStore } from "zustand";
 import { createAnalysisDataSlice } from "@/features/analysis/stores/analysisDataStore";
 import { createAnalysisPlotSlice } from "@/features/analysis/stores/analysisPlotStore";
@@ -113,6 +113,7 @@ function zernikeData(numTerms = 37): ZernikeData {
 function setup(imagePoint: ImagePoint = "centroid") {
   const lensStore = createStore(createLensEditorSlice);
   const analysisDataStore = createStore(createAnalysisDataSlice);
+  const analysisPlotStore = createStore(createAnalysisPlotSlice);
   const specsStore = createStore(createSpecsConfiguratorSlice);
   const getZernikeCoefficients = jest
     .fn<
@@ -144,7 +145,13 @@ function setup(imagePoint: ImagePoint = "centroid") {
       model,
     );
   analysisDataStore.getState().setSeidelData(seidel, model);
-  const deps = { lensStore, analysisDataStore, proxy, imagePoint };
+  const deps = {
+    lensStore,
+    analysisDataStore,
+    analysisPlotStore,
+    proxy,
+    imagePoint,
+  };
   const tools = createAnalysisTools(deps);
   const execute = async (
     tool: WebMCP.ModelContextTool,

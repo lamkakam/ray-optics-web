@@ -1,4 +1,4 @@
-/** Covers all fourteen editor tools, registration lifetime, and live dependencies. */
+/** Covers all twenty-four editor tools, registration lifetime, and live worker, reference, and sampling dependencies. */
 import { renderHook } from "@testing-library/react";
 import { createStore } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -74,7 +74,7 @@ describe("useLensEditorWebMCP", () => {
       renderHook(() => useLensEditorWebMCP(makeDependencies())),
     ).not.toThrow();
   });
-  it("registers all fourteen tools after the five prescription tools", () => {
+  it("registers all twenty-four tools after the five prescription tools", () => {
     const registrations: WebMCP.ModelContextTool[] = [];
     const registerTool = jest.fn(
       (
@@ -107,6 +107,16 @@ describe("useLensEditorWebMCP", () => {
       "get_paraxial_data",
       "get_3rd_order_seidel_data",
       "get_zernike_terms",
+      "get_ray_fan_data",
+      "get_opd_fan_data",
+      "get_spot_diagram_data",
+      "get_field_curvature_data",
+      "get_astigmatism_data",
+      "get_longitudinal_spherical_aberration_data",
+      "get_strehl_vs_wavelength_data",
+      "get_wavefront_map_data",
+      "get_diffraction_psf_data",
+      "get_diffraction_mtf_data",
     ]);
     unmount();
     expect(
@@ -140,6 +150,7 @@ describe("useLensEditorWebMCP", () => {
     const getZernikeCoefficients = jest
       .fn()
       .mockRejectedValue(new Error("Current worker reached"));
+    const getRayFanData = jest.fn().mockResolvedValue([]);
     const { rerender, unmount } = renderHook(
       ({ dependencies }) => useLensEditorWebMCP(dependencies),
       { initialProps: { dependencies: initial } },
@@ -148,13 +159,16 @@ describe("useLensEditorWebMCP", () => {
     rerender({
       dependencies: {
         ...initial,
-        proxy: { getZernikeCoefficients } as unknown as PyodideWorkerAPI,
+        proxy: {
+          getZernikeCoefficients,
+          getRayFanData,
+        } as unknown as PyodideWorkerAPI,
         isDark: true,
         imagePoint: "centroid",
       },
     });
 
-    expect(registerTool).toHaveBeenCalledTimes(14);
+    expect(registerTool).toHaveBeenCalledTimes(24);
     const zernikeTool = registerTool.mock.calls.find(
       ([tool]) => tool.name === "get_zernike_terms",
     )![0];
@@ -170,6 +184,22 @@ describe("useLensEditorWebMCP", () => {
       "fringe",
       "entrance",
     );
+    initial.analysisPlotStore.getState().setRayCount("rayFan", 64);
+    const rayFanTool = registerTool.mock.calls.find(
+      ([tool]) => tool.name === "get_ray_fan_data",
+    )![0];
+    expect(
+      JSON.parse(
+        String(
+          await rayFanTool.execute(
+            {},
+            { signal: new AbortController().signal },
+          ),
+        ),
+      ),
+    ).toEqual({ data: [], fieldIndex: 0, imagePoint: "centroid", numRays: 64 });
+    expect(getRayFanData).toHaveBeenCalledWith(model, 0, "centroid", 64);
+    expect(registerTool).toHaveBeenCalledTimes(24);
     unmount();
     Object.defineProperty(document, "modelContext", {
       configurable: true,
