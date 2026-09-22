@@ -2505,7 +2505,7 @@ const polychromaticQuadrupletRefractor: OpticalModel = {
       space: "object",
       type: "angle",
       maxField: 0.5,
-      fields: [0, 0.707, 1],
+      fields: [0, Math.SQRT1_2, 1],
       isRelative: true,
       isWideAngle: false,
     },
