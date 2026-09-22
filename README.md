@@ -240,6 +240,7 @@ The bundled example optical systems are derived or adapted from the following so
 - **Diffraction Grating (Reflective) Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/147#discussioncomment-9360602)
 - **Superachromatic High NA Immersion Microscope Objective with Tube Lens US#9,645,380 Example 1 (2013)** - from [High aperture immersion objective (US9645380B2)](https://patents.google.com/patent/US9645380B2/)
 - **Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)** - from [Lens Design: Microscopes and objectives](https://www.lens-designs.com/microscopes)
+- **Polychromatic Quadruplet Refractor DE 10 2016 123 732 A1 Example 6 (2017)** - from [Polychromatisches Objektiv und Verfahren zum Entwurf eines polychromatischen Objektivs (DE102016123732A1)](https://patents.google.com/patent/DE102016123732A1)
 
 ## License
 
