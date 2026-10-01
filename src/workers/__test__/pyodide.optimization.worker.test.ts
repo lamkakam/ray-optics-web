@@ -44,6 +44,17 @@ const baseModel: OpticalModel = {
   },
 };
 
+/** Returns the zero-argument callback bound to a Pyodide global by name. */
+function boundGlobal(globalsSet: jest.Mock, name: string): () => void {
+  const binding = globalsSet.mock.calls.find(
+    ([boundName]) => boundName === name,
+  );
+  if (binding === undefined) {
+    throw new Error(`${name} was not bound`);
+  }
+  return binding[1] as () => void;
+}
+
 const glassConfig: GlassOptimizationConfig = {
   glass_optimizer: { num_neighbours: 2, maxiter: 20, tol: 1e-4 },
   glass_variables: [
@@ -260,13 +271,14 @@ describe("_optimizeGlasses", () => {
       ),
     ).rejects.toThrow("python failed");
 
-    expect(setInterruptBuffer).toHaveBeenNthCalledWith(
-      1,
-      expect.any(Int32Array),
-    );
+    expect(setInterruptBuffer).not.toHaveBeenCalledWith(expect.any(Int32Array));
     expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
     expect(globalsDelete).toHaveBeenCalledWith(
       "_optimization_progress_callback",
+    );
+    expect(globalsDelete).toHaveBeenCalledWith("_arm_optimization_interrupts");
+    expect(globalsDelete).toHaveBeenCalledWith(
+      "_disarm_optimization_interrupts",
     );
     expect(_getOptimizationInterruptStateForTesting()).toEqual({
       activeRunId: undefined,
@@ -274,7 +286,7 @@ describe("_optimizeGlasses", () => {
     });
   });
 
-  it("cleans up progress and interrupt state when interrupt setup throws", async () => {
+  it("cleans up progress and interrupt state when arming from Python throws", async () => {
     const setInterruptBuffer = jest
       .fn()
       .mockImplementation((view?: Int32Array) => {
@@ -289,7 +301,9 @@ describe("_optimizeGlasses", () => {
       globals: { set: globalsSet, delete: globalsDelete },
     });
     const interruptBuffer = new SharedArrayBuffer(4);
-    const runPython = jest.fn();
+    const runPython = jest.fn().mockImplementation(async () => {
+      boundGlobal(globalsSet, "_arm_optimization_interrupts")();
+    });
 
     await expect(
       _optimizeGlasses(
@@ -303,7 +317,7 @@ describe("_optimizeGlasses", () => {
       ),
     ).rejects.toThrow("interrupt setup failed");
 
-    expect(runPython).not.toHaveBeenCalled();
+    expect(runPython).toHaveBeenCalledTimes(1);
     expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
     expect(globalsDelete).toHaveBeenCalledWith(
       "_optimization_progress_callback",
@@ -715,10 +729,19 @@ describe("_optimizeOpm", () => {
           activeRunId: "run-1",
           interruptBuffer,
         });
+        // Model build and setup run disarmed; a stop still lands in the buffer.
+        expect(setInterruptBuffer).not.toHaveBeenCalled();
         expect(await _requestOptimizationStop("run-1")).toEqual({
           signaled: true,
         });
         expect(Atomics.load(interruptView, 0)).toBe(2);
+        boundGlobal(globalsSet, "_arm_optimization_interrupts")();
+        expect(setInterruptBuffer).toHaveBeenCalledTimes(1);
+        expect(setInterruptBuffer.mock.calls[0]?.[0].buffer).toBe(
+          interruptBuffer,
+        );
+        boundGlobal(globalsSet, "_disarm_optimization_interrupts")();
+        expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
         if (outcome === "failure") {
           throw new Error("python failed after stop");
         }
@@ -754,13 +777,9 @@ describe("_optimizeOpm", () => {
       }
 
       expect(Atomics.load(interruptView, 0)).toBe(0);
-      expect(setInterruptBuffer).toHaveBeenNthCalledWith(
-        1,
-        expect.any(Int32Array),
-      );
-      expect(setInterruptBuffer.mock.calls[0]?.[0].buffer).toBe(
-        interruptBuffer,
-      );
+      const source = runPython.mock.calls[0]?.[0] ?? "";
+      expect(source).toContain("def _optimization_interrupt_scope():");
+      expect(source).toContain("interrupt_scope=_optimization_interrupt_scope");
       expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
       expect(globalsSet).toHaveBeenCalledWith(
         "_optimization_progress_callback",
@@ -768,6 +787,12 @@ describe("_optimizeOpm", () => {
       );
       expect(globalsDelete).toHaveBeenCalledWith(
         "_optimization_progress_callback",
+      );
+      expect(globalsDelete).toHaveBeenCalledWith(
+        "_arm_optimization_interrupts",
+      );
+      expect(globalsDelete).toHaveBeenCalledWith(
+        "_disarm_optimization_interrupts",
       );
       expect(_getOptimizationInterruptStateForTesting()).toEqual({
         activeRunId: undefined,
@@ -783,14 +808,15 @@ describe("_optimizeOpm", () => {
     "unsupported runtime",
   ] as const)("does not bind interruption with %s", async (missingPart) => {
     const setInterruptBuffer = jest.fn();
+    const globalsSet = jest.fn();
     const runtime =
       missingPart === "unsupported runtime"
-        ? { globals: { set: jest.fn(), delete: jest.fn() } }
+        ? { globals: { set: globalsSet, delete: jest.fn() } }
         : missingPart === "missing runtime"
           ? undefined
           : {
               setInterruptBuffer,
-              globals: { set: jest.fn(), delete: jest.fn() },
+              globals: { set: globalsSet, delete: jest.fn() },
             };
     _setPyodideForTesting(runtime);
     const interruptBuffer =
@@ -825,6 +851,11 @@ describe("_optimizeOpm", () => {
     );
 
     expect(setInterruptBuffer).not.toHaveBeenCalled();
+    expect(runPython.mock.calls[0]?.[0]).not.toContain("interrupt_scope");
+    expect(globalsSet).not.toHaveBeenCalledWith(
+      "_arm_optimization_interrupts",
+      expect.any(Function),
+    );
     expect(_getOptimizationInterruptStateForTesting()).toEqual({
       activeRunId: undefined,
       interruptBuffer: undefined,

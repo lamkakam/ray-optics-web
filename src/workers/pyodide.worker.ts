@@ -24,7 +24,7 @@
  * collected after execution; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.33.1` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.34.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -34,7 +34,8 @@
  * typed `status: "error"` reports, temporarily own the same progress callback and
  * interrupt-buffer lifecycle, and clear both on every completion path; executor,
  * parsing, and transport failures may still reject. Stop requests affect only the
- * matching active run id.
+ * matching active run id, and Python arms the interrupt buffer only around the
+ * solver phase so a stop can never escape as a `KeyboardInterrupt` rejection.
  */
 import { runPyodideOperation } from "@/shared/lib/pyodideErrors";
 import { expose, releaseProxy } from "comlink";
@@ -344,7 +345,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
         ]);
 
         const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-        const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.33.1-py3-none-any.whl`;
+        const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.34.0-py3-none-any.whl`;
 
         await _init(
           createInitializationExecutor(pyodide),
@@ -880,6 +881,7 @@ export async function _evaluateOptimizationProblem(
  * optional per-run interruption. The serialized config is reconstructed in Python;
  * ordinary Python setup/runtime exceptions resolve as complete failure reports, and
  * temporary callback globals and interrupt state are always cleared in `finally`.
+ * Interrupts are armed only around the Python solver phase (see `runOptimization`).
  *
  * @param onProgress - Optional live receiver for parsed optimization snapshots.
  * @param runId - Identifier used to reject stale stop requests.
@@ -945,6 +947,15 @@ export async function _optimizeGlasses(
  * optimizer RPC. The generated Python `try` begins before model construction and
  * converts ordinary Python exceptions to the matching complete failure report.
  * Executor rejection and JSON parsing errors still reject after guaranteed cleanup.
+ *
+ * For an interrupt-capable run the worker zeroes and records the shared view but
+ * does not install it before `runPython`. It binds `_arm_optimization_interrupts`
+ * and `_disarm_optimization_interrupts` globals and passes an
+ * `_optimization_interrupt_scope` context manager as `interrupt_scope`, so Pyodide
+ * raises `KeyboardInterrupt` only while the solver runs. A stop written during model
+ * build or setup stays pending in the buffer and fires as soon as the scope arms,
+ * producing a zero-progress `"stopped"` report; a stop after the solver finishes is
+ * ignored. `finally` uninstalls the buffer, zeroes it, and deletes both globals.
  */
 async function runOptimization<
   TReport extends OptimizationReport | GlassOptimizationReport,
@@ -981,7 +992,9 @@ async function runOptimization<
     runId !== undefined &&
     interruptBuffer !== undefined &&
     pyodide !== null &&
-    typeof pyodide.setInterruptBuffer === "function";
+    typeof pyodide.setInterruptBuffer === "function" &&
+    typeof pyodide.globals?.set === "function" &&
+    typeof pyodide.globals?.delete === "function";
   let progressBindingStarted = false;
   let interruptBindingStarted = false;
   const failureReportBuilder =
@@ -1004,7 +1017,12 @@ async function runOptimization<
       activeOptimizationInterruptBuffer = interruptBuffer;
       activeOptimizationInterruptView = interruptView;
       interruptBindingStarted = true;
-      pyodide.setInterruptBuffer(interruptView);
+      pyodide.globals.set("_arm_optimization_interrupts", () => {
+        pyodide.setInterruptBuffer(interruptView);
+      });
+      pyodide.globals.set("_disarm_optimization_interrupts", () => {
+        pyodide.setInterruptBuffer(undefined);
+      });
     }
     const json = (await runPython(
       buildScript(
@@ -1017,11 +1035,25 @@ def _report_optimization_progress(progress):
     _optimization_progress_callback(json.dumps(progress))
 `
     : ""
+}${
+  canBindInterruptBuffer
+    ? `
+import contextlib
+
+@contextlib.contextmanager
+def _optimization_interrupt_scope():
+    try:
+        _arm_optimization_interrupts()
+        yield
+    finally:
+        _disarm_optimization_interrupts()
+`
+    : ""
 }
 _optimization_config = {}
 try:
     _optimization_config = json.loads(${JSON.stringify(configJson)})
-    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""}${candidateMaterialsArgument})
+    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""}${candidateMaterialsArgument}${canBindInterruptBuffer ? ", interrupt_scope=_optimization_interrupt_scope" : ""})
 except Exception as _optimization_error:
     _optimization_report = ${failureReportBuilder}(_optimization_error, _optimization_config)
 json.dumps(_optimization_report)
@@ -1042,6 +1074,8 @@ json.dumps(_optimization_report)
             activeOptimizationRunId = undefined;
             activeOptimizationInterruptBuffer = undefined;
             activeOptimizationInterruptView = undefined;
+            pyodide.globals.delete("_arm_optimization_interrupts");
+            pyodide.globals.delete("_disarm_optimization_interrupts");
           }
         }
       } finally {

@@ -20,6 +20,7 @@ bounds passed to SciPy; unbounded ``lm`` evaluation is unaffected.
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import cast
 
 from scipy.optimize import least_squares
@@ -29,6 +30,7 @@ import rayoptics_web_utils.optimization.operands as _operands_module
 from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
 from rayoptics_web_utils.optimization._types import (
     FloatArray,
+    InterruptScope,
     OptimizationConfig,
     OptimizationReport,
     ProblemEvaluation,
@@ -182,6 +184,8 @@ def optimize_opm(
     config: OptimizationConfig,
     image_point: str = "chief_ray",
     progress_reporter: ProgressReporter | None = None,
+    *,
+    interrupt_scope: InterruptScope | None = None,
 ) -> OptimizationReport:
     """Optimize a rayoptics optical model using a dict-driven config.
 
@@ -198,7 +202,7 @@ def optimize_opm(
        - evaluates operand residuals
     6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
     7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`. Progress records only objective evaluations the solver counts toward `max_nfev`: least-squares finite-difference Jacobian probes are excluded, `lm` budgets must be at least 2, and differential-evolution budgets are translated with SciPy's real population size (including Sobol power-of-two rounding) and must cover one full population.
-    8. If SciPy raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
+    8. Runs only the solver inside `interrupt_scope()` when supplied, so a host interrupt mechanism can raise `KeyboardInterrupt` during solving but never during model setup or report assembly. If SciPy or entering the scope (a stop requested before arming) raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
     9. If setup, SciPy, or final evaluation fails with another ordinary exception, restores the snapshotted state and returns a complete `success == False`, `status == "error"` report without retrying merit evaluation. Failures before snapshot capture use empty state arrays and zero counters.
 
     If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`.
@@ -208,6 +212,8 @@ def optimize_opm(
         config: Optimization configuration mapping.
         image_point: Image-point reference convention.
         progress_reporter: Optional callback that receives optimization progress.
+        interrupt_scope: Optional context-manager factory that arms user interrupts
+            for the solver phase only; defaults to no interrupt handling.
 
     Returns:
         Detailed optimization result and progress report.
@@ -250,7 +256,8 @@ def optimize_opm(
     result: SolverResult | None = None
     try:
         solver = _SOLVER_REGISTRY[problem.optimizer["kind"]](problem)
-        result = solver.solve(progress_reporter)
+        with (interrupt_scope or nullcontext)():
+            result = solver.solve(progress_reporter)
         report = problem.evaluate(result["x"])
     except KeyboardInterrupt:
         return _build_stopped_report(problem, initial_values)

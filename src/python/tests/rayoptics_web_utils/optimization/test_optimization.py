@@ -1116,6 +1116,114 @@ class TestOptimizeOpm:
         assert report["optimization_progress"] == progress_snapshots[-1]
         assert report["optimizer"]["nfev"] == 1
 
+    def test_interrupt_scope_wraps_only_the_solver(self, monkeypatch, fresh_cooke_triplet):
+        import contextlib
+
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        events = []
+        original_evaluate = optimization_module._OptimizationProblem.evaluate
+
+        def recording_evaluate(self, *args, **kwargs):
+            events.append("evaluate")
+            return original_evaluate(self, *args, **kwargs)
+
+        monkeypatch.setattr(optimization_module._OptimizationProblem, "evaluate", recording_evaluate)
+
+        class FakeSolver:
+            def __init__(self, problem):
+                self.problem = problem
+
+            def solve(self, progress_reporter=None):
+                del progress_reporter
+                events.append("solve")
+                return {
+                    "x": self.problem.current_vector(),
+                    "success": True,
+                    "status": 1,
+                    "message": "accepted",
+                    "nfev": 1,
+                }
+
+        monkeypatch.setitem(optimization_module._SOLVER_REGISTRY, "least_squares", FakeSolver)
+
+        @contextlib.contextmanager
+        def recording_scope():
+            events.append("enter")
+            try:
+                yield
+            finally:
+                events.append("exit")
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 30},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [{"kind": "focal_length", "target": 90.0, "weight": 1.0}]
+                },
+            },
+            interrupt_scope=recording_scope,
+        )
+
+        assert report["status"] == 1
+        assert events[-4:] == ["enter", "solve", "exit", "evaluate"]
+        assert "enter" not in events[:-4]
+
+    def test_stop_pending_when_interrupt_scope_arms_returns_initial_stopped_report(
+        self,
+        monkeypatch,
+        fresh_cooke_triplet,
+    ):
+        import contextlib
+
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        class UnreachableSolver:
+            def __init__(self, problem):
+                del problem
+
+            def solve(self, progress_reporter=None):
+                raise AssertionError("solver must not run after a pending stop")
+
+        monkeypatch.setitem(optimization_module._SOLVER_REGISTRY, "least_squares", UnreachableSolver)
+
+        @contextlib.contextmanager
+        def pending_stop_scope():
+            raise KeyboardInterrupt
+            yield
+
+        original_thickness = fresh_cooke_triplet["seq_model"].gaps[6].thi
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 30},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [{"kind": "focal_length", "target": 90.0, "weight": 1.0}]
+                },
+            },
+            interrupt_scope=pending_stop_scope,
+        )
+
+        assert report["success"] is True
+        assert report["status"] == "stopped"
+        assert report["message"] == "Optimization stopped by user"
+        assert report["optimization_progress"] == []
+        assert report["optimizer"]["nfev"] == 0
+        assert report["final_values"] == report["initial_values"]
+        assert report["final_values"][0]["value"] == pytest.approx(original_thickness)
+        json.dumps(report, allow_nan=False)
+
     def test_setup_error_returns_complete_empty_json_safe_report(
         self,
         fresh_cooke_triplet,

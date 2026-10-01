@@ -2,7 +2,7 @@ import { access, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { prepareRelease } from "../prepare-release";
+import { currentWheelFromPyproject, prepareRelease } from "../prepare-release";
 
 async function expectMissing(filePath: string): Promise<void> {
   await expect(access(filePath)).rejects.toThrow();
@@ -13,7 +13,8 @@ describe("prepare-release", () => {
     const fixtureDir = await mkdtemp(path.join(tmpdir(), "prepare-release-"));
     const outDir = path.join(fixtureDir, "out");
     const destinationDir = path.join(fixtureDir, "release-dist");
-    const currentWheel = "rayoptics_web_utils-0.33.1-py3-none-any.whl";
+    const currentWheel = "rayoptics_web_utils-current-py3-none-any.whl";
+    const obsoleteWheel = "rayoptics_web_utils-obsolete-py3-none-any.whl";
 
     await mkdir(path.join(outDir, "_next/static/chunks"), { recursive: true });
     await mkdir(path.join(outDir, "route"), { recursive: true });
@@ -27,10 +28,7 @@ describe("prepare-release", () => {
       writeFile(path.join(outDir, "serve.json"), "{}"),
       writeFile(path.join(outDir, "THIRD-PARTY-LICENSES.md"), "licenses"),
       writeFile(path.join(outDir, currentWheel), "current"),
-      writeFile(
-        path.join(outDir, "rayoptics_web_utils-0.33.0-py3-none-any.whl"),
-        "obsolete",
-      ),
+      writeFile(path.join(outDir, obsoleteWheel), "obsolete"),
       writeFile(path.join(outDir, "nested/__tests__/worker.ts"), "test"),
       writeFile(path.join(outDir, "component.test.js"), "test"),
       writeFile(path.join(outDir, "component.spec.ts"), "spec"),
@@ -60,11 +58,58 @@ describe("prepare-release", () => {
     await expectMissing(path.join(destinationDir, "component.test.js"));
     await expectMissing(path.join(destinationDir, "component.spec.ts"));
     await expectMissing(path.join(destinationDir, "pyodide-sw.js.md"));
-    await expectMissing(
-      path.join(
-        destinationDir,
-        "rayoptics_web_utils-0.33.0-py3-none-any.whl",
-      ),
+    await expectMissing(path.join(destinationDir, obsoleteWheel));
+  });
+});
+
+describe("currentWheelFromPyproject", () => {
+  async function writePyproject(contents: string): Promise<string> {
+    const fixtureDir = await mkdtemp(path.join(tmpdir(), "pyproject-"));
+    const pyprojectPath = path.join(fixtureDir, "pyproject.toml");
+    await writeFile(pyprojectPath, contents);
+    return pyprojectPath;
+  }
+
+  it("builds the wheel filename from the project version line", async () => {
+    const pyprojectPath = await writePyproject(
+      [
+        "[project]",
+        'name = "rayoptics-web-utils"',
+        'version = "fixture-version"',
+        'requires-python = ">=3.12"',
+        'dependencies = ["numpy==2.0.0"]',
+        "",
+      ].join("\n"),
     );
+
+    await expect(currentWheelFromPyproject(pyprojectPath)).resolves.toBe(
+      "rayoptics_web_utils-fixture-version-py3-none-any.whl",
+    );
+  });
+
+  it("rejects when no version line is present", async () => {
+    const pyprojectPath = await writePyproject(
+      ["[project]", 'name = "rayoptics-web-utils"', ""].join("\n"),
+    );
+
+    await expect(currentWheelFromPyproject(pyprojectPath)).rejects.toThrow(
+      `Unable to read project version from ${pyprojectPath}`,
+    );
+  });
+
+  it("names the same wheel that the Pyodide worker installs", async () => {
+    const releasedWheel = await currentWheelFromPyproject(
+      path.resolve(process.cwd(), "src/python/pyproject.toml"),
+    );
+    const workerSource = await readFile(
+      path.resolve(process.cwd(), "src/workers/pyodide.worker.ts"),
+      "utf8",
+    );
+    const requestedWheels = workerSource.match(
+      /rayoptics_web_utils-[^/`"'\s]+-py3-none-any\.whl/g,
+    );
+
+    expect(requestedWheels).not.toBeNull();
+    expect(new Set(requestedWheels)).toEqual(new Set([releasedWheel]));
   });
 });

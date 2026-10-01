@@ -10,6 +10,7 @@ exceptions return complete ``status="error"`` reports without retrying merit.
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 import math
 from typing import cast
@@ -35,6 +36,7 @@ from ._types import (
     GlassOptimizationConfig,
     GlassOptimizationReport,
     GlassStateEntry,
+    InterruptScope,
     OptimizationReport,
     ProgressReporter,
     SnapshotEntry,
@@ -341,6 +343,7 @@ def optimize_glasses(
     progress_reporter: ProgressReporter | None = None,
     *,
     candidate_materials: CandidateMaterials | None = None,
+    interrupt_scope: InterruptScope | None = None,
 ) -> GlassOptimizationReport:
     """Optimize ordered glass choices and optional continuous RayOptics targets.
 
@@ -350,7 +353,10 @@ def optimize_glasses(
     continuous L-BFGS-B polish. Ordinary failures restore the original design and
     return a complete ``"error"`` report without retrying the failed merit
     evaluation. ``KeyboardInterrupt`` instead restores the best fully completed
-    candidate and returns a successful ``"stopped"`` report.
+    candidate (the original design if the stop arrives when ``interrupt_scope``
+    arms) and returns a successful ``"stopped"`` report. Only initialization,
+    search, and polish run inside ``interrupt_scope``; setup and report assembly
+    are never interrupted.
 
     Args:
         opm: RayOptics optical model to optimize in place.
@@ -358,6 +364,8 @@ def optimize_glasses(
         image_point: Image-point reference convention forwarded to operands.
         progress_reporter: Optional callback receiving the globally monotonic history.
         candidate_materials: Optional live ``Special``/``Custom`` material maps.
+        interrupt_scope: Optional context-manager factory that arms user interrupts
+            for the search phases only; defaults to no interrupt handling.
 
     Returns:
         Detailed JSON-safe mixed optimization report.
@@ -379,9 +387,10 @@ def optimize_glasses(
         return build_glass_optimization_failure_report(error, config)
 
     try:
-        optimizer.initialize()
-        optimizer.search()
-        optimizer.polish()
+        with (interrupt_scope or nullcontext)():
+            optimizer.initialize()
+            optimizer.search()
+            optimizer.polish()
         return optimizer.build_report()
     except KeyboardInterrupt:
         try:
