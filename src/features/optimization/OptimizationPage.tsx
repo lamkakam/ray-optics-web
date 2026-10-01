@@ -157,8 +157,8 @@ function buildCurrentEditorModel(
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
  * - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
  * - Whenever the committed optimization config changes, the component immediately marks Operand Evaluation pending, clears the prior report, debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
- * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, and `apply_optimization_to_editor` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
- * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, and application call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, and confirmed Apply action. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
+ * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, `apply_optimization_to_editor`, and `dismiss_optimization_progress` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
+ * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, application, and progress dismissal call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, confirmed Apply action, and progress-modal `OK`/backdrop close. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
  * - A resolved failed evaluation report clears stale rows and displays the shared approved failure message. Initial-guess bounds validation retains its rollback report; a later successful evaluation clears warnings. Worker diagnostics are logged once at the boundary.
  * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
  * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
@@ -181,6 +181,7 @@ function buildCurrentEditorModel(
  * - Late or stale stop responses are ignored by the page orchestration because only the active run's worker promise can update the completed optimization state.
  * - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
  * - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
+ * - Progress dismissal is one shared operation guarded by the store's `isOptimizing` flag and the active run id. `dismiss_optimization_progress` rejects with an error while a run is active, and after the run finishes, fails, stops, or is aborted it closes the modal and returns `{ dismissed: true, wasOpen }`; calling it with the modal already closed is a successful no-op with `wasOpen: false`. The GUI close handler ignores the active-run error so the modal stays blocking.
  * - `Apply to Editor` asynchronously applies through `applyOptimizationModelToEditor()`, clearing the unapplied marker only after success. Synchronization failures retain the result and use the existing error UI.
  * - An aborted WebMCP execution sends the active run through the same interrupt-buffer and worker run-id Stop path as the modal, waits for the worker report to settle, mirrors any stopped partial result, and then rejects with `AbortError`.
  * - Modal rendering is delegated to extracted wrappers:
@@ -363,7 +364,6 @@ export function OptimizationPage({
   >([]);
   const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] =
     useState(false);
-  const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
   const [canStopOptimization, setCanStopOptimization] = useState(false);
   const [isStoppingOptimization, setIsStoppingOptimization] = useState(false);
   const [liveDrawerHeight, setLiveDrawerHeight] = useState(
@@ -381,6 +381,7 @@ export function OptimizationPage({
   const optimizationInterruptBufferRef = useRef<SharedArrayBuffer | undefined>(
     undefined,
   );
+  const optimizationProgressModalOpenRef = useRef(false);
   const optimizationStopRequestedRunIdRef = useRef<string | undefined>(
     undefined,
   );
@@ -927,8 +928,8 @@ export function OptimizationPage({
       optimizationStopPromiseRef.current = undefined;
       setOptimizationWarningMessage(undefined);
       setOptimizationProgress([]);
+      optimizationProgressModalOpenRef.current = true;
       setOptimizationProgressModalOpen(true);
-      setOptimizationRunComplete(false);
       setIsStoppingOptimization(false);
       optimizationStore.getState().setIsOptimizing(true);
 
@@ -987,7 +988,6 @@ export function OptimizationPage({
         throw error;
       } finally {
         signal.removeEventListener("abort", abortHandler);
-        setOptimizationRunComplete(true);
         setIsStoppingOptimization(false);
         optimizationRunIdRef.current = undefined;
         optimizationInterruptBufferRef.current = undefined;
@@ -1019,6 +1019,34 @@ export function OptimizationPage({
   const handleStopOptimization = useCallback(() => {
     void requestOptimizationStop();
   }, [requestOptimizationStop]);
+
+  /** Closes the settled progress modal; throws while a run is still active so callers cannot hide live progress. */
+  const dismissOptimizationProgressOperation = useCallback(
+    (signal: AbortSignal): { readonly wasOpen: boolean } => {
+      assertWebMcpNotCancelled(signal);
+      if (
+        optimizationStore.getState().isOptimizing ||
+        optimizationRunIdRef.current !== undefined
+      ) {
+        throw new Error(
+          "Cannot dismiss the Optimization Progress modal while optimization is still running. Wait for execute_optimization to settle or cancel it first.",
+        );
+      }
+      const wasOpen = optimizationProgressModalOpenRef.current;
+      optimizationProgressModalOpenRef.current = false;
+      setOptimizationProgressModalOpen(false);
+      return { wasOpen };
+    },
+    [optimizationStore],
+  );
+
+  const handleCloseOptimizationProgress = useCallback(() => {
+    try {
+      dismissOptimizationProgressOperation(new AbortController().signal);
+    } catch {
+      // The modal stays blocking while optimization is running.
+    }
+  }, [dismissOptimizationProgressOperation]);
 
   /** Forwards cancellation to the editor commit boundary; a cancelled pending Apply retains the result and skips the completion callback. */
   const applyOptimizationOperation = useCallback(
@@ -1070,6 +1098,7 @@ export function OptimizationPage({
     evaluate: evaluateCurrentOptimization,
     execute: executeOptimizationOperation,
     apply: applyOptimizationOperation,
+    dismissProgress: dismissOptimizationProgressOperation,
   });
 
   const bottomDrawerFields = useMemo(
@@ -1125,12 +1154,7 @@ export function OptimizationPage({
         onStop={handleStopOptimization}
         isStopping={isStoppingOptimization}
         canStop={canStopOptimization}
-        onClose={() => {
-          if (!optimizationRunComplete) {
-            return;
-          }
-          setOptimizationProgressModalOpen(false);
-        }}
+        onClose={handleCloseOptimizationProgress}
       />
 
       <OptimizationActionBar

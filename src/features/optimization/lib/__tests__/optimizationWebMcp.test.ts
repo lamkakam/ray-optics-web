@@ -41,7 +41,7 @@ const config: OptimizationConfig = {
 };
 
 describe("optimization WebMCP tools", () => {
-  it("creates the five tools in order with strict annotations", () => {
+  it("creates the six tools in order with strict annotations", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     const tools = createOptimizationWebMcpTools({
       optimizationStore: store,
@@ -49,6 +49,7 @@ describe("optimization WebMCP tools", () => {
       evaluate: jest.fn().mockResolvedValue(report),
       execute: jest.fn().mockResolvedValue(report),
       apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      dismissProgress: jest.fn().mockReturnValue({ wasOpen: true }),
     });
 
     expect(Object.values(tools).map((tool) => tool.name)).toEqual([
@@ -57,7 +58,12 @@ describe("optimization WebMCP tools", () => {
       "evaluate_optimization_operands",
       "execute_optimization",
       "apply_optimization_to_editor",
+      "dismiss_optimization_progress",
     ]);
+    expect(tools.dismissOptimizationProgress.annotations).toEqual({
+      readOnlyHint: false,
+      untrustedContentHint: false,
+    });
     expect(tools.getOptimizationConfig.annotations).toEqual({
       readOnlyHint: true,
       untrustedContentHint: false,
@@ -83,12 +89,14 @@ describe("optimization WebMCP tools", () => {
     const evaluate = jest.fn().mockResolvedValue(report);
     const execute = jest.fn().mockResolvedValue(report);
     const apply = jest.fn().mockResolvedValue({ surfaceCount: 2 });
+    const dismissProgress = jest.fn().mockReturnValue({ wasOpen: true });
     const tools = createOptimizationWebMcpTools({
       optimizationStore: store,
       catalogs: undefined,
       evaluate,
       execute,
       apply,
+      dismissProgress,
     });
     const signal = new AbortController().signal;
 
@@ -108,9 +116,13 @@ describe("optimization WebMCP tools", () => {
     await expect(
       tools.applyOptimizationToEditor.execute({}, { signal }),
     ).resolves.toBe(JSON.stringify({ applied: true, surfaceCount: 2 }));
+    await expect(
+      tools.dismissOptimizationProgress.execute({}, { signal }),
+    ).resolves.toBe(JSON.stringify({ dismissed: true, wasOpen: true }));
     expect(evaluate).toHaveBeenCalledWith(signal);
     expect(execute).toHaveBeenCalledWith(signal);
     expect(apply).toHaveBeenCalledWith(signal);
+    expect(dismissProgress).toHaveBeenCalledWith(signal);
 
     await expect(
       tools.setOptimizationConfig.execute(
@@ -120,6 +132,12 @@ describe("optimization WebMCP tools", () => {
     ).rejects.toThrow(/Invalid input/);
     await expect(
       tools.getOptimizationConfig.execute({ unexpected: true }, { signal }),
+    ).rejects.toThrow(/Invalid input/);
+    await expect(
+      tools.dismissOptimizationProgress.execute(
+        { unexpected: true },
+        { signal },
+      ),
     ).rejects.toThrow(/Invalid input/);
     expect(setOptimizationConfig).toHaveBeenCalledTimes(1);
 
@@ -137,8 +155,36 @@ describe("optimization WebMCP tools", () => {
         },
       ),
     ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      tools.dismissOptimizationProgress.execute(
+        {},
+        { signal: controller.signal },
+      ),
+    ).rejects.toMatchObject({ name: "AbortError" });
     expect(evaluate).toHaveBeenCalledTimes(1);
     expect(execute).toHaveBeenCalledTimes(1);
     expect(apply).toHaveBeenCalledTimes(1);
+    expect(dismissProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the dismiss operation error to the caller while optimization is running", async () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    const tools = createOptimizationWebMcpTools({
+      optimizationStore: store,
+      catalogs: undefined,
+      evaluate: jest.fn().mockResolvedValue(report),
+      execute: jest.fn().mockResolvedValue(report),
+      apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      dismissProgress: jest.fn(() => {
+        throw new Error("Optimization is still running.");
+      }),
+    });
+
+    await expect(
+      tools.dismissOptimizationProgress.execute(
+        {},
+        { signal: new AbortController().signal },
+      ),
+    ).rejects.toThrow("Optimization is still running.");
   });
 });

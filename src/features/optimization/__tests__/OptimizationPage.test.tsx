@@ -2975,7 +2975,7 @@ describe("OptimizationPage", () => {
     const proxy = makeProxy();
     const { lensStore, optimizationStore, unmount } =
       renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(5));
+    await waitFor(() => expect(registrations).toHaveLength(6));
     const tools = new Map(
       registrations.map(({ tool }) => [tool.name, tool] as const),
     );
@@ -3048,6 +3048,7 @@ describe("OptimizationPage", () => {
       "evaluate_optimization_operands",
       "execute_optimization",
       "apply_optimization_to_editor",
+      "dismiss_optimization_progress",
     ]);
     unmount();
     expect(
@@ -3082,7 +3083,7 @@ describe("OptimizationPage", () => {
           undefined,
           { onApplyToEditor },
         );
-      await waitFor(() => expect(registrations).toHaveLength(5));
+      await waitFor(() => expect(registrations).toHaveLength(6));
       const optimizedModel: OpticalModel = {
         ...baseModel,
         setAutoAperture: "autoAperture",
@@ -3164,7 +3165,7 @@ describe("OptimizationPage", () => {
     });
     const { optimizationStore } = renderOptimizationPage(proxy);
     const signalController = new AbortController();
-    await waitFor(() => expect(registrations).toHaveLength(5));
+    await waitFor(() => expect(registrations).toHaveLength(6));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3211,6 +3212,108 @@ describe("OptimizationPage", () => {
       ).toBe(44);
       expect(optimizationStore.getState().isOptimizing).toBe(false);
     });
+
+    let dismissed: unknown;
+    await act(async () => {
+      dismissed = await tools
+        .get("dismiss_optimization_progress")
+        ?.execute({}, { signal: new AbortController().signal });
+    });
+    expect(JSON.parse(String(dismissed))).toEqual({
+      dismissed: true,
+      wasOpen: true,
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Optimization Progress" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("rejects WebMCP progress dismissal while optimization is running and dismisses the modal after it finishes", async () => {
+    let resolveOptimization:
+      | ((report: OptimizationRunReport) => void)
+      | undefined;
+    const optimizationPromise = new Promise<OptimizationRunReport>(
+      (resolve) => {
+        resolveOptimization = resolve;
+      },
+    );
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockImplementation(() => optimizationPromise),
+    });
+    const registrations: WebMCP.ModelContextTool[] = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+          registrations.push(tool);
+        }),
+      },
+    });
+    renderOptimizationPage(proxy);
+    await waitFor(() => expect(registrations).toHaveLength(6));
+    const tools = new Map(
+      registrations.map((tool) => [tool.name, tool] as const),
+    );
+    const dismiss = tools.get("dismiss_optimization_progress")!;
+    const signal = new AbortController().signal;
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+    );
+
+    let execution!: Promise<unknown>;
+    await act(async () => {
+      execution = Promise.resolve(
+        tools.get("execute_optimization")?.execute({}, { signal }),
+      );
+    });
+    await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
+
+    await expect(dismiss.execute({}, { signal })).rejects.toThrow(
+      "Cannot dismiss the Optimization Progress modal while optimization is still running.",
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Optimization Progress" }),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      resolveOptimization?.({
+        ...makeEvaluationReport(),
+        status: "optimized",
+        message: "Optimization finished",
+        final_values: [
+          { kind: "radius", surface_index: 1, value: 45, min: 40, max: 60 },
+        ],
+        optimization_progress: [],
+      } as OptimizationReport);
+      await execution;
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument(),
+    );
+
+    let dismissed: unknown;
+    await act(async () => {
+      dismissed = await dismiss.execute({}, { signal });
+    });
+    expect(JSON.parse(String(dismissed))).toEqual({
+      dismissed: true,
+      wasOpen: true,
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Optimization Progress" }),
+    ).not.toBeInTheDocument();
+
+    let dismissedAgain: unknown;
+    await act(async () => {
+      dismissedAgain = await dismiss.execute({}, { signal });
+    });
+    expect(JSON.parse(String(dismissedAgain))).toEqual({
+      dismissed: true,
+      wasOpen: false,
+    });
   });
 
   it("requires a fresh evaluation after a WebMCP configuration change", async () => {
@@ -3225,7 +3328,7 @@ describe("OptimizationPage", () => {
     });
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(5));
+    await waitFor(() => expect(registrations).toHaveLength(6));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );

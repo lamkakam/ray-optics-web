@@ -23,6 +23,12 @@ export interface OptimizationApplyResult {
   readonly surfaceCount: number;
 }
 
+/** Result returned by the shared Optimization Progress modal dismiss operation. */
+export interface OptimizationProgressDismissResult {
+  /** Whether the progress modal was open before this dismissal. */
+  readonly wasOpen: boolean;
+}
+
 /** Page callbacks shared by GUI controls and imperative Optimization tools. */
 export interface OptimizationWebMcpDependencies {
   readonly optimizationStore: StoreApi<OptimizationState>;
@@ -33,19 +39,27 @@ export interface OptimizationWebMcpDependencies {
   readonly execute: (signal: AbortSignal) => Promise<OptimizationRunReport>;
   /** Runs the same throwing, confirmed apply operation used by the modal. */
   readonly apply: (signal: AbortSignal) => Promise<OptimizationApplyResult>;
+  /**
+   * Runs the same dismiss operation used by the progress modal `OK` control;
+   * throws while an optimization run is still active.
+   */
+  readonly dismissProgress: (
+    signal: AbortSignal,
+  ) => OptimizationProgressDismissResult;
 }
 
 type OptimizationWebMcpDependenciesSource =
   | OptimizationWebMcpDependencies
   | (() => OptimizationWebMcpDependencies);
 
-/** Named readonly handles for the five page-scoped Optimization descriptors. */
+/** Named readonly handles for the six page-scoped Optimization descriptors. */
 export type OptimizationWebMcpTools = Readonly<{
   readonly setOptimizationConfig: WebMCP.ModelContextTool;
   readonly getOptimizationConfig: WebMCP.ModelContextTool;
   readonly evaluateOptimizationOperands: WebMCP.ModelContextTool;
   readonly executeOptimization: WebMCP.ModelContextTool;
   readonly applyOptimizationToEditor: WebMCP.ModelContextTool;
+  readonly dismissOptimizationProgress: WebMCP.ModelContextTool;
 }>;
 
 const validators = (() => {
@@ -152,6 +166,19 @@ export function createOptimizationWebMcpTools(
           applied: true,
           surfaceCount: result.surfaceCount,
         });
+      },
+    },
+    dismissOptimizationProgress: {
+      name: "dismiss_optimization_progress",
+      description:
+        "Dismiss the Optimization Progress modal after the optimization has finished or been interrupted. Returns an error while the optimization is still running.",
+      inputSchema: emptyOptimizationInputSchema,
+      annotations: { readOnlyHint: false, untrustedContentHint: false },
+      execute: async (input, { signal }) => {
+        assertWebMcpInput(validators.empty, input);
+        assertWebMcpNotCancelled(signal);
+        const result = currentDependencies(source).dismissProgress(signal);
+        return JSON.stringify({ dismissed: true, wasOpen: result.wasOpen });
       },
     },
   };
