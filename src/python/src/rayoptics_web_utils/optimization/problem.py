@@ -7,6 +7,7 @@ from typing import Self
 
 import numpy as np
 from rayoptics.environment import OpticalModel
+from scipy.optimize._numdiff import approx_derivative
 
 from .config import normalize_config, pickup_order
 from ._types import (
@@ -48,6 +49,7 @@ class OptimizationProblem:
     - For targeted scalar operands, weighted residuals remain `total_weight * (actual - target)`. For target-less vector operands, weighted residuals are `total_weight * sample_value`.
     - The penalty residual vector length matches the nominal non-zero-weight residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per retained field/wavelength sample; for axis-specific Ray Fan operands, that means `num_rays` entries.
     - Records progress only when the evaluated optimizer vector or glass-search context changes materially.
+    - `residual_jacobian(...)` reproduces SciPy's default 2-point finite-difference Jacobian (reusing the cached residuals of the last `residual_objective(...)` call as `f0`) without recording progress, so least-squares progress contains only the evaluations SciPy counts toward `max_nfev`.
     - `from_normalized_config(...)` lets the glass facade reuse the problem core after its distinct flat configuration has already been validated.
     - Converts optional bounds into SciPy-compatible `(None, None)` intervals for L-BFGS-B while preserving the existing array bounds used by current solvers.
     - Uses `OpticalModel` plus package-local typed config/report aliases for all internal mappings."""
@@ -95,6 +97,7 @@ class OptimizationProblem:
         self.optimization_progress = self.progress.entries
         self._progress_reporter: ProgressReporter | None = None
         self.progress_context: dict[str, object] | None = None
+        self._last_residual_evaluation: tuple[FloatArray, FloatArray] | None = None
 
     def current_vector(self) -> FloatArray:
         return np.array(
@@ -227,18 +230,66 @@ class OptimizationProblem:
         )
         return np.full(size, PENALTY_RESIDUAL, dtype=float)
 
-    def residual_objective(self, vector: FloatArray) -> FloatArray:
+    def _residuals_or_penalty(self, vector: FloatArray) -> tuple[FloatArray, ProblemEvaluation | None]:
+        """Evaluate weighted residuals without recording progress.
+
+        Ordinary evaluation failures become the penalty residual vector and no
+        evaluation; ``KeyboardInterrupt`` propagates so user stops still work.
+        """
         try:
             evaluation = self.evaluate(vector)
         except Exception:
-            return self.penalty_residual_vector()
-        self.progress.record(
-            vector,
-            evaluation,
-            self._progress_reporter,
-            context=self.progress_context,
+            return self.penalty_residual_vector(), None
+        residuals = np.array([entry["weighted_residual"] for entry in evaluation["residuals"]], dtype=float)
+        return residuals, evaluation
+
+    def residual_objective(self, vector: FloatArray) -> FloatArray:
+        residuals, evaluation = self._residuals_or_penalty(vector)
+        self._last_residual_evaluation = (np.array(vector, dtype=float, copy=True), residuals)
+        if evaluation is not None:
+            self.progress.record(
+                vector,
+                evaluation,
+                self._progress_reporter,
+                context=self.progress_context,
+            )
+        return residuals
+
+    def residual_jacobian(
+        self,
+        vector: FloatArray,
+        bounds: tuple[FloatArray | float, FloatArray | float],
+    ) -> FloatArray:
+        """Estimate the residual Jacobian without recording progress.
+
+        Mirrors SciPy ``least_squares``' default ``jac="2-point"`` estimate (the
+        same ``approx_derivative`` call, default relative step, bounds and
+        ``f0``), so solver steps are unchanged while finite-difference probes
+        stay out of the progress history and outside the ``max_nfev`` budget the
+        user sees. ``approx_derivative`` is private SciPy API; the SciPy version
+        is pinned by the Pyodide distribution.
+
+        Args:
+            vector: Optimizer vector at which to differentiate.
+            bounds: Lower and upper optimizer-space bounds passed to SciPy.
+
+        Returns:
+            Dense ``(residual_count, variable_count)`` Jacobian.
+        """
+        x = np.asarray(vector, dtype=float)
+        f0 = None
+        cached = self._last_residual_evaluation
+        if cached is not None and np.array_equal(cached[0], x):
+            f0 = cached[1]
+        jacobian = approx_derivative(
+            lambda values: self._residuals_or_penalty(values)[0],
+            x,
+            method="2-point",
+            rel_step=None,
+            f0=f0,
+            bounds=bounds,
         )
-        return np.array([entry["weighted_residual"] for entry in evaluation["residuals"]], dtype=float)
+        return np.atleast_2d(jacobian)
 
     def scalar_objective(self, vector: FloatArray) -> float:
         try:

@@ -20,6 +20,8 @@
  * - Operand `weight` must be a positive non-zero number.
  * - For bounded optimizers such as `trf`, `differential_evolution`, and `glass_expert`, variable `min` and `max` must be numeric, and `min < max`.
  * - For least-squares `lm`, the built config must provide at least as many non-zero-weight residual samples as optimization variables; otherwise `buildOptimizationConfig()` throws before the page tries to evaluate or optimize.
+ * - For least-squares `lm` with at least one variable, `max_nfev` must be at least 2, because MINPACK always evaluates one trial step after the initial point; otherwise `buildOptimizationConfig()` throws before the worker is called.
+ * - For Differential Evolution with at least one variable, `max_nfev` must cover one full SciPy population, `max(5, 15 * variableCount)`, because SciPy always evaluates the whole initial population; otherwise `buildOptimizationConfig()` throws before the worker is called.
  * - Pickup `source_surface_index` must be in range and must not equal the target surface index.
  * - Asphere coefficient pickups require a coefficient `sourceTermKey`.
  * - Asphere coefficient pickup `source_coefficient_index` must be a non-negative integer so zero-based coefficient slot `0` is allowed.
@@ -579,6 +581,63 @@ function buildOptimizerConfig(
     xtol: getParsedOptimizerNumericField(optimizer, "xtol"),
     gtol: getParsedOptimizerNumericField(optimizer, "gtol"),
   };
+}
+
+/** SciPy's default `popsize`; the UI never overrides it for Differential Evolution. */
+const DIFFERENTIAL_EVOLUTION_POPSIZE = 15;
+/** SciPy raises any smaller Differential Evolution population to this size. */
+const DIFFERENTIAL_EVOLUTION_MIN_POPULATION = 5;
+
+/**
+ * Rejects a Differential Evolution step budget that cannot cover SciPy's first population.
+ *
+ * SciPy always evaluates the whole initial population of
+ * `max(5, popsize * variableCount)` members, so a smaller `max_nfev` would overshoot.
+ * UI bounds always satisfy `min < max`, so no variable is excluded as equal-bounded.
+ * Runs without variables skip SciPy and are not checked.
+ */
+function assertDifferentialEvolutionBudget(
+  optimizer: OptimizationConfig["optimizer"],
+  variableCount: number,
+): void {
+  if (optimizer.kind !== "differential_evolution" || variableCount === 0) {
+    return;
+  }
+  const population = Math.max(
+    DIFFERENTIAL_EVOLUTION_MIN_POPULATION,
+    DIFFERENTIAL_EVOLUTION_POPSIZE * variableCount,
+  );
+  if (optimizer.max_nfev < population) {
+    throw new Error(
+      `Differential Evolution requires Max. num of steps of at least ${population} (one full population for ${variableCount} ${variableCount === 1 ? "variable" : "variables"}).`,
+    );
+  }
+}
+
+/** MINPACK always evaluates one trial step after the initial point. */
+const LEVENBERG_MARQUARDT_MIN_STEPS = 2;
+
+/**
+ * Rejects a Levenberg-Marquardt step budget that SciPy's MINPACK backend would overshoot.
+ *
+ * Runs without variables skip SciPy and are not checked.
+ */
+function assertLevenbergMarquardtBudget(
+  optimizer: OptimizationConfig["optimizer"],
+  variableCount: number,
+): void {
+  if (
+    optimizer.kind !== "least_squares" ||
+    optimizer.method !== "lm" ||
+    variableCount === 0
+  ) {
+    return;
+  }
+  if (optimizer.max_nfev < LEVENBERG_MARQUARDT_MIN_STEPS) {
+    throw new Error(
+      `Levenberg-Marquardt requires Max. num of steps of at least ${LEVENBERG_MARQUARDT_MIN_STEPS}.`,
+    );
+  }
 }
 
 function buildGlassOptimizerConfig(
@@ -1621,8 +1680,12 @@ function buildOptimizationConfigForState(
     };
   }
 
+  const optimizer = buildOptimizerConfig(state.optimizer);
+  assertDifferentialEvolutionBudget(optimizer, variables.length);
+  assertLevenbergMarquardtBudget(optimizer, variables.length);
+
   return {
-    optimizer: buildOptimizerConfig(state.optimizer),
+    optimizer,
     variables,
     pickups,
     merit_function,

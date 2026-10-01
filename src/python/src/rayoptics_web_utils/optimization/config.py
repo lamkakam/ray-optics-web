@@ -3,7 +3,8 @@
 Least-squares supports ``trf`` and ``lm``; differential evolution has its own
 methodless option set. Bounded solvers require finite bounds, while ``lm`` permits
 fully unbounded variables and requires at least as many nominal residuals as
-variables. Validation also enforces unique mutable targets, acyclic pickups, and
+variables and a ``max_nfev`` of at least 2. A differential-evolution ``max_nfev``
+budget must cover at least one full SciPy population. Validation also enforces unique mutable targets, acyclic pickups, and
 stable option-driven residual counts after field/wavelength expansion. Tilt and
 decenter targets validate their interface and coordinate strategy, materialize
 missing target data, and leave missing pickup sources unconfigured. Operand
@@ -18,6 +19,7 @@ from collections import deque
 from copy import deepcopy
 from typing import cast
 
+import numpy as np
 from rayoptics.environment import OpticalModel
 
 from .operands import OPERAND_REGISTRY, get_nominal_operand_sample_residual_count
@@ -386,13 +388,84 @@ def normalize_merit_function(opm: OpticalModel, merit_function: MeritFunctionCon
     return {"operands": normalized_operands}
 
 
+DIFFERENTIAL_EVOLUTION_DEFAULT_POPSIZE = 15
+DIFFERENTIAL_EVOLUTION_MIN_POPULATION = 5
+LEVENBERG_MARQUARDT_MIN_NFEV = 2
+"""MINPACK ``lmder`` always evaluates a trial step after the initial point."""
+
+
+def differential_evolution_population_size(
+    optimizer: NormalizedOptimizerConfig,
+    variables: list[VariableConfig],
+) -> int:
+    """Return the population size SciPy differential evolution will evaluate.
+
+    Mirrors SciPy: an array ``init`` fixes the population to its row count;
+    otherwise the population is ``max(5, popsize * max(1, N - E))`` where ``E``
+    counts variables whose ``min`` equals ``max``, rounded up to the next power
+    of two for ``init="sobol"``. Equality is unit-independent, so external radius
+    bounds count the same as SciPy's curvature bounds.
+
+    Args:
+        optimizer: Normalized differential-evolution optimizer config.
+        variables: Normalized variables with finite bounds.
+
+    Returns:
+        Number of objective evaluations in one generation.
+    """
+    init = optimizer.get("init", "latinhypercube")
+    if not isinstance(init, str):
+        return int(np.shape(init)[0])
+    popsize = int(optimizer.get("popsize", DIFFERENTIAL_EVOLUTION_DEFAULT_POPSIZE))
+    equal_bound_count = sum(
+        1 for variable in variables if "min" in variable and "max" in variable and variable["min"] == variable["max"]
+    )
+    population_size = max(
+        DIFFERENTIAL_EVOLUTION_MIN_POPULATION,
+        popsize * max(1, len(variables) - equal_bound_count),
+    )
+    if init == "sobol":
+        return 1 << (population_size - 1).bit_length()
+    return population_size
+
+
 def validate_optimizer_dimensions(
     optimizer: NormalizedOptimizerConfig,
     variables: list[VariableConfig],
     merit_function: MeritFunctionConfig,
 ) -> None:
-    if optimizer["kind"] != "least_squares" or optimizer["method"] != "lm":
+    """Validate optimizer-specific limits that depend on problem dimensions.
+
+    - ``lm`` requires at least as many nominal residuals as variables and, whenever
+      variables are present, an explicit ``max_nfev`` of at least
+      ``LEVENBERG_MARQUARDT_MIN_NFEV`` because MINPACK always evaluates one trial
+      step after the initial point.
+    - Differential evolution always evaluates its whole first population, so an
+      explicit ``max_nfev`` must be at least ``differential_evolution_population_size``
+      whenever variables are present.
+
+    Args:
+        optimizer: Normalized optimizer config.
+        variables: Normalized variables.
+        merit_function: Normalized merit function.
+
+    Raises:
+        ValueError: If the optimizer cannot run within these dimensions.
+    """
+    if optimizer["kind"] == "differential_evolution":
+        max_nfev = optimizer.get("max_nfev")
+        if (
+            max_nfev is not None
+            and len(variables) > 0
+            and max_nfev < differential_evolution_population_size(optimizer, variables)
+        ):
+            raise ValueError("Differential evolution max_nfev must cover at least one full population")
         return
+    if optimizer["method"] != "lm":
+        return
+    max_nfev = optimizer.get("max_nfev")
+    if max_nfev is not None and len(variables) > 0 and max_nfev < LEVENBERG_MARQUARDT_MIN_NFEV:
+        raise ValueError("Levenberg-Marquardt max_nfev must be at least 2")
     nominal_residual_count = sum(
         get_nominal_operand_sample_residual_count(operand)
         for operand in merit_function["operands"]

@@ -315,7 +315,7 @@ describe("optimization config adapter", () => {
     const config: OptimizationConfig = {
       optimizer: {
         kind: "differential_evolution",
-        max_nfev: 100,
+        max_nfev: 200,
         tol: 1e-3,
         atol: 1e-6,
       },

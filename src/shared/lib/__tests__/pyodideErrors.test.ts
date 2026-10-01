@@ -236,6 +236,41 @@ describe("Pyodide error policy", () => {
     expect(report.diagnostic).toBeDefined();
   });
 
+  it("preserves the Differential Evolution population-budget validation message", () => {
+    const message =
+      "Differential evolution max_nfev must cover at least one full population";
+
+    expect(
+      normalizeOptimizationReport(
+        {
+          success: false,
+          status: "error",
+          message,
+          diagnostic: { exception_type: "ValueError", message },
+        },
+        "optimizeOpm",
+      ).message,
+    ).toBe(message);
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it("preserves the Levenberg-Marquardt step-budget validation message", () => {
+    const message = "Levenberg-Marquardt max_nfev must be at least 2";
+
+    expect(
+      normalizeOptimizationReport(
+        {
+          success: false,
+          status: "error",
+          message,
+          diagnostic: { exception_type: "ValueError", message },
+        },
+        "optimizeOpm",
+      ).message,
+    ).toBe(message);
+    expect(error).not.toHaveBeenCalled();
+  });
+
   it("warns for non-convergence but stays silent for stopped and successful runs", () => {
     expect(
       normalizeOptimizationReport(

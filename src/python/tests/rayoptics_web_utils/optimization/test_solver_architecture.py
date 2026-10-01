@@ -106,7 +106,7 @@ def test_optimize_opm_dispatches_differential_evolution_through_solver_registry(
     captured = {}
     original_image_distance = cooke_triplet["seq_model"].gaps[6].thi
     config = {
-        "optimizer": {"kind": "differential_evolution", "max_nfev": 3},
+        "optimizer": {"kind": "differential_evolution", "max_nfev": 15},
         "variables": [
             {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
         ],
@@ -146,7 +146,7 @@ def test_optimize_opm_dispatches_differential_evolution_through_solver_registry(
         cooke_triplet.update_model()
 
     assert captured["problem"].optimizer["kind"] == "differential_evolution"
-    assert captured["problem"].optimizer["max_nfev"] == 3
+    assert captured["problem"].optimizer["max_nfev"] == 15
     assert "method" not in captured["problem"].optimizer
     assert "maxiter" not in captured["problem"].optimizer
     assert result["success"] is True
@@ -161,8 +161,9 @@ def test_least_squares_adapter_calls_scipy_with_problem_interfaces(monkeypatch, 
     captured = {}
     problem = OptimizationProblem(cooke_triplet, optimization_config)
 
-    def fake_least_squares(func, x0, bounds, method, ftol, xtol, gtol, max_nfev):
+    def fake_least_squares(func, x0, bounds, method, ftol, xtol, gtol, max_nfev, jac):
         captured["func"] = func
+        captured["jac"] = jac
         captured["x0"] = x0
         captured["bounds"] = bounds
         captured["method"] = method
@@ -192,6 +193,8 @@ def test_least_squares_adapter_calls_scipy_with_problem_interfaces(monkeypatch, 
     assert captured["method"] == "trf"
     assert captured["max_nfev"] == 5
     assert "bounds" in captured
+    assert captured["jac"](captured["x0"]).shape == (1, 1)
+    assert problem.optimization_progress == []
 
 
 def test_least_squares_adapter_omits_bounds_for_lm(monkeypatch, cooke_triplet, optimization_config):
@@ -234,6 +237,7 @@ def test_least_squares_adapter_omits_bounds_for_lm(monkeypatch, cooke_triplet, o
     assert captured["func"] == problem.residual_objective
     assert captured["method"] == "lm"
     assert "bounds" not in captured["kwargs"]
+    assert callable(captured["kwargs"]["jac"])
 
 
 def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bounds(monkeypatch, cooke_triplet):
@@ -565,25 +569,27 @@ def test_penalty_residual_vector_uses_ray_fan_num_rays_option(cooke_triplet):
 
 
 @pytest.mark.parametrize(
-    ("max_nfev", "popsize", "variable_count", "expected"),
+    ("max_nfev", "population_size", "expected"),
     [
-        (None, 15, 2, 1000),
-        (0, 15, 2, 0),
-        (59, 3, 4, 3),
-        (3, 0, 0, 2),
+        (None, 30, 1000),
+        (0, 30, 0),
+        (29, 30, 0),
+        (30, 30, 0),
+        (59, 12, 3),
+        (60, 12, 4),
+        (10, 5, 1),
     ],
 )
 def test_differential_evolution_budget_translation_handles_boundaries(
     max_nfev,
-    popsize,
-    variable_count,
+    population_size,
     expected,
 ):
     from rayoptics_web_utils.optimization.solvers.differential_evolution import (
         _maxiter_for_evaluation_budget,
     )
 
-    assert _maxiter_for_evaluation_budget(max_nfev, popsize, variable_count) == expected
+    assert _maxiter_for_evaluation_budget(max_nfev, population_size) == expected
 
 
 def test_least_squares_adapter_normalizes_missing_njev_and_clears_reporter(
@@ -675,6 +681,7 @@ def test_least_squares_adapter_forwards_exact_default_options_and_normalizes_res
 
     assert captured["function"] == problem.residual_objective
     assert captured["initial"].tolist() == [2.0]
+    assert callable(captured["kwargs"].pop("jac"))
     assert captured["kwargs"] == {
         "method": "lm",
         "ftol": 1e-8,
@@ -732,6 +739,7 @@ def test_least_squares_adapter_forwards_explicit_tolerance_options(monkeypatch):
 
     LeastSquaresSolver(problem).solve()
 
+    assert callable(captured["kwargs"].pop("jac"))
     assert captured["kwargs"] == {
         "method": "lm",
         "ftol": 2e-7,
@@ -768,6 +776,10 @@ def test_differential_evolution_adapter_falls_back_when_scipy_omits_status(
             "atol": 0.01,
         },
         bounds=lambda: (np.array([-1.0, 0.0]), np.array([1.0, 2.0])),
+        variables=[
+            {"kind": "thickness", "surface_index": 1, "min": -1.0, "max": 1.0},
+            {"kind": "thickness", "surface_index": 2, "min": 0.0, "max": 2.0},
+        ],
         scalar_objective=lambda vector: float(np.sum(vector**2)),
         _progress_reporter=None,
     )
@@ -792,7 +804,8 @@ def test_differential_evolution_adapter_falls_back_when_scipy_omits_status(
 
     assert captured["func"] == problem.scalar_objective
     assert captured["bounds"] == [(-1.0, 1.0), (0.0, 2.0)]
-    assert captured["maxiter"] == 4
+    # popsize 2 x 2 variables is raised to SciPy's 5-member minimum: 20 // 5 - 1.
+    assert captured["maxiter"] == 3
     assert captured["strategy"] == "rand1bin"
     assert captured["polish"] is True
     assert result["status"] == status
