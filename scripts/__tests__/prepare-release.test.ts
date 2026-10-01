@@ -2,7 +2,7 @@ import { access, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { prepareRelease } from "../prepare-release";
+import { currentWheelFromPyproject, prepareRelease } from "../prepare-release";
 
 async function expectMissing(filePath: string): Promise<void> {
   await expect(access(filePath)).rejects.toThrow();
@@ -66,5 +66,57 @@ describe("prepare-release", () => {
         "rayoptics_web_utils-0.33.0-py3-none-any.whl",
       ),
     );
+  });
+});
+
+describe("currentWheelFromPyproject", () => {
+  async function writePyproject(contents: string): Promise<string> {
+    const fixtureDir = await mkdtemp(path.join(tmpdir(), "pyproject-"));
+    const pyprojectPath = path.join(fixtureDir, "pyproject.toml");
+    await writeFile(pyprojectPath, contents);
+    return pyprojectPath;
+  }
+
+  it("builds the wheel filename from the project version line", async () => {
+    const pyprojectPath = await writePyproject(
+      [
+        "[project]",
+        'name = "rayoptics-web-utils"',
+        'version = "1.2.3"',
+        'requires-python = ">=3.12"',
+        'dependencies = ["numpy==2.0.0"]',
+        "",
+      ].join("\n"),
+    );
+
+    await expect(currentWheelFromPyproject(pyprojectPath)).resolves.toBe(
+      "rayoptics_web_utils-1.2.3-py3-none-any.whl",
+    );
+  });
+
+  it("rejects when no version line is present", async () => {
+    const pyprojectPath = await writePyproject(
+      ["[project]", 'name = "rayoptics-web-utils"', ""].join("\n"),
+    );
+
+    await expect(currentWheelFromPyproject(pyprojectPath)).rejects.toThrow(
+      `Unable to read project version from ${pyprojectPath}`,
+    );
+  });
+
+  it("names the same wheel that the Pyodide worker installs", async () => {
+    const releasedWheel = await currentWheelFromPyproject(
+      path.resolve(process.cwd(), "src/python/pyproject.toml"),
+    );
+    const workerSource = await readFile(
+      path.resolve(process.cwd(), "src/workers/pyodide.worker.ts"),
+      "utf8",
+    );
+    const requestedWheels = workerSource.match(
+      /rayoptics_web_utils-[^/`"'\s]+-py3-none-any\.whl/g,
+    );
+
+    expect(requestedWheels).not.toBeNull();
+    expect(new Set(requestedWheels)).toEqual(new Set([releasedWheel]));
   });
 });
