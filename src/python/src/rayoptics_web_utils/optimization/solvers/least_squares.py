@@ -2,11 +2,46 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+import numpy as np
 from scipy.optimize import least_squares
 
-from rayoptics_web_utils.optimization._types import ProgressReporter, SolverResult
+from rayoptics_web_utils.optimization._types import OptimizationProblemProtocol, ProgressReporter, SolverResult
 
 from .base import SolverAdapter
+
+
+def build_least_squares_kwargs(problem: OptimizationProblemProtocol) -> dict[str, Any]:
+    """Build SciPy ``least_squares`` keyword arguments for a problem.
+
+    The ``jac`` callable is ``problem.residual_jacobian`` with the same
+    optimizer-space bounds SciPy uses for its default finite differences
+    (``problem.bounds()`` for ``trf``; unbounded for ``lm``), so Jacobian probes
+    neither record progress nor exceed the user-visible ``max_nfev`` budget.
+    ``bounds`` is passed to SciPy only for ``trf``.
+
+    Args:
+        problem: Optimization problem with a normalized least-squares optimizer.
+
+    Returns:
+        Keyword arguments excluding the objective and initial vector.
+    """
+    method = problem.optimizer["method"]
+    kwargs: dict[str, Any] = {
+        "method": method,
+        "ftol": problem.optimizer.get("ftol", 1e-8),
+        "xtol": problem.optimizer.get("xtol", 1e-8),
+        "gtol": problem.optimizer.get("gtol", 1e-8),
+        "max_nfev": problem.optimizer.get("max_nfev", 200),
+    }
+    if method == "trf":
+        jacobian_bounds = problem.bounds()
+        kwargs["bounds"] = jacobian_bounds
+    else:
+        jacobian_bounds = (-np.inf, np.inf)
+    kwargs["jac"] = lambda vector: problem.residual_jacobian(vector, jacobian_bounds)
+    return kwargs
 
 
 class LeastSquaresSolver(SolverAdapter):
@@ -18,6 +53,7 @@ class LeastSquaresSolver(SolverAdapter):
     - Calls `scipy.optimize.least_squares(...)`.
     - Uses `OptimizationProblem.residual_objective(...)` as the solver objective.
     - Passes SciPy `bounds=(lower, upper)` only for bounded least-squares methods such as `trf`; omits the `bounds` argument for `lm`.
+    - Passes `jac=` backed by `OptimizationProblem.residual_jacobian(...)`, which reproduces SciPy's default 2-point estimate without recording progress, so progress entries never exceed `max_nfev`.
     - Returns a normalized result mapping with least-squares-specific metadata:
       - `x`
       - `success`
@@ -32,20 +68,10 @@ class LeastSquaresSolver(SolverAdapter):
         x0 = self.problem.current_vector()
         self.problem._progress_reporter = progress_reporter
         try:
-            least_squares_kwargs = {
-                "method": self.problem.optimizer["method"],
-                "ftol": self.problem.optimizer.get("ftol", 1e-8),
-                "xtol": self.problem.optimizer.get("xtol", 1e-8),
-                "gtol": self.problem.optimizer.get("gtol", 1e-8),
-                "max_nfev": self.problem.optimizer.get("max_nfev", 200),
-            }
-            if self.problem.optimizer["method"] == "trf":
-                lower, upper = self.problem.bounds()
-                least_squares_kwargs["bounds"] = (lower, upper)
             result = least_squares(
                 self.problem.residual_objective,
                 x0,
-                **least_squares_kwargs,
+                **build_least_squares_kwargs(self.problem),
             )
             return {
                 "x": result.x,

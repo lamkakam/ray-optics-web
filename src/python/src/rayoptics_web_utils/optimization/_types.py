@@ -504,6 +504,7 @@ type OperandEvaluator = Callable[[OpticalModel, int | None, int | None, OperandO
 
 class OptimizationProblemProtocol(Protocol):
     optimizer: NormalizedOptimizerConfig
+    variables: list[VariableConfig]
     _progress_reporter: ProgressReporter | None
 
     def current_vector(self) -> FloatArray: ...
@@ -511,6 +512,12 @@ class OptimizationProblemProtocol(Protocol):
     def bounds(self) -> tuple[FloatArray, FloatArray]: ...
 
     def residual_objective(self, vector: FloatArray) -> FloatArray: ...
+
+    def residual_jacobian(
+        self,
+        vector: FloatArray,
+        bounds: tuple[FloatArray | float, FloatArray | float],
+    ) -> FloatArray: ...
 
     def scalar_objective(self, vector: FloatArray) -> float: ...
 

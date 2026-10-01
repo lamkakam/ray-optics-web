@@ -45,6 +45,7 @@ const validationMessages = new Set([
   "lm variables must omit both min and max bounds together",
   "Differential evolution variables must provide finite min and max bounds",
   "Levenberg-Marquardt requires at least as many residuals as variables",
+  "Differential evolution max_nfev must cover at least one full population",
   "Pickup cycle detected",
   "Glass optimization variables must omit both min and max or provide both",
   "Glass optimization variable bounds must satisfy finite min < max",

@@ -599,6 +599,47 @@ describe("optimizationStore", () => {
     ]);
   });
 
+  it("rejects a Differential Evolution step budget smaller than one full population", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState({
+      optimizer: {
+        kind: "differential_evolution",
+        max_nfev: "29",
+        tol: "0.01",
+        atol: "0",
+      },
+    });
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "Differential Evolution requires Max. num of steps of at least 30 (one full population for 2 variables).",
+    );
+
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, max_nfev: "30" },
+    }));
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
   it("does not apply least-squares residual-count validation to Differential Evolution", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);

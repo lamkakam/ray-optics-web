@@ -43,6 +43,7 @@ from rayoptics_web_utils.optimization.operands import (
 )
 from rayoptics_web_utils.optimization.problem import OptimizationProblem
 from rayoptics_web_utils.optimization.solvers import DifferentialEvolutionSolver, LeastSquaresSolver
+from rayoptics_web_utils.optimization.solvers.least_squares import build_least_squares_kwargs
 from rayoptics_web_utils.optimization.targets import restore_state as _restore_state
 from rayoptics_web_utils.optimization.targets import snapshot_state as _snapshot_state
 
@@ -74,20 +75,10 @@ class _OptimizationProblem(OptimizationProblem):
         x0 = self.current_vector()
         self._progress_reporter = progress_reporter
         try:
-            least_squares_kwargs = {
-                "method": self.optimizer["method"],
-                "ftol": self.optimizer.get("ftol", 1e-8),
-                "xtol": self.optimizer.get("xtol", 1e-8),
-                "gtol": self.optimizer.get("gtol", 1e-8),
-                "max_nfev": self.optimizer.get("max_nfev", 200),
-            }
-            if self.optimizer["method"] == "trf":
-                lower, upper = self.bounds()
-                least_squares_kwargs["bounds"] = (lower, upper)
             return least_squares(
                 self.objective,
                 x0,
-                **least_squares_kwargs,
+                **build_least_squares_kwargs(self),
             )
         finally:
             self._progress_reporter = None
@@ -206,7 +197,7 @@ def optimize_opm(
        - calls `opm.update_model()`
        - evaluates operand residuals
     6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
-    7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`.
+    7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`. Progress records only objective evaluations the solver counts toward `max_nfev`: least-squares finite-difference Jacobian probes are excluded, and differential-evolution budgets are translated with SciPy's real population size and must cover one full population.
     8. If SciPy raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
     9. If setup, SciPy, or final evaluation fails with another ordinary exception, restores the snapshotted state and returns a complete `success == False`, `status == "error"` report without retrying merit evaluation. Failures before snapshot capture use empty state arrays and zero counters.
 

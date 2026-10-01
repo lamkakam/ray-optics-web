@@ -5,19 +5,30 @@ from __future__ import annotations
 from scipy.optimize import differential_evolution
 
 from rayoptics_web_utils.optimization._types import ProgressReporter, SolverResult
+from rayoptics_web_utils.optimization.config import (
+    DIFFERENTIAL_EVOLUTION_DEFAULT_POPSIZE,
+    differential_evolution_population_size,
+)
 
 from .base import SolverAdapter
 
 
-def _maxiter_for_evaluation_budget(
-    max_nfev: int | None,
-    popsize: int,
-    variable_count: int,
-) -> int:
+def _maxiter_for_evaluation_budget(max_nfev: int | None, population_size: int) -> int:
+    """Translate an evaluation budget into SciPy's generation count.
+
+    SciPy evaluates ``population_size * (maxiter + 1)`` candidates (the initial
+    population plus one population per generation), so the largest ``maxiter``
+    that stays within ``max_nfev`` is ``max_nfev // population_size - 1``.
+
+    Args:
+        max_nfev: Evaluation budget, or ``None`` for SciPy's default ``maxiter``.
+        population_size: Members evaluated per generation.
+
+    Returns:
+        Non-negative SciPy ``maxiter``.
+    """
     if max_nfev is None:
         return 1000
-
-    population_size = max(1, popsize) * max(1, variable_count)
     return max(0, (max_nfev // population_size) - 1)
 
 
@@ -32,13 +43,13 @@ class DifferentialEvolutionSolver(SolverAdapter):
     - Converts `OptimizationProblem.bounds()` into SciPy's per-dimension `(min, max)` sequence.
     - Supports the SciPy 1.14.1-compatible DE options:
       - `strategy`
-      - `max_nfev` as the public/internal function-evaluation budget; the adapter translates it into SciPy's generation-count `maxiter` using `popsize * variable_count`
+      - `max_nfev` as the public/internal function-evaluation budget, including the initial population; the adapter translates it into SciPy's generation-count `maxiter` using SciPy's actual population size (`config.differential_evolution_population_size(...)`, which applies SciPy's minimum of 5 members, excludes equal-bound variables, and honors an array `init`). Config validation guarantees the budget covers at least one population
       - `popsize`
       - `tol`
       - `mutation`
       - `recombination`
       - `seed`
-      - `polish` (defaults to `False` so the configured evaluation budget is not extended by an extra local-search phase)
+      - `polish` (defaults to `False` so the configured evaluation budget is not extended by an extra local-search phase; `polish=True` evaluations fall outside the budget)
       - `init`
       - `atol`
     - Leaves unsupported SciPy features such as `workers`, `vectorized`, `updating`, `constraints`, `integrality`, `callback`, and `x0` out of scope for this adapter.
@@ -53,7 +64,7 @@ class DifferentialEvolutionSolver(SolverAdapter):
     def solve(self, progress_reporter: ProgressReporter | None = None) -> SolverResult:
         lower, upper = self.problem.bounds()
         bounds = list(zip(lower.tolist(), upper.tolist(), strict=True))
-        popsize = self.problem.optimizer.get("popsize", 15)
+        popsize = self.problem.optimizer.get("popsize", DIFFERENTIAL_EVOLUTION_DEFAULT_POPSIZE)
         self.problem._progress_reporter = progress_reporter
         try:
             result = differential_evolution(
@@ -62,8 +73,7 @@ class DifferentialEvolutionSolver(SolverAdapter):
                 strategy=self.problem.optimizer.get("strategy", "best1bin"),
                 maxiter=_maxiter_for_evaluation_budget(
                     self.problem.optimizer.get("max_nfev"),
-                    popsize,
-                    len(bounds),
+                    differential_evolution_population_size(self.problem.optimizer, self.problem.variables),
                 ),
                 popsize=popsize,
                 tol=self.problem.optimizer.get("tol", 0.01),

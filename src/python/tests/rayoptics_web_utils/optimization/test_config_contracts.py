@@ -477,3 +477,47 @@ def test_lm_dimension_error_is_exact():
     assert exc_info.value.args == (
         "Levenberg-Marquardt requires at least as many residuals as variables",
     )
+
+
+@pytest.mark.parametrize(
+    ("optimizer", "variables", "expected"),
+    [
+        ({}, [{"min": 0.0, "max": 1.0}, {"min": 0.0, "max": 1.0}], 30),
+        ({"popsize": 1}, [{"min": 0.0, "max": 1.0}, {"min": 0.0, "max": 1.0}], 5),
+        ({"popsize": 4}, [{"min": 0.0, "max": 1.0}, {"min": 2.0, "max": 2.0}], 5),
+        ({"popsize": 4}, [{"min": 0.0, "max": 1.0}, {"min": 0.0, "max": 1.0}, {"min": 2.0, "max": 2.0}], 8),
+        ({"popsize": 4}, [{"min": 2.0, "max": 2.0}], 5),
+        ({"popsize": 15, "init": [[0.0]] * 7}, [{"min": 0.0, "max": 1.0}], 7),
+    ],
+)
+def test_differential_evolution_population_size_mirrors_scipy(optimizer, variables, expected):
+    from rayoptics_web_utils.optimization.config import differential_evolution_population_size
+
+    assert differential_evolution_population_size(
+        {"kind": "differential_evolution", **optimizer},
+        [{"kind": "thickness", "surface_index": 1, **variable} for variable in variables],
+    ) == expected
+
+
+def test_differential_evolution_budget_below_one_population_error_is_exact():
+    from rayoptics_web_utils.optimization.config import validate_optimizer_dimensions
+
+    variables = [
+        {"kind": "thickness", "surface_index": 1, "min": 0.0, "max": 1.0},
+        {"kind": "thickness", "surface_index": 2, "min": 0.0, "max": 1.0},
+    ]
+    operands = {"operands": [{"kind": "focal_length", "target": 0.0, "weight": 1.0}]}
+
+    with pytest.raises(ValueError) as exc_info:
+        validate_optimizer_dimensions(
+            {"kind": "differential_evolution", "max_nfev": 29},
+            variables,
+            operands,
+        )
+
+    assert exc_info.value.args == (
+        "Differential evolution max_nfev must cover at least one full population",
+    )
+    validate_optimizer_dimensions({"kind": "differential_evolution", "max_nfev": 30}, variables, operands)
+    validate_optimizer_dimensions({"kind": "differential_evolution"}, variables, operands)
+    validate_optimizer_dimensions({"kind": "differential_evolution", "max_nfev": 1}, [], operands)
