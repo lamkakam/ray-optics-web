@@ -13,7 +13,8 @@ describe("prepare-release", () => {
     const fixtureDir = await mkdtemp(path.join(tmpdir(), "prepare-release-"));
     const outDir = path.join(fixtureDir, "out");
     const destinationDir = path.join(fixtureDir, "release-dist");
-    const currentWheel = "rayoptics_web_utils-0.33.1-py3-none-any.whl";
+    const currentWheel = "rayoptics_web_utils-current-py3-none-any.whl";
+    const obsoleteWheel = "rayoptics_web_utils-obsolete-py3-none-any.whl";
 
     await mkdir(path.join(outDir, "_next/static/chunks"), { recursive: true });
     await mkdir(path.join(outDir, "route"), { recursive: true });
@@ -27,10 +28,7 @@ describe("prepare-release", () => {
       writeFile(path.join(outDir, "serve.json"), "{}"),
       writeFile(path.join(outDir, "THIRD-PARTY-LICENSES.md"), "licenses"),
       writeFile(path.join(outDir, currentWheel), "current"),
-      writeFile(
-        path.join(outDir, "rayoptics_web_utils-0.33.0-py3-none-any.whl"),
-        "obsolete",
-      ),
+      writeFile(path.join(outDir, obsoleteWheel), "obsolete"),
       writeFile(path.join(outDir, "nested/__tests__/worker.ts"), "test"),
       writeFile(path.join(outDir, "component.test.js"), "test"),
       writeFile(path.join(outDir, "component.spec.ts"), "spec"),
@@ -60,12 +58,7 @@ describe("prepare-release", () => {
     await expectMissing(path.join(destinationDir, "component.test.js"));
     await expectMissing(path.join(destinationDir, "component.spec.ts"));
     await expectMissing(path.join(destinationDir, "pyodide-sw.js.md"));
-    await expectMissing(
-      path.join(
-        destinationDir,
-        "rayoptics_web_utils-0.33.0-py3-none-any.whl",
-      ),
-    );
+    await expectMissing(path.join(destinationDir, obsoleteWheel));
   });
 });
 
@@ -82,7 +75,7 @@ describe("currentWheelFromPyproject", () => {
       [
         "[project]",
         'name = "rayoptics-web-utils"',
-        'version = "1.2.3"',
+        'version = "fixture-version"',
         'requires-python = ">=3.12"',
         'dependencies = ["numpy==2.0.0"]',
         "",
@@ -90,7 +83,7 @@ describe("currentWheelFromPyproject", () => {
     );
 
     await expect(currentWheelFromPyproject(pyprojectPath)).resolves.toBe(
-      "rayoptics_web_utils-1.2.3-py3-none-any.whl",
+      "rayoptics_web_utils-fixture-version-py3-none-any.whl",
     );
   });
 

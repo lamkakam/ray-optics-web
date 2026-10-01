@@ -12,7 +12,8 @@ describe("prepare-cloudflare", () => {
     const fixtureDir = await mkdtemp(path.join(tmpdir(), "prepare-cloudflare-"));
     const outDir = path.join(fixtureDir, "out");
     const destinationDir = path.join(fixtureDir, "cloudflare-pages");
-    const currentWheel = "rayoptics_web_utils-0.33.1-py3-none-any.whl";
+    const currentWheel = "rayoptics_web_utils-current-py3-none-any.whl";
+    const obsoleteWheel = "rayoptics_web_utils-obsolete-py3-none-any.whl";
 
     await mkdir(path.join(outDir, "_next/static/chunks"), { recursive: true });
     await mkdir(path.join(outDir, "nested/route"), { recursive: true });
@@ -25,10 +26,7 @@ describe("prepare-cloudflare", () => {
     await writeFile(path.join(outDir, "nested/__tests__/worker.ts"), "test");
     await writeFile(path.join(outDir, "worker.spec.js"), "spec");
     await writeFile(path.join(outDir, "serve.json.md"), "sidecar");
-    await writeFile(
-      path.join(outDir, "rayoptics_web_utils-0.33.0-py3-none-any.whl"),
-      "obsolete wheel",
-    );
+    await writeFile(path.join(outDir, obsoleteWheel), "obsolete wheel");
     await writeFile(path.join(destinationDir, "stale.txt"), "stale");
     await writeFile(path.join(destinationDir, "_headers"), "stale headers");
 
@@ -54,13 +52,7 @@ describe("prepare-cloudflare", () => {
       readFile(path.join(destinationDir, "serve.json.md"), "utf8"),
     ).rejects.toThrow();
     await expect(
-      readFile(
-        path.join(
-          destinationDir,
-          "rayoptics_web_utils-0.33.0-py3-none-any.whl",
-        ),
-        "utf8",
-      ),
+      readFile(path.join(destinationDir, obsoleteWheel), "utf8"),
     ).rejects.toThrow();
     await expect(
       readFile(path.join(destinationDir, currentWheel), "utf8"),
