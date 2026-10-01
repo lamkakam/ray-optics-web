@@ -1,6 +1,6 @@
 "use client";
 
-/** Composition hook that registers the five page-scoped Optimization WebMCP tools. */
+/** Composition hook that registers the six page-scoped Optimization WebMCP tools. */
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { useWebMCP } from "@/shared/hooks/useWebMCP";
 import {
@@ -30,4 +30,5 @@ export function useOptimizationWebMCP(
   useWebMCP(tools.evaluateOptimizationOperands);
   useWebMCP(tools.executeOptimization);
   useWebMCP(tools.applyOptimizationToEditor);
+  useWebMCP(tools.dismissOptimizationProgress);
 }
