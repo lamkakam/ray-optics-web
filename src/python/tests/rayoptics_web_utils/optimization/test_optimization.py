@@ -3001,6 +3001,87 @@ class TestOptimizationProgressBudget:
         assert report["optimizer"]["nfev"] <= 10
         assert len(report["optimization_progress"]) <= 10
 
+    def test_differential_evolution_sobol_progress_respects_power_of_two_population(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {
+                    "kind": "differential_evolution",
+                    "max_nfev": 32,
+                    "init": "sobol",
+                    "tol": 0.0,
+                    "atol": 0.0,
+                    "seed": 1,
+                },
+                "variables": [
+                    {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": _budget_merit_function(),
+            },
+        )
+
+        assert report["status"] != "error"
+        assert report["optimizer"]["nfev"] <= 32
+        assert len(report["optimization_progress"]) <= 32
+
+    def test_differential_evolution_sobol_rejects_budget_below_rounded_population(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "differential_evolution", "max_nfev": 30, "init": "sobol", "seed": 1},
+                "variables": [
+                    {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": _budget_merit_function(),
+            },
+        )
+
+        assert report["status"] == "error"
+        assert report["message"] == "Differential evolution max_nfev must cover at least one full population"
+        assert report["optimization_progress"] == []
+
+    def test_lm_rejects_single_step_budget(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm", "max_nfev": 1},
+                "variables": [{"kind": "radius", "surface_index": 1}],
+                "pickups": [],
+                "merit_function": _budget_merit_function(),
+            },
+        )
+
+        assert report["status"] == "error"
+        assert report["message"] == "Levenberg-Marquardt max_nfev must be at least 2"
+        assert report["optimization_progress"] == []
+
+    def test_lm_two_step_budget_stays_within_budget(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm", "max_nfev": 2},
+                "variables": [{"kind": "radius", "surface_index": 1}],
+                "pickups": [],
+                "merit_function": _budget_merit_function(),
+            },
+        )
+
+        assert report["status"] != "error"
+        assert report["optimizer"]["nfev"] <= 2
+        assert len(report["optimization_progress"]) <= 2
+
     def test_differential_evolution_rejects_budget_below_one_population(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import optimize_opm
 

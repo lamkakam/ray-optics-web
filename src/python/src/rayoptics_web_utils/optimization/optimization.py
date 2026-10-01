@@ -197,7 +197,7 @@ def optimize_opm(
        - calls `opm.update_model()`
        - evaluates operand residuals
     6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
-    7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`. Progress records only objective evaluations the solver counts toward `max_nfev`: least-squares finite-difference Jacobian probes are excluded, and differential-evolution budgets are translated with SciPy's real population size and must cover one full population.
+    7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`. Progress records only objective evaluations the solver counts toward `max_nfev`: least-squares finite-difference Jacobian probes are excluded, `lm` budgets must be at least 2, and differential-evolution budgets are translated with SciPy's real population size (including Sobol power-of-two rounding) and must cover one full population.
     8. If SciPy raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
     9. If setup, SciPy, or final evaluation fails with another ordinary exception, restores the snapshotted state and returns a complete `success == False`, `status == "error"` report without retrying merit evaluation. Failures before snapshot capture use empty state arrays and zero counters.
 

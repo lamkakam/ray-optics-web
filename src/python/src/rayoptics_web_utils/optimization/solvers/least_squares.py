@@ -53,7 +53,7 @@ class LeastSquaresSolver(SolverAdapter):
     - Calls `scipy.optimize.least_squares(...)`.
     - Uses `OptimizationProblem.residual_objective(...)` as the solver objective.
     - Passes SciPy `bounds=(lower, upper)` only for bounded least-squares methods such as `trf`; omits the `bounds` argument for `lm`.
-    - Passes `jac=` backed by `OptimizationProblem.residual_jacobian(...)`, which reproduces SciPy's default 2-point estimate without recording progress, so progress entries never exceed `max_nfev`.
+    - Passes `jac=` backed by `OptimizationProblem.residual_jacobian(...)`, which reproduces SciPy's default 2-point estimate without recording progress, so progress entries never exceed `max_nfev`. Config validation rejects `lm` budgets below 2 because MINPACK always evaluates one trial step after the initial point.
     - Returns a normalized result mapping with least-squares-specific metadata:
       - `x`
       - `success`

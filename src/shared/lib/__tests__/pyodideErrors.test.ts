@@ -254,6 +254,23 @@ describe("Pyodide error policy", () => {
     expect(error).not.toHaveBeenCalled();
   });
 
+  it("preserves the Levenberg-Marquardt step-budget validation message", () => {
+    const message = "Levenberg-Marquardt max_nfev must be at least 2";
+
+    expect(
+      normalizeOptimizationReport(
+        {
+          success: false,
+          status: "error",
+          message,
+          diagnostic: { exception_type: "ValueError", message },
+        },
+        "optimizeOpm",
+      ).message,
+    ).toBe(message);
+    expect(error).not.toHaveBeenCalled();
+  });
+
   it("warns for non-convergence but stays silent for stopped and successful runs", () => {
     expect(
       normalizeOptimizationReport(

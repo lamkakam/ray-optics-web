@@ -640,6 +640,42 @@ describe("optimizationStore", () => {
     expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
   });
 
+  it("rejects a Levenberg-Marquardt step budget smaller than two", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, method: "lm", max_nfev: "1" },
+    }));
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "Levenberg-Marquardt requires Max. num of steps of at least 2.",
+    );
+
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, max_nfev: "2" },
+    }));
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, method: "trf", max_nfev: "1" },
+    }));
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
   it("does not apply least-squares residual-count validation to Differential Evolution", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);

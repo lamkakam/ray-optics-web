@@ -43,7 +43,7 @@ class DifferentialEvolutionSolver(SolverAdapter):
     - Converts `OptimizationProblem.bounds()` into SciPy's per-dimension `(min, max)` sequence.
     - Supports the SciPy 1.14.1-compatible DE options:
       - `strategy`
-      - `max_nfev` as the public/internal function-evaluation budget, including the initial population; the adapter translates it into SciPy's generation-count `maxiter` using SciPy's actual population size (`config.differential_evolution_population_size(...)`, which applies SciPy's minimum of 5 members, excludes equal-bound variables, and honors an array `init`). Config validation guarantees the budget covers at least one population
+      - `max_nfev` as the public/internal function-evaluation budget, including the initial population; the adapter translates it into SciPy's generation-count `maxiter` using SciPy's actual population size (`config.differential_evolution_population_size(...)`, which applies SciPy's minimum of 5 members, excludes equal-bound variables, rounds `init="sobol"` populations up to a power of two, and honors an array `init`). Config validation guarantees the budget covers at least one population
       - `popsize`
       - `tol`
       - `mutation`
