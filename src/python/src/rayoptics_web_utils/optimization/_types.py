@@ -13,6 +13,7 @@ preserves asphere kinds and tilt/decenter coordinate strategies.
 from __future__ import annotations
 
 import math
+from contextlib import AbstractContextManager
 from typing import Callable, Literal, NotRequired, Protocol, TypedDict
 
 import numpy as np
@@ -431,6 +432,10 @@ class OptimizationProgressEntry(TypedDict):
 
 
 type ProgressReporter = Callable[[list[OptimizationProgressEntry]], None]
+
+# Factory for the context in which user interrupts may raise ``KeyboardInterrupt``.
+# Entering it may raise immediately when a stop was requested before arming.
+type InterruptScope = Callable[[], AbstractContextManager[None]]
 
 
 class OptimizerSummary(TypedDict):

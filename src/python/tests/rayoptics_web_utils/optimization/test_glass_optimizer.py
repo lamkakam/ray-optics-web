@@ -897,6 +897,83 @@ class TestOptimizeGlasses:
         assert report["final_glasses"][0]["name"] == "N-BK7"
         assert glass_opm["seq_model"].gaps[6].thi != pytest.approx(999.0)
 
+    def test_interrupt_scope_wraps_search_phases_but_not_reporting(self, monkeypatch, glass_opm):
+        import contextlib
+
+        import rayoptics_web_utils.optimization.glass_optimizer as module
+
+        events = []
+        for phase in ("initialize", "search", "polish", "build_report"):
+            original = getattr(module.GlassExpertOptimizer, phase)
+
+            def recording(self, *args, _phase=phase, _original=original, **kwargs):
+                events.append(_phase)
+                return _original(self, *args, **kwargs)
+
+            monkeypatch.setattr(module.GlassExpertOptimizer, phase, recording)
+
+        @contextlib.contextmanager
+        def recording_scope():
+            events.append("enter")
+            try:
+                yield
+            finally:
+                events.append("exit")
+
+        report = module.optimize_glasses(
+            glass_opm,
+            _config(glass_variables=[_glass_variable()]),
+            interrupt_scope=recording_scope,
+        )
+
+        assert report["status"] == "optimized"
+        assert events == ["enter", "initialize", "search", "polish", "exit", "build_report"]
+
+    def test_stop_pending_when_interrupt_scope_arms_returns_original_stopped_report(
+        self,
+        monkeypatch,
+        glass_opm,
+    ):
+        import contextlib
+
+        import rayoptics_web_utils.optimization.glass_optimizer as module
+
+        def unreachable(self):
+            raise AssertionError("glass search must not run after a pending stop")
+
+        monkeypatch.setattr(module.GlassExpertOptimizer, "initialize", unreachable)
+
+        @contextlib.contextmanager
+        def pending_stop_scope():
+            raise KeyboardInterrupt
+            yield
+
+        original_thickness = glass_opm["seq_model"].gaps[6].thi
+        report = module.optimize_glasses(
+            glass_opm,
+            _config(
+                glass_variables=[_glass_variable()],
+                variables=[
+                    {
+                        "kind": "thickness",
+                        "surface_index": 6,
+                        "min": 35.0,
+                        "max": 50.0,
+                    }
+                ],
+            ),
+            interrupt_scope=pending_stop_scope,
+        )
+
+        assert report["success"] is True
+        assert report["status"] == "stopped"
+        assert report["message"] == "Optimization stopped by user"
+        assert report["optimization_progress"] == []
+        assert report["final_glasses"] == report["initial_glasses"]
+        assert report["final_values"] == report["initial_values"]
+        assert report["final_values"][0]["value"] == pytest.approx(original_thickness)
+        json.dumps(report, allow_nan=False)
+
     def test_progress_is_global_monotonic_and_candidate_aware(self, glass_opm):
         from rayoptics_web_utils.optimization import optimize_glasses
 
