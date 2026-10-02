@@ -12,7 +12,8 @@ non-zero-weight field/wavelength samples; ray-fan operands retain fixed,
 penalty-padded dimensions. OPD operands trace only each retained sample's
 wavelength through the single-wavelength analysis helper.
 Ordinary setup/runtime exceptions return rollback reports with ``status="error"``;
-user interruption retains the successful partial ``status="stopped"`` contract.
+user interruption retains the successful partial ``status="stopped"`` contract,
+reporting the best (lowest-merit) state evaluated before the stop.
 Operand evaluation returns a structured ``status="error"`` report when bounded
 least-squares ``trf`` initial vectors fall outside the same transformed inclusive
 bounds passed to SciPy; unbounded ``lm`` evaluation is unaffected.
@@ -149,11 +150,11 @@ def _build_stopped_report(
     problem: _OptimizationProblem,
     initial_values,
 ) -> OptimizationReport:
-    latest_vector = problem.progress.latest_vector
-    if latest_vector is None:
-        latest_vector = problem.current_vector()
+    best_vector = problem.progress.best_vector
+    if best_vector is None:
+        best_vector = problem.current_vector()
 
-    report = cast(OptimizationReport, problem.evaluate(latest_vector))
+    report = cast(OptimizationReport, problem.evaluate(best_vector))
     report["success"] = True
     report["status"] = "stopped"
     report["message"] = "Optimization stopped by user"
@@ -202,7 +203,7 @@ def optimize_opm(
        - evaluates operand residuals
     6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
     7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`. Progress records only objective evaluations the solver counts toward `max_nfev`: least-squares finite-difference Jacobian probes are excluded, `lm` budgets must be at least 2, and differential-evolution budgets are translated with SciPy's real population size (including Sobol power-of-two rounding) and must cover one full population.
-    8. Runs only the solver inside `interrupt_scope()` when supplied, so a host interrupt mechanism can raise `KeyboardInterrupt` during solving but never during model setup or report assembly. If SciPy or entering the scope (a stop requested before arming) raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
+    8. Runs only the solver inside `interrupt_scope()` when supplied, so a host interrupt mechanism can raise `KeyboardInterrupt` during solving but never during model setup or report assembly. If SciPy or entering the scope (a stop requested before arming) raises `KeyboardInterrupt`, treats it as a user stop, evaluates the recorded optimizer vector with the lowest merit function value (the earliest one on ties, or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that best state. Rejected least-squares trial steps and differential-evolution trial members therefore never replace a better earlier state.
     9. If setup, SciPy, or final evaluation fails with another ordinary exception, restores the snapshotted state and returns a complete `success == False`, `status == "error"` report without retrying merit evaluation. Failures before snapshot capture use empty state arrays and zero counters.
 
     If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`.

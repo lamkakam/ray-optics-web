@@ -23,19 +23,28 @@ class OptimizationProgress:
       - `merit_function_value`
       - `log10_merit_function_value`
     - Deduplicates repeated evaluations of the same vector within the same optional glass-search context; a new candidate context always starts a new history segment.
-    - Stores a copied latest recorded vector and exposes it through `latest_vector` as a defensive copy so interrupted optimization can build a partial-result report without mutating internal progress state.
+    - Stores a copied latest recorded vector and exposes it through `latest_vector` as a defensive copy.
+    - Stores a copy of the recorded vector with the lowest `merit_function_value` (the earliest one on ties) and exposes it through `best_vector` as a defensive copy, so interrupted optimization can build a partial-result report from the best evaluated state without mutating internal progress state.
     - Can notify an optional progress reporter whenever a new snapshot is recorded."""
 
     def __init__(self) -> None:
         self.entries: list[OptimizationProgressEntry] = []
         self._last_vector: FloatArray | None = None
         self._last_context: dict[str, object] | None = None
+        self._best_vector: FloatArray | None = None
+        self._best_merit_function_value = math.inf
 
     @property
     def latest_vector(self) -> FloatArray | None:
         if self._last_vector is None:
             return None
         return np.array(self._last_vector, dtype=float, copy=True)
+
+    @property
+    def best_vector(self) -> FloatArray | None:
+        if self._best_vector is None:
+            return None
+        return np.array(self._best_vector, dtype=float, copy=True)
 
     def record(
         self,
@@ -66,6 +75,9 @@ class OptimizationProgress:
         self.entries.append(progress_entry)
         self._last_vector = candidate
         self._last_context = normalized_context
+        if self._best_vector is None or merit_function_value < self._best_merit_function_value:
+            self._best_vector = candidate
+            self._best_merit_function_value = merit_function_value
         if reporter is not None:
             reporter(list(self.entries))
         return True

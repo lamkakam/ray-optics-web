@@ -303,13 +303,21 @@ describe("optimization WebMCP tools", () => {
 
   it.each([
     [0, true, {}],
-    [1, true, { latestStep: { step: 0, meritFunctionValue: 10 } }],
+    [
+      1,
+      true,
+      {
+        latestStep: { step: 0, meritFunctionValue: 10 },
+        bestStep: { step: 0, meritFunctionValue: 10 },
+      },
+    ],
     [
       2,
       false,
       {
         latestStep: { step: 1, meritFunctionValue: 9 },
         previousStep: { step: 0, meritFunctionValue: 10 },
+        bestStep: { step: 1, meritFunctionValue: 9 },
       },
     ],
     [
@@ -318,10 +326,11 @@ describe("optimization WebMCP tools", () => {
       {
         latestStep: { step: 4, meritFunctionValue: 6 },
         previousStep: { step: 3, meritFunctionValue: 7 },
+        bestStep: { step: 4, meritFunctionValue: 6 },
       },
     ],
   ] as const)(
-    "reports the latest and previous steps from %i progress entries",
+    "reports the latest, previous and best steps from %i progress entries",
     async (count, isRunning, steps) => {
       const store = createStore<OptimizationState>(createOptimizationSlice);
       const tools = createOptimizationWebMcpTools({
@@ -349,4 +358,39 @@ describe("optimization WebMCP tools", () => {
       expect(result).toEqual({ isRunning, ...steps });
     },
   );
+
+  it("reports the earliest lowest merit step as the best step of a noisy history", async () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    const progress = [10, 4, 7, 4, 12].map((meritFunctionValue, iteration) => ({
+      iteration,
+      merit_function_value: meritFunctionValue,
+      log10_merit_function_value: Math.log10(meritFunctionValue),
+    }));
+    const tools = createOptimizationWebMcpTools({
+      optimizationStore: store,
+      catalogs: undefined,
+      evaluate: jest.fn().mockResolvedValue(report),
+      execute: jest.fn().mockResolvedValue(report),
+      apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
+      stop: jest.fn().mockReturnValue({ state: "not_running" }),
+      readProgress: jest.fn().mockReturnValue({ isRunning: true, progress }),
+    });
+
+    const result: unknown = JSON.parse(
+      String(
+        await tools.getOptimizationProgress.execute(
+          {},
+          { signal: new AbortController().signal },
+        ),
+      ),
+    );
+
+    expect(result).toEqual({
+      isRunning: true,
+      latestStep: { step: 4, meritFunctionValue: 12 },
+      previousStep: { step: 3, meritFunctionValue: 4 },
+      bestStep: { step: 1, meritFunctionValue: 4 },
+    });
+  });
 });

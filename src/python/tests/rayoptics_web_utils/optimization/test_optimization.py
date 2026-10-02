@@ -1074,6 +1074,64 @@ class TestOptimizeOpm:
         assert progress.latest_vector is not None
         assert progress.latest_vector.tolist() == pytest.approx([1.0, 2.0])
 
+    def test_progress_retains_best_recorded_vector(self):
+        from rayoptics_web_utils.optimization.progress import OptimizationProgress
+
+        def evaluation(sum_of_squares):
+            return {"merit_function": {"sum_of_squares": sum_of_squares, "rss": math.sqrt(sum_of_squares)}}
+
+        progress = OptimizationProgress()
+        assert progress.best_vector is None
+
+        first = np.array([1.0], dtype=float)
+        progress.record(first, evaluation(4.0))
+        progress.record(np.array([2.0], dtype=float), evaluation(9.0))
+        progress.record(np.array([3.0], dtype=float), evaluation(4.0))
+        first[0] = 99.0
+
+        assert progress.latest_vector.tolist() == pytest.approx([3.0])
+        assert progress.best_vector.tolist() == pytest.approx([1.0])
+
+        progress.record(np.array([5.0], dtype=float), evaluation(1.0))
+        best = progress.best_vector
+        best[0] = -1.0
+
+        assert progress.best_vector.tolist() == pytest.approx([5.0])
+
+    def test_returns_stopped_report_with_best_progress_when_interrupted(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        config = {
+            "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 30},
+            "variables": [
+                {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+            ],
+            "pickups": [],
+            "merit_function": {"operands": [{"kind": "focal_length", "target": 90.0, "weight": 1.0}]},
+        }
+
+        class FakeSolver:
+            def __init__(self, problem):
+                self.problem = problem
+
+            def solve(self, progress_reporter=None):
+                for value, sum_of_squares in ((42.0, 1.0), (48.0, 5.0)):
+                    self.problem.progress.record(
+                        np.array([value], dtype=float),
+                        {"merit_function": {"sum_of_squares": sum_of_squares, "rss": math.sqrt(sum_of_squares)}},
+                        progress_reporter,
+                    )
+                raise KeyboardInterrupt
+
+        monkeypatch.setitem(optimization_module._SOLVER_REGISTRY, "least_squares", FakeSolver)
+
+        report = optimize_opm(fresh_cooke_triplet, config)
+
+        assert report["status"] == "stopped"
+        assert report["final_values"][0]["value"] == pytest.approx(42.0)
+        assert len(report["optimization_progress"]) == 2
+
     def test_returns_stopped_report_with_latest_progress_when_interrupted(self, monkeypatch, fresh_cooke_triplet):
         import rayoptics_web_utils.optimization.optimization as optimization_module
         from rayoptics_web_utils.optimization import optimize_opm
@@ -2782,15 +2840,15 @@ def test_optimize_opm_reports_no_variable_metadata_for_each_solver_family(
 
 
 @pytest.mark.parametrize(
-    ("kind", "latest_vector"),
+    ("kind", "best_vector"),
     [
         ("least_squares", np.array([4.0])),
         ("differential_evolution", None),
     ],
 )
-def test_stopped_report_uses_latest_or_current_vector_and_solver_specific_fields(
+def test_stopped_report_uses_best_or_current_vector_and_solver_specific_fields(
     kind,
-    latest_vector,
+    best_vector,
 ):
     import rayoptics_web_utils.optimization.optimization as optimization_module
 
@@ -2798,7 +2856,8 @@ def test_stopped_report_uses_latest_or_current_vector_and_solver_specific_fields
 
     class FakeProgress:
         def __init__(self):
-            self.latest_vector = latest_vector
+            self.best_vector = best_vector
+            self.latest_vector = np.array([6.0])
 
     class FakeProblem:
         optimizer = {
@@ -2824,7 +2883,7 @@ def test_stopped_report_uses_latest_or_current_vector_and_solver_specific_fields
         [{"kind": "radius", "surface_index": 1, "value": 20.0}],
     )
 
-    expected_vector = latest_vector if latest_vector is not None else np.array([8.0])
+    expected_vector = best_vector if best_vector is not None else np.array([8.0])
     np.testing.assert_allclose(evaluated_vectors, [expected_vector])
     assert report["success"] is True
     assert report["status"] == "stopped"
