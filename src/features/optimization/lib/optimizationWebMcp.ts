@@ -69,6 +69,20 @@ function toProgressStep(entry: OptimizationProgressEntry | undefined) {
     : { step: entry.iteration, meritFunctionValue: entry.merit_function_value };
 }
 
+/** Earliest progress entry with the lowest merit function value, or undefined for an empty history. */
+function findBestProgressEntry(
+  progress: ReadonlyArray<OptimizationProgressEntry>,
+): OptimizationProgressEntry | undefined {
+  return progress.reduce<OptimizationProgressEntry | undefined>(
+    (best, entry) =>
+      best === undefined ||
+      entry.merit_function_value < best.merit_function_value
+        ? entry
+        : best,
+    undefined,
+  );
+}
+
 /** Agent-facing explanation returned by `stop_optimization` for each stop state. */
 const STOP_MESSAGES: Readonly<Record<OptimizationStopState, string>> = {
   stop_requested:
@@ -264,7 +278,7 @@ export function createOptimizationWebMcpTools(
     getOptimizationProgress: {
       name: "get_optimization_progress",
       description:
-        "Read the optimization progress shown in the Optimization Progress chart: the step number and merit function value of the most recent step (latestStep) and of the step before it (previousStep), plus whether an optimization is still running. Works during a run and after it settles. A step is omitted when the history does not contain it yet, so both are omitted before the first optimization run.",
+        "Read the optimization progress shown in the Optimization Progress chart: the step number and merit function value of the most recent step (latestStep), of the step before it (previousStep), and of the step with the lowest merit function value so far (bestStep, the earliest one on ties), plus whether an optimization is still running. Works during a run and after it settles. Judge whether the merit function has levelled off from bestStep: latestStep can rise or jump because the history records every counted evaluation, including rejected least-squares trial steps and differential-evolution trial members. Stopping keeps the bestStep state (Glass Expert keeps its best fully completed glass candidate instead). A step is omitted when the history does not contain it yet, so all three are omitted before the first optimization run.",
       inputSchema: emptyOptimizationInputSchema,
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       execute: async (input, { signal }) => {
@@ -276,6 +290,7 @@ export function createOptimizationWebMcpTools(
           isRunning,
           latestStep: toProgressStep(progress.at(-1)),
           previousStep: toProgressStep(progress.at(-2)),
+          bestStep: toProgressStep(findBestProgressEntry(progress)),
         });
       },
     },

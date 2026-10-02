@@ -3511,6 +3511,7 @@ describe("OptimizationPage", () => {
       isRunning: true,
       latestStep: { step: 2, meritFunctionValue: 2 },
       previousStep: { step: 1, meritFunctionValue: 4 },
+      bestStep: { step: 2, meritFunctionValue: 2 },
     });
 
     await settle(execution, "optimized", [
@@ -3523,6 +3524,7 @@ describe("OptimizationPage", () => {
       isRunning: false,
       latestStep: { step: 3, meritFunctionValue: 1 },
       previousStep: { step: 2, meritFunctionValue: 2 },
+      bestStep: { step: 3, meritFunctionValue: 1 },
     });
   });
 
