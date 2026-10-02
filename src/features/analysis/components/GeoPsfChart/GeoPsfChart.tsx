@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  COORDINATE_SYSTEM,
-  DeckGL,
-  OrthographicView,
-  ScatterplotLayer,
-} from "deck.gl";
+import { COORDINATE_SYSTEM, OrthographicView } from "@deck.gl/core";
+import { ScatterplotLayer } from "@deck.gl/layers";
+import { DeckGL } from "@deck.gl/react";
 import { useMemo, useState } from "react";
 import {
   CartesianSvgOverlay,

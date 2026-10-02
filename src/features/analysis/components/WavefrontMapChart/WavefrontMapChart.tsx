@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  BitmapLayer,
-  COORDINATE_SYSTEM,
-  DeckGL,
-  OrthographicView,
-} from "deck.gl";
+import { COORDINATE_SYSTEM, OrthographicView } from "@deck.gl/core";
+import { BitmapLayer } from "@deck.gl/layers";
+import { DeckGL } from "@deck.gl/react";
 import { useMemo, useState } from "react";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";

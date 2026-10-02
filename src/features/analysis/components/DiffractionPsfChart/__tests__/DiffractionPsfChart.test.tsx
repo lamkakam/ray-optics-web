@@ -26,29 +26,28 @@ const mockBitmapLayer = jest.fn((props: unknown) => ({
   id: "bitmap-layer",
   props,
 }));
-const mockGridLayer = jest.fn((props: unknown) => ({
-  id: "grid-layer",
-  props,
-}));
 const mockOrthographicView = jest.fn((props: unknown) => ({
   id: "orthographic-view",
   props,
 }));
 
-jest.mock("deck.gl", () => ({
+jest.mock("@deck.gl/core", () => ({
   COORDINATE_SYSTEM: {
     CARTESIAN: "cartesian",
-  },
-  BitmapLayer: function BitmapLayer(props: unknown) {
-    return mockBitmapLayer(props);
-  },
-  DeckGL: (props: MockDeckGLProps) => mockDeckGL(props),
-  GridLayer: function GridLayer(props: unknown) {
-    return mockGridLayer(props);
   },
   OrthographicView: function OrthographicView(props: unknown) {
     return mockOrthographicView(props);
   },
+}));
+
+jest.mock("@deck.gl/layers", () => ({
+  BitmapLayer: function BitmapLayer(props: unknown) {
+    return mockBitmapLayer(props);
+  },
+}));
+
+jest.mock("@deck.gl/react", () => ({
+  DeckGL: (props: MockDeckGLProps) => mockDeckGL(props),
 }));
 
 describe("DiffractionPsfChart", () => {
@@ -91,7 +90,6 @@ describe("DiffractionPsfChart", () => {
   it("creates a BitmapLayer from the diffraction PSF raster", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
 
-    expect(mockGridLayer).not.toHaveBeenCalled();
     expect(mockBitmapLayer).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "diffraction-psf-bitmap",

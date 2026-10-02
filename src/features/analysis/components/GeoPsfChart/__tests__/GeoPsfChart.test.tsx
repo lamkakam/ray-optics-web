@@ -31,17 +31,23 @@ const mockOrthographicView = jest.fn((props: unknown) => ({
   props,
 }));
 
-jest.mock("deck.gl", () => ({
+jest.mock("@deck.gl/core", () => ({
   COORDINATE_SYSTEM: {
     CARTESIAN: "cartesian",
   },
-  DeckGL: (props: MockDeckGLProps) => mockDeckGL(props),
   OrthographicView: function OrthographicView(props: unknown) {
     return mockOrthographicView(props);
   },
+}));
+
+jest.mock("@deck.gl/layers", () => ({
   ScatterplotLayer: function ScatterplotLayer(props: unknown) {
     return mockScatterplotLayer(props);
   },
+}));
+
+jest.mock("@deck.gl/react", () => ({
+  DeckGL: (props: MockDeckGLProps) => mockDeckGL(props),
 }));
 
 describe("GeoPsfChart", () => {
