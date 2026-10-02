@@ -66,7 +66,10 @@ import { useImagePoint } from "@/shared/components/providers/ImagePointProvider"
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import { useOptimizationWebMCP } from "./hooks/useOptimizationWebMCP";
 import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
-import type { OptimizationStopResult } from "./lib/optimizationWebMcp";
+import type {
+  OptimizationProgressSnapshot,
+  OptimizationStopResult,
+} from "./lib/optimizationWebMcp";
 
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -158,7 +161,7 @@ function buildCurrentEditorModel(
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
  * - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
  * - Whenever the committed optimization config changes, the component immediately marks Operand Evaluation pending, clears the prior report, debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
- * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, `apply_optimization_to_editor`, `dismiss_optimization_progress`, and `stop_optimization` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
+ * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, `apply_optimization_to_editor`, `dismiss_optimization_progress`, `stop_optimization`, and `get_optimization_progress` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
  * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, application, and progress dismissal call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, confirmed Apply action, and progress-modal `OK`/backdrop close. Both `stop_optimization` and an aborted `execute_optimization` stop through that Stop path. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
  * - A resolved failed evaluation report clears stale rows and displays the shared approved failure message. Initial-guess bounds validation retains its rollback report; a later successful evaluation clears warnings. Worker diagnostics are logged once at the boundary.
  * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
@@ -184,6 +187,7 @@ function buildCurrentEditorModel(
  * - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
  * - Progress dismissal is one shared operation guarded by the store's `isOptimizing` flag and the active run id. `dismiss_optimization_progress` rejects with an error while a run is active, and after the run finishes, fails, stops, or is aborted it closes the modal and returns `{ dismissed: true, wasOpen }`; calling it with the modal already closed is a successful no-op with `wasOpen: false`. The GUI close handler ignores the active-run error so the modal stays blocking.
  * - Stopping is one shared operation used by the progress-modal Stop control and `stop_optimization`. While a run is active and interruptible, it signals the stop and returns `stop_requested` immediately without awaiting the worker acknowledgement; a repeated call for the same run returns `already_stopping`. With no active run it returns `already_stopped` when the last run settled as interrupted (a `stopped` report, or a rejection after a stop request), `already_completed` when the last run ended any other way, and `not_running` when no run has happened since mount. It throws when the active run has no interrupt buffer; the GUI handler ignores that error because the Stop control is disabled in that case.
+ * - `get_optimization_progress` reads the same merit history the progress modal chart plots (reset when a run starts, replaced by each streamed update for the active run, then by the settled report's history) and whether a run is active. The history is mirrored in a ref so a call during a run sees the newest streamed update before the next render. The tool returns the step number and merit function value of the most recent step and of the step before it.
  * - `Apply to Editor` asynchronously applies through `applyOptimizationModelToEditor()`, clearing the unapplied marker only after success. Synchronization failures retain the result and use the existing error UI.
  * - An aborted WebMCP execution sends the active run through the same interrupt-buffer and worker run-id Stop path as the modal, waits for the worker report to settle, mirrors any stopped partial result, and then rejects with `AbortError`.
  * - Modal rendering is delegated to extracted wrappers:
@@ -384,6 +388,9 @@ export function OptimizationPage({
     undefined,
   );
   const optimizationProgressModalOpenRef = useRef(false);
+  const optimizationProgressRef = useRef<
+    ReadonlyArray<OptimizationProgressEntry>
+  >([]);
   const lastOptimizationRunOutcomeRef = useRef<
     "completed" | "stopped" | undefined
   >(undefined);
@@ -932,6 +939,7 @@ export function OptimizationPage({
       optimizationStopRequestedRunIdRef.current = undefined;
       optimizationStopPromiseRef.current = undefined;
       setOptimizationWarningMessage(undefined);
+      optimizationProgressRef.current = [];
       setOptimizationProgress([]);
       optimizationProgressModalOpenRef.current = true;
       setOptimizationProgressModalOpen(true);
@@ -941,6 +949,7 @@ export function OptimizationPage({
       const progressCallback = comlinkProxy(
         (progress: ReadonlyArray<OptimizationProgressEntry>) => {
           if (optimizationRunIdRef.current === runId) {
+            optimizationProgressRef.current = progress;
             setOptimizationProgress(progress);
           }
         },
@@ -975,7 +984,8 @@ export function OptimizationPage({
         if (report.status === "stopped") {
           outcome = "stopped";
         }
-        setOptimizationProgress(report.optimization_progress ?? []);
+        optimizationProgressRef.current = report.optimization_progress ?? [];
+        setOptimizationProgress(optimizationProgressRef.current);
         if (report.status === "error") {
           setOptimizationWarningMessage(getPyodideErrorMessage(report.message));
         } else {
@@ -1087,6 +1097,18 @@ export function OptimizationPage({
     [optimizationStore],
   );
 
+  /** Reads the merit history the progress modal chart plots, from a ref so streamed updates are visible before the next render. */
+  const readOptimizationProgressOperation = useCallback(
+    (signal: AbortSignal): OptimizationProgressSnapshot => {
+      assertWebMcpNotCancelled(signal);
+      return {
+        isRunning: optimizationRunIdRef.current !== undefined,
+        progress: optimizationProgressRef.current,
+      };
+    },
+    [],
+  );
+
   const handleCloseOptimizationProgress = useCallback(() => {
     try {
       dismissOptimizationProgressOperation(new AbortController().signal);
@@ -1147,6 +1169,7 @@ export function OptimizationPage({
     apply: applyOptimizationOperation,
     dismissProgress: dismissOptimizationProgressOperation,
     stop: stopOptimizationOperation,
+    readProgress: readOptimizationProgressOperation,
   });
 
   const bottomDrawerFields = useMemo(

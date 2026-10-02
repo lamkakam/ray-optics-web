@@ -15,6 +15,7 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type {
   GlassOptimizationConfig,
   OptimizationConfig,
+  OptimizationProgressEntry,
   OptimizationReport,
   OptimizationRunReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
@@ -2975,7 +2976,7 @@ describe("OptimizationPage", () => {
     const proxy = makeProxy();
     const { lensStore, optimizationStore, unmount } =
       renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(7));
+    await waitFor(() => expect(registrations).toHaveLength(8));
     const tools = new Map(
       registrations.map(({ tool }) => [tool.name, tool] as const),
     );
@@ -3050,6 +3051,7 @@ describe("OptimizationPage", () => {
       "apply_optimization_to_editor",
       "dismiss_optimization_progress",
       "stop_optimization",
+      "get_optimization_progress",
     ]);
     unmount();
     expect(
@@ -3084,7 +3086,7 @@ describe("OptimizationPage", () => {
           undefined,
           { onApplyToEditor },
         );
-      await waitFor(() => expect(registrations).toHaveLength(7));
+      await waitFor(() => expect(registrations).toHaveLength(8));
       const optimizedModel: OpticalModel = {
         ...baseModel,
         setAutoAperture: "autoAperture",
@@ -3166,7 +3168,7 @@ describe("OptimizationPage", () => {
     });
     const { optimizationStore } = renderOptimizationPage(proxy);
     const signalController = new AbortController();
-    await waitFor(() => expect(registrations).toHaveLength(7));
+    await waitFor(() => expect(registrations).toHaveLength(8));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3251,7 +3253,7 @@ describe("OptimizationPage", () => {
       },
     });
     renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(7));
+    await waitFor(() => expect(registrations).toHaveLength(8));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3343,7 +3345,7 @@ describe("OptimizationPage", () => {
       },
     });
     renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(7));
+    await waitFor(() => expect(registrations).toHaveLength(8));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3377,6 +3379,7 @@ describe("OptimizationPage", () => {
     const settle = async (
       execution: Promise<unknown>,
       status: "optimized" | "stopped",
+      optimizationProgress: ReadonlyArray<OptimizationProgressEntry> = [],
     ) => {
       await act(async () => {
         resolveOptimization?.({
@@ -3386,7 +3389,7 @@ describe("OptimizationPage", () => {
           final_values: [
             { kind: "radius", surface_index: 1, value: 45, min: 40, max: 60 },
           ],
-          optimization_progress: [],
+          optimization_progress: optimizationProgress,
         } as OptimizationReport);
         await execution;
       });
@@ -3472,6 +3475,57 @@ describe("OptimizationPage", () => {
     await settle(execution, "optimized");
   });
 
+  it("reports the latest and previous optimization steps through WebMCP while running and after settling", async () => {
+    const { proxy, tools, signal, startExecution, settle } =
+      await renderPendingWebMcpOptimization();
+    const readProgress = async (): Promise<unknown> => {
+      let result: unknown;
+      await act(async () => {
+        result = await tools
+          .get("get_optimization_progress")
+          ?.execute({}, { signal });
+      });
+      return JSON.parse(String(result));
+    };
+    const entry = (
+      iteration: number,
+      meritFunctionValue: number,
+    ): OptimizationProgressEntry => ({
+      iteration,
+      merit_function_value: meritFunctionValue,
+      log10_merit_function_value: Math.log10(meritFunctionValue),
+    });
+
+    expect(await readProgress()).toEqual({ isRunning: false });
+
+    const { execution } = await startExecution();
+    expect(await readProgress()).toEqual({ isRunning: true });
+
+    const onProgress = (proxy.optimizeOpm as jest.Mock).mock.calls[0]?.[3] as (
+      progress: ReadonlyArray<OptimizationProgressEntry>,
+    ) => void;
+    await act(async () => {
+      onProgress([entry(0, 8), entry(1, 4), entry(2, 2)]);
+    });
+    expect(await readProgress()).toEqual({
+      isRunning: true,
+      latestStep: { step: 2, meritFunctionValue: 2 },
+      previousStep: { step: 1, meritFunctionValue: 4 },
+    });
+
+    await settle(execution, "optimized", [
+      entry(0, 8),
+      entry(1, 4),
+      entry(2, 2),
+      entry(3, 1),
+    ]);
+    expect(await readProgress()).toEqual({
+      isRunning: false,
+      latestStep: { step: 3, meritFunctionValue: 1 },
+      previousStep: { step: 2, meritFunctionValue: 2 },
+    });
+  });
+
   it("requires a fresh evaluation after a WebMCP configuration change", async () => {
     const registrations: WebMCP.ModelContextTool[] = [];
     Object.defineProperty(document, "modelContext", {
@@ -3484,7 +3538,7 @@ describe("OptimizationPage", () => {
     });
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(7));
+    await waitFor(() => expect(registrations).toHaveLength(8));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );

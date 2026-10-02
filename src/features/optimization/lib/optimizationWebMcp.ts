@@ -8,6 +8,7 @@ import {
 import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
 import type { OptimizationState } from "@/features/optimization/stores/optimizationStore";
 import type {
+  OptimizationProgressEntry,
   OptimizationReport,
   OptimizationRunConfig,
   OptimizationRunReport,
@@ -49,6 +50,25 @@ export interface OptimizationStopResult {
   readonly state: OptimizationStopState;
 }
 
+/** Snapshot read by the shared Optimization progress operation. */
+export interface OptimizationProgressSnapshot {
+  /** Whether an optimization run is still active, so the history may still grow. */
+  readonly isRunning: boolean;
+  /**
+   * Chronological merit history plotted by the progress modal chart: streamed
+   * entries while running, the settled report's history afterwards, and empty
+   * before the first run since mount.
+   */
+  readonly progress: ReadonlyArray<OptimizationProgressEntry>;
+}
+
+/** Agent-facing step number and merit function value of one progress entry. */
+function toProgressStep(entry: OptimizationProgressEntry | undefined) {
+  return entry === undefined
+    ? undefined
+    : { step: entry.iteration, meritFunctionValue: entry.merit_function_value };
+}
+
 /** Agent-facing explanation returned by `stop_optimization` for each stop state. */
 const STOP_MESSAGES: Readonly<Record<OptimizationStopState, string>> = {
   stop_requested:
@@ -85,13 +105,15 @@ export interface OptimizationWebMcpDependencies {
    * cannot be interrupted.
    */
   readonly stop: (signal: AbortSignal) => OptimizationStopResult;
+  /** Reads the merit history shown by the progress modal chart and whether a run is active. */
+  readonly readProgress: (signal: AbortSignal) => OptimizationProgressSnapshot;
 }
 
 type OptimizationWebMcpDependenciesSource =
   | OptimizationWebMcpDependencies
   | (() => OptimizationWebMcpDependencies);
 
-/** Named readonly handles for the seven page-scoped Optimization descriptors. */
+/** Named readonly handles for the eight page-scoped Optimization descriptors. */
 export type OptimizationWebMcpTools = Readonly<{
   readonly setOptimizationConfig: WebMCP.ModelContextTool;
   readonly getOptimizationConfig: WebMCP.ModelContextTool;
@@ -100,6 +122,7 @@ export type OptimizationWebMcpTools = Readonly<{
   readonly applyOptimizationToEditor: WebMCP.ModelContextTool;
   readonly dismissOptimizationProgress: WebMCP.ModelContextTool;
   readonly stopOptimization: WebMCP.ModelContextTool;
+  readonly getOptimizationProgress: WebMCP.ModelContextTool;
 }>;
 
 const validators = (() => {
@@ -235,6 +258,24 @@ export function createOptimizationWebMcpTools(
           stopRequested: state === "stop_requested",
           state,
           message: STOP_MESSAGES[state],
+        });
+      },
+    },
+    getOptimizationProgress: {
+      name: "get_optimization_progress",
+      description:
+        "Read the optimization progress shown in the Optimization Progress chart: the step number and merit function value of the most recent step (latestStep) and of the step before it (previousStep), plus whether an optimization is still running. Works during a run and after it settles. A step is omitted when the history does not contain it yet, so both are omitted before the first optimization run.",
+      inputSchema: emptyOptimizationInputSchema,
+      annotations: { readOnlyHint: true, untrustedContentHint: false },
+      execute: async (input, { signal }) => {
+        assertWebMcpInput(validators.empty, input);
+        assertWebMcpNotCancelled(signal);
+        const { isRunning, progress } =
+          currentDependencies(source).readProgress(signal);
+        return JSON.stringify({
+          isRunning,
+          latestStep: toProgressStep(progress.at(-1)),
+          previousStep: toProgressStep(progress.at(-2)),
         });
       },
     },
