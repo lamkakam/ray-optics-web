@@ -29,6 +29,39 @@ export interface OptimizationProgressDismissResult {
   readonly wasOpen: boolean;
 }
 
+/**
+ * Outcome of the shared Optimization Stop operation:
+ * - `stop_requested`: the active run was signalled to stop.
+ * - `already_stopping`: a stop was already requested for the active run.
+ * - `already_stopped`: no run is active; the last run was interrupted.
+ * - `already_completed`: no run is active; the last run ended without interruption.
+ * - `not_running`: no run is active and none has run since the page mounted.
+ */
+export type OptimizationStopState =
+  | "stop_requested"
+  | "already_stopping"
+  | "already_stopped"
+  | "already_completed"
+  | "not_running";
+
+/** Result returned by the shared Optimization Stop operation. */
+export interface OptimizationStopResult {
+  readonly state: OptimizationStopState;
+}
+
+/** Agent-facing explanation returned by `stop_optimization` for each stop state. */
+const STOP_MESSAGES: Readonly<Record<OptimizationStopState, string>> = {
+  stop_requested:
+    'Stop requested. The running optimization will settle with a status "stopped" report, which an awaiting execute_optimization call returns. Call dismiss_optimization_progress afterwards to close the Optimization Progress modal.',
+  already_stopping:
+    "A stop has already been requested for the running optimization. Wait for it to settle.",
+  already_stopped:
+    "No optimization is running. The last optimization has already been interrupted.",
+  already_completed:
+    "No optimization is running. The last optimization has already completed.",
+  not_running: "No optimization is running.",
+};
+
 /** Page callbacks shared by GUI controls and imperative Optimization tools. */
 export interface OptimizationWebMcpDependencies {
   readonly optimizationStore: StoreApi<OptimizationState>;
@@ -46,13 +79,19 @@ export interface OptimizationWebMcpDependencies {
   readonly dismissProgress: (
     signal: AbortSignal,
   ) => OptimizationProgressDismissResult;
+  /**
+   * Runs the same stop operation used by the progress modal Stop control;
+   * returns immediately after signalling and throws when the active run
+   * cannot be interrupted.
+   */
+  readonly stop: (signal: AbortSignal) => OptimizationStopResult;
 }
 
 type OptimizationWebMcpDependenciesSource =
   | OptimizationWebMcpDependencies
   | (() => OptimizationWebMcpDependencies);
 
-/** Named readonly handles for the six page-scoped Optimization descriptors. */
+/** Named readonly handles for the seven page-scoped Optimization descriptors. */
 export type OptimizationWebMcpTools = Readonly<{
   readonly setOptimizationConfig: WebMCP.ModelContextTool;
   readonly getOptimizationConfig: WebMCP.ModelContextTool;
@@ -60,6 +99,7 @@ export type OptimizationWebMcpTools = Readonly<{
   readonly executeOptimization: WebMCP.ModelContextTool;
   readonly applyOptimizationToEditor: WebMCP.ModelContextTool;
   readonly dismissOptimizationProgress: WebMCP.ModelContextTool;
+  readonly stopOptimization: WebMCP.ModelContextTool;
 }>;
 
 const validators = (() => {
@@ -179,6 +219,23 @@ export function createOptimizationWebMcpTools(
         assertWebMcpNotCancelled(signal);
         const result = currentDependencies(source).dismissProgress(signal);
         return JSON.stringify({ dismissed: true, wasOpen: result.wasOpen });
+      },
+    },
+    stopOptimization: {
+      name: "stop_optimization",
+      description:
+        "Interrupt the running optimization, like the Optimization Progress Stop button. Returns immediately after the stop is signalled. If no optimization is running (never started, already completed, or already interrupted), returns a message explaining that instead.",
+      inputSchema: emptyOptimizationInputSchema,
+      annotations: { readOnlyHint: false, untrustedContentHint: false },
+      execute: async (input, { signal }) => {
+        assertWebMcpInput(validators.empty, input);
+        assertWebMcpNotCancelled(signal);
+        const { state } = currentDependencies(source).stop(signal);
+        return JSON.stringify({
+          stopRequested: state === "stop_requested",
+          state,
+          message: STOP_MESSAGES[state],
+        });
       },
     },
   };

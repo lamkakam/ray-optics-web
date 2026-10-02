@@ -891,6 +891,54 @@ describe("_optimizeOpm", () => {
     }
   });
 
+  it("keeps a stop signalled before the worker starts the run pending until the solver arms interrupts", async () => {
+    const setInterruptBuffer = jest.fn();
+    const globalsSet = jest.fn();
+    _setPyodideForTesting({
+      setInterruptBuffer,
+      globals: { set: globalsSet, delete: jest.fn() },
+    });
+    const interruptBuffer = new SharedArrayBuffer(4);
+    const interruptView = new Int32Array(interruptBuffer);
+    // The page writes the signal on the main thread before this RPC is handled.
+    Atomics.store(interruptView, 0, 2);
+    const runPython = jest.fn().mockImplementation(async () => {
+      expect(Atomics.load(interruptView, 0)).toBe(2);
+      boundGlobal(globalsSet, "_arm_optimization_interrupts")();
+      expect(setInterruptBuffer).toHaveBeenCalledTimes(1);
+      expect(Atomics.load(setInterruptBuffer.mock.calls[0]?.[0], 0)).toBe(2);
+      boundGlobal(globalsSet, "_disarm_optimization_interrupts")();
+      return JSON.stringify(optimizationErrorReport());
+    });
+
+    await _optimizeOpm(
+      runPython,
+      baseModel,
+      {
+        optimizer: {
+          kind: "least_squares",
+          method: "trf",
+          max_nfev: 200,
+          ftol: 1e-8,
+          xtol: 1e-8,
+          gtol: 1e-8,
+        },
+        variables: [],
+        pickups: [],
+        merit_function: {
+          operands: [{ kind: "focal_length", target: 100, weight: 1 }],
+        },
+      },
+      "chief_ray",
+      undefined,
+      "run-early-stop",
+      interruptBuffer,
+    );
+
+    expect(runPython).toHaveBeenCalledTimes(1);
+    expect(Atomics.load(interruptView, 0)).toBe(0);
+  });
+
   it("signals only the active matching run id and treats stale stops as no-ops", async () => {
     const interruptBuffer = new SharedArrayBuffer(4);
     const interruptView = new Int32Array(interruptBuffer);

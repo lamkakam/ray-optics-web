@@ -41,7 +41,7 @@ const config: OptimizationConfig = {
 };
 
 describe("optimization WebMCP tools", () => {
-  it("creates the six tools in order with strict annotations", () => {
+  it("creates the seven tools in order with strict annotations", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     const tools = createOptimizationWebMcpTools({
       optimizationStore: store,
@@ -50,6 +50,7 @@ describe("optimization WebMCP tools", () => {
       execute: jest.fn().mockResolvedValue(report),
       apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
       dismissProgress: jest.fn().mockReturnValue({ wasOpen: true }),
+      stop: jest.fn().mockReturnValue({ state: "not_running" }),
     });
 
     expect(Object.values(tools).map((tool) => tool.name)).toEqual([
@@ -59,8 +60,13 @@ describe("optimization WebMCP tools", () => {
       "execute_optimization",
       "apply_optimization_to_editor",
       "dismiss_optimization_progress",
+      "stop_optimization",
     ]);
     expect(tools.dismissOptimizationProgress.annotations).toEqual({
+      readOnlyHint: false,
+      untrustedContentHint: false,
+    });
+    expect(tools.stopOptimization.annotations).toEqual({
       readOnlyHint: false,
       untrustedContentHint: false,
     });
@@ -90,6 +96,7 @@ describe("optimization WebMCP tools", () => {
     const execute = jest.fn().mockResolvedValue(report);
     const apply = jest.fn().mockResolvedValue({ surfaceCount: 2 });
     const dismissProgress = jest.fn().mockReturnValue({ wasOpen: true });
+    const stop = jest.fn().mockReturnValue({ state: "stop_requested" });
     const tools = createOptimizationWebMcpTools({
       optimizationStore: store,
       catalogs: undefined,
@@ -97,6 +104,7 @@ describe("optimization WebMCP tools", () => {
       execute,
       apply,
       dismissProgress,
+      stop,
     });
     const signal = new AbortController().signal;
 
@@ -123,6 +131,13 @@ describe("optimization WebMCP tools", () => {
     expect(execute).toHaveBeenCalledWith(signal);
     expect(apply).toHaveBeenCalledWith(signal);
     expect(dismissProgress).toHaveBeenCalledWith(signal);
+    const stopped = await tools.stopOptimization.execute({}, { signal });
+    expect(JSON.parse(String(stopped))).toEqual({
+      stopRequested: true,
+      state: "stop_requested",
+      message: expect.any(String),
+    });
+    expect(stop).toHaveBeenCalledWith(signal);
 
     await expect(
       tools.setOptimizationConfig.execute(
@@ -138,6 +153,9 @@ describe("optimization WebMCP tools", () => {
         { unexpected: true },
         { signal },
       ),
+    ).rejects.toThrow(/Invalid input/);
+    await expect(
+      tools.stopOptimization.execute({ unexpected: true }, { signal }),
     ).rejects.toThrow(/Invalid input/);
     expect(setOptimizationConfig).toHaveBeenCalledTimes(1);
 
@@ -161,10 +179,14 @@ describe("optimization WebMCP tools", () => {
         { signal: controller.signal },
       ),
     ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
+      tools.stopOptimization.execute({}, { signal: controller.signal }),
+    ).rejects.toMatchObject({ name: "AbortError" });
     expect(evaluate).toHaveBeenCalledTimes(1);
     expect(execute).toHaveBeenCalledTimes(1);
     expect(apply).toHaveBeenCalledTimes(1);
     expect(dismissProgress).toHaveBeenCalledTimes(1);
+    expect(stop).toHaveBeenCalledTimes(1);
   });
 
   it("returns the dismiss operation error to the caller while optimization is running", async () => {
@@ -178,6 +200,7 @@ describe("optimization WebMCP tools", () => {
       dismissProgress: jest.fn(() => {
         throw new Error("Optimization is still running.");
       }),
+      stop: jest.fn().mockReturnValue({ state: "not_running" }),
     });
 
     await expect(
@@ -186,5 +209,62 @@ describe("optimization WebMCP tools", () => {
         { signal: new AbortController().signal },
       ),
     ).rejects.toThrow("Optimization is still running.");
+  });
+
+  it.each([
+    ["stop_requested", true, /stop/i],
+    ["already_stopping", false, /already been requested/i],
+    ["already_stopped", false, /already been interrupted/i],
+    ["already_completed", false, /already completed/i],
+    ["not_running", false, /no optimization is running/i],
+  ] as const)(
+    "reports the %s stop state to the caller",
+    async (state, stopRequested, messagePattern) => {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      const tools = createOptimizationWebMcpTools({
+        optimizationStore: store,
+        catalogs: undefined,
+        evaluate: jest.fn().mockResolvedValue(report),
+        execute: jest.fn().mockResolvedValue(report),
+        apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+        dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
+        stop: jest.fn().mockReturnValue({ state }),
+      });
+
+      const result = JSON.parse(
+        String(
+          await tools.stopOptimization.execute(
+            {},
+            { signal: new AbortController().signal },
+          ),
+        ),
+      ) as { stopRequested: boolean; state: string; message: string };
+
+      expect(result.stopRequested).toBe(stopRequested);
+      expect(result.state).toBe(state);
+      expect(result.message).toMatch(messagePattern);
+    },
+  );
+
+  it("returns the stop operation error to the caller when the run cannot be interrupted", async () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    const tools = createOptimizationWebMcpTools({
+      optimizationStore: store,
+      catalogs: undefined,
+      evaluate: jest.fn().mockResolvedValue(report),
+      execute: jest.fn().mockResolvedValue(report),
+      apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
+      stop: jest.fn(() => {
+        throw new Error("Cannot interrupt.");
+      }),
+    });
+
+    await expect(
+      tools.stopOptimization.execute(
+        {},
+        { signal: new AbortController().signal },
+      ),
+    ).rejects.toThrow("Cannot interrupt.");
   });
 });

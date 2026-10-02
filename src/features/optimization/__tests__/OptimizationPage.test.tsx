@@ -2975,7 +2975,7 @@ describe("OptimizationPage", () => {
     const proxy = makeProxy();
     const { lensStore, optimizationStore, unmount } =
       renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(6));
+    await waitFor(() => expect(registrations).toHaveLength(7));
     const tools = new Map(
       registrations.map(({ tool }) => [tool.name, tool] as const),
     );
@@ -3049,6 +3049,7 @@ describe("OptimizationPage", () => {
       "execute_optimization",
       "apply_optimization_to_editor",
       "dismiss_optimization_progress",
+      "stop_optimization",
     ]);
     unmount();
     expect(
@@ -3083,7 +3084,7 @@ describe("OptimizationPage", () => {
           undefined,
           { onApplyToEditor },
         );
-      await waitFor(() => expect(registrations).toHaveLength(6));
+      await waitFor(() => expect(registrations).toHaveLength(7));
       const optimizedModel: OpticalModel = {
         ...baseModel,
         setAutoAperture: "autoAperture",
@@ -3165,7 +3166,7 @@ describe("OptimizationPage", () => {
     });
     const { optimizationStore } = renderOptimizationPage(proxy);
     const signalController = new AbortController();
-    await waitFor(() => expect(registrations).toHaveLength(6));
+    await waitFor(() => expect(registrations).toHaveLength(7));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3250,7 +3251,7 @@ describe("OptimizationPage", () => {
       },
     });
     renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(6));
+    await waitFor(() => expect(registrations).toHaveLength(7));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3316,6 +3317,161 @@ describe("OptimizationPage", () => {
     });
   });
 
+  /** Mounts the page with captured WebMCP tools and a pending optimization run. */
+  async function renderPendingWebMcpOptimization(
+    overrides?: Partial<PyodideWorkerAPI>,
+  ) {
+    let resolveOptimization:
+      | ((report: OptimizationRunReport) => void)
+      | undefined;
+    const optimizationPromise = new Promise<OptimizationRunReport>(
+      (resolve) => {
+        resolveOptimization = resolve;
+      },
+    );
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockImplementation(() => optimizationPromise),
+      ...overrides,
+    });
+    const registrations: WebMCP.ModelContextTool[] = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+          registrations.push(tool);
+        }),
+      },
+    });
+    renderOptimizationPage(proxy);
+    await waitFor(() => expect(registrations).toHaveLength(7));
+    const tools = new Map(
+      registrations.map((tool) => [tool.name, tool] as const),
+    );
+    const signal = new AbortController().signal;
+    const stop = async (): Promise<unknown> => {
+      let result: unknown;
+      await act(async () => {
+        result = await tools.get("stop_optimization")?.execute({}, { signal });
+      });
+      return JSON.parse(String(result));
+    };
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled(),
+    );
+    // Wrapped so awaiting the helper does not adopt the pending execution.
+    const startExecution = async (): Promise<{
+      readonly execution: Promise<unknown>;
+    }> => {
+      let execution!: Promise<unknown>;
+      await act(async () => {
+        execution = Promise.resolve(
+          tools.get("execute_optimization")?.execute({}, { signal }),
+        );
+      });
+      await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
+      return { execution };
+    };
+    const settle = async (
+      execution: Promise<unknown>,
+      status: "optimized" | "stopped",
+    ) => {
+      await act(async () => {
+        resolveOptimization?.({
+          ...makeEvaluationReport(),
+          status,
+          message: `Optimization ${status}`,
+          final_values: [
+            { kind: "radius", surface_index: 1, value: 45, min: 40, max: 60 },
+          ],
+          optimization_progress: [],
+        } as OptimizationReport);
+        await execution;
+      });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument(),
+      );
+    };
+    return { proxy, tools, signal, stop, startExecution, settle };
+  }
+
+  it("interrupts a running optimization through WebMCP and reports later stop calls as already interrupted", async () => {
+    const { proxy, stop, startExecution, settle } =
+      await renderPendingWebMcpOptimization();
+
+    expect(await stop()).toEqual({
+      stopRequested: false,
+      state: "not_running",
+      message: expect.stringMatching(/no optimization is running/i),
+    });
+
+    const { execution } = await startExecution();
+    expect(await stop()).toEqual({
+      stopRequested: true,
+      state: "stop_requested",
+      message: expect.any(String),
+    });
+    const optimizeOpm = proxy.optimizeOpm as jest.Mock;
+    expect(proxy.requestOptimizationStop).toHaveBeenCalledWith(
+      optimizeOpm.mock.calls[0]?.[4],
+    );
+    const interruptBuffer = optimizeOpm.mock.calls[0]?.[5] as SharedArrayBuffer;
+    expect(Atomics.load(new Int32Array(interruptBuffer), 0)).toBe(2);
+    expect(
+      screen.getByRole("dialog", { name: "Optimization Progress" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Stopping optimization" }),
+    ).toBeDisabled();
+
+    expect(await stop()).toEqual({
+      stopRequested: false,
+      state: "already_stopping",
+      message: expect.any(String),
+    });
+    expect(proxy.requestOptimizationStop).toHaveBeenCalledTimes(1);
+
+    await settle(execution, "stopped");
+    expect(await stop()).toEqual({
+      stopRequested: false,
+      state: "already_stopped",
+      message: expect.stringMatching(/already been interrupted/i),
+    });
+    expect(proxy.requestOptimizationStop).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a finished optimization as already completed through WebMCP stop", async () => {
+    const { proxy, stop, startExecution, settle } =
+      await renderPendingWebMcpOptimization();
+
+    const { execution } = await startExecution();
+    await settle(execution, "optimized");
+
+    expect(await stop()).toEqual({
+      stopRequested: false,
+      state: "already_completed",
+      message: expect.stringMatching(/already completed/i),
+    });
+    expect(proxy.requestOptimizationStop).not.toHaveBeenCalled();
+  });
+
+  it("rejects WebMCP stop when the running optimization cannot be interrupted", async () => {
+    const { proxy, tools, signal, startExecution, settle } =
+      await renderPendingWebMcpOptimization({
+        canInterruptOptimization: jest.fn().mockResolvedValue(false),
+      });
+
+    const { execution } = await startExecution();
+    await expect(
+      tools.get("stop_optimization")?.execute({}, { signal }),
+    ).rejects.toThrow("cannot interrupt the running optimization");
+    expect(proxy.requestOptimizationStop).not.toHaveBeenCalled();
+
+    await settle(execution, "optimized");
+  });
+
   it("requires a fresh evaluation after a WebMCP configuration change", async () => {
     const registrations: WebMCP.ModelContextTool[] = [];
     Object.defineProperty(document, "modelContext", {
@@ -3328,7 +3484,7 @@ describe("OptimizationPage", () => {
     });
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(6));
+    await waitFor(() => expect(registrations).toHaveLength(7));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
