@@ -47,6 +47,9 @@ describe("useOptimizationWebMCP", () => {
         apply: jest.fn().mockResolvedValue({ surfaceCount: 0 }),
         dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
         stop: jest.fn().mockReturnValue({ state: "not_running" }),
+        readProgress: jest
+          .fn()
+          .mockReturnValue({ isRunning: false, progress: [] }),
       }),
     );
 
@@ -58,6 +61,7 @@ describe("useOptimizationWebMCP", () => {
       "apply_optimization_to_editor",
       "dismiss_optimization_progress",
       "stop_optimization",
+      "get_optimization_progress",
     ]);
     unmount();
     expect(registrations.every(({ signal }) => signal.aborted)).toBe(true);
@@ -88,6 +92,9 @@ describe("useOptimizationWebMCP", () => {
       apply: jest.fn().mockResolvedValue({ surfaceCount: 0 }),
       dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
       stop: jest.fn().mockReturnValue({ state: "not_running" }),
+      readProgress: jest
+        .fn()
+        .mockReturnValue({ isRunning: false, progress: [] }),
     });
     const initialDependencies = makeDependencies(firstEvaluate);
     const { rerender, unmount } = renderHook(
@@ -105,7 +112,7 @@ describe("useOptimizationWebMCP", () => {
     ).resolves.toBe(JSON.stringify({ second: true }));
     expect(firstEvaluate).not.toHaveBeenCalled();
     expect(secondEvaluate).toHaveBeenCalledTimes(1);
-    expect(registrations).toHaveLength(7);
+    expect(registrations).toHaveLength(8);
     unmount();
   });
 });
