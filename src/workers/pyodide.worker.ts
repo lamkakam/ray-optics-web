@@ -948,12 +948,13 @@ export async function _optimizeGlasses(
  * converts ordinary Python exceptions to the matching complete failure report.
  * Executor rejection and JSON parsing errors still reject after guaranteed cleanup.
  *
- * For an interrupt-capable run the worker zeroes and records the shared view but
- * does not install it before `runPython`. It binds `_arm_optimization_interrupts`
- * and `_disarm_optimization_interrupts` globals and passes an
- * `_optimization_interrupt_scope` context manager as `interrupt_scope`, so Pyodide
- * raises `KeyboardInterrupt` only while the solver runs. A stop written during model
- * build or setup stays pending in the buffer and fires as soon as the scope arms,
+ * For an interrupt-capable run the worker records the shared view but neither
+ * zeroes nor installs it before `runPython`; callers supply a fresh buffer per run.
+ * It binds `_arm_optimization_interrupts` and `_disarm_optimization_interrupts`
+ * globals and passes an `_optimization_interrupt_scope` context manager as
+ * `interrupt_scope`, so Pyodide raises `KeyboardInterrupt` only while the solver
+ * runs. A stop written before the worker handled this RPC, or during model build
+ * or setup, stays pending in the buffer and fires as soon as the scope arms,
  * producing a zero-progress `"stopped"` report; a stop after the solver finishes is
  * ignored. `finally` uninstalls the buffer, zeroes it, and deletes both globals.
  */
@@ -1011,8 +1012,8 @@ async function runOptimization<
       pyodide.globals.set("_optimization_progress_callback", reportProgress);
     }
     if (canBindInterruptBuffer) {
+      // Not zeroed here: a stop signalled before this RPC runs must stay pending.
       const interruptView = new Int32Array(interruptBuffer);
-      Atomics.store(interruptView, 0, 0);
       activeOptimizationRunId = runId;
       activeOptimizationInterruptBuffer = interruptBuffer;
       activeOptimizationInterruptView = interruptView;
