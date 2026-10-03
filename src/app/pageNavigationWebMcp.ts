@@ -4,9 +4,15 @@
  * @remarks
  * The descriptors deliberately receive navigation callbacks instead of owning
  * a router. `AppShell` supplies those callbacks so WebMCP requests use the
- * same Optimization leave guard, modal, and apply synchronization path as
- * SideNav clicks. Input and cancellation checks use the shared WebMCP helper so
- * shell and route-scoped tools expose the same stable validation behavior.
+ * same Optimization pending-destination state and apply synchronization path as
+ * SideNav clicks. Unlike SideNav, `set_active_page` never defers navigation
+ * behind the leave modal: while an optimized lens prescription is pending on
+ * Optimization, the supplied callback throws
+ * `PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR` so the agent applies or
+ * discards the result first. `resolve_optimization_navigation` still resolves a
+ * leave modal opened by SideNav or browser history. Input and cancellation
+ * checks use the shared WebMCP helper so shell and route-scoped tools expose
+ * the same stable validation behavior.
  */
 import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
 import {
@@ -19,7 +25,11 @@ import {
   assertWebMcpNotCancelled,
 } from "@/shared/lib/webMcpValidation";
 
-/** Result returned after a page navigation request is accepted or deferred. */
+/** Agent-facing error thrown by `set_active_page` when leaving Optimization with a pending optimized lens prescription. */
+export const PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR =
+  "Cannot leave the Optimization page while an optimized lens prescription is pending. Call apply_optimization_to_editor to apply it to the Lens Editor, or call discard_optimization_result to discard it, then call set_active_page again.";
+
+/** Result returned after a SideNav-style page navigation request is accepted or deferred. */
 export type PageNavigationResult =
   | { readonly status: "navigated"; readonly page: PageKey }
   | {
@@ -27,6 +37,12 @@ export type PageNavigationResult =
       readonly currentPage: PageKey;
       readonly requestedPage: PageKey;
     };
+
+/** Result returned by `set_active_page` after an accepted navigation. */
+export type PageNavigatedResult = Extract<
+  PageNavigationResult,
+  { readonly status: "navigated" }
+>;
 
 /** Result returned by `get_active_page`. */
 export interface ActivePageResult {
@@ -50,8 +66,12 @@ export interface PageNavigationWebMcpDependencies {
   readonly getCurrentPage: () => PageKey;
   /** Reads the pending guarded destination at execution time. */
   readonly getPendingNavigation: () => PageKey | undefined;
-  /** Uses the shell's guarded navigation callback for one canonical page. */
-  readonly navigateToPage: (page: PageKey) => PageNavigationResult;
+  /**
+   * Navigates to one canonical page for `set_active_page`; throws
+   * `PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR` instead of deferring when
+   * leaving Optimization with a pending optimized lens prescription.
+   */
+  readonly navigateToPage: (page: PageKey) => PageNavigatedResult;
   /** Uses the shell's shared Stay/Leave/Apply resolution callbacks. */
   readonly resolveOptimizationNavigation: (
     action: OptimizationNavigationAction,
@@ -130,10 +150,10 @@ export function createPageNavigationTools(
     setActivePage: {
       name: "set_active_page",
       description:
-        "Navigate to one of the application's canonical pages by route key. Leaving Optimization with an unapplied result returns a pending confirmation instead of navigating immediately.",
+        "Navigate to one of the application's canonical pages by route key. While an optimized lens prescription is pending on the Optimization page, leaving Optimization returns an error and does not navigate; call apply_optimization_to_editor or discard_optimization_result first.",
       inputSchema: setActivePageInputSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-      execute: (input, { signal }) => {
+      execute: async (input, { signal }) => {
         assertWebMcpInput(validators.setActivePage, input);
         assertWebMcpNotCancelled(signal);
         const page = (input as SetActivePageInput).page;

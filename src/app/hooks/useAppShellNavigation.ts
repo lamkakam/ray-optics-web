@@ -17,8 +17,10 @@ import {
 } from "@/shared/lib/navigation/pageDefinitions";
 import {
   createPageNavigationTools,
+  PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR,
   type OptimizationNavigationAction,
   type OptimizationNavigationResult,
+  type PageNavigatedResult,
   type PageNavigationResult,
   type PageNavigationWebMcpDependencies,
 } from "@/app/pageNavigationWebMcp";
@@ -136,7 +138,11 @@ function usePageNavigationWebMcp({
 /**
  * Owns the shared SideNav/WebMCP Optimization confirmation state. Canonical page
  * requests use shared page definitions; arbitrary and history destinations retain
- * their full href. Stay clears the pending destination, Leave navigates without
+ * their full href. SideNav and history requests away from a pending Optimization
+ * result are deferred behind the confirmation modal, while WebMCP `set_active_page`
+ * requests are rejected with `PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR`,
+ * reading the live Optimization store so a just-applied or just-discarded result
+ * no longer blocks. Stay clears the pending destination, Leave navigates without
  * applying, and Apply uses the editor's atomic synchronization helper. Only a
  * successful Apply marks the result applied and navigates. Failures report through
  * the shell error callback; cancellation retains editor/specs, result, and destination.
@@ -218,6 +224,28 @@ export function useAppShellNavigation(
       proceedToHref,
       shouldWarnBeforeLeavingOptimization,
     ],
+  );
+
+  /** Navigates for `set_active_page`, refusing instead of deferring when leaving Optimization with a pending result read from the live store. */
+  const navigateToPageFromWebMcp = useCallback(
+    (page: PageKey): PageNavigatedResult => {
+      const definition = getPageDefinition(page);
+      if (definition === undefined) {
+        throw new Error(`Unknown application page: ${page}`);
+      }
+
+      if (
+        pathname === "/optimization" &&
+        definition.path !== "/optimization" &&
+        optimizationStore.getState().hasUnappliedOptimizationResult
+      ) {
+        throw new Error(PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR);
+      }
+
+      proceedToHref(definition.path);
+      return { status: "navigated", page };
+    },
+    [optimizationStore, pathname, proceedToHref],
   );
 
   /** Intercepts in-app navigation away from an unapplied Optimization result. */
@@ -357,7 +385,7 @@ export function useAppShellNavigation(
   usePageNavigationWebMcp({
     getCurrentPage,
     getPendingNavigation,
-    navigateToPage: requestPageNavigation,
+    navigateToPage: navigateToPageFromWebMcp,
     resolveOptimizationNavigation,
   });
   useBrowserHistoryNavigation(pathname, optimizationStore, deferNavigation);

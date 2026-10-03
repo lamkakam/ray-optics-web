@@ -54,6 +54,7 @@
  * - `applyOptimizationResult()` can create or update `surface.aspherical` and surface/Image `decenter`, preserving untouched tilt/decenter components, and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
  * - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
  * - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
+ * - `discardOptimizationResult(editorModel)` replaces the page-local model and sync baseline with the supplied Editor model, clears the unapplied marker and last report, and reconciles prescription modes by index like a preserved sync. Algorithm settings, weights, and operands are unchanged, and the Editor itself is never mutated.
  * - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
  * - `RadiusMode`, `RadiusModeDraft`, `GlassMode`, `GlassModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.
  */
@@ -299,6 +300,8 @@ export interface OptimizationState {
   lastOptimizationReport: OptimizationRunReport | undefined;
   /** Whether the apply-to-Editor confirmation modal is open. Defaults to `false`. */
   applyConfirmOpen: boolean;
+  /** Whether the discard-optimization-result confirmation modal is open. Defaults to `false`. */
+  discardConfirmOpen: boolean;
   /** Radius variable/pickup modal state. Defaults to closed without a surface index. */
   radiusModal: RadiusModalState;
   /** Thickness variable/pickup modal state. Defaults to closed without a surface index. */
@@ -389,6 +392,17 @@ export interface OptimizationState {
   setIsOptimizing: (value: boolean) => void;
   /** Clears the unapplied-result marker after the optimized model is applied to the Editor. */
   markOptimizationResultAppliedToEditor: () => void;
+  /** Opens the discard-optimization-result confirmation modal. */
+  openDiscardConfirm: () => void;
+  /** Closes the discard-optimization-result confirmation modal. */
+  closeDiscardConfirm: () => void;
+  /**
+   * Restores the page-local model from `editorModel`, preserving compatible prescription modes, and clears the unapplied marker and last report.
+   * Throws while an optimization run is active. Returns whether a result was pending before the call.
+   */
+  discardOptimizationResult: (editorModel: OpticalModel) => {
+    readonly hadUnappliedResult: boolean;
+  };
   /** Switches optimizer kind and resets all algorithm fields to that kind's UI defaults. */
   setOptimizerKind: (kind: OptimizationAlgorithmState["kind"]) => void;
   /** Validates current UI state and the supplied live catalogs, then builds a continuous or Glass Expert worker run config. */
@@ -1712,6 +1726,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (
   hasUnappliedOptimizationResult: false,
   lastOptimizationReport: undefined,
   applyConfirmOpen: false,
+  discardConfirmOpen: false,
   radiusModal: { open: false, surfaceIndex: undefined },
   thicknessModal: { open: false, surfaceIndex: undefined },
   asphereModal: { open: false, surfaceIndex: undefined },
@@ -2017,6 +2032,38 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (
   setIsOptimizing: (value) => set({ isOptimizing: value }),
   markOptimizationResultAppliedToEditor: () =>
     set({ hasUnappliedOptimizationResult: false }),
+  openDiscardConfirm: () => set({ discardConfirmOpen: true }),
+  closeDiscardConfirm: () => set({ discardConfirmOpen: false }),
+  discardOptimizationResult: (editorModel) => {
+    const state = get();
+    if (state.isOptimizing) {
+      throw new Error(
+        "Cannot discard optimization result while a run is already running.",
+      );
+    }
+
+    set({
+      optimizationModel: editorModel,
+      editorSyncBaseline: createEditorSyncBaseline(editorModel),
+      hasUnappliedOptimizationResult: false,
+      lastOptimizationReport: undefined,
+      radiusModes: reconcileModes(
+        state.radiusModes,
+        createRadiusModes(editorModel),
+      ),
+      thicknessModes: reconcileModes(
+        state.thicknessModes,
+        createThicknessModes(editorModel),
+      ),
+      glassModes: reconcileGlassModes(state.glassModes, editorModel),
+      asphereStates: reconcileAsphereStates(state.asphereStates, editorModel),
+      decenterStates: reconcileDecenterStates(
+        state.decenterStates,
+        editorModel,
+      ),
+    });
+    return { hadUnappliedResult: state.hasUnappliedOptimizationResult };
+  },
   setOptimizerKind: (kind) =>
     set({ optimizer: createDefaultOptimizerState(kind) }),
 

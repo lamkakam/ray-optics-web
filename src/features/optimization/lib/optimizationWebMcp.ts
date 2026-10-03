@@ -24,6 +24,12 @@ export interface OptimizationApplyResult {
   readonly surfaceCount: number;
 }
 
+/** Result returned by the shared discard-optimization-result operation. */
+export interface OptimizationDiscardResult {
+  /** Whether an optimized prescription was pending before this discard. */
+  readonly wasPending: boolean;
+}
+
 /** Result returned by the shared Optimization Progress modal dismiss operation. */
 export interface OptimizationProgressDismissResult {
   /** Whether the progress modal was open before this dismissal. */
@@ -107,6 +113,11 @@ export interface OptimizationWebMcpDependencies {
   /** Runs the same throwing, confirmed apply operation used by the modal. */
   readonly apply: (signal: AbortSignal) => Promise<OptimizationApplyResult>;
   /**
+   * Runs the same discard operation used by the confirmed Discard action;
+   * throws while an optimization run is still active.
+   */
+  readonly discard: (signal: AbortSignal) => OptimizationDiscardResult;
+  /**
    * Runs the same dismiss operation used by the progress modal `OK` control;
    * throws while an optimization run is still active.
    */
@@ -127,13 +138,14 @@ type OptimizationWebMcpDependenciesSource =
   | OptimizationWebMcpDependencies
   | (() => OptimizationWebMcpDependencies);
 
-/** Named readonly handles for the eight page-scoped Optimization descriptors. */
+/** Named readonly handles for the nine page-scoped Optimization descriptors. */
 export type OptimizationWebMcpTools = Readonly<{
   readonly setOptimizationConfig: WebMCP.ModelContextTool;
   readonly getOptimizationConfig: WebMCP.ModelContextTool;
   readonly evaluateOptimizationOperands: WebMCP.ModelContextTool;
   readonly executeOptimization: WebMCP.ModelContextTool;
   readonly applyOptimizationToEditor: WebMCP.ModelContextTool;
+  readonly discardOptimizationResult: WebMCP.ModelContextTool;
   readonly dismissOptimizationProgress: WebMCP.ModelContextTool;
   readonly stopOptimization: WebMCP.ModelContextTool;
   readonly getOptimizationProgress: WebMCP.ModelContextTool;
@@ -242,6 +254,22 @@ export function createOptimizationWebMcpTools(
         return JSON.stringify({
           applied: true,
           surfaceCount: result.surfaceCount,
+        });
+      },
+    },
+    discardOptimizationResult: {
+      name: "discard_optimization_result",
+      description:
+        "Discard the pending optimized lens prescription and restore the Optimization page's prescription from the Lens Editor, like the Discard button after confirmation. The Lens Editor is not changed. Returns an error while an optimization is running.",
+      inputSchema: emptyOptimizationInputSchema,
+      annotations: { readOnlyHint: false, untrustedContentHint: false },
+      execute: async (input, { signal }) => {
+        assertWebMcpInput(validators.empty, input);
+        assertWebMcpNotCancelled(signal);
+        const result = currentDependencies(source).discard(signal);
+        return JSON.stringify({
+          discarded: true,
+          wasPending: result.wasPending,
         });
       },
     },

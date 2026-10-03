@@ -6,8 +6,9 @@ import {
 } from "@/shared/lib/navigation/pageDefinitions";
 import {
   createPageNavigationTools,
+  PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR,
   type ActivePageResult,
-  type PageNavigationResult,
+  type PageNavigatedResult,
   type OptimizationNavigationResult,
 } from "@/app/pageNavigationWebMcp";
 
@@ -15,7 +16,7 @@ function setup() {
   let currentPage: ActivePageResult["page"] = "lens_editor";
   let pendingNavigation: ActivePageResult["pendingNavigation"];
   const navigateToPage = jest.fn<
-    PageNavigationResult,
+    PageNavigatedResult,
     [ActivePageResult["page"]]
   >((page) => ({ status: "navigated", page }));
   const resolveOptimizationNavigation = jest.fn<
@@ -51,6 +52,14 @@ function setup() {
     },
   };
 }
+
+describe("pending Optimization result navigation error", () => {
+  it("tells the agent to apply or discard the pending prescription", () => {
+    expect(PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR).toBe(
+      "Cannot leave the Optimization page while an optimized lens prescription is pending. Call apply_optimization_to_editor to apply it to the Lens Editor, or call discard_optimization_result to discard it, then call set_active_page again.",
+    );
+  });
+});
 
 describe("page definitions", () => {
   it("contains the eight canonical routes in SideNav order", () => {
@@ -208,7 +217,7 @@ describe("page navigation WebMCP tools", () => {
     });
   });
 
-  it("reports direct and guarded page navigation results", async () => {
+  it("reports direct navigation and propagates the pending-result navigation error", async () => {
     const { execute, navigateToPage } = setup();
 
     expect(
@@ -216,18 +225,12 @@ describe("page navigation WebMCP tools", () => {
     ).toEqual({ status: "navigated", page: "about" });
     expect(navigateToPage).toHaveBeenCalledWith("about");
 
-    navigateToPage.mockReturnValueOnce({
-      status: "pending_optimization_confirmation",
-      currentPage: "optimization",
-      requestedPage: "settings",
+    navigateToPage.mockImplementationOnce(() => {
+      throw new Error(PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR);
     });
-    expect(
-      JSON.parse(String(await execute("setActivePage", { page: "settings" }))),
-    ).toEqual({
-      status: "pending_optimization_confirmation",
-      currentPage: "optimization",
-      requestedPage: "settings",
-    });
+    await expect(
+      execute("setActivePage", { page: "settings" }),
+    ).rejects.toThrow(PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR);
   });
 
   it.each([

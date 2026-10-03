@@ -142,8 +142,8 @@ describe("useAppShellNavigation", () => {
     expect(result.current.confirmationModalProps.isOpen).toBe(false);
     expect(mockRouter.push).not.toHaveBeenCalled();
 
-    await act(async () => {
-      await execute("set_active_page", { page: "settings" });
+    act(() => {
+      result.current.guardedNavigate("/settings");
     });
     expect(result.current.confirmationModalProps.isOpen).toBe(true);
     act(() => {
@@ -155,6 +155,33 @@ describe("useAppShellNavigation", () => {
       mockOptimizationStore.getState().hasUnappliedOptimizationResult,
     ).toBe(true);
     expect(getSurfaceSemiDiameters).not.toHaveBeenCalled();
+  });
+
+  it("rejects WebMCP page navigation away from a pending Optimization result without deferring it", async () => {
+    const { result } = renderHook(() =>
+      useAppShellNavigation(proxy, openErrorModal),
+    );
+
+    await expect(
+      execute("set_active_page", { page: "settings" }),
+    ).rejects.toThrow(
+      "Cannot leave the Optimization page while an optimized lens prescription is pending. Call apply_optimization_to_editor to apply it to the Lens Editor, or call discard_optimization_result to discard it, then call set_active_page again.",
+    );
+    expect(mockRouter.push).not.toHaveBeenCalled();
+    expect(result.current.confirmationModalProps.isOpen).toBe(false);
+    expect(JSON.parse(String(await execute("get_active_page", {})))).toEqual({
+      page: "optimization",
+    });
+  });
+
+  it("navigates through WebMCP as soon as the pending Optimization result is cleared", async () => {
+    renderHook(() => useAppShellNavigation(proxy, openErrorModal));
+    mockOptimizationStore.setState({ hasUnappliedOptimizationResult: false });
+
+    expect(
+      JSON.parse(String(await execute("set_active_page", { page: "about" }))),
+    ).toEqual({ status: "navigated", page: "about" });
+    expect(mockRouter.push).toHaveBeenCalledWith("/about");
   });
 
   it("waits for atomic editor synchronization before marking applied and navigating", async () => {

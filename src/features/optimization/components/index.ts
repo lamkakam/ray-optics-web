@@ -5,6 +5,7 @@ export * from "./OptimizationLensPrescriptionGrid";
 export * from "./OptimizationActionBar";
 export * from "./OptimizationAlgorithmTab";
 export * from "./OptimizationApplyConfirmModal";
+export * from "./OptimizationDiscardConfirmModal";
 export * from "./OptimizationEvaluationPanel";
 export * from "./OptimizationInspectionModals";
 export * from "./OptimizationOperandsTab";

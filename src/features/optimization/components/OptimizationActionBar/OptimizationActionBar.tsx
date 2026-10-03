@@ -7,21 +7,27 @@ interface OptimizationActionBarProps {
   readonly canOptimize: boolean;
   /** enables `Apply to Editor` when there is an optimization model to apply. */
   readonly canApplyToEditor: boolean;
+  /** enables `Discard` when there is a pending optimized prescription that can be discarded. */
+  readonly canDiscard: boolean;
   /** disables `Optimize` while an optimization run is active. */
   readonly isOptimizing: boolean;
   /** called by `Optimize`. */
   readonly onOptimize: () => void;
   /** called by `Apply to Editor`. */
   readonly onApplyToEditor: () => void;
+  /** called by `Discard`. */
+  readonly onDiscard: () => void;
 }
 
 /** Renders the optimization page primary actions and delegates button state/click handling to page-level callbacks. */
 export function OptimizationActionBar({
   canOptimize,
   canApplyToEditor,
+  canDiscard,
   isOptimizing,
   onOptimize,
   onApplyToEditor,
+  onDiscard,
 }: OptimizationActionBarProps) {
   return (
     <div className="mb-4 flex gap-3">
@@ -40,6 +46,14 @@ export function OptimizationActionBar({
         disabled={!canApplyToEditor}
       >
         Apply to Editor
+      </Button>
+      <Button
+        variant="danger"
+        aria-label="Discard"
+        onClick={onDiscard}
+        disabled={!canDiscard}
+      >
+        Discard
       </Button>
     </div>
   );

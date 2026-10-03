@@ -45,6 +45,7 @@ describe("useOptimizationWebMCP", () => {
         evaluate: jest.fn().mockResolvedValue({}),
         execute: jest.fn().mockResolvedValue({}),
         apply: jest.fn().mockResolvedValue({ surfaceCount: 0 }),
+        discard: jest.fn().mockReturnValue({ wasPending: false }),
         dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
         stop: jest.fn().mockReturnValue({ state: "not_running" }),
         readProgress: jest
@@ -59,6 +60,7 @@ describe("useOptimizationWebMCP", () => {
       "evaluate_optimization_operands",
       "execute_optimization",
       "apply_optimization_to_editor",
+      "discard_optimization_result",
       "dismiss_optimization_progress",
       "stop_optimization",
       "get_optimization_progress",
@@ -90,6 +92,7 @@ describe("useOptimizationWebMCP", () => {
       evaluate,
       execute: jest.fn().mockResolvedValue({}),
       apply: jest.fn().mockResolvedValue({ surfaceCount: 0 }),
+      discard: jest.fn().mockReturnValue({ wasPending: false }),
       dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
       stop: jest.fn().mockReturnValue({ state: "not_running" }),
       readProgress: jest
@@ -112,7 +115,7 @@ describe("useOptimizationWebMCP", () => {
     ).resolves.toBe(JSON.stringify({ second: true }));
     expect(firstEvaluate).not.toHaveBeenCalled();
     expect(secondEvaluate).toHaveBeenCalledTimes(1);
-    expect(registrations).toHaveLength(8);
+    expect(registrations).toHaveLength(9);
     unmount();
   });
 });
