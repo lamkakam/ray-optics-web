@@ -2732,6 +2732,135 @@ describe("OptimizationPage", () => {
     });
   });
 
+  it("disables Discard until an optimized prescription is pending", async () => {
+    renderOptimizationPage(makeProxy());
+
+    expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+  });
+
+  it("confirms Discard and restores the lens editor prescription without changing the editor", async () => {
+    const proxy = makeProxy();
+    const onApplyToEditor = jest.fn();
+    const { lensStore, optimizationStore } = renderOptimizationPage(
+      proxy,
+      jest.fn(),
+      undefined,
+      { onApplyToEditor },
+    );
+    const user = userEvent.setup();
+    const editorRowsBeforeRun = lensStore.getState().rows;
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+    });
+    await clickOptimizeAfterEvaluation(user);
+    await waitFor(() =>
+      expect(
+        optimizationStore.getState().optimizationModel?.surfaces[0]
+          .curvatureRadius,
+      ).toBe(42),
+    );
+    await user.click(screen.getByRole("button", { name: "OK" }));
+
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+    expect(
+      screen.getByText(/discard the optimized lens prescription/i),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(
+      screen.queryByText(/discard the optimized lens prescription/i),
+    ).not.toBeInTheDocument();
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+      true,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Discard Optimization Result",
+    });
+    await user.click(within(dialog).getByRole("button", { name: "Discard" }));
+
+    expect(
+      optimizationStore.getState().optimizationModel?.surfaces[0]
+        .curvatureRadius,
+    ).toBe(50);
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+      false,
+    );
+    expect(optimizationStore.getState().radiusModes[0]).toMatchObject({
+      mode: "variable",
+    });
+    expect(lensStore.getState().rows).toBe(editorRowsBeforeRun);
+    expect(onApplyToEditor).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("dialog", { name: "Discard Optimization Result" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+  });
+
+  it("discards the pending prescription through the discard_optimization_result tool", async () => {
+    const registrations: WebMCP.ModelContextTool[] = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+          registrations.push(tool);
+        }),
+      },
+    });
+    const proxy = makeProxy();
+    const { lensStore, optimizationStore } = renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+    const editorRowsBeforeRun = lensStore.getState().rows;
+    await waitFor(() => expect(registrations).toHaveLength(9));
+    const discard = registrations.find(
+      (tool) => tool.name === "discard_optimization_result",
+    )!;
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+    });
+    await clickOptimizeAfterEvaluation(user);
+    await waitFor(() =>
+      expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+        true,
+      ),
+    );
+
+    let discarded: unknown;
+    await act(async () => {
+      discarded = await discard.execute(
+        {},
+        { signal: new AbortController().signal },
+      );
+    });
+
+    expect(JSON.parse(String(discarded))).toEqual({
+      discarded: true,
+      wasPending: true,
+    });
+    expect(
+      optimizationStore.getState().optimizationModel?.surfaces[0]
+        .curvatureRadius,
+    ).toBe(50);
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
+      false,
+    );
+    expect(lensStore.getState().rows).toBe(editorRowsBeforeRun);
+  });
+
   it("tracks live lens-editor changes after the optimization page has mounted", async () => {
     const { lensStore, optimizationStore } = renderOptimizationPage(
       makeProxy(),
@@ -2976,7 +3105,7 @@ describe("OptimizationPage", () => {
     const proxy = makeProxy();
     const { lensStore, optimizationStore, unmount } =
       renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(8));
+    await waitFor(() => expect(registrations).toHaveLength(9));
     const tools = new Map(
       registrations.map(({ tool }) => [tool.name, tool] as const),
     );
@@ -3049,6 +3178,7 @@ describe("OptimizationPage", () => {
       "evaluate_optimization_operands",
       "execute_optimization",
       "apply_optimization_to_editor",
+      "discard_optimization_result",
       "dismiss_optimization_progress",
       "stop_optimization",
       "get_optimization_progress",
@@ -3086,7 +3216,7 @@ describe("OptimizationPage", () => {
           undefined,
           { onApplyToEditor },
         );
-      await waitFor(() => expect(registrations).toHaveLength(8));
+      await waitFor(() => expect(registrations).toHaveLength(9));
       const optimizedModel: OpticalModel = {
         ...baseModel,
         setAutoAperture: "autoAperture",
@@ -3168,7 +3298,7 @@ describe("OptimizationPage", () => {
     });
     const { optimizationStore } = renderOptimizationPage(proxy);
     const signalController = new AbortController();
-    await waitFor(() => expect(registrations).toHaveLength(8));
+    await waitFor(() => expect(registrations).toHaveLength(9));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3253,7 +3383,7 @@ describe("OptimizationPage", () => {
       },
     });
     renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(8));
+    await waitFor(() => expect(registrations).toHaveLength(9));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3345,7 +3475,7 @@ describe("OptimizationPage", () => {
       },
     });
     renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(8));
+    await waitFor(() => expect(registrations).toHaveLength(9));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );
@@ -3540,7 +3670,7 @@ describe("OptimizationPage", () => {
     });
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
-    await waitFor(() => expect(registrations).toHaveLength(8));
+    await waitFor(() => expect(registrations).toHaveLength(9));
     const tools = new Map(
       registrations.map((tool) => [tool.name, tool] as const),
     );

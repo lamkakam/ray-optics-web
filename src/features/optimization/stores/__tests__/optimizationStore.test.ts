@@ -2665,4 +2665,94 @@ describe("optimizationStore", () => {
       conicConstant: -1,
     });
   });
+
+  describe("discardOptimizationResult", () => {
+    function createOptimizedStore() {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      store.getState().initializeFromOpticalModel(baseModel);
+      store.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+      store
+        .getState()
+        .replaceOperands([
+          { id: "operand", kind: "focal_length", target: "100", weight: "1" },
+        ]);
+      store
+        .getState()
+        .applyOptimizationResult(
+          continuousReport([{ kind: "radius", surface_index: 1, value: 55 }]),
+        );
+      return store;
+    }
+
+    it("restores the Editor prescription and clears the pending result", () => {
+      const store = createOptimizedStore();
+      expect(
+        store.getState().optimizationModel?.surfaces[0].curvatureRadius,
+      ).toBe(55);
+      expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
+
+      const result = store.getState().discardOptimizationResult(baseModel);
+
+      expect(result).toEqual({ hadUnappliedResult: true });
+      expect(store.getState().optimizationModel).toEqual(baseModel);
+      expect(store.getState().hasUnappliedOptimizationResult).toBe(false);
+      expect(store.getState().lastOptimizationReport).toBeUndefined();
+    });
+
+    it("keeps variable modes and operands", () => {
+      const store = createOptimizedStore();
+
+      store.getState().discardOptimizationResult(baseModel);
+
+      expect(store.getState().buildOptimizationConfig()).toMatchObject({
+        variables: [{ kind: "radius", surface_index: 1 }],
+        merit_function: { operands: [{ kind: "focal_length", target: 100 }] },
+      });
+    });
+
+    it("keeps later Editor syncs from treating the restored model as changed", () => {
+      const store = createOptimizedStore();
+
+      store.getState().discardOptimizationResult(baseModel);
+      store.getState().syncFromOpticalModel(baseModel);
+
+      expect(store.getState().radiusModes[0]).toMatchObject({
+        mode: "variable",
+      });
+    });
+
+    it("reports when there was no pending result", () => {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      store.getState().initializeFromOpticalModel(baseModel);
+
+      expect(store.getState().discardOptimizationResult(baseModel)).toEqual({
+        hadUnappliedResult: false,
+      });
+    });
+
+    it("throws while an optimization run is active", () => {
+      const store = createOptimizedStore();
+      store.getState().setIsOptimizing(true);
+
+      expect(() =>
+        store.getState().discardOptimizationResult(baseModel),
+      ).toThrow(
+        "Cannot discard optimization result while a run is already running.",
+      );
+      expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
+    });
+  });
+
+  it("opens and closes the discard confirmation", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    expect(store.getState().discardConfirmOpen).toBe(false);
+    store.getState().openDiscardConfirm();
+    expect(store.getState().discardConfirmOpen).toBe(true);
+    store.getState().closeDiscardConfirm();
+    expect(store.getState().discardConfirmOpen).toBe(false);
+  });
 });

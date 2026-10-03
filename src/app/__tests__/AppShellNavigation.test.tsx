@@ -290,7 +290,7 @@ describe("AppShell navigation callback", () => {
     },
   );
 
-  it("shares the Optimization leave guard with WebMCP navigation", async () => {
+  it("rejects WebMCP navigation away from Optimization while a result is pending", async () => {
     mockPathname = "/optimization";
     mockHasUnappliedResult = true;
     const registerTool = jest.fn().mockResolvedValue(undefined);
@@ -304,24 +304,19 @@ describe("AppShell navigation callback", () => {
       ([tool]) => tool.name === "set_active_page",
     )?.[0] as WebMCP.ModelContextTool;
 
-    let result: unknown;
-    await act(async () => {
-      result = await setActivePage.execute(
+    await expect(
+      setActivePage.execute(
         { page: "about" },
         { signal: new AbortController().signal },
-      );
-    });
-
-    expect(JSON.parse(String(result))).toEqual({
-      status: "pending_optimization_confirmation",
-      currentPage: "optimization",
-      requestedPage: "about",
-    });
+      ),
+    ).rejects.toThrow(
+      /apply_optimization_to_editor.*discard_optimization_result/,
+    );
     expect(mockPush).not.toHaveBeenCalled();
-    expect(mockUnappliedModalProps?.isOpen).toBe(true);
+    expect(mockUnappliedModalProps?.isOpen).toBe(false);
   });
 
-  it("resolves WebMCP Optimization navigation through Stay, Leave, and Apply", async () => {
+  it("resolves SideNav-deferred Optimization navigation through WebMCP Stay, Leave, and Apply", async () => {
     mockPathname = "/optimization";
     mockHasUnappliedResult = true;
     mockOptimizationModel = {} as OpticalModel;
@@ -336,15 +331,14 @@ describe("AppShell navigation callback", () => {
       registerTool.mock.calls.find(([tool]) => tool.name === name)?.[0] as
         | WebMCP.ModelContextTool
         | undefined;
-    const setActivePage = getTool("set_active_page");
     const resolveNavigation = getTool("resolve_optimization_navigation");
     const execute = async (tool: WebMCP.ModelContextTool, input: unknown) =>
       tool.execute(input as Record<string, unknown>, {
         signal: new AbortController().signal,
       });
 
-    await act(async () => {
-      await execute(setActivePage!, { page: "settings" });
+    act(() => {
+      mockCapturedOnNavigate?.("/settings");
     });
     let result: unknown;
     await act(async () => {
@@ -354,8 +348,8 @@ describe("AppShell navigation callback", () => {
     expect(mockPush).not.toHaveBeenCalled();
     expect(mockUnappliedModalProps?.isOpen).toBe(false);
 
-    await act(async () => {
-      await execute(setActivePage!, { page: "settings" });
+    act(() => {
+      mockCapturedOnNavigate?.("/settings");
     });
     await act(async () => {
       result = await execute(resolveNavigation!, { action: "leave" });
@@ -368,8 +362,8 @@ describe("AppShell navigation callback", () => {
 
     mockPush.mockClear();
     mockPathname = "/optimization";
-    await act(async () => {
-      await execute(setActivePage!, { page: "settings" });
+    act(() => {
+      mockCapturedOnNavigate?.("/settings");
     });
     mockApplyOptimizationModelToEditor.mockResolvedValue(undefined);
     await act(async () => {
@@ -441,11 +435,8 @@ describe("AppShell navigation callback", () => {
         registerTool.mock.calls.find(
           ([tool]) => tool.name === name,
         )![0] as WebMCP.ModelContextTool;
-      await act(async () => {
-        await getTool("set_active_page").execute(
-          { page: "settings" },
-          { signal: new AbortController().signal },
-        );
+      act(() => {
+        mockCapturedOnNavigate?.("/settings");
       });
       const initialLensState = mockLensStore.getState();
       const initialSpecsState = mockSpecsStore.getState();

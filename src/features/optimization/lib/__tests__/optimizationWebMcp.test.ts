@@ -52,7 +52,7 @@ const config: OptimizationConfig = {
 };
 
 describe("optimization WebMCP tools", () => {
-  it("creates the eight tools in order with strict annotations", () => {
+  it("creates the nine tools in order with strict annotations", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     const tools = createOptimizationWebMcpTools({
       optimizationStore: store,
@@ -60,6 +60,7 @@ describe("optimization WebMCP tools", () => {
       evaluate: jest.fn().mockResolvedValue(report),
       execute: jest.fn().mockResolvedValue(report),
       apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      discard: jest.fn().mockReturnValue({ wasPending: false }),
       dismissProgress: jest.fn().mockReturnValue({ wasOpen: true }),
       stop: jest.fn().mockReturnValue({ state: "not_running" }),
       readProgress: jest.fn().mockReturnValue(idleProgress),
@@ -71,12 +72,17 @@ describe("optimization WebMCP tools", () => {
       "evaluate_optimization_operands",
       "execute_optimization",
       "apply_optimization_to_editor",
+      "discard_optimization_result",
       "dismiss_optimization_progress",
       "stop_optimization",
       "get_optimization_progress",
     ]);
     expect(tools.getOptimizationProgress.annotations).toEqual({
       readOnlyHint: true,
+      untrustedContentHint: false,
+    });
+    expect(tools.discardOptimizationResult.annotations).toEqual({
+      readOnlyHint: false,
       untrustedContentHint: false,
     });
     expect(tools.dismissOptimizationProgress.annotations).toEqual({
@@ -112,6 +118,7 @@ describe("optimization WebMCP tools", () => {
     const evaluate = jest.fn().mockResolvedValue(report);
     const execute = jest.fn().mockResolvedValue(report);
     const apply = jest.fn().mockResolvedValue({ surfaceCount: 2 });
+    const discard = jest.fn().mockReturnValue({ wasPending: true });
     const dismissProgress = jest.fn().mockReturnValue({ wasOpen: true });
     const stop = jest.fn().mockReturnValue({ state: "stop_requested" });
     const readProgress = jest.fn().mockReturnValue(idleProgress);
@@ -121,6 +128,7 @@ describe("optimization WebMCP tools", () => {
       evaluate,
       execute,
       apply,
+      discard,
       dismissProgress,
       stop,
       readProgress,
@@ -144,11 +152,15 @@ describe("optimization WebMCP tools", () => {
       tools.applyOptimizationToEditor.execute({}, { signal }),
     ).resolves.toBe(JSON.stringify({ applied: true, surfaceCount: 2 }));
     await expect(
+      tools.discardOptimizationResult.execute({}, { signal }),
+    ).resolves.toBe(JSON.stringify({ discarded: true, wasPending: true }));
+    await expect(
       tools.dismissOptimizationProgress.execute({}, { signal }),
     ).resolves.toBe(JSON.stringify({ dismissed: true, wasOpen: true }));
     expect(evaluate).toHaveBeenCalledWith(signal);
     expect(execute).toHaveBeenCalledWith(signal);
     expect(apply).toHaveBeenCalledWith(signal);
+    expect(discard).toHaveBeenCalledWith(signal);
     expect(dismissProgress).toHaveBeenCalledWith(signal);
     const stopped = await tools.stopOptimization.execute({}, { signal });
     expect(JSON.parse(String(stopped))).toEqual({
@@ -170,6 +182,9 @@ describe("optimization WebMCP tools", () => {
     ).rejects.toThrow(/Invalid input/);
     await expect(
       tools.getOptimizationConfig.execute({ unexpected: true }, { signal }),
+    ).rejects.toThrow(/Invalid input/);
+    await expect(
+      tools.discardOptimizationResult.execute({ unexpected: true }, { signal }),
     ).rejects.toThrow(/Invalid input/);
     await expect(
       tools.dismissOptimizationProgress.execute(
@@ -200,6 +215,12 @@ describe("optimization WebMCP tools", () => {
       ),
     ).rejects.toMatchObject({ name: "AbortError" });
     await expect(
+      tools.discardOptimizationResult.execute(
+        {},
+        { signal: controller.signal },
+      ),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    await expect(
       tools.dismissOptimizationProgress.execute(
         {},
         { signal: controller.signal },
@@ -214,9 +235,38 @@ describe("optimization WebMCP tools", () => {
     expect(evaluate).toHaveBeenCalledTimes(1);
     expect(execute).toHaveBeenCalledTimes(1);
     expect(apply).toHaveBeenCalledTimes(1);
+    expect(discard).toHaveBeenCalledTimes(1);
     expect(dismissProgress).toHaveBeenCalledTimes(1);
     expect(stop).toHaveBeenCalledTimes(1);
     expect(readProgress).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the discard operation error to the caller while optimization is running", async () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    const tools = createOptimizationWebMcpTools({
+      optimizationStore: store,
+      catalogs: undefined,
+      evaluate: jest.fn().mockResolvedValue(report),
+      execute: jest.fn().mockResolvedValue(report),
+      apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      discard: jest.fn(() => {
+        throw new Error(
+          "Cannot discard optimization result while a run is already running.",
+        );
+      }),
+      dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
+      stop: jest.fn().mockReturnValue({ state: "not_running" }),
+      readProgress: jest.fn().mockReturnValue(idleProgress),
+    });
+
+    await expect(
+      tools.discardOptimizationResult.execute(
+        {},
+        { signal: new AbortController().signal },
+      ),
+    ).rejects.toThrow(
+      "Cannot discard optimization result while a run is already running.",
+    );
   });
 
   it("returns the dismiss operation error to the caller while optimization is running", async () => {
@@ -227,6 +277,7 @@ describe("optimization WebMCP tools", () => {
       evaluate: jest.fn().mockResolvedValue(report),
       execute: jest.fn().mockResolvedValue(report),
       apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      discard: jest.fn().mockReturnValue({ wasPending: false }),
       dismissProgress: jest.fn(() => {
         throw new Error("Optimization is still running.");
       }),
@@ -258,6 +309,7 @@ describe("optimization WebMCP tools", () => {
         evaluate: jest.fn().mockResolvedValue(report),
         execute: jest.fn().mockResolvedValue(report),
         apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+        discard: jest.fn().mockReturnValue({ wasPending: false }),
         dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
         stop: jest.fn().mockReturnValue({ state }),
         readProgress: jest.fn().mockReturnValue(idleProgress),
@@ -286,6 +338,7 @@ describe("optimization WebMCP tools", () => {
       evaluate: jest.fn().mockResolvedValue(report),
       execute: jest.fn().mockResolvedValue(report),
       apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      discard: jest.fn().mockReturnValue({ wasPending: false }),
       dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
       stop: jest.fn(() => {
         throw new Error("Cannot interrupt.");
@@ -339,6 +392,7 @@ describe("optimization WebMCP tools", () => {
         evaluate: jest.fn().mockResolvedValue(report),
         execute: jest.fn().mockResolvedValue(report),
         apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+        discard: jest.fn().mockReturnValue({ wasPending: false }),
         dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
         stop: jest.fn().mockReturnValue({ state: "not_running" }),
         readProgress: jest
@@ -372,6 +426,7 @@ describe("optimization WebMCP tools", () => {
       evaluate: jest.fn().mockResolvedValue(report),
       execute: jest.fn().mockResolvedValue(report),
       apply: jest.fn().mockResolvedValue({ surfaceCount: 2 }),
+      discard: jest.fn().mockReturnValue({ wasPending: false }),
       dismissProgress: jest.fn().mockReturnValue({ wasOpen: false }),
       stop: jest.fn().mockReturnValue({ state: "not_running" }),
       readProgress: jest.fn().mockReturnValue({ isRunning: true, progress }),

@@ -21,6 +21,7 @@ import {
   BottomDrawerContainer,
   OptimizationActionBar,
   OptimizationApplyConfirmModal,
+  OptimizationDiscardConfirmModal,
   OptimizationEvaluationPanel,
   OptimizationInspectionModals,
   OptimizationProgressModal,
@@ -67,6 +68,7 @@ import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProv
 import { useOptimizationWebMCP } from "./hooks/useOptimizationWebMCP";
 import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
 import type {
+  OptimizationDiscardResult,
   OptimizationProgressSnapshot,
   OptimizationStopResult,
 } from "./lib/optimizationWebMcp";
@@ -125,6 +127,7 @@ function buildCurrentEditorModel(
  * - Renders the extracted `OptimizationActionBar` above the tabs with:
  * - `Optimize`
  * - `Apply to Editor`
+ * - `Discard` (danger), enabled only while an optimized prescription is pending and no run is active
  * - Derives the action button size from `useScreenBreakpoint()` and passes it to `OptimizationActionBar`: `xs` on `screenSM`, `sm` otherwise. This matches Lens Editor's `Update System` responsive sizing.
  * - Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, formats `Weight` and `Value` with 6 decimal places, can show a warning banner above the table or empty state, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
  * - When the current store state cannot build an optimization config, passes the thrown `buildOptimizationConfig()` error message into the evaluation panel so Operand Evaluation shows the specific invalid-config reason before either the table or the existing placeholder text.
@@ -161,8 +164,8 @@ function buildCurrentEditorModel(
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
  * - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
  * - Whenever the committed optimization config changes, the component immediately marks Operand Evaluation pending, clears the prior report, debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
- * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, `apply_optimization_to_editor`, `dismiss_optimization_progress`, `stop_optimization`, and `get_optimization_progress` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
- * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, application, and progress dismissal call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, confirmed Apply action, and progress-modal `OK`/backdrop close. Both `stop_optimization` and an aborted `execute_optimization` stop through that Stop path. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
+ * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, `apply_optimization_to_editor`, `discard_optimization_result`, `dismiss_optimization_progress`, `stop_optimization`, and `get_optimization_progress` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
+ * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, application, discard, and progress dismissal call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, confirmed Apply action, confirmed Discard action, and progress-modal `OK`/backdrop close. Both `stop_optimization` and an aborted `execute_optimization` stop through that Stop path. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
  * - A resolved failed evaluation report clears stale rows and displays the shared approved failure message. Initial-guess bounds validation retains its rollback report; a later successful evaluation clears warnings. Worker diagnostics are logged once at the boundary.
  * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
  * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
@@ -189,6 +192,7 @@ function buildCurrentEditorModel(
  * - Stopping is one shared operation used by the progress-modal Stop control and `stop_optimization`. While a run is active and interruptible, it signals the stop and returns `stop_requested` immediately without awaiting the worker acknowledgement; a repeated call for the same run returns `already_stopping`. With no active run it returns `already_stopped` when the last run settled as interrupted (a `stopped` report, or a rejection after a stop request), `already_completed` when the last run ended any other way, and `not_running` when no run has happened since mount. It throws when the active run has no interrupt buffer; the GUI handler ignores that error because the Stop control is disabled in that case.
  * - `get_optimization_progress` reads the same merit history the progress modal chart plots (reset when a run starts, replaced by each streamed update for the active run, then by the settled report's history) and whether a run is active. The history is mirrored in a ref so a call during a run sees the newest streamed update before the next render. The tool returns the step number and merit function value of the most recent step, of the step before it, and of the earliest step with the lowest merit function value so far.
  * - `Apply to Editor` asynchronously applies through `applyOptimizationModelToEditor()`, clearing the unapplied marker only after success. Synchronization failures retain the result and use the existing error UI.
+ * - `Discard` opens `OptimizationDiscardConfirmModal`; confirming runs the discard operation shared with `discard_optimization_result`. It rejects while a run is active, otherwise rebuilds the current Editor model through `buildCurrentEditorModel(...)`, calls the store's `discardOptimizationResult(...)` so the page-local prescription is restored while compatible variable/pickup modes, weights, operands, and algorithm settings are kept, closes the modal, and reports whether a result was pending. The Lens Editor and Specs stores are never mutated, and failures use the existing error UI.
  * - An aborted WebMCP execution sends the active run through the same interrupt-buffer and worker run-id Stop path as the modal, waits for the worker report to settle, mirrors any stopped partial result, and then rejects with `AbortError`.
  * - Modal rendering is delegated to extracted wrappers:
  * - `RadiusModeModal`
@@ -196,6 +200,7 @@ function buildCurrentEditorModel(
  * - `AsphereVarModal`
  * - `OptimizationProgressModal`
  * - `OptimizationApplyConfirmModal`
+ * - `OptimizationDiscardConfirmModal`
  * - `OptimizationInspectionModals`
  * - Modal-backed prescription columns still open the existing lens-editor dialogs in `readOnly` mode so users can inspect, but not edit, those settings from optimization, including aperture settings.
  *
@@ -203,7 +208,7 @@ function buildCurrentEditorModel(
  *
  * ## Key Conventions
  *
- * - The optimization page stays decoupled from the editor while open; it does not mutate the editor until the user confirms `Apply to Editor`.
+ * - The optimization page stays decoupled from the editor while open; it does not mutate the editor until the user confirms `Apply to Editor`. `Discard` only reads the editor to restore the page-local prescription.
  * - Half-field row labels convert relative samples through `maxField` and display absolute samples directly because those coordinates are already physical.
  * - Mount-time initialization preserves existing optimization weights, operands, algorithm settings, and variable/pickup modes when returning to the route without editor changes.
  * - Editor-driven optical-model changes propagate into optimization automatically; field, wavelength, and prescription differences are synchronized independently so only affected optimization defaults reset.
@@ -314,6 +319,14 @@ export function OptimizationPage({
   const applyConfirmOpen = useStore(
     optimizationStore,
     (state) => state.applyConfirmOpen,
+  );
+  const discardConfirmOpen = useStore(
+    optimizationStore,
+    (state) => state.discardConfirmOpen,
+  );
+  const hasUnappliedOptimizationResult = useStore(
+    optimizationStore,
+    (state) => state.hasUnappliedOptimizationResult,
   );
   const radiusModal = useStore(optimizationStore, (state) => state.radiusModal);
   const thicknessModal = useStore(
@@ -1161,12 +1174,49 @@ export function OptimizationPage({
     }
   }, [applyOptimizationOperation, onError]);
 
+  /** Restores the page-local prescription from the live Editor stores without mutating them; shared by the confirmed Discard action and WebMCP. */
+  const discardOptimizationOperation = useCallback(
+    (signal: AbortSignal): OptimizationDiscardResult => {
+      assertWebMcpNotCancelled(signal);
+      if (
+        optimizationStore.getState().isOptimizing ||
+        optimizationRunIdRef.current !== undefined
+      ) {
+        throw new Error(
+          "Cannot discard optimization result while a run is already running.",
+        );
+      }
+      const lensState = lensStore.getState();
+      const editorModel = buildCurrentEditorModel(
+        lensState.rows,
+        lensState.autoAperture,
+        lensState.autoSemiDiameters,
+        specsStore.getState().toOpticalSpecs(),
+      );
+      const { hadUnappliedResult } = optimizationStore
+        .getState()
+        .discardOptimizationResult(editorModel);
+      optimizationStore.getState().closeDiscardConfirm();
+      return { wasPending: hadUnappliedResult };
+    },
+    [lensStore, optimizationStore, specsStore],
+  );
+
+  const handleDiscardOptimizationResult = useCallback(() => {
+    try {
+      discardOptimizationOperation(new AbortController().signal);
+    } catch (error) {
+      onError(error);
+    }
+  }, [discardOptimizationOperation, onError]);
+
   useOptimizationWebMCP({
     optimizationStore,
     catalogs,
     evaluate: evaluateCurrentOptimization,
     execute: executeOptimizationOperation,
     apply: applyOptimizationOperation,
+    discard: discardOptimizationOperation,
     dismissProgress: dismissOptimizationProgressOperation,
     stop: stopOptimizationOperation,
     readProgress: readOptimizationProgressOperation,
@@ -1231,9 +1281,11 @@ export function OptimizationPage({
       <OptimizationActionBar
         canOptimize={canOptimize}
         canApplyToEditor={optimizationModel !== undefined}
+        canDiscard={hasUnappliedOptimizationResult && !isOptimizing}
         isOptimizing={isOptimizing}
         onOptimize={() => void handleOptimize()}
         onApplyToEditor={() => optimizationStore.getState().openApplyConfirm()}
+        onDiscard={() => optimizationStore.getState().openDiscardConfirm()}
       />
 
       <div ref={evaluationPanelRef}>
@@ -1311,6 +1363,12 @@ export function OptimizationPage({
         isOpen={applyConfirmOpen}
         onCancel={() => optimizationStore.getState().closeApplyConfirm()}
         onConfirm={() => void handleApplyToEditor()}
+      />
+
+      <OptimizationDiscardConfirmModal
+        isOpen={discardConfirmOpen}
+        onCancel={() => optimizationStore.getState().closeDiscardConfirm()}
+        onConfirm={handleDiscardOptimizationResult}
       />
 
       <OptimizationInspectionModals
