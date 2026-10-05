@@ -8,13 +8,14 @@ budget must cover at least one full SciPy population. Validation also enforces u
 stable option-driven residual counts after field/wavelength expansion. Tilt and
 decenter targets validate their interface and coordinate strategy, materialize
 missing target data, and leave missing pickup sources unconfigured. Operand
-normalization validates every supplied field and wavelength index, preserves
-sample order, and then removes combinations with an exactly zero operand, field,
-or wavelength weight.
+normalization enforces the kind's target mode, validates every supplied field and
+wavelength index, preserves sample order, and then removes combinations with an
+exactly zero operand, field, or wavelength weight.
 """
 
 from __future__ import annotations
 
+import math
 from collections import deque
 from copy import deepcopy
 from typing import cast
@@ -22,7 +23,7 @@ from typing import cast
 import numpy as np
 from rayoptics.environment import OpticalModel
 
-from .operands import OPERAND_REGISTRY, get_nominal_operand_sample_residual_count
+from .operands import OPERAND_REGISTRY, get_nominal_operand_sample_residual_count, operand_goal
 from .targets import (
     DECENTER_KINDS,
     DECENTER_TYPES,
@@ -309,8 +310,12 @@ def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
 def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) -> list[OperandSample]:
     """Expand one operand into ordered non-zero-weight field/wavelength samples.
 
-    All supplied indices are validated before exact-zero weights are filtered, so
-    disabled UI rows cannot conceal an invalid field or wavelength reference.
+    All supplied indices and target-mode fields are validated before exact-zero
+    weights are filtered, so disabled UI rows cannot conceal an invalid field or
+    wavelength reference or a malformed target. Target kinds require a finite
+    ``target``; targetless kinds accept neither ``target`` nor range bounds; range
+    kinds require at least one finite bound with ``min <= max`` and keep only the
+    supplied bounds.
 
     Args:
         opm: RayOptics optical model.
@@ -323,13 +328,12 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
     if kind not in OPERAND_REGISTRY:
         raise ValueError(f"Unknown operand kind: {kind}")
 
-    base: OperandSample = {
+    base = {
         "kind": kind,
         "weight": float(operand.get("weight", 1.0)),
         "options": deepcopy(operand.get("options") or {}),
+        **normalize_operand_goal_fields(kind, operand),
     }
-    if kind not in {"ray_fan", "ray_fan_tangential", "ray_fan_sagittal"}:
-        base["target"] = float(operand.get("target", 0.0))
 
     if kind in {"focal_length", "f_number"}:
         if base["weight"] == 0.0:
@@ -368,6 +372,50 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
                 }
             )
     return normalized
+
+
+def normalize_operand_goal_fields(kind: str, operand: OperandConfigInput) -> dict[str, float]:
+    """Validate and return the target-mode fields carried by one operand.
+
+    Args:
+        kind: Registered operand kind.
+        operand: Unnormalized operand configuration.
+
+    Returns:
+        ``{"target": ...}`` for target kinds, the supplied ``min``/``max`` for
+        range kinds, or an empty mapping for targetless kinds.
+
+    Raises:
+        ValueError: If the operand's fields do not match its kind's target mode.
+    """
+    goal = operand_goal(kind)
+    has_bounds = "min" in operand or "max" in operand
+    if goal != "range" and has_bounds:
+        raise ValueError(f"Operand {kind} does not accept range bounds")
+    if goal != "target" and "target" in operand:
+        raise ValueError(f"Operand {kind} does not accept a target")
+    if goal == "none":
+        return {}
+    if goal == "target":
+        target = operand.get("target")
+        if not _is_finite_number(target):
+            raise ValueError(f"Operand {kind} requires a finite target")
+        return {"target": float(target)}
+
+    if not has_bounds:
+        raise ValueError(f"Operand {kind} range requires at least one bound")
+    bounds = {key: operand[key] for key in ("min", "max") if key in operand}
+    if not all(_is_finite_number(value) for value in bounds.values()):
+        raise ValueError(f"Operand {kind} range bounds must be finite")
+    normalized = {key: float(value) for key, value in bounds.items()}
+    if "min" in normalized and "max" in normalized and normalized["min"] > normalized["max"]:
+        raise ValueError(f"Operand {kind} range min must not exceed max")
+    return normalized
+
+
+def _is_finite_number(value: object) -> bool:
+    """Return whether a config value is a finite real number (booleans excluded)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def normalize_merit_function(opm: OpticalModel, merit_function: MeritFunctionConfigInput) -> MeritFunctionConfig:

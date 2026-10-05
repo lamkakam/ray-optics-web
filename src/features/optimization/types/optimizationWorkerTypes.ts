@@ -33,51 +33,77 @@ export type GlassCatalogName =
   | "Sumita"
   | "Special"
   | "Custom";
-/** Worker-supported merit operand discriminators. */
-export type OptimizationOperandKind =
+/** Operand kinds that require exactly one scalar `target`. */
+export type OptimizationTargetOperandKind =
   | "focal_length"
   | "f_number"
   | "opd_difference"
   | "opd_difference_tangential"
   | "opd_difference_sagittal"
   | "rms_spot_size"
-  | "rms_wavefront_error"
+  | "rms_wavefront_error";
+/** Operand kinds whose (possibly vector) values are driven toward zero without a target. */
+export type OptimizationTargetlessOperandKind =
   | "ray_fan"
   | "ray_fan_tangential"
   | "ray_fan_sagittal";
+/** Operand kinds bounded by `min`/`max`; reserved, no kind uses range mode yet. */
+export type OptimizationRangeOperandKind = never;
+/** Worker-supported merit operand discriminators. */
+export type OptimizationOperandKind =
+  | OptimizationTargetOperandKind
+  | OptimizationTargetlessOperandKind
+  | OptimizationRangeOperandKind;
 
-/** Targeted scalar or target-less vector operand configuration. */
+/** Inclusive operand range with at least one finite bound; a missing bound is unbounded. */
+export type OptimizationOperandRange =
+  | { readonly min: number; readonly max?: number }
+  | { readonly min?: number; readonly max: number };
+
+/** Weighting and sampling fields shared by every operand configuration. */
+interface OptimizationOperandConfigBase {
+  readonly weight: number;
+  readonly fields?: ReadonlyArray<{
+    readonly index: number;
+    readonly weight: number;
+  }>;
+  readonly wavelengths?: ReadonlyArray<{
+    readonly index: number;
+    readonly weight: number;
+  }>;
+  /** Optional sampling controls, preserved by the Optimization GUI. */
+  readonly options?: { readonly num_rays?: number };
+}
+
+/** Scalar operand driven toward one target value. */
+export interface OptimizationTargetOperandConfig
+  extends OptimizationOperandConfigBase {
+  readonly kind: OptimizationTargetOperandKind;
+  readonly target: number;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** Target-less (vector) operand driven toward zero. */
+export interface OptimizationTargetlessOperandConfig
+  extends OptimizationOperandConfigBase {
+  readonly kind: OptimizationTargetlessOperandKind;
+  readonly target?: undefined;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** Operand penalized only outside its inclusive range. */
+export type OptimizationRangeOperandConfig = OptimizationOperandConfigBase & {
+  readonly kind: OptimizationRangeOperandKind;
+  readonly target?: undefined;
+} & OptimizationOperandRange;
+
+/** Operand configuration whose target fields are determined by `kind`. */
 export type OptimizationOperandConfig =
-  | {
-      readonly kind: OptimizationOperandKind;
-      readonly target: number;
-      readonly weight: number;
-      readonly fields?: ReadonlyArray<{
-        readonly index: number;
-        readonly weight: number;
-      }>;
-      readonly wavelengths?: ReadonlyArray<{
-        readonly index: number;
-        readonly weight: number;
-      }>;
-      /** Optional sampling controls, preserved by the Optimization GUI. */
-      readonly options?: { readonly num_rays?: number };
-    }
-  | {
-      readonly kind: OptimizationOperandKind;
-      readonly target?: undefined;
-      readonly weight: number;
-      readonly fields?: ReadonlyArray<{
-        readonly index: number;
-        readonly weight: number;
-      }>;
-      readonly wavelengths?: ReadonlyArray<{
-        readonly index: number;
-        readonly weight: number;
-      }>;
-      /** Optional sampling controls, preserved by the Optimization GUI. */
-      readonly options?: { readonly num_rays?: number };
-    };
+  | OptimizationTargetOperandConfig
+  | OptimizationTargetlessOperandConfig
+  | OptimizationRangeOperandConfig;
 
 /**
  * Solver-specific continuous optimizer configuration.
@@ -300,10 +326,8 @@ export type OptimizationPickupEntry =
       readonly value: number;
     };
 
-/** One scalar residual; target is absent for target-less vector operands. */
-export interface OptimizationResidualEntry {
-  readonly kind: string;
-  readonly target?: number;
+/** Evaluated value, sampling context, and weighting shared by every residual. */
+interface OptimizationResidualEntryBase {
   readonly value: number;
   readonly field_index?: number;
   readonly wavelength_index?: number;
@@ -313,6 +337,36 @@ export interface OptimizationResidualEntry {
   readonly total_weight: number;
   readonly weighted_residual: number;
 }
+
+/** Residual of a target operand, reporting its target. */
+export interface OptimizationTargetResidualEntry
+  extends OptimizationResidualEntryBase {
+  readonly kind: OptimizationTargetOperandKind;
+  readonly target: number;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** One scalar sample of a target-less vector operand. */
+export interface OptimizationTargetlessResidualEntry
+  extends OptimizationResidualEntryBase {
+  readonly kind: OptimizationTargetlessOperandKind;
+  readonly target?: undefined;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** Residual of a range operand, reporting the supplied bounds. */
+export type OptimizationRangeResidualEntry = OptimizationResidualEntryBase & {
+  readonly kind: OptimizationRangeOperandKind;
+  readonly target?: undefined;
+} & OptimizationOperandRange;
+
+/** One scalar residual whose reported target fields are determined by `kind`. */
+export type OptimizationResidualEntry =
+  | OptimizationTargetResidualEntry
+  | OptimizationTargetlessResidualEntry
+  | OptimizationRangeResidualEntry;
 
 /** One chronological merit-history sample. */
 export interface OptimizationProgressEntry {

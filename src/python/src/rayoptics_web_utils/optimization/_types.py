@@ -4,9 +4,10 @@ Input and normalized configs remain distinct. Solver options are discriminated b
 kind, mutable targets by target kind, and result mappings allow solver-specific
 metadata. Glass-expert inputs keep categorical candidates ordered separately from
 continuous targets. Returned statuses distinguish successful evaluation/stop states,
-numeric solver statuses, and ordinary Python ``"error"`` reports. Operand evaluators
-may return scalars or residual vectors and receive the image-point convention
-explicitly. Snapshot entries retain the complete target descriptor so rollback
+numeric solver statuses, and ordinary Python ``"error"`` reports. Operand configs,
+normalized samples, and residual entries are discriminated by kind into target,
+targetless, and range modes. Operand evaluators may return scalars or residual
+vectors and receive the image-point convention explicitly. Snapshot entries retain the complete target descriptor so rollback
 preserves asphere kinds and tilt/decenter coordinate strategies.
 """
 
@@ -14,7 +15,7 @@ from __future__ import annotations
 
 import math
 from contextlib import AbstractContextManager
-from typing import Callable, Literal, NotRequired, Protocol, TypedDict
+from typing import Callable, Literal, Never, NotRequired, Protocol, Required, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
@@ -42,6 +43,25 @@ type BaseTargetKey = tuple[TargetKind, int]
 type PolynomialTargetKey = tuple[Literal["asphere_polynomial_coefficient"], int, int]
 type TargetKey = BaseTargetKey | PolynomialTargetKey
 type OptimizationStatus = int | Literal["evaluated", "optimized", "no_variables", "stopped", "error"]
+
+
+type TargetOperandKind = Literal[
+    "focal_length",
+    "f_number",
+    "opd_difference",
+    "opd_difference_tangential",
+    "opd_difference_sagittal",
+    "rms_spot_size",
+    "rms_wavefront_error",
+]
+"""Operand kinds that require exactly one scalar ``target``."""
+type TargetlessOperandKind = Literal["ray_fan", "ray_fan_tangential", "ray_fan_sagittal"]
+"""Operand kinds whose (possibly vector) values are driven toward zero without a target."""
+type RangeOperandKind = Never
+"""Operand kinds bounded by ``min``/``max``; reserved, no kind uses range mode yet."""
+type OperandKind = TargetOperandKind | TargetlessOperandKind | RangeOperandKind
+type OperandGoal = Literal["target", "none", "range"]
+"""Target mode shared by every operand of one kind group."""
 
 
 class OperandOptions(TypedDict, total=False):
@@ -301,24 +321,60 @@ class WavelengthSampleConfigInput(TypedDict, total=False):
     weight: float
 
 
-class OperandConfigInput(TypedDict, total=False):
-    kind: str
-    target: NotRequired[float]
+class _OperandConfigInputBase(TypedDict, total=False):
     weight: float
     fields: list[FieldSampleConfigInput]
     wavelengths: list[WavelengthSampleConfigInput]
     options: OperandOptions
 
 
-class OperandSample(TypedDict):
-    kind: str
+class TargetOperandConfigInput(_OperandConfigInputBase, total=False):
+    kind: Required[TargetOperandKind]
+    target: Required[float]
+
+
+class TargetlessOperandConfigInput(_OperandConfigInputBase, total=False):
+    kind: Required[TargetlessOperandKind]
+
+
+class RangeOperandConfigInput(_OperandConfigInputBase, total=False):
+    """Range operand input; normalization requires at least one finite bound and ``min <= max``."""
+
+    kind: Required[RangeOperandKind]
+    min: float
+    max: float
+
+
+type OperandConfigInput = TargetOperandConfigInput | TargetlessOperandConfigInput | RangeOperandConfigInput
+
+
+class _OperandSampleBase(TypedDict):
     weight: float
     field_index: int | None
     field_weight: float
     wavelength_index: int | None
     wavelength_weight: float
     options: OperandOptions
-    target: NotRequired[float]
+
+
+class TargetOperandSample(_OperandSampleBase):
+    kind: TargetOperandKind
+    target: float
+
+
+class TargetlessOperandSample(_OperandSampleBase):
+    kind: TargetlessOperandKind
+
+
+class RangeOperandSample(_OperandSampleBase):
+    """Normalized range sample carrying only the bounds that were supplied."""
+
+    kind: RangeOperandKind
+    min: NotRequired[float]
+    max: NotRequired[float]
+
+
+type OperandSample = TargetOperandSample | TargetlessOperandSample | RangeOperandSample
 
 
 class MeritFunctionConfigInput(TypedDict, total=False):
@@ -404,8 +460,7 @@ class SnapshotEntry(TypedDict):
     value: float
 
 
-class ResidualEntry(TypedDict):
-    kind: str
+class _ResidualEntryBase(TypedDict):
     value: float
     field_index: int | None
     wavelength_index: int | None
@@ -414,7 +469,24 @@ class ResidualEntry(TypedDict):
     wavelength_weight: float
     total_weight: float
     weighted_residual: float
-    target: NotRequired[float]
+
+
+class TargetResidualEntry(_ResidualEntryBase):
+    kind: TargetOperandKind
+    target: float
+
+
+class TargetlessResidualEntry(_ResidualEntryBase):
+    kind: TargetlessOperandKind
+
+
+class RangeResidualEntry(_ResidualEntryBase):
+    kind: RangeOperandKind
+    min: NotRequired[float]
+    max: NotRequired[float]
+
+
+type ResidualEntry = TargetResidualEntry | TargetlessResidualEntry | RangeResidualEntry
 
 
 class MeritFunctionSummary(TypedDict):

@@ -47,8 +47,8 @@
  * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius, thickness, glass, asphere, and tilt/decenter modes by index so model-shape-compatible modes survive while new targets receive default constant modes.
  * - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
  * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, `differential_evolution`, and `glass_expert`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
- * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
- * - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal`.
+ * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, target mode (`goal`) and default target, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
+ * - `buildOptimizationConfig()` narrows each row by kind group: target kinds emit a parsed `target`, and target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal` omit it. Range operand rows are not supported by the GUI yet, so adding a range kind fails compilation until the builder handles it.
  * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count after combinations with an exactly zero operand, field, or wavelength weight are excluded. `ray_fan` contributes `num_rays * 2` residuals per retained field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
  * - `setOptimizationConfig()` atomically adapts a strict worker config into the string-backed form state, normalizes shared field/wavelength vectors, preserves operand options, and leaves the page-local model, sync baseline, prior report, and unapplied-result marker untouched.
  * - `applyOptimizationResult()` can create or update `surface.aspherical` and surface/Image `decenter`, preserving untouched tilt/decenter components, and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
@@ -80,7 +80,11 @@ import type {
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { OptimizationOperandOptions } from "@/features/optimization/types/optimizationOperandTypes";
 import { adaptOptimizationRunConfigToGuiState } from "@/features/optimization/lib/optimizationConfigAdapter";
-import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
+import {
+  getOptimizationOperandMetadata,
+  isOptimizationTargetlessOperandKind,
+  isOptimizationTargetOperandKind,
+} from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import {
   formatOptimizerUiDefaultValue,
@@ -979,12 +983,12 @@ function buildMeritFunctionOperands(
   wavelengthWeights: ReadonlyArray<number>,
 ): OptimizationConfig["merit_function"]["operands"] {
   const configOperands: OptimizationOperandConfig[] = operands.map(
-    (operand) => {
-      const metadata = getOptimizationOperandMetadata(operand.kind);
+    (operand): OptimizationOperandConfig => {
+      const { kind } = operand;
+      const metadata = getOptimizationOperandMetadata(kind);
       const weight = parsePositiveFloat(operand.weight, "Weight");
       const base = metadata.expandsByFieldAndWavelength
         ? {
-            kind: operand.kind,
             weight,
             fields: fieldWeights.map((currentWeight, index) => ({
               index,
@@ -999,21 +1003,26 @@ function buildMeritFunctionOperands(
               : {}),
           }
         : {
-            kind: operand.kind,
             weight,
             ...((operand.options ?? metadata.defaultOptions) !== undefined
               ? { options: operand.options ?? metadata.defaultOptions }
               : {}),
           };
 
-      if (!metadata.requiresTarget) {
-        return base;
+      if (isOptimizationTargetOperandKind(kind)) {
+        return {
+          ...base,
+          kind,
+          target: parseFloatValue(operand.target ?? "", "Target"),
+        };
       }
-
-      return {
-        ...base,
-        target: parseFloatValue(operand.target ?? "", "Target"),
-      };
+      if (isOptimizationTargetlessOperandKind(kind)) {
+        return { ...base, kind };
+      }
+      // Range operand rows are not supported by the GUI yet; this fails to compile once a range kind exists.
+      throw new Error(
+        `Unsupported operand kind: ${String(kind satisfies never)}`,
+      );
     },
   );
 
@@ -1992,16 +2001,13 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (
         }
 
         const nextKind = patch.kind ?? operand.kind;
-        const nextMetadata = getOptimizationOperandMetadata(nextKind);
         return {
           ...operand,
           ...patch,
           kind: nextKind,
           target:
             patch.kind !== undefined && patch.target === undefined
-              ? nextMetadata.requiresTarget
-                ? getDefaultOperandTarget(nextKind)
-                : undefined
+              ? getDefaultOperandTarget(nextKind)
               : (patch.target ?? operand.target),
         };
       }),

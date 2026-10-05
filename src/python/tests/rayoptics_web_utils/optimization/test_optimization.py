@@ -2538,7 +2538,7 @@ class TestOptimizationValidation:
 
         assert normalize_operand_samples(
             fresh_cooke_triplet,
-            {"kind": kind, "weight": 0.0},
+            {"kind": kind, "target": 1.0, "weight": 0.0},
         ) == []
 
     def test_rejects_duplicate_variables_and_bad_asphere_targets(self, fresh_cooke_triplet):
@@ -2750,6 +2750,57 @@ class TestOptimizationProblemStateAndObjectives:
             2.0**2 + (18.0 * 0.25) ** 2 + (18.0 * -0.5) ** 2
         )
         assert "target" not in evaluation["residuals"][1]
+        assert evaluation["residuals"][0]["target"] == 5.0
+
+    def test_evaluate_reports_range_bounds_and_dead_zone_residuals(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.operands as operands_module
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        monkeypatch.setattr(operands_module, "RANGE_OPERAND_KINDS", frozenset({"fake_range"}))
+        actual_values = iter([0.5, 3.0])
+        monkeypatch.setitem(
+            operands_module.OPERAND_REGISTRY,
+            "fake_range",
+            lambda opm, field_index, wavelength_index, options, image_point: next(actual_values),
+        )
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "fake_range",
+                            "min": 1.0,
+                            "max": 2.0,
+                            "weight": 2,
+                            "fields": [{"index": 0}],
+                            "wavelengths": [{"index": 0}],
+                        },
+                        {
+                            "kind": "fake_range",
+                            "min": 1.0,
+                            "weight": 1,
+                            "fields": [{"index": 0}],
+                            "wavelengths": [{"index": 0}],
+                        },
+                    ]
+                },
+            },
+        )
+
+        residuals = problem.evaluate()["residuals"]
+
+        assert [(entry["value"], entry["weighted_residual"]) for entry in residuals] == [
+            (pytest.approx(0.5), pytest.approx(1.0)),
+            (pytest.approx(3.0), pytest.approx(0.0)),
+        ]
+        assert (residuals[0]["min"], residuals[0]["max"]) == (1.0, 2.0)
+        assert residuals[1]["min"] == 1.0
+        assert "max" not in residuals[1]
+        assert all("target" not in entry for entry in residuals)
 
     def test_penalty_residual_vector_has_at_least_one_entry_for_empty_normalized_merit(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization.problem import OptimizationProblem

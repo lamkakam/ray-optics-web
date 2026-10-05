@@ -399,15 +399,16 @@ def test_each_ray_fan_kind_omits_scalar_target(kind):
     ]
 
 
-def test_operand_defaults_include_target_weight_and_missing_sample_weights():
+def test_operand_defaults_include_weight_and_missing_sample_weights():
     from rayoptics_web_utils.optimization.config import normalize_operand_samples
 
     model = _FakeOpticalModel()
-    scalar = normalize_operand_samples(model, {"kind": "focal_length"})
+    scalar = normalize_operand_samples(model, {"kind": "focal_length", "target": 50})
     explicit_samples = normalize_operand_samples(
         model,
         {
             "kind": "opd_difference",
+            "target": 0,
             "fields": [{"index": 0}],
             "wavelengths": [{"index": 1}],
         },
@@ -418,7 +419,7 @@ def test_operand_defaults_include_target_weight_and_missing_sample_weights():
             "kind": "focal_length",
             "weight": 1.0,
             "options": {},
-            "target": 0.0,
+            "target": 50.0,
             "field_index": None,
             "field_weight": 1.0,
             "wavelength_index": None,
@@ -431,6 +432,82 @@ def test_operand_defaults_include_target_weight_and_missing_sample_weights():
     assert explicit_samples[0]["wavelength_weight"] == 1.0
 
 
+@pytest.mark.parametrize(
+    "operand, message",
+    [
+        ({"kind": "focal_length"}, "Operand focal_length requires a finite target"),
+        ({"kind": "rms_spot_size", "target": None}, "Operand rms_spot_size requires a finite target"),
+        ({"kind": "f_number", "target": float("nan")}, "Operand f_number requires a finite target"),
+        ({"kind": "f_number", "target": float("inf")}, "Operand f_number requires a finite target"),
+        ({"kind": "focal_length", "target": 1.0, "min": 0.0}, "Operand focal_length does not accept range bounds"),
+        ({"kind": "focal_length", "target": 1.0, "max": 2.0}, "Operand focal_length does not accept range bounds"),
+        ({"kind": "ray_fan", "target": 0.0}, "Operand ray_fan does not accept a target"),
+        ({"kind": "ray_fan_sagittal", "min": 0.0}, "Operand ray_fan_sagittal does not accept range bounds"),
+        ({"kind": "ray_fan_tangential", "max": 0.0}, "Operand ray_fan_tangential does not accept range bounds"),
+    ],
+)
+def test_operand_target_mode_is_strictly_matched_to_kind(operand, message):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(ValueError) as exc_info:
+        normalize_operand_samples(_FakeOpticalModel(), operand)
+    assert exc_info.value.args == (message,)
+
+
+@pytest.fixture
+def fake_range_operand(monkeypatch):
+    import rayoptics_web_utils.optimization.operands as operands_module
+
+    monkeypatch.setattr(operands_module, "RANGE_OPERAND_KINDS", frozenset({"fake_range"}))
+    monkeypatch.setitem(operands_module.OPERAND_REGISTRY, "fake_range", lambda *args: 0.0)
+    return "fake_range"
+
+
+@pytest.mark.parametrize(
+    "bounds",
+    [{"min": 1.0}, {"max": 2.0}, {"min": 1.0, "max": 2.0}, {"min": 1.5, "max": 1.5}],
+)
+def test_range_operand_copies_only_supplied_bounds(fake_range_operand, bounds):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    samples = normalize_operand_samples(
+        _FakeOpticalModel(),
+        {"kind": fake_range_operand, "fields": [{"index": 0}], "wavelengths": [{"index": 1}], **bounds},
+    )
+
+    assert samples == [
+        {
+            "kind": fake_range_operand,
+            "weight": 1.0,
+            "options": {},
+            **bounds,
+            "field_index": 0,
+            "field_weight": 1.0,
+            "wavelength_index": 1,
+            "wavelength_weight": 1.0,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "bounds, message",
+    [
+        ({}, "Operand fake_range range requires at least one bound"),
+        ({"min": float("nan")}, "Operand fake_range range bounds must be finite"),
+        ({"max": float("-inf")}, "Operand fake_range range bounds must be finite"),
+        ({"min": None}, "Operand fake_range range bounds must be finite"),
+        ({"min": 2.0, "max": 1.0}, "Operand fake_range range min must not exceed max"),
+        ({"target": 0.0, "min": 1.0}, "Operand fake_range does not accept a target"),
+    ],
+)
+def test_range_operand_rejects_invalid_bounds(fake_range_operand, bounds, message):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(ValueError) as exc_info:
+        normalize_operand_samples(_FakeOpticalModel(), {"kind": fake_range_operand, **bounds})
+    assert exc_info.value.args == (message,)
+
+
 def test_operand_default_field_and_wavelength_weights_are_one():
     from rayoptics_web_utils.optimization.config import normalize_operand_samples
 
@@ -438,6 +515,7 @@ def test_operand_default_field_and_wavelength_weights_are_one():
         _FakeOpticalModel(),
         {
             "kind": "opd_difference",
+            "target": 0.0,
             "fields": [],
             "wavelengths": [],
         },
@@ -455,7 +533,7 @@ def test_merit_function_empty_and_zero_sample_errors_are_exact(monkeypatch):
     with pytest.raises(ValueError) as zero_error:
         config.normalize_merit_function(
             _FakeOpticalModel(),
-            {"operands": [{"kind": "focal_length", "weight": 0.0}]},
+            {"operands": [{"kind": "focal_length", "target": 0.0, "weight": 0.0}]},
         )
 
     assert empty_error.value.args == ("merit_function.operands must not be empty",)

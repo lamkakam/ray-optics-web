@@ -3,6 +3,10 @@ import {
   createPrescriptionAjv,
   finiteNumberSchema,
 } from "@/shared/lib/schemas/prescriptionSchema";
+import {
+  OPTIMIZATION_TARGETLESS_OPERAND_KINDS,
+  OPTIMIZATION_TARGET_OPERAND_KINDS,
+} from "@/features/optimization/lib/operandMetadata";
 import type { OptimizationRunConfig } from "@/features/optimization/types/optimizationWorkerTypes";
 
 const positiveIntegerSchema = {
@@ -261,6 +265,11 @@ const operandProperties = {
   options: operandOptionsSchema,
 } as const;
 
+/**
+ * Operand schema with one branch per target mode, whose kind enums come from the
+ * shared operand metadata. A range branch is added together with the first range
+ * operand kind, because a JSON-schema `enum` must not be empty.
+ */
 const optimizationOperandSchema = {
   oneOf: [
     {
@@ -268,18 +277,7 @@ const optimizationOperandSchema = {
       required: ["kind", "target", "weight"],
       additionalProperties: false,
       properties: {
-        kind: {
-          type: "string",
-          enum: [
-            "focal_length",
-            "f_number",
-            "opd_difference",
-            "opd_difference_tangential",
-            "opd_difference_sagittal",
-            "rms_spot_size",
-            "rms_wavefront_error",
-          ],
-        },
+        kind: { type: "string", enum: OPTIMIZATION_TARGET_OPERAND_KINDS },
         target: finiteNumberSchema,
         ...operandProperties,
       },
@@ -289,10 +287,7 @@ const optimizationOperandSchema = {
       required: ["kind", "weight"],
       additionalProperties: false,
       properties: {
-        kind: {
-          type: "string",
-          enum: ["ray_fan", "ray_fan_tangential", "ray_fan_sagittal"],
-        },
+        kind: { type: "string", enum: OPTIMIZATION_TARGETLESS_OPERAND_KINDS },
         ...operandProperties,
       },
     },

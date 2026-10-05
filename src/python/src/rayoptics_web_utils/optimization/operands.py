@@ -4,10 +4,13 @@ Scalar and ray-fan operands share a penalty value of ``1e6`` when analysis data 
 unavailable. Fan operands preserve a stable residual dimension by padding blocked
 or non-finite samples. OPD-based operands propagate the app-wide image-point
 reference, trace only their normalized sample's wavelength, and scale wavefront
-grids to the traced wavelength before evaluation.
+grids to the traced wavelength before evaluation. Every registered kind belongs to
+exactly one target-mode group, which decides how its values become residuals.
 """
 
 from __future__ import annotations
+
+from typing import get_args
 
 import numpy as np
 from rayoptics.environment import OpticalModel
@@ -18,10 +21,74 @@ from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils._spot import _rms_radius, _spot_fn
 from rayoptics_web_utils.zernike.zernike import _opd_wfe, _scale_opd_grid_to_wavelength
 
-from ._types import OperandEvaluator, OperandOptions, OperandSample
+from ._types import (
+    OperandEvaluator,
+    OperandGoal,
+    OperandOptions,
+    OperandSample,
+    RangeOperandKind,
+    TargetlessOperandKind,
+    TargetOperandKind,
+)
 from .targets import validate_surface_index
 
 PENALTY_RESIDUAL = 1e6
+
+TARGET_OPERAND_KINDS: frozenset[str] = frozenset(get_args(TargetOperandKind.__value__))
+"""Runtime mirror of ``TargetOperandKind``."""
+TARGETLESS_OPERAND_KINDS: frozenset[str] = frozenset(get_args(TargetlessOperandKind.__value__))
+"""Runtime mirror of ``TargetlessOperandKind``."""
+RANGE_OPERAND_KINDS: frozenset[str] = frozenset(get_args(RangeOperandKind.__value__))
+"""Runtime mirror of ``RangeOperandKind``; empty until the first range operand is registered."""
+
+
+def operand_goal(kind: str) -> OperandGoal:
+    """Return the target mode of an operand kind.
+
+    The kind groups are read at call time so range handling can be exercised
+    before any registered operand uses it.
+
+    Args:
+        kind: Operand kind.
+
+    Returns:
+        ``"target"``, ``"none"`` (targetless), or ``"range"``.
+
+    Raises:
+        ValueError: If the kind belongs to no target-mode group.
+    """
+    if kind in TARGET_OPERAND_KINDS:
+        return "target"
+    if kind in TARGETLESS_OPERAND_KINDS:
+        return "none"
+    if kind in RANGE_OPERAND_KINDS:
+        return "range"
+    raise ValueError(f"Unknown operand kind: {kind}")
+
+
+def operand_goal_residual(sample: OperandSample, actual: float) -> float:
+    """Return the unweighted residual of one evaluated operand value.
+
+    Target operands return ``actual - target`` and targetless operands return
+    ``actual``. Range operands return a dead-zone residual: zero inside the
+    inclusive ``[min, max]`` band and the distance to the violated bound outside
+    it; a missing bound is unbounded on that side.
+
+    Args:
+        sample: Normalized operand sample.
+        actual: One evaluated operand value.
+
+    Returns:
+        Unweighted residual.
+    """
+    goal = operand_goal(sample["kind"])
+    if goal == "target":
+        return actual - sample["target"]
+    if goal == "none":
+        return actual
+    below = sample["min"] - actual if "min" in sample else 0.0
+    above = actual - sample["max"] if "max" in sample else 0.0
+    return max(0.0, below) + max(0.0, above)
 
 
 def get_operand_num_rays(options: OperandOptions | None, default: int = 21) -> int:

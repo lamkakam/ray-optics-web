@@ -541,7 +541,7 @@ function createOperandRows(
       sharedWavelengths ??= wavelengths;
     }
 
-    if (metadata.requiresTarget) {
+    if (metadata.goal === "target") {
       assertFiniteNumber(operand.target, `${operand.kind} target`);
     } else if (operand.target !== undefined) {
       throw new Error(`${operand.kind} does not accept a target.`);
@@ -563,7 +563,7 @@ function createOperandRows(
     return {
       id: `optimization-operand-${index}`,
       kind: operand.kind,
-      target: metadata.requiresTarget ? String(operand.target) : undefined,
+      target: metadata.goal === "target" ? String(operand.target) : undefined,
       weight: String(operand.weight),
       ...(operand.options === undefined
         ? {}

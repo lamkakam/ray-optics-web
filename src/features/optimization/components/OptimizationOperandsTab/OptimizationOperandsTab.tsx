@@ -8,7 +8,7 @@ import type { OptimizationOperandRow } from "@/features/optimization/stores/opti
 import { getOperandLabel } from "@/features/optimization/lib/optimizationViewModels";
 import {
   OPTIMIZATION_OPERAND_METADATA,
-  getOptimizationOperandMetadata,
+  isOptimizationTargetOperandKind,
 } from "@/features/optimization/lib/operandMetadata";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Button } from "@/shared/components/primitives/Button";
@@ -83,12 +83,12 @@ export function OptimizationOperandsTab({
         width: 85,
         editable: (params) =>
           params.data !== undefined &&
-          getOptimizationOperandMetadata(params.data.kind).requiresTarget,
+          isOptimizationTargetOperandKind(params.data.kind),
         valueGetter: (params) => {
           if (params.data === undefined) {
             return undefined;
           }
-          return getOptimizationOperandMetadata(params.data.kind).requiresTarget
+          return isOptimizationTargetOperandKind(params.data.kind)
             ? params.data.target
             : "N/A";
         },
@@ -97,9 +97,7 @@ export function OptimizationOperandsTab({
             return false;
           }
 
-          if (
-            !getOptimizationOperandMetadata(params.data.kind).requiresTarget
-          ) {
+          if (!isOptimizationTargetOperandKind(params.data.kind)) {
             return false;
           }
 
