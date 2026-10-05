@@ -25,17 +25,16 @@ from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 from rayoptics_web_utils.zernike.zernike import _opd_wfe, _scale_opd_grid_to_wavelength
 
-# Plot-level focus tolerance as a fraction of |EFL| (1 µm for a 50 mm lens).
-_FOCUS_XATOL_FRACTION = 2.0e-5
+# Plot-level focus tolerance as a fraction of |EFL| (0.05 µm for a 50 mm lens).
+_FOCUS_XATOL_FRACTION = 1.0e-6
 
 
 def _focus_tolerance(opm: OpticalModel) -> float | None:
     """Return the best-focus search tolerance for the plot in system length units.
 
-    The tolerance is `2e-5 |EFL|`, looser than the shared solver's default so
-    each wavelength needs fewer OPD evaluations while staying far below the
-    plotted focal-shift resolution. A non-finite or zero EFL falls back to the
-    solver default.
+    The tolerance is `1e-6 |EFL|`, scaling with the lens instead of the shared
+    solver's fixed default and staying far below the plotted focal-shift
+    resolution. A non-finite or zero EFL falls back to the solver default.
 
     Args:
         opm: RayOptics optical model.
@@ -199,9 +198,10 @@ def get_chromatic_focal_shift_data(
     that minimizes chief-ray-referenced RMS wavefront error with piston removed
     (the same objective as focusing's Strehl strategies) for the selected field,
     found by focusing's shared bounded search within `±5` system length units of
-    the paraxial image, stopping at a tolerance of `2e-5 |EFL|`. In infinite image space it is the RMS best-fit output
-    vergence. Every value is reported relative to the same
-    quantity at the model's reference wavelength, so the curve is zero there.
+    the paraxial image, stopping at a tolerance of `1e-6 |EFL|`. In infinite
+    image space it is the RMS best-fit output vergence. Every value is reported
+    relative to the same quantity at the model's reference wavelength, so the
+    curve is zero there.
 
     The result contains `fieldIdx`, focal shifts `x` (`None` for failed
     samples), wavelengths `y`, `unitX` (system length unit, or `D` when afocal),

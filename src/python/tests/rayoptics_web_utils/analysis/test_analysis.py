@@ -1240,7 +1240,7 @@ class TestGetChromaticFocalShiftData:
             _restore_wavelengths(cooke_triplet, spectral_region, original_state)
 
         efl = abs(float(cooke_triplet["analysis_results"]["parax_data"].fod.efl))
-        assert result["x"] == pytest.approx(expected, abs=2.0e-5 * efl)
+        assert result["x"] == pytest.approx(expected, abs=1.0e-6 * efl)
 
     def test_finite_focus_uses_shared_solver_centered_on_paraxial_focus(self, cooke_triplet, monkeypatch):
         import rayoptics_web_utils.analysis.chromatic_focal_shift as module
@@ -1263,7 +1263,7 @@ class TestGetChromaticFocalShiftData:
         assert centers == pytest.approx([_paraxial_focus_offset(cooke_triplet)] * 4)
         # The plot uses a looser stopping tolerance scaled to the focal length.
         efl = abs(float(cooke_triplet["analysis_results"]["parax_data"].fod.efl))
-        assert tolerances == pytest.approx([2.0e-5 * efl] * 4)
+        assert tolerances == pytest.approx([1.0e-6 * efl] * 4)
         assert cooke_triplet["seq_model"].gaps[-1].thi == thi_before
 
     def test_off_axis_field_changes_focal_shift_curve(self, cooke_triplet):
