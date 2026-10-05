@@ -21,6 +21,7 @@ const themeOptions: { value: Theme; label: string }[] = [
  * - Reads `theme` and `setTheme` from `ThemeProvider`
  * - Adapts the `<select>` change event into the `Theme` union
  * - Renders the Settings heading and theme selector inline in the route file
+ * - Scrolls vertically within the app shell's clipped content area, so every section stays reachable on small and large screens
  * - Shows nine independent persisted analysis ray-count selectors below Theme; counts are per fan axis or grid dimension.
  * - Shows an "Analysis wavelength sample counts" section below the ray counts with persisted Strehl vs Wavelength and Chromatic Focal Shift sample-count selectors; their accessible names end in "wavelength samples" to stay distinct from the same plots' ray-count selectors.
  * - Uses the shared `Select` primitive with bounded width for layout stability
@@ -43,7 +44,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 overflow-y-auto">
       <Header level={2} className="mb-4">
         Settings
       </Header>

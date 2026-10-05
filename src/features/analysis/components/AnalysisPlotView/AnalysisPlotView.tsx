@@ -42,9 +42,9 @@ export type PlotType =
   | "fieldCurvature"
   | "astigmatismCurve"
   | "longitudinalSphericalAberration"
+  | "chromaticFocalShift"
   | "surfaceBySurface3rdOrder"
   | "strehlVsWavelength"
-  | "chromaticFocalShift"
   | "wavefrontMap"
   | "geoPSF"
   | "diffractionPSF"
@@ -125,9 +125,9 @@ export interface PlotTypeConfig {
  * | `fieldCurvature` | "Field Curvature" | false | true |
  * | `astigmatismCurve` | "Astigmatism Curve" | false | true |
  * | `longitudinalSphericalAberration` | "Longitudinal Spherical Aberration" | false | false |
+ * | `chromaticFocalShift` | "Chromatic Focal Shift" | true | false |
  * | `surfaceBySurface3rdOrder` | "Surface by Surface 3rd Order Aberr." | false | false |
  * | `strehlVsWavelength` | "Strehl vs Wavelength" | true | false |
- * | `chromaticFocalShift` | "Chromatic Focal Shift" | true | false |
  * | `wavefrontMap` | "Wavefront Map" | true | true |
  * | `geoPSF` | "Geometric PSF" | true | true |
  * | `diffractionPSF` | "Diffraction PSF" | true | true |
@@ -164,6 +164,11 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
     fieldDependent: false,
     wavelengthDependent: false,
   },
+  chromaticFocalShift: {
+    label: "Chromatic Focal Shift",
+    fieldDependent: true,
+    wavelengthDependent: false,
+  },
   surfaceBySurface3rdOrder: {
     label: "Surface by Surface 3rd Order Aberr.",
     fieldDependent: false,
@@ -171,11 +176,6 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
   },
   strehlVsWavelength: {
     label: "Strehl vs Wavelength",
-    fieldDependent: true,
-    wavelengthDependent: false,
-  },
-  chromaticFocalShift: {
-    label: "Chromatic Focal Shift",
     fieldDependent: true,
     wavelengthDependent: false,
   },
