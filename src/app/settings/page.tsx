@@ -20,7 +20,7 @@ const themeOptions: { value: Theme; label: string }[] = [
  * - Reads `theme` and `setTheme` from `ThemeProvider`
  * - Adapts the `<select>` change event into the `Theme` union
  * - Renders the Settings heading and theme selector inline in the route file
- * - Shows eight independent persisted analysis ray-count selectors below Theme; counts are per fan axis or grid dimension.
+ * - Shows nine independent persisted analysis ray-count selectors below Theme; counts are per fan axis or grid dimension.
  * - Uses the shared `Select` primitive with bounded width for layout stability
  * - Does not render the Image point selector; image reference selection lives in the Lens Editor drawer's `Image Reference` tab
  */

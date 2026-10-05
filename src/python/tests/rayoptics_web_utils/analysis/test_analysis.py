@@ -135,6 +135,7 @@ class TestAnalysisConcreteModuleExports:
             ("diffraction_psf", "get_diffraction_psf_data"),
             ("diffraction_mtf", "get_diffraction_mtf_data"),
             ("strehl_vs_wavelength", "get_strehl_vs_wavelength_data"),
+            ("chromatic_focal_shift", "get_chromatic_focal_shift_data"),
             ("field_curves", "get_field_curvature_data"),
             ("field_curves", "get_astigmatism_curve_data"),
             ("longitudinal_spherical_aberration", "get_lsa_data"),
@@ -237,6 +238,15 @@ class TestGetAnalysisPlotDataSignatures:
         assert sig.parameters["wavelength_samples"].default == 32
         assert sig.parameters["num_rays"].default == 21
         assert sig.parameters["image_point"].default == "chief_ray"
+
+    def test_get_chromatic_focal_shift_data_accepts_opm_field_index_samples_and_num_rays(self):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+        import inspect
+
+        sig = inspect.signature(get_chromatic_focal_shift_data)
+        assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "wavelength_samples", "num_rays"]
+        assert sig.parameters["wavelength_samples"].default == 200
+        assert sig.parameters["num_rays"].default == 15
 
     @pytest.mark.parametrize("getter_name", ["get_field_curvature_data", "get_astigmatism_curve_data"])
     def test_field_curve_getters_accept_opm_wvl_idx_and_num_points(self, getter_name):
@@ -1130,6 +1140,261 @@ class TestGetStrehlVsWavelengthData:
             wavelength_samples=4,
             num_rays=11,
         )
+
+        json.dumps(result)
+
+
+def _dispersive_afocal_model(epd: float):
+    """Build an image-space-afocal pair of zero-thickness dispersive thin lenses."""
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
+
+    opm = OpticalModel()
+    osp = opm["optical_spec"]
+    sm = opm["seq_model"]
+    opm.system_spec.dimensions = "mm"
+    osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=epd)
+    osp["fov"] = FieldSpec(osp, key=["object", "angle"], value=1.0, flds=[0.0, 1.0], is_relative=True)
+    osp["wvls"] = WvlSpec([(486.133, 1), (587.562, 2), (656.273, 1)], ref_wl=1)
+    opm.radius_mode = True
+    sm.do_apertures = False
+    sm.gaps[0].thi = 1.0e10
+    sm.add_surface([100.0, 0.0, "N-BK7", "Schott"], sd=6.0)
+    sm.set_stop()
+    sm.add_surface([-100.0, 193.6, "air"], sd=6.0)
+    sm.add_surface([100.0, 0.0, "N-BK7", "Schott"], sd=6.0)
+    sm.add_surface([-100.0, 1.0e10, "air"], sd=6.0)
+    opm.update_model()
+    return opm
+
+
+def _brute_force_best_focus(opm, field_index: int, wavelength_nm: float, num_rays: int) -> float:
+    """Minimize piston- and tilt-removed RMS OPD over the focus shift."""
+    from scipy.optimize import minimize_scalar
+    from rayoptics_web_utils.raygrid import make_ray_grid
+
+    central_sys = opm.nm_to_sys_units(opm["optical_spec"]["wvls"].central_wvl)
+
+    def rms(foc: float) -> float:
+        grid = np.asarray(make_ray_grid(opm, field_index, wavelength_nm, foc=foc, num_rays=num_rays).grid)
+        valid = np.isfinite(grid[2])
+        basis = np.column_stack([np.ones(valid.sum()), grid[0][valid], grid[1][valid]])
+        values = grid[2][valid] * central_sys
+        residual = values - basis @ np.linalg.lstsq(basis, values, rcond=None)[0]
+        return float(np.sqrt(np.mean(residual**2)))
+
+    return float(minimize_scalar(rms, bounds=(-2.0, 2.0), method="bounded", options={"xatol": 1.0e-8}).x)
+
+
+class TestGetChromaticFocalShiftData:
+    """Tests for get_chromatic_focal_shift_data()."""
+
+    def test_multi_wavelength_model_samples_configured_range(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+
+        result = get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=1, wavelength_samples=5, num_rays=11)
+
+        wavelengths = cooke_triplet["optical_spec"]["wvls"].wavelengths
+        assert result["fieldIdx"] == 1
+        assert result["unitX"] == "mm"
+        assert result["unitY"] == "nm"
+        assert result["referenceWavelength"] == pytest.approx(587.562)
+        assert len(result["x"]) == 5
+        assert len(result["y"]) == 5
+        assert result["y"][0] == pytest.approx(min(wavelengths))
+        assert result["y"][-1] == pytest.approx(max(wavelengths))
+        assert all(isinstance(v, float) for v in result["x"])
+        assert result["maxFocalShiftRange"] == pytest.approx(max(result["x"]) - min(result["x"]))
+
+    def test_shift_is_zero_at_reference_wavelength(self, cooke_triplet, monkeypatch):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+
+        spectral_region = cooke_triplet["optical_spec"]["wvls"]
+        monkeypatch.setattr(spectral_region, "wavelengths", [500.0, 587.562, 675.124])
+        monkeypatch.setattr(spectral_region, "spectral_wts", [1, 2, 1])
+        monkeypatch.setattr(spectral_region, "reference_wvl", 1)
+        cooke_triplet.update_model()
+
+        try:
+            result = get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=3, num_rays=11)
+        finally:
+            monkeypatch.undo()
+            cooke_triplet.update_model()
+
+        assert result["y"] == pytest.approx([500.0, 587.562, 675.124])
+        assert result["x"][1] == pytest.approx(0.0, abs=1.0e-12)
+        assert result["x"][0] != pytest.approx(0.0, abs=1.0e-6)
+
+    def test_shift_matches_brute_force_best_focus_difference(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+        from rayoptics_web_utils.analysis._wavelength_sweep import (
+            _restore_wavelengths,
+            _set_analysis_wavelengths,
+        )
+
+        result = get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=2, wavelength_samples=3, num_rays=11)
+
+        reference = result["referenceWavelength"]
+        spectral_region, original_state = _set_analysis_wavelengths(cooke_triplet, np.array(result["y"]))
+        try:
+            reference_focus = _brute_force_best_focus(cooke_triplet, 2, reference, 11)
+            expected = [
+                _brute_force_best_focus(cooke_triplet, 2, wavelength, 11) - reference_focus
+                for wavelength in result["y"]
+            ]
+        finally:
+            _restore_wavelengths(cooke_triplet, spectral_region, original_state)
+
+        assert result["x"] == pytest.approx(expected, abs=1.0e-4)
+
+    def test_off_axis_field_changes_focal_shift_curve(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+
+        on_axis = get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=3, num_rays=11)
+        off_axis = get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=2, wavelength_samples=3, num_rays=11)
+
+        assert on_axis["fieldIdx"] == 0
+        assert off_axis["fieldIdx"] == 2
+        assert off_axis["x"] != pytest.approx(on_axis["x"], abs=1.0e-3)
+
+    @pytest.mark.parametrize(
+        ("wavelengths", "expected_axis"),
+        [
+            ([587.562, 587.562], [387.562, 587.562, 787.562]),
+            ([300.0, 300.0], [201.0, 350.5, 500.0]),
+        ],
+    )
+    def test_single_distinct_wavelength_uses_strehl_axis_and_subtracts_reference(
+        self, cooke_triplet, monkeypatch, wavelengths, expected_axis
+    ):
+        import rayoptics_web_utils.analysis.chromatic_focal_shift as module
+
+        spectral_region = cooke_triplet["optical_spec"]["wvls"]
+        monkeypatch.setattr(spectral_region, "wavelengths", wavelengths)
+        monkeypatch.setattr(spectral_region, "spectral_wts", [1, 1])
+        monkeypatch.setattr(spectral_region, "reference_wvl", 0)
+        requested = {}
+
+        def fake_focus_positions(opm, field_index, sampled_wavelengths, num_rays):
+            requested["args"] = (opm, field_index, list(sampled_wavelengths), num_rays)
+            return 1.0, [1.0 + wavelength / 1000.0 for wavelength in sampled_wavelengths]
+
+        monkeypatch.setattr(module, "_focus_positions", fake_focus_positions)
+        monkeypatch.setattr(module, "is_afocal_image_space", lambda _opm: False)
+
+        result = module.get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=2, wavelength_samples=3, num_rays=7)
+
+        assert requested["args"][0] is cooke_triplet
+        assert requested["args"][1] == 2
+        assert requested["args"][2] == pytest.approx(expected_axis)
+        assert requested["args"][3] == 7
+        assert result["y"] == pytest.approx(expected_axis)
+        assert result["x"] == pytest.approx([wavelength / 1000.0 for wavelength in expected_axis])
+        assert result["referenceWavelength"] == pytest.approx(wavelengths[0])
+
+    def test_failed_samples_are_none_and_excluded_from_range(self, cooke_triplet, monkeypatch):
+        import rayoptics_web_utils.analysis.chromatic_focal_shift as module
+
+        monkeypatch.setattr(
+            module,
+            "_focus_positions",
+            lambda opm, field_index, wavelengths, num_rays: (0.5, [0.25, float("nan"), 0.75, 1.0]),
+        )
+
+        result = module.get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=4, num_rays=7)
+
+        assert result["x"] == [-0.25, None, 0.25, 0.5]
+        assert result["maxFocalShiftRange"] == pytest.approx(0.75)
+        json.dumps(result)
+
+    def test_all_failed_samples_have_no_range(self, cooke_triplet, monkeypatch):
+        import rayoptics_web_utils.analysis.chromatic_focal_shift as module
+
+        monkeypatch.setattr(
+            module,
+            "_focus_positions",
+            lambda opm, field_index, wavelengths, num_rays: (0.5, [float("nan"), float("inf")]),
+        )
+
+        result = module.get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=2, num_rays=7)
+
+        assert result["x"] == [None, None]
+        assert result["maxFocalShiftRange"] is None
+        json.dumps(result)
+
+    @pytest.mark.parametrize("wavelength_samples", [1, 0, -3])
+    def test_rejects_fewer_than_two_wavelength_samples(self, cooke_triplet, wavelength_samples):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+
+        with pytest.raises(ValueError, match="at least 2"):
+            get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=wavelength_samples)
+
+    def test_restores_model_wavelengths_after_success_and_error(self, cooke_triplet, monkeypatch):
+        import rayoptics_web_utils.analysis.chromatic_focal_shift as module
+
+        spectral_region = cooke_triplet["optical_spec"]["wvls"]
+        original = (
+            list(spectral_region.wavelengths),
+            list(spectral_region.spectral_wts),
+            spectral_region.reference_wvl,
+        )
+
+        def current_state():
+            return (
+                list(spectral_region.wavelengths),
+                list(spectral_region.spectral_wts),
+                spectral_region.reference_wvl,
+            )
+
+        module.get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=3, num_rays=7)
+        assert current_state() == original
+
+        def failing_focus_positions(opm, field_index, wavelengths, num_rays):
+            assert len(spectral_region.wavelengths) > len(original[0])
+            raise RuntimeError("trace failed")
+
+        monkeypatch.setattr(module, "_focus_positions", failing_focus_positions)
+        with pytest.raises(RuntimeError, match="trace failed"):
+            module.get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=3, num_rays=7)
+        assert current_state() == original
+
+    def test_afocal_model_returns_vergence_shift_in_diopters(self):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+        from rayoptics_web_utils.analysis._afocal import differential_output_vergence
+        from rayoptics_web_utils.analysis._wavelength_sweep import (
+            _restore_wavelengths,
+            _set_analysis_wavelengths,
+        )
+
+        opm = _dispersive_afocal_model(epd=0.5)
+        result = get_chromatic_focal_shift_data(opm, fieldIndex=1, wavelength_samples=3, num_rays=11)
+
+        assert result["unitX"] == "D"
+        assert result["unitY"] == "nm"
+
+        spectral_region, original_state = _set_analysis_wavelengths(opm, np.array(result["y"]))
+        try:
+            field = opm.optical_spec.field_of_view.fields[1]
+
+            def mean_vergence(wavelength):
+                return 0.5 * (
+                    differential_output_vergence(opm, field, wavelength, 0)
+                    + differential_output_vergence(opm, field, wavelength, 1)
+                )
+
+            reference = mean_vergence(result["referenceWavelength"])
+            expected = [mean_vergence(wavelength) - reference for wavelength in result["y"]]
+        finally:
+            _restore_wavelengths(opm, spectral_region, original_state)
+
+        assert result["x"] == pytest.approx(expected, abs=2.0e-3)
+        assert result["x"][0] > 0.1
+        assert result["x"][-1] < -0.05
+
+    def test_result_is_json_encodable(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data
+
+        result = get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=0, wavelength_samples=4, num_rays=11)
 
         json.dumps(result)
 

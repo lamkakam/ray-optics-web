@@ -104,7 +104,11 @@ def _chief_image_point(chief_ray_pkg, foc: float) -> np.ndarray:
 
 
 class ChiefRayGrid(RayGrid):
-    """Finite RayGrid whose OPD and projected pupil share one reference sphere."""
+    """Finite RayGrid whose OPD and projected pupil share one reference sphere.
+
+    ``refocused_opd`` re-evaluates OPD for the traced rays at another focus
+    shift without retracing or changing the built grid.
+    """
 
     def __init__(self, opt_model, f, wl, foc, num_rays):
         """Initialize and immediately build a chief-ray-referenced finite grid."""
@@ -124,19 +128,24 @@ class ChiefRayGrid(RayGrid):
         }
         self.update_data()
 
-    def update_data(self, **kwargs):
-        """Rebuild rays and Hopkins OPD against the transformed chief sphere."""
-        wavelength_model = model_view_for_wavelength_opd(self.opt_model, self.wvl)
-        _, chief_ray_pkg = trace.setup_pupil_coords(
-            wavelength_model, self.fld, self.wvl, self.foc
-        )
-        # Chief-ray aiming is wavelength dependent and must be refreshed before
-        # pupil rays are launched from the optical specification.
-        self.fld.chief_ray = chief_ray_pkg
-        raw_grid = sample_valid_rays(
-            self.opt_model, self.fld, self.wvl, self.foc, self.num_rays
-        )
-        image_point = _chief_image_point(chief_ray_pkg, self.foc)
+    def _hopkins_opd(self, wavelength_model, chief_ray_pkg, raw_grid, foc: float):
+        """Return the chief sphere, preprocessing, and OPD waves for traced rays at ``foc``.
+
+        Ray tracing does not depend on focus; only the chief-ray image point,
+        its reference sphere, and the Hopkins OPD evaluation do.
+
+        Args:
+            wavelength_model: Wavelength-specific model view for OPD evaluation.
+            chief_ray_pkg: Chief ray package from ``setup_pupil_coords``.
+            raw_grid: Traced pupil cells from ``sample_valid_rays``.
+            foc: Focus shift in system length units.
+
+        Returns:
+            ``(image_point, ref_sphere, updated_grid, opd_values)``, where
+            ``opd_values`` has shape ``(num_rays, num_rays)`` in
+            central-wavelength waves and blocked cells are ``NaN``.
+        """
+        image_point = _chief_image_point(chief_ray_pkg, foc)
         ref_sphere = _reference_sphere(wavelength_model, chief_ray_pkg, image_point)
         first_order_data = wavelength_model["analysis_results"]["parax_data"].fod
         updated_grid = []
@@ -153,7 +162,7 @@ class ChiefRayGrid(RayGrid):
                     first_order_data,
                     self.fld,
                     self.wvl,
-                    self.foc,
+                    foc,
                     ray_pkg,
                     chief_ray_pkg,
                     ref_sphere,
@@ -163,13 +172,47 @@ class ChiefRayGrid(RayGrid):
                     first_order_data,
                     self.fld,
                     self.wvl,
-                    self.foc,
+                    foc,
                     ray_pkg,
                     chief_ray_pkg,
                     precomputed,
                     ref_sphere,
                 )
             updated_grid.append(updated_row)
+        return image_point, ref_sphere, updated_grid, opd_values
+
+    def refocused_opd(self, foc: float) -> np.ndarray:
+        """Return OPD waves for the already traced rays at another focus shift.
+
+        The grid, its reference sphere, and the field caches are left unchanged,
+        so repeated focus evaluations at one wavelength avoid retracing rays.
+
+        Args:
+            foc: Focus shift in system length units.
+
+        Returns:
+            OPD with shape ``(num_rays, num_rays)`` in central-wavelength waves,
+            ``NaN`` for blocked cells.
+        """
+        return self._hopkins_opd(
+            self._wavelength_model, self.chief_ray_pkg, self.raw_grid, foc
+        )[3]
+
+    def update_data(self, **kwargs):
+        """Rebuild rays and Hopkins OPD against the transformed chief sphere."""
+        wavelength_model = model_view_for_wavelength_opd(self.opt_model, self.wvl)
+        _, chief_ray_pkg = trace.setup_pupil_coords(
+            wavelength_model, self.fld, self.wvl, self.foc
+        )
+        # Chief-ray aiming is wavelength dependent and must be refreshed before
+        # pupil rays are launched from the optical specification.
+        self.fld.chief_ray = chief_ray_pkg
+        raw_grid = sample_valid_rays(
+            self.opt_model, self.fld, self.wvl, self.foc, self.num_rays
+        )
+        image_point, ref_sphere, updated_grid, opd_values = self._hopkins_opd(
+            wavelength_model, chief_ray_pkg, raw_grid, self.foc
+        )
 
         grid = np.empty((3, self.num_rays, self.num_rays), dtype=float)
         for row_index, row in enumerate(raw_grid):
@@ -183,6 +226,7 @@ class ChiefRayGrid(RayGrid):
         self.image_point = image_point
         self.ref_sphere = ref_sphere
         self.chief_ray_pkg = chief_ray_pkg
+        self._wavelength_model = wavelength_model
         self.fld.chief_ray = chief_ray_pkg
         self.fld.ref_sphere = ref_sphere
         return self

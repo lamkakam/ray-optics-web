@@ -372,6 +372,15 @@ const mockProxy = {
     unitX: "nm",
     unitY: "",
   }),
+  getChromaticFocalShiftData: jest.fn().mockResolvedValue({
+    fieldIdx: 0,
+    x: [0.02, 0, -0.01],
+    y: [486.1, 587.6, 656.3],
+    unitX: "mm",
+    unitY: "nm",
+    referenceWavelength: 587.6,
+    maxFocalShiftRange: 0.03,
+  }),
   getGeoPSFData: jest.fn().mockResolvedValue({
     fieldIdx: 0,
     wvlIdx: 0,

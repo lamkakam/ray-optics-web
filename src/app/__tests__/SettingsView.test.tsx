@@ -61,6 +61,7 @@ describe("analysis ray count settings", () => {
     ["OPD Fan", [21, 32, 64, 128], 21],
     ["Spot Diagram", [21, 32, 64, 128], 21],
     ["Strehl vs Wavelength", [21, 32, 64, 128], 21],
+    ["Chromatic Focal Shift", [15, 21, 32, 64], 15],
     ["Wavefront Map", [64, 128, 256], 128],
     ["Geometric PSF", [32, 64, 128, 256], 128],
     ["Diffraction PSF", [64, 128, 256], 128],
@@ -69,7 +70,7 @@ describe("analysis ray count settings", () => {
 
   beforeEach(() => localStorage.clear());
 
-  it("shows all eight labeled dropdowns with ordered options and defaults", () => {
+  it("shows all nine labeled dropdowns with ordered options and defaults", () => {
     render(<SettingsWithStore />);
     expect(
       screen.getByRole("heading", { name: "Analysis ray counts" }),

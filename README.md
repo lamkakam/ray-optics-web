@@ -26,7 +26,7 @@ This project is not affiliated with, endorsed by, or in any way officially conne
   - Reflective surfaces (mirrors)
   - Semi-diameter of each surface: can be set automatically or manually
 - **Lens layout** — PNG diagram of the optical system
-- **Analysis plots** — ray fan, OPD fan, spot diagram, surface-by-surface 3rd-order Seidel aberration breakdown, wavefront map, geometric PSF, diffraction PSF
+- **Analysis plots** — ray fan, OPD fan, spot diagram, field curvature, astigmatism, longitudinal spherical aberration, surface-by-surface 3rd-order Seidel aberration breakdown, Strehl vs wavelength, chromatic focal shift, wavefront map, geometric PSF, diffraction PSF, diffraction MTF
 - **3rd-order Seidel aberrations** — surface-by-surface breakdown, transverse ray aberrations, wavefront aberrations (in waves of reference wavelength set in System Specs), field curvature
 - **Zernike wavefront analysis** — Strehl ratio, Zernike polynomial terms (Fringe and Noll ordering up to quaternary spherical)
 - **Focusing** — optimize image surface position by minimizing monochromatic/polychromatic spot size/wavefront error

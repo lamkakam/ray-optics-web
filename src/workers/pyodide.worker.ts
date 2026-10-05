@@ -44,6 +44,7 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type {
   AstigmatismCurveData,
+  ChromaticFocalShiftData,
   DiffractionMtfData,
   DiffractionPsfData,
   FieldCurveData,
@@ -294,7 +295,7 @@ from rayoptics.seq.medium import decode_medium
 
 from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular, RonchiRuling, set_vig_with_ronchi_envelopes
 from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec, ExactOpticalModel, set_vig_respecting_exact_pupil
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data, get_surface_semi_diameters
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_chromatic_focal_shift_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data, get_surface_semi_diameters
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
 )
@@ -604,6 +605,29 @@ export async function _getStrehlVsWavelengthData(
     ),
   )) as string;
   return JSON.parse(json) as StrehlVsWavelengthData;
+}
+
+/**
+ * Loads and parses chromatic focal shift data for one field with injected execution.
+ *
+ * @param wavelengthSamples - Number of wavelength samples; defaults to 200.
+ * @param numRays - Ray-grid size; defaults to 15.
+ */
+export async function _getChromaticFocalShiftData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthSamples: number = 200,
+  numRays: number = 15,
+): Promise<ChromaticFocalShiftData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) =>
+        `json.dumps(get_chromatic_focal_shift_data(${opm}, ${fieldIndex}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as ChromaticFocalShiftData;
 }
 
 /** Loads and parses geometric-PSF points with injected execution. */
@@ -1266,6 +1290,24 @@ export async function getStrehlVsWavelengthData(
   });
 }
 
+/** Returns best-focus shift across wavelength for one field, using 200 wavelength samples and 15 rays by default. */
+export async function getChromaticFocalShiftData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthSamples: number = 200,
+  numRays: number = 15,
+): Promise<ChromaticFocalShiftData> {
+  return runPyodideOperation("getChromaticFocalShiftData", async () => {
+    return await _getChromaticFocalShiftData(
+      requirePyodide(),
+      opticalModel,
+      fieldIndex,
+      wavelengthSamples,
+      numRays,
+    );
+  });
+}
+
 /** Returns geometric-PSF points for one field and wavelength. */
 export async function getGeoPSFData(
   opticalModel: OpticalModel,
@@ -1549,6 +1591,7 @@ expose({
   getLSAData,
   getWavefrontData,
   getStrehlVsWavelengthData,
+  getChromaticFocalShiftData,
   getGeoPSFData,
   getDiffractionPSFData,
   getDiffractionMTFData,

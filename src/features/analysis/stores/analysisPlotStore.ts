@@ -1,12 +1,12 @@
 /**
- * Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+ * Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, chromatic-focal-shift data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
  *
  * @remarks
  * ## Dependencies
  *
  * - `create`, `StateCreator` from `zustand`.
  * - `PlotType` (type-only) from `@/features/analysis/components`.
- * - `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `LongitudinalSphericalAberrationData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
+ * - `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `LongitudinalSphericalAberrationData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, `ChromaticFocalShiftData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
  */
 import type { StateCreator } from "zustand";
 import {
@@ -19,6 +19,7 @@ import {
 import type { PlotType } from "@/features/analysis/components";
 import type {
   AstigmatismCurveData,
+  ChromaticFocalShiftData,
   DiffractionMtfData,
   DiffractionPsfData,
   FieldCurveData,
@@ -60,6 +61,8 @@ export interface AnalysisPlotState {
   wavefrontMapData: WavefrontMapData | undefined;
   /** Strehl-vs-wavelength chart payload, initially `undefined`. */
   strehlVsWavelengthData: StrehlVsWavelengthData | undefined;
+  /** Chromatic-focal-shift chart payload, initially `undefined`. */
+  chromaticFocalShiftData: ChromaticFocalShiftData | undefined;
   /** Whether plot data is loading. Defaults to `false`. */
   plotLoading: boolean;
   /** Active field index. Defaults to `0`. */
@@ -93,6 +96,10 @@ export interface AnalysisPlotState {
   setWavefrontMapData: (data: WavefrontMapData | undefined) => void;
   /** Sets or clears the Strehl-vs-wavelength payload and clears every other typed plot payload. */
   setStrehlVsWavelengthData: (data: StrehlVsWavelengthData | undefined) => void;
+  /** Sets or clears the chromatic-focal-shift payload and clears every other typed plot payload. */
+  setChromaticFocalShiftData: (
+    data: ChromaticFocalShiftData | undefined,
+  ) => void;
   /** Sets whether plot data is loading. */
   setPlotLoading: (loading: boolean) => void;
   /** Sets the active field index, clamping only its upper bound to `maxCount - 1` when `maxCount` is provided. */
@@ -128,6 +135,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
   diffractionMtfData: undefined,
   wavefrontMapData: undefined,
   strehlVsWavelengthData: undefined,
+  chromaticFocalShiftData: undefined,
   plotLoading: false,
   selectedFieldIndex: 0,
   selectedWavelengthIndex: 0,
@@ -146,6 +154,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setOpdFanData: (data) =>
     set({
@@ -160,6 +169,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setSpotDiagramData: (data) =>
     set({
@@ -174,6 +184,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setFieldCurvatureData: (data) =>
     set({
@@ -188,6 +199,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setAstigmatismCurveData: (data) =>
     set({
@@ -202,6 +214,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setLongitudinalSphericalAberrationData: (data) =>
     set({
@@ -216,6 +229,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setGeoPsfData: (data) =>
     set({
@@ -230,6 +244,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setDiffractionPsfData: (data) =>
     set({
@@ -244,6 +259,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setDiffractionMtfData: (data) =>
     set({
@@ -258,6 +274,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionPsfData: undefined,
       wavefrontMapData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setWavefrontMapData: (data) =>
     set({
@@ -272,6 +289,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionPsfData: undefined,
       diffractionMtfData: undefined,
       strehlVsWavelengthData: undefined,
+      chromaticFocalShiftData: undefined,
     }),
   setStrehlVsWavelengthData: (data) =>
     set({
@@ -286,6 +304,22 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       diffractionPsfData: undefined,
       diffractionMtfData: undefined,
       wavefrontMapData: undefined,
+      chromaticFocalShiftData: undefined,
+    }),
+  setChromaticFocalShiftData: (data) =>
+    set({
+      chromaticFocalShiftData: data,
+      rayFanData: undefined,
+      opdFanData: undefined,
+      spotDiagramData: undefined,
+      fieldCurvatureData: undefined,
+      astigmatismCurveData: undefined,
+      longitudinalSphericalAberrationData: undefined,
+      geoPsfData: undefined,
+      diffractionPsfData: undefined,
+      diffractionMtfData: undefined,
+      wavefrontMapData: undefined,
+      strehlVsWavelengthData: undefined,
     }),
   setPlotLoading: (loading) => set({ plotLoading: loading }),
   setSelectedFieldIndex: (index, maxCount) =>

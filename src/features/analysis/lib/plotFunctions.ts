@@ -13,6 +13,7 @@ import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
   AstigmatismCurveData,
+  ChromaticFocalShiftData,
   DiffractionMtfData,
   DiffractionPsfData,
   FieldCurveData,
@@ -67,6 +68,10 @@ export type AnalysisPlotLoadResult =
       readonly strehlVsWavelengthData: StrehlVsWavelengthData;
     }
   | {
+      readonly kind: "chromaticFocalShift";
+      readonly chromaticFocalShiftData: ChromaticFocalShiftData;
+    }
+  | {
       readonly kind: "diffractionPSF";
       readonly diffractionPsfData: DiffractionPsfData;
     }
@@ -75,9 +80,14 @@ export type AnalysisPlotLoadResult =
       readonly diffractionMtfData: DiffractionMtfData;
     };
 
+/** Default number of wavelength samples across the chromatic-focal-shift range. */
+export const DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES = 200;
+
 /** Plot selectors and optional app-wide sampling preferences, defaulting to historical resolutions. */
 interface LoadAnalysisPlotParams {
   readonly rayCounts?: AnalysisRayCounts;
+  /** Chromatic-focal-shift wavelength samples; defaults to `DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES` and is ignored by other plots. */
+  readonly wavelengthSamples?: number;
   readonly plotType: PlotType;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly model: OpticalModel | undefined;
@@ -100,11 +110,12 @@ interface LoadAnalysisPlotParams {
  * - Calls `proxy.getLSAData(model)` for `longitudinalSphericalAberration`; the worker returns all wavelength series, so no field or wavelength selector index is used.
  * - Calls `proxy.getWavefrontData(...)` with `imagePoint` for `wavefrontMap`.
  * - Calls `proxy.getStrehlVsWavelengthData(...)` with `imagePoint` for `strehlVsWavelength`.
+ * - Calls `proxy.getChromaticFocalShiftData(model, fi, wavelengthSamples, numRays)` for `chromaticFocalShift`; its chief-ray best focus is independent of `imagePoint`.
  * - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
  * - Calls `proxy.getDiffractionPSFData(...)` with `imagePoint` for `diffractionPSF`.
  * - Calls `proxy.getDiffractionMTFData(...)` with `imagePoint` for `diffractionMTF`.
  * - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
- * - Caches serialized worker promises by exact model instance, image point, plot type, effective ray count, FFT dimensions, and only the selectors relevant to that plot. Strehl retains 100 wavelength samples; diffraction PSF uses maxDims=1024 and MTF uses twice its ray count so the frequency axis stays aligned with the diffraction cutoff at every resolution.
+ * - Caches serialized worker promises by exact model instance, image point, plot type, effective ray count, FFT dimensions, and only the selectors relevant to that plot. Strehl retains 100 wavelength samples; chromatic focal shift includes its wavelength-sample count in the key; diffraction PSF uses maxDims=1024 and MTF uses twice its ray count so the frequency axis stays aligned with the diffraction cutoff at every resolution.
  * - Shares the complete cached Seidel request with `surfaceBySurface3rdOrder`.
  */
 export async function loadAnalysisPlot({
@@ -115,6 +126,7 @@ export async function loadAnalysisPlot({
   fieldIndex,
   wavelengthIndex,
   imagePoint = "chief_ray",
+  wavelengthSamples = DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES,
 }: LoadAnalysisPlotParams): Promise<AnalysisPlotLoadResult | undefined> {
   if (!proxy || !model) return undefined;
 
@@ -168,6 +180,22 @@ export async function loadAnalysisPlot({
             imagePoint,
             100,
             rayCounts.strehlVsWavelength,
+          ),
+      ),
+    };
+  }
+
+  if (plotType === "chromaticFocalShift") {
+    return {
+      kind: "chromaticFocalShift",
+      chromaticFocalShiftData: await cached(
+        `chromaticFocalShift:${fieldIndex}:${wavelengthSamples}:${rayCounts.chromaticFocalShift}`,
+        () =>
+          proxy.getChromaticFocalShiftData(
+            model,
+            fieldIndex,
+            wavelengthSamples,
+            rayCounts.chromaticFocalShift,
           ),
       ),
     };
@@ -353,7 +381,7 @@ export function loadZernikeData({
  * - No-ops when `plotResult` is `undefined`.
  * - When a requested ray-count snapshot is supplied, discards results whose plot resolution changed while loading.
  * - No-ops for `"surfaceBySurface3rdOrder"` because Seidel surface-by-surface data is committed through `AnalysisDataState`.
- * - Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"longitudinalSphericalAberration"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"diffractionPSF"`, and `"diffractionMTF"`.
+ * - Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"longitudinalSphericalAberration"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"chromaticFocalShift"`, `"diffractionPSF"`, and `"diffractionMTF"`.
  * - Uses an exhaustive `switch` so future `AnalysisPlotLoadResult` variants must be handled explicitly.
  */
 export function commitAnalysisPlotResult(
@@ -416,6 +444,11 @@ export function commitAnalysisPlotResult(
       analysisPlotStore
         .getState()
         .setStrehlVsWavelengthData(plotResult.strehlVsWavelengthData);
+      return;
+    case "chromaticFocalShift":
+      analysisPlotStore
+        .getState()
+        .setChromaticFocalShiftData(plotResult.chromaticFocalShiftData);
       return;
     case "diffractionPSF":
       analysisPlotStore

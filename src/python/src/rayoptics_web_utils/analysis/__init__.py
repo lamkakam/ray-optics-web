@@ -4,6 +4,7 @@ Importing this namespace loads RayOptics-dependent modules, so the top-level pac
 exposes these helpers through its lazy import map.
 """
 
+from rayoptics_web_utils.analysis.chromatic_focal_shift import get_chromatic_focal_shift_data
 from rayoptics_web_utils.analysis.diffraction_mtf import get_diffraction_mtf_data
 from rayoptics_web_utils.analysis.diffraction_psf import get_diffraction_psf_data
 from rayoptics_web_utils.analysis.field_curves import get_astigmatism_curve_data, get_field_curvature_data
@@ -30,6 +31,7 @@ __all__ = [
     "get_diffraction_psf_data",
     "get_diffraction_mtf_data",
     "get_strehl_vs_wavelength_data",
+    "get_chromatic_focal_shift_data",
     "get_field_curvature_data",
     "get_astigmatism_curve_data",
     "get_lsa_data",

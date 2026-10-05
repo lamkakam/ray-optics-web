@@ -1,5 +1,6 @@
 import type React from "react";
 import { AstigmatismChart } from "@/features/analysis/components/AstigmatismChart";
+import { ChromaticFocalShiftChart } from "@/features/analysis/components/ChromaticFocalShiftChart";
 import { DiffractionMtfChart } from "@/features/analysis/components/DiffractionMtfChart";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
 import { FieldCurveChart } from "@/features/analysis/components/FieldCurveChart";
@@ -19,6 +20,7 @@ import {
 } from "@/shared/components/primitives/Select";
 import type {
   AstigmatismCurveData,
+  ChromaticFocalShiftData,
   DiffractionMtfData,
   DiffractionPsfData,
   FieldCurveData,
@@ -42,6 +44,7 @@ export type PlotType =
   | "longitudinalSphericalAberration"
   | "surfaceBySurface3rdOrder"
   | "strehlVsWavelength"
+  | "chromaticFocalShift"
   | "wavefrontMap"
   | "geoPSF"
   | "diffractionPSF"
@@ -86,6 +89,8 @@ interface AnalysisPlotViewProps {
   readonly wavefrontMapData?: WavefrontMapData;
   /** Strehl ratio vs wavelength line data used only when `selectedPlotType === "strehlVsWavelength"` */
   readonly strehlVsWavelengthData?: StrehlVsWavelengthData;
+  /** Best-focus shift vs wavelength line data used only when `selectedPlotType === "chromaticFocalShift"` */
+  readonly chromaticFocalShiftData?: ChromaticFocalShiftData;
   /** Shows "Loading plot..." placeholder when `true` */
   readonly loading?: boolean;
   /** Called with the new field index */
@@ -122,6 +127,7 @@ export interface PlotTypeConfig {
  * | `longitudinalSphericalAberration` | "Longitudinal Spherical Aberration" | false | false |
  * | `surfaceBySurface3rdOrder` | "Surface by Surface 3rd Order Aberr." | false | false |
  * | `strehlVsWavelength` | "Strehl vs Wavelength" | true | false |
+ * | `chromaticFocalShift` | "Chromatic Focal Shift" | true | false |
  * | `wavefrontMap` | "Wavefront Map" | true | true |
  * | `geoPSF` | "Geometric PSF" | true | true |
  * | `diffractionPSF` | "Diffraction PSF" | true | true |
@@ -165,6 +171,11 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
   },
   strehlVsWavelength: {
     label: "Strehl vs Wavelength",
+    fieldDependent: true,
+    wavelengthDependent: false,
+  },
+  chromaticFocalShift: {
+    label: "Chromatic Focal Shift",
     fieldDependent: true,
     wavelengthDependent: false,
   },
@@ -317,6 +328,16 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
       />
     ),
   ),
+  chromaticFocalShift: createPlotRenderer(
+    (props) => props.chromaticFocalShiftData !== undefined,
+    (props) => props.chromaticFocalShiftData,
+    (props, chromaticFocalShiftData) => (
+      <ChromaticFocalShiftChart
+        chromaticFocalShiftData={chromaticFocalShiftData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
   wavefrontMap: createPlotRenderer(
     (props) => props.wavefrontMapData !== undefined,
     (props) => props.wavefrontMapData,
@@ -377,6 +398,7 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
  * - `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a Half-Field selector.
  * - `longitudinalSphericalAberration` renders `LongitudinalSphericalAberrationChart` only when `longitudinalSphericalAberrationData` is present, passes wavelength labels to name each series, and hides both field and wavelength selectors because the worker always traces field 0 for all wavelengths.
  * - `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
+ * - `chromaticFocalShift` renders `ChromaticFocalShiftChart` only when `chromaticFocalShiftData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
  * - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
  * - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
  * - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.

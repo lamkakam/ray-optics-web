@@ -345,6 +345,15 @@ function makeProxy(): PyodideWorkerAPI {
       unitX: "nm",
       unitY: "",
     }),
+    getChromaticFocalShiftData: jest.fn().mockResolvedValue({
+      fieldIdx: 0,
+      x: [0.02, 0, -0.01],
+      y: [486.1, 587.6, 656.3],
+      unitX: "mm",
+      unitY: "nm",
+      referenceWavelength: 587.6,
+      maxFocalShiftRange: 0.03,
+    }),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
       wvlIdx: 0,
@@ -492,6 +501,7 @@ describe("LensEditor", () => {
       "get_astigmatism_data",
       "get_longitudinal_spherical_aberration_data",
       "get_strehl_vs_wavelength_data",
+      "get_chromatic_focal_shift_data",
       "get_wavefront_map_data",
       "get_diffraction_psf_data",
       "get_diffraction_mtf_data",

@@ -9,6 +9,7 @@ import type {
   ZernikePupilSpace,
 } from "@/features/lens-editor/types/zernikeData";
 import {
+  DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES,
   loadAnalysisPlot,
   loadZernikeData,
   type AnalysisPlotLoadResult,
@@ -97,12 +98,25 @@ const plotInputSchemas = {
     },
   },
   none: { ...emptyInputSchema, properties: {} },
+  fieldSamples: {
+    ...emptyInputSchema,
+    properties: {
+      fieldIndex: zernikeInputSchema.properties.fieldIndex,
+      wavelengthSamples: {
+        type: "integer",
+        minimum: 2,
+        maximum: 1000,
+        description: `Number of uniformly spaced wavelength samples across the analysis range; defaults to ${DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES}.`,
+      },
+    },
+  },
 } as const;
 
 /** Optional committed selectors; every plot's schema rejects unsupported keys. */
 interface PlotInput {
   readonly fieldIndex?: number;
   readonly wavelengthIndex?: number;
+  readonly wavelengthSamples?: number;
 }
 
 const validators = (() => {
@@ -115,6 +129,7 @@ const validators = (() => {
       wavelength: ajv.compile<PlotInput>(plotInputSchemas.wavelength),
       both: ajv.compile<PlotInput>(plotInputSchemas.both),
       none: ajv.compile<PlotInput>(plotInputSchemas.none),
+      fieldSamples: ajv.compile<PlotInput>(plotInputSchemas.fieldSamples),
     },
   };
 })();
@@ -128,7 +143,7 @@ export interface AnalysisWebMcpDependencies {
   readonly imagePoint?: ImagePoint;
 }
 
-/** Named handles for thirteen read-only, Lens Editor-scoped analysis tools. */
+/** Named handles for fourteen read-only, Lens Editor-scoped analysis tools. */
 export interface AnalysisTools {
   readonly getParaxialData: WebMCP.ModelContextTool;
   readonly get3rdOrderSeidelData: WebMCP.ModelContextTool;
@@ -140,6 +155,7 @@ export interface AnalysisTools {
   readonly getAstigmatismData: WebMCP.ModelContextTool;
   readonly getLongitudinalSphericalAberrationData: WebMCP.ModelContextTool;
   readonly getStrehlVsWavelengthData: WebMCP.ModelContextTool;
+  readonly getChromaticFocalShiftData: WebMCP.ModelContextTool;
   readonly getWavefrontMapData: WebMCP.ModelContextTool;
   readonly getDiffractionPsfData: WebMCP.ModelContextTool;
   readonly getDiffractionMtfData: WebMCP.ModelContextTool;
@@ -180,7 +196,7 @@ interface PlotToolDefinition<K extends ToolPlotKind> {
  * rounding. Cancellation is checked before loading and after awaiting; it does
  * not interrupt computation shared with the dialog or another tool caller.
  *
- * Ten plot tools use loadAnalysisPlot and its unchanged model-identity/image-point
+ * Eleven plot tools use loadAnalysisPlot and its unchanged model-identity/image-point
  * LRU, selector/sampling/FFT keys, shared promises, and failure eviction. Each call
  * snapshots the committed model, app ray counts, and current image reference;
  * defaults are field 0 and the committed reference wavelength, never UI selection.
@@ -188,6 +204,8 @@ interface PlotToolDefinition<K extends ToolPlotKind> {
  * Results contain the complete unrounded worker `data`, applicable resolved
  * selectors, imagePoint, and numRays for configurable plots. Fans, spots, and LSA
  * retain every wavelength; Strehl retains the loader's wavelength sampling.
+ * Chromatic focal shift also accepts an optional integer wavelengthSamples in
+ * [2, 1000], defaulting to 200, which joins its cache key and is echoed back.
  * Spot results also include unrounded GEO/RMS `radii` from all positive committed
  * spectral weights about the supplied reference origin, in µm or afocal arcsec.
  * Unavailable radii are omitted without discarding point data. Tools never commit
@@ -209,7 +227,11 @@ export function createAnalysisTools({
     selectors,
     data: readData,
   }: PlotToolDefinition<K>): WebMCP.ModelContextTool {
-    const hasField = selectors === "field" || selectors === "both";
+    const hasField =
+      selectors === "field" ||
+      selectors === "both" ||
+      selectors === "fieldSamples";
+    const hasSamples = selectors === "fieldSamples";
     const hasWavelength = selectors === "wavelength" || selectors === "both";
     const setting = ANALYSIS_RAY_COUNT_SETTINGS.find(
       (entry) => entry.plotType === plotType,
@@ -230,6 +252,7 @@ export function createAnalysisTools({
         const {
           fieldIndex = 0,
           wavelengthIndex = model.specs.wavelengths.referenceIndex,
+          wavelengthSamples = DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES,
         } = input as PlotInput;
         if (hasField && fieldIndex >= model.specs.field.fields.length)
           throw new Error(
@@ -260,6 +283,7 @@ export function createAnalysisTools({
           wavelengthIndex,
           imagePoint,
           rayCounts,
+          wavelengthSamples,
         });
         assertWebMcpNotCancelled(signal);
         if (result?.kind !== plotType)
@@ -275,6 +299,7 @@ export function createAnalysisTools({
           ...(hasWavelength ? { wavelengthIndex } : {}),
           imagePoint,
           numRays,
+          ...(hasSamples ? { wavelengthSamples } : {}),
           ...(result.kind === "spotDiagram"
             ? {
                 radii: calculateSpotDiagramRadii(
@@ -341,6 +366,14 @@ export function createAnalysisTools({
       plotType: "strehlVsWavelength",
       selectors: "field",
       data: (result) => result.strehlVsWavelengthData,
+    }),
+    getChromaticFocalShiftData: createPlotTool({
+      name: "get_chromatic_focal_shift_data",
+      description:
+        "Read complete Chromatic Focal Shift data: the real-ray best-focus shift (RMS wavefront) for one field at uniformly sampled wavelengths, relative to the committed reference wavelength, in system length units or diopters of output vergence for afocal image space. The wavelength range matches Strehl vs Wavelength. Failed samples are null.",
+      plotType: "chromaticFocalShift",
+      selectors: "fieldSamples",
+      data: (result) => result.chromaticFocalShiftData,
     }),
     getWavefrontMapData: createPlotTool({
       name: "get_wavefront_map_data",

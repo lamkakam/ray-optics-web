@@ -45,6 +45,15 @@ const mockStrehlVsWavelengthChart = jest.fn(
   ),
 );
 
+const mockChromaticFocalShiftChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="chromatic-focal-shift-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
+
 const mockGeoPsfChart = jest.fn(
   ({ autoHeight }: { readonly autoHeight?: boolean }) => (
     <div
@@ -135,6 +144,11 @@ jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
 jest.mock("@/features/analysis/components/StrehlVsWavelengthChart", () => ({
   StrehlVsWavelengthChart: (props: { readonly autoHeight?: boolean }) =>
     mockStrehlVsWavelengthChart(props),
+}));
+
+jest.mock("@/features/analysis/components/ChromaticFocalShiftChart", () => ({
+  ChromaticFocalShiftChart: (props: { readonly autoHeight?: boolean }) =>
+    mockChromaticFocalShiftChart(props),
 }));
 
 jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
@@ -253,6 +267,7 @@ describe("AnalysisPlotView", () => {
       screen.getByText("Surface by Surface 3rd Order Aberr."),
     ).toBeInTheDocument();
     expect(screen.getByText("Strehl vs Wavelength")).toBeInTheDocument();
+    expect(screen.getByText("Chromatic Focal Shift")).toBeInTheDocument();
     expect(screen.getByText("Wavefront Map")).toBeInTheDocument();
     expect(screen.getByText("Geometric PSF")).toBeInTheDocument();
     expect(screen.getByText("Diffraction PSF")).toBeInTheDocument();
@@ -266,6 +281,7 @@ describe("AnalysisPlotView", () => {
       "Longitudinal Spherical Aberration",
       "Surface by Surface 3rd Order Aberr.",
       "Strehl vs Wavelength",
+      "Chromatic Focal Shift",
       "Wavefront Map",
       "Geometric PSF",
       "Diffraction PSF",
@@ -494,6 +510,46 @@ describe("AnalysisPlotView", () => {
         autoHeight: undefined,
       }),
     );
+  });
+
+  it("renders a chromatic focal shift chart when data is provided", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="chromaticFocalShift"
+        chromaticFocalShiftData={{
+          fieldIdx: 0,
+          x: [0.02, 0, -0.01],
+          y: [486.1, 587.6, 656.3],
+          unitX: "mm",
+          unitY: "nm",
+          referenceWavelength: 587.6,
+          maxFocalShiftRange: 0.03,
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("chromatic-focal-shift-chart"),
+    ).toBeInTheDocument();
+    expect(mockChromaticFocalShiftChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoHeight: undefined,
+      }),
+    );
+  });
+
+  it("does not render a chromatic focal shift chart without data", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="chromaticFocalShift"
+      />,
+    );
+
+    expect(
+      screen.queryByTestId("chromatic-focal-shift-chart"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders a geometric PSF chart when data is provided", () => {
@@ -846,6 +902,17 @@ describe("AnalysisPlotView", () => {
         />,
       );
       expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
+    });
+
+    it("renders an enabled field selector and no wavelength selector for chromaticFocalShift", () => {
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="chromaticFocalShift"
+        />,
+      );
+      expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
+      expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
     });
 
     it("field selector is enabled for geoPSF", () => {

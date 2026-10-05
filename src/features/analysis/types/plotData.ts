@@ -62,6 +62,24 @@ export interface StrehlVsWavelengthData {
   unitY: string;
 }
 
+/**
+ * Best-focus shift across wavelength for one field, relative to the reference wavelength.
+ *
+ * `x` holds focal shifts in `unitX` (system length unit, or `D` for output
+ * vergence in afocal image space), `undefined` where a sample failed to trace.
+ * `y` holds wavelengths in `unitY` (`nm`). `maxFocalShiftRange` is the spread
+ * of the finite shifts, or `undefined` when no sample succeeded.
+ */
+export interface ChromaticFocalShiftData {
+  fieldIdx: number;
+  x: (number | undefined)[];
+  y: number[];
+  unitX: string;
+  unitY: string;
+  referenceWavelength: number;
+  maxFocalShiftRange: number | undefined;
+}
+
 /** Geometric-PSF point coordinates and physical units. */
 export interface GeoPsfData {
   fieldIdx: number;

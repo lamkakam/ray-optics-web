@@ -10,6 +10,7 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type {
   AstigmatismCurveData,
+  ChromaticFocalShiftData,
   DiffractionMtfData,
   DiffractionPsfData,
   FieldCurveData,
@@ -122,6 +123,13 @@ export interface PyodideWorkerAPI {
     wavelengthSamples?: number,
     numRays?: number,
   ): Promise<StrehlVsWavelengthData>;
+  /** Returns best-focus shift across wavelength for one field, relative to the reference wavelength. */
+  getChromaticFocalShiftData(
+    opticalModel: OpticalModel,
+    fieldIndex: number,
+    wavelengthSamples?: number,
+    numRays?: number,
+  ): Promise<ChromaticFocalShiftData>;
   /** Returns geometric-PSF points. Sampling defaults to 128 per grid dimension. */
   getGeoPSFData(
     opticalModel: OpticalModel,

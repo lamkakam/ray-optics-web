@@ -34,6 +34,7 @@ import type {
   RayFanData,
   SpotDiagramData,
   StrehlVsWavelengthData,
+  ChromaticFocalShiftData,
   WavefrontMapData,
 } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
@@ -199,6 +200,16 @@ const strehlVsWavelengthData: StrehlVsWavelengthData = {
   y: [0.72, 0.94, 0.81],
   unitX: "nm",
   unitY: "",
+};
+
+const chromaticFocalShiftData: ChromaticFocalShiftData = {
+  fieldIdx: 1,
+  x: [0.02, 0, -0.01],
+  y: [486.1, 587.6, 656.3],
+  unitX: "mm",
+  unitY: "nm",
+  referenceWavelength: 587.6,
+  maxFocalShiftRange: 0.03,
 };
 
 const geoPsfData: GeoPsfData = {
@@ -372,6 +383,9 @@ function makeMockProxy(
     getStrehlVsWavelengthData: jest
       .fn<Promise<StrehlVsWavelengthData>, [OpticalModel, number]>()
       .mockResolvedValue(strehlVsWavelengthData),
+    getChromaticFocalShiftData: jest
+      .fn<Promise<ChromaticFocalShiftData>, [OpticalModel, number]>()
+      .mockResolvedValue(chromaticFocalShiftData),
     get3rdOrderSeidelData: jest.fn(),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
@@ -639,6 +653,7 @@ describe("AnalysisPlotContainer", () => {
     ["geoPSF", "geo-psf-chart"],
     ["wavefrontMap", "wavefront-map-chart"],
     ["strehlVsWavelength", "strehl-vs-wavelength-chart"],
+    ["chromaticFocalShift", "chromatic-focal-shift-chart"],
     ["diffractionPSF", "diffraction-psf-chart"],
     ["diffractionMTF", "diffraction-mtf-chart"],
   ] as const)(
@@ -678,6 +693,9 @@ describe("AnalysisPlotContainer", () => {
           break;
         case "strehlVsWavelength":
           store.getState().setStrehlVsWavelengthData(strehlVsWavelengthData);
+          break;
+        case "chromaticFocalShift":
+          store.getState().setChromaticFocalShiftData(chromaticFocalShiftData);
           break;
         case "diffractionPSF":
           store.getState().setDiffractionPsfData(diffractionPsfData);
@@ -1248,6 +1266,27 @@ describe("AnalysisPlotContainer", () => {
     });
     expect(store.getState().strehlVsWavelengthData).toEqual(
       strehlVsWavelengthData,
+    );
+  });
+
+  it("handlePlotTypeChange: chromaticFocalShift fetches data for the selected field and stores it", async () => {
+    store.getState().setSelectedFieldIndex(1);
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "chromaticFocalShift");
+
+    expect(store.getState().selectedPlotType).toBe("chromaticFocalShift");
+    await waitFor(() => {
+      expect(proxy.getChromaticFocalShiftData).toHaveBeenCalledWith(
+        testModel,
+        1,
+        200,
+        15,
+      );
+    });
+    expect(store.getState().chromaticFocalShiftData).toEqual(
+      chromaticFocalShiftData,
     );
   });
 

@@ -4,6 +4,7 @@ import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
   AstigmatismCurveData,
+  ChromaticFocalShiftData,
   DiffractionMtfData,
   FieldCurveData,
   LongitudinalSphericalAberrationData,
@@ -47,6 +48,16 @@ const strehlVsWavelengthData: StrehlVsWavelengthData = {
   y: [0.72, 0.94, 0.81],
   unitX: "nm",
   unitY: "",
+};
+
+const chromaticFocalShiftData: ChromaticFocalShiftData = {
+  fieldIdx: 1,
+  x: [0.02, 0, -0.01],
+  y: [486.1, 587.6, 656.3],
+  unitX: "mm",
+  unitY: "nm",
+  referenceWavelength: 587.6,
+  maxFocalShiftRange: 0.03,
 };
 
 const fieldCurveData: FieldCurveData = {
@@ -173,6 +184,9 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     getStrehlVsWavelengthData: jest
       .fn()
       .mockResolvedValue(strehlVsWavelengthData),
+    getChromaticFocalShiftData: jest
+      .fn()
+      .mockResolvedValue(chromaticFocalShiftData),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
 }
 
@@ -364,6 +378,58 @@ describe("loadAnalysisPlot", () => {
     });
   });
 
+  it("loads chromaticFocalShift through getChromaticFocalShiftData with 200 wavelength samples by default", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "chromaticFocalShift",
+      proxy,
+      model: mockModel,
+      fieldIndex: 1,
+      wavelengthIndex: 2,
+      imagePoint: "centroid",
+    });
+
+    expect(proxy.getChromaticFocalShiftData).toHaveBeenCalledWith(
+      mockModel,
+      1,
+      200,
+      15,
+    );
+    expect(result).toEqual({
+      kind: "chromaticFocalShift",
+      chromaticFocalShiftData,
+    });
+  });
+
+  it("forwards and separately caches explicit chromaticFocalShift wavelength samples", async () => {
+    const proxy = makeMockProxy();
+    const params = {
+      plotType: "chromaticFocalShift" as const,
+      proxy,
+      model: mockModel,
+      fieldIndex: 1,
+      wavelengthIndex: 0,
+    };
+
+    await loadAnalysisPlot({ ...params, wavelengthSamples: 50 });
+    expect(proxy.getChromaticFocalShiftData).toHaveBeenLastCalledWith(
+      mockModel,
+      1,
+      50,
+      15,
+    );
+    await loadAnalysisPlot({ ...params, wavelengthSamples: 50 });
+    expect(proxy.getChromaticFocalShiftData).toHaveBeenCalledTimes(1);
+    await loadAnalysisPlot({ ...params, wavelengthIndex: 2 });
+    expect(proxy.getChromaticFocalShiftData).toHaveBeenLastCalledWith(
+      mockModel,
+      1,
+      200,
+      15,
+    );
+    expect(proxy.getChromaticFocalShiftData).toHaveBeenCalledTimes(2);
+  });
+
   it("loads geoPSF through getGeoPSFData", async () => {
     const proxy = makeMockProxy();
     const result = await loadAnalysisPlot({
@@ -530,6 +596,22 @@ describe("commitAnalysisPlotResult", () => {
     );
   });
 
+  it("commits chromaticFocalShift data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult(
+      {
+        kind: "chromaticFocalShift",
+        chromaticFocalShiftData,
+      },
+      store,
+    );
+
+    expect(store.getState().chromaticFocalShiftData).toEqual(
+      chromaticFocalShiftData,
+    );
+  });
+
   it("commits fieldCurvature data into the analysis plot store", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
 
@@ -591,6 +673,7 @@ describe("configurable plot sampling", () => {
       21,
       [1, "centroid", 100],
     ],
+    ["chromaticFocalShift", "getChromaticFocalShiftData", 15, [1, 200]],
     ["wavefrontMap", "getWavefrontData", 128, [1, 2, "centroid"]],
     ["geoPSF", "getGeoPSFData", 128, [1, 2]],
     ["diffractionPSF", "getDiffractionPSFData", 128, [1, 2, "centroid"]],

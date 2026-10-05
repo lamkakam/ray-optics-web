@@ -23,6 +23,7 @@ import {
   _getSpotDiagramData,
   _getWavefrontData,
   _getStrehlVsWavelengthData,
+  _getChromaticFocalShiftData,
   _getGeoPSFData,
   _getDiffractionPSFData,
   _getDiffractionMTFData,
@@ -43,6 +44,7 @@ import {
   getLSAData,
   getWavefrontData,
   getStrehlVsWavelengthData,
+  getChromaticFocalShiftData,
   getGeoPSFData,
   getDiffractionMTFData,
   get3rdOrderSeidelData,
@@ -686,6 +688,54 @@ describe("_getWavefrontData", () => {
   });
 });
 
+describe("_getChromaticFocalShiftData", () => {
+  const mockData = {
+    fieldIdx: 1,
+    x: [0.02, 0, -0.01],
+    y: [486.1, 587.6, 656.3],
+    unitX: "mm",
+    unitY: "nm",
+    referenceWavelength: 587.6,
+    maxFocalShiftRange: 0.03,
+  };
+
+  it("should call json.dumps(get_chromatic_focal_shift_data(...)) with 200 samples and 15 rays by default", async () => {
+    let pythonScript = "";
+    const result = await _getChromaticFocalShiftData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      1,
+    );
+
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
+    expect(pythonScript).toContain(
+      "json.dumps(get_chromatic_focal_shift_data(_build_opm(), 1, wavelength_samples=200, num_rays=15))",
+    );
+    expect(result).toEqual(mockData);
+  });
+
+  it("should forward custom wavelength samples and ray count", async () => {
+    let pythonScript = "";
+    await _getChromaticFocalShiftData(
+      async (code) => {
+        pythonScript = code;
+        return JSON.stringify(mockData);
+      },
+      allSphericalOpticalModel,
+      2,
+      50,
+      21,
+    );
+
+    expect(pythonScript).toContain(
+      "json.dumps(get_chromatic_focal_shift_data(_build_opm(), 2, wavelength_samples=50, num_rays=21))",
+    );
+  });
+});
+
 describe("_getStrehlVsWavelengthData", () => {
   it("should build the model script, call json.dumps(get_strehl_vs_wavelength_data(...)) and return parsed data", async () => {
     const mockData = {
@@ -1248,6 +1298,10 @@ describe("public worker guards before initialization", () => {
         "getStrehlVsWavelengthData",
         () => getStrehlVsWavelengthData(allSphericalOpticalModel, 0),
       ],
+      [
+        "getChromaticFocalShiftData",
+        () => getChromaticFocalShiftData(allSphericalOpticalModel, 0),
+      ],
       ["getGeoPSFData", () => getGeoPSFData(allSphericalOpticalModel, 0, 0)],
       [
         "getDiffractionPSFData",
@@ -1379,6 +1433,7 @@ describe("public worker guards before initialization", () => {
     await getSpotDiagramData(allSphericalOpticalModel, 0);
     await getWavefrontData(allSphericalOpticalModel, 0, 0);
     await getStrehlVsWavelengthData(allSphericalOpticalModel, 0);
+    await getChromaticFocalShiftData(allSphericalOpticalModel, 0);
     await getDiffractionPSFData(allSphericalOpticalModel, 0, 0);
     await getDiffractionMTFData(allSphericalOpticalModel, 0, 0);
     await getZernikeCoefficients(allSphericalOpticalModel, 0, 0);
@@ -1409,6 +1464,9 @@ describe("public worker guards before initialization", () => {
         ),
         expect.stringContaining(
           "get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')",
+        ),
+        expect.stringContaining(
+          "get_chromatic_focal_shift_data(_build_opm(), 0, wavelength_samples=200, num_rays=15)",
         ),
         expect.stringContaining(
           "get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=128, max_dims=1024, image_point='chief_ray')",

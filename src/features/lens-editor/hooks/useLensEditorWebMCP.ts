@@ -40,7 +40,7 @@ export interface LensEditorWebMCPDependencies {
   readonly onError?: (error: unknown) => void;
 }
 
-/** Registers prescription, System Specs, recomputation, focus, and thirteen committed-analysis tools in order. Analysis descriptors use current worker/image-reference dependencies without re-registering, read sampling preferences at invocation, and share the editor's plot and Zernike caches without modifying chart state. Unsupported browsers are skipped; all registrations end on unmount. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
+/** Registers prescription, System Specs, recomputation, focus, and fourteen committed-analysis tools in order. Analysis descriptors use current worker/image-reference dependencies without re-registering, read sampling preferences at invocation, and share the editor's plot and Zernike caches without modifying chart state. Unsupported browsers are skipped; all registrations end on unmount. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
 export function useLensEditorWebMCP({
   lensStore,
   specsStore,
@@ -157,6 +157,10 @@ export function useLensEditorWebMCP({
     analysisPlotStore,
   ]);
   useWebMCP(analysisTools.getStrehlVsWavelengthData, [
+    lensStore,
+    analysisPlotStore,
+  ]);
+  useWebMCP(analysisTools.getChromaticFocalShiftData, [
     lensStore,
     analysisPlotStore,
   ]);
