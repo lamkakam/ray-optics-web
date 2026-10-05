@@ -680,6 +680,23 @@ class TestMonochromaticStrehl:
         )
 
 
+class TestOpdWfe:
+    """Piston-only RMS wavefront error shared by focusing and focus analyses."""
+
+    def test_removes_piston_and_ignores_nan_cells(self):
+        from rayoptics_web_utils.zernike.zernike import _opd_wfe
+
+        opd = np.array([[1.0, 3.0], [np.nan, 5.0]])
+
+        assert _opd_wfe(opd) == pytest.approx(np.std([1.0, 3.0, 5.0]))
+        assert _opd_wfe(opd + 10.0) == pytest.approx(_opd_wfe(opd))
+
+    def test_returns_penalty_when_no_cell_is_valid(self):
+        from rayoptics_web_utils.zernike.zernike import _opd_wfe
+
+        assert _opd_wfe(np.full((2, 2), np.nan)) == 1.0e6
+
+
 class TestNollNormFactor:
     """Test Noll normalization factor N_n^m = sqrt((2 - delta_{m,0})(n + 1))."""
 

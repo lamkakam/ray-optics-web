@@ -124,6 +124,32 @@ class TestMakeRayGrid:
 
         assert result.image_pt_2d is None
 
+    @pytest.mark.parametrize("field_index", [0, 2])
+    def test_chief_grid_refocused_opd_matches_a_retraced_grid_without_retracing(
+        self, cooke_triplet, monkeypatch, field_index
+    ):
+        """Refocusing reuses traced rays and leaves the built grid unchanged."""
+        import rayoptics_web_utils.raygrid.raygrid as module
+
+        wavelength = cooke_triplet.optical_spec.spectral_region.central_wvl
+        expected = module.make_ray_grid(
+            cooke_triplet, fi=field_index, wavelength_nm=wavelength, foc=0.05, num_rays=9
+        ).grid[2]
+        grid = module.make_ray_grid(cooke_triplet, fi=field_index, wavelength_nm=wavelength, num_rays=9)
+        original_opd = grid.grid[2].copy()
+        original_sphere = grid.ref_sphere
+        monkeypatch.setattr(
+            module, "sample_valid_rays", lambda *args, **kwargs: pytest.fail("unexpected retrace")
+        )
+
+        refocused = grid.refocused_opd(0.05)
+
+        np.testing.assert_allclose(refocused, expected, rtol=1.0e-12, atol=1.0e-12, equal_nan=True)
+        assert grid.foc == 0.0
+        np.testing.assert_array_equal(grid.grid[2], original_opd)
+        assert grid.ref_sphere is original_sphere
+        assert grid.fld.ref_sphere is original_sphere
+
     def test_centroid_mode_uses_centroid_ray_grid(self, cooke_triplet):
         """Centroid mode uses the rebuild-capable best-fit RayGrid subclass."""
         import rayoptics_web_utils.raygrid.raygrid as module
@@ -641,6 +667,29 @@ class TestLinearOpdCoefficients:
             match=r"^Centroid wavefront reference requires non-collinear valid rays\.$",
         ):
             _linear_opd_coefficients(raw_grid, [[2.0, 5.0, 8.0]])
+
+    def test_error_messages_name_the_requested_reference(self):
+        """Callers such as the afocal plane-wave fit label their own failures."""
+        from rayoptics_web_utils.raygrid.raygrid import _linear_opd_coefficients
+
+        ray_pkg = object()
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Centroid plane-wave reference requires at least three valid rays\.$",
+        ):
+            _linear_opd_coefficients(
+                [[[0.0, 0.0, ray_pkg]]], [[1.0]], "Centroid plane-wave reference"
+            )
+        with pytest.raises(
+            ValueError,
+            match=r"^Centroid plane-wave reference requires non-collinear valid rays\.$",
+        ):
+            _linear_opd_coefficients(
+                [[[0.0, 0.0, ray_pkg], [1.0, 0.0, ray_pkg], [2.0, 0.0, ray_pkg]]],
+                [[2.0, 5.0, 8.0]],
+                "Centroid plane-wave reference",
+            )
 
     @pytest.mark.parametrize(
         ("raw_grid", "opd_values"),

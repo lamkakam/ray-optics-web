@@ -25,6 +25,12 @@ export const ANALYSIS_RAY_COUNT_SETTINGS = [
     defaultValue: 21,
   },
   {
+    plotType: "chromaticFocalShift",
+    label: "Chromatic Focal Shift",
+    options: [15, 21, 32, 64],
+    defaultValue: 15,
+  },
+  {
     plotType: "wavefrontMap",
     label: "Wavefront Map",
     options: [64, 128, 256],
@@ -66,7 +72,7 @@ export const DEFAULT_ANALYSIS_RAY_COUNTS = Object.fromEntries(
   ]),
 ) as AnalysisRayCounts;
 
-/** Storage contains only the eight preferences, without transient analysis data. */
+/** Storage contains only the nine preferences, without transient analysis data. */
 const STORAGE_KEY = "ray-optics-web-analysis-ray-counts";
 
 /** Accepts only an integer offered by the selected plot's dropdown. */

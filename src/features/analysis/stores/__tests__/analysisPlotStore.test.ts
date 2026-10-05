@@ -56,6 +56,11 @@ describe("analysisPlotStore", () => {
       expect(store.getState().strehlVsWavelengthData).toBeUndefined();
     });
 
+    it("has chromaticFocalShiftData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().chromaticFocalShiftData).toBeUndefined();
+    });
+
     it("has spotDiagramData as undefined", () => {
       const store = makeStore();
       expect(store.getState().spotDiagramData).toBeUndefined();
@@ -720,6 +725,62 @@ describe("analysisPlotStore", () => {
     });
   });
 
+  describe("setChromaticFocalShiftData", () => {
+    const chromaticFocalShiftData = {
+      fieldIdx: 2,
+      x: [0.02, 0, undefined],
+      y: [486.1, 587.6, 656.3],
+      unitX: "mm",
+      unitY: "nm",
+      referenceWavelength: 587.6,
+      maxFocalShiftRange: 0.02,
+    };
+
+    it("sets and clears chromaticFocalShiftData", () => {
+      const store = makeStore();
+      store.getState().setChromaticFocalShiftData(chromaticFocalShiftData);
+      expect(store.getState().chromaticFocalShiftData).toEqual(
+        chromaticFocalShiftData,
+      );
+
+      store.getState().setChromaticFocalShiftData(undefined);
+      expect(store.getState().chromaticFocalShiftData).toBeUndefined();
+    });
+
+    it("clears other chart payloads when setting chromatic focal shift data", () => {
+      const store = makeStore();
+      store.getState().setStrehlVsWavelengthData({
+        fieldIdx: 1,
+        x: [486.1],
+        y: [0.94],
+        unitX: "nm",
+        unitY: "",
+      });
+
+      store.getState().setChromaticFocalShiftData(chromaticFocalShiftData);
+
+      expect(store.getState().strehlVsWavelengthData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().chromaticFocalShiftData?.fieldIdx).toBe(2);
+    });
+
+    it("is cleared when another chart payload is set", () => {
+      const store = makeStore();
+      store.getState().setChromaticFocalShiftData(chromaticFocalShiftData);
+
+      store.getState().setStrehlVsWavelengthData({
+        fieldIdx: 1,
+        x: [486.1],
+        y: [0.94],
+        unitX: "nm",
+        unitY: "",
+      });
+
+      expect(store.getState().chromaticFocalShiftData).toBeUndefined();
+    });
+  });
+
   describe("setPlotLoading", () => {
     it("sets plotLoading to true", () => {
       const store = makeStore();
@@ -826,6 +887,7 @@ describe("analysisPlotStore", () => {
         "longitudinalSphericalAberration",
         "surfaceBySurface3rdOrder",
         "strehlVsWavelength",
+        "chromaticFocalShift",
         "wavefrontMap",
         "geoPSF",
         "diffractionPSF",
@@ -874,6 +936,7 @@ describe("analysisPlotStore", () => {
       expect(store.getState().diffractionMtfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
       expect(store.getState().strehlVsWavelengthData).toBeUndefined();
+      expect(store.getState().chromaticFocalShiftData).toBeUndefined();
     });
   });
 });
@@ -886,6 +949,7 @@ describe("analysis ray count preferences", () => {
     opdFan: 21,
     spotDiagram: 21,
     strehlVsWavelength: 21,
+    chromaticFocalShift: 15,
     wavefrontMap: 128,
     geoPSF: 128,
     diffractionPSF: 128,
@@ -927,6 +991,7 @@ describe("analysis ray count preferences", () => {
     store.getState().setRayCount("rayFan", 32);
     store.getState().setRayCount("wavefrontMap", 21);
     store.getState().setRayCount("opdFan", 32.5);
+    store.getState().setRayCount("chromaticFocalShift", 128);
     store.getState().setSelectedPlotType("opdFan");
     expect(store.getState().rayCounts).toEqual({ ...defaults, rayFan: 32 });
     expect(JSON.parse(localStorage.getItem(key)!)).toEqual({
@@ -949,5 +1014,81 @@ describe("analysis ray count preferences", () => {
     expect(store.getState().rayCounts).toEqual(defaults);
     store.getState().setRayCount("geoPSF", 256);
     expect(store.getState().rayCounts.geoPSF).toBe(256);
+  });
+});
+
+/** Wavelength sample counts persist separately from ray counts and tolerate storage failures. */
+describe("analysis wavelength sample count preferences", () => {
+  const key = "ray-optics-web-analysis-wavelength-samples";
+  const defaults = { strehlVsWavelength: 100, chromaticFocalShift: 50 };
+  beforeEach(() => localStorage.clear());
+  afterEach(() => jest.restoreAllMocks());
+
+  it("defaults Strehl to 100 and Chromatic Focal Shift to 50 samples", () => {
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual(defaults);
+  });
+
+  it("restores valid entries and defaults invalid or absent entries individually", () => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ strehlVsWavelength: 400, chromaticFocalShift: 400 }),
+    );
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual({
+      ...defaults,
+      strehlVsWavelength: 400,
+    });
+
+    localStorage.setItem(
+      key,
+      JSON.stringify({ strehlVsWavelength: "200", chromaticFocalShift: 200 }),
+    );
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual({
+      ...defaults,
+      chromaticFocalShift: 200,
+    });
+  });
+
+  it.each(["not json", "null", "[]", "42"])(
+    "defaults malformed storage %s",
+    (raw) => {
+      localStorage.setItem(key, raw);
+      expect(makeStore().getState().wavelengthSampleCounts).toEqual(defaults);
+    },
+  );
+
+  it("validates updates and persists only wavelength sample counts", () => {
+    const store = makeStore();
+    store.getState().setWavelengthSampleCount("strehlVsWavelength", 200);
+    store.getState().setWavelengthSampleCount("chromaticFocalShift", 400);
+    store.getState().setWavelengthSampleCount("chromaticFocalShift", 75);
+    store.getState().setRayCount("rayFan", 32);
+
+    expect(store.getState().wavelengthSampleCounts).toEqual({
+      ...defaults,
+      strehlVsWavelength: 200,
+    });
+    expect(JSON.parse(localStorage.getItem(key)!)).toEqual({
+      ...defaults,
+      strehlVsWavelength: 200,
+    });
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual(
+      store.getState().wavelengthSampleCounts,
+    );
+    expect(makeStore().getState().rayCounts.rayFan).toBe(32);
+  });
+
+  it("keeps session preferences usable when storage is unavailable", () => {
+    jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("full");
+    });
+    const store = makeStore();
+    expect(store.getState().wavelengthSampleCounts).toEqual(defaults);
+    store.getState().setWavelengthSampleCount("chromaticFocalShift", 100);
+    expect(store.getState().wavelengthSampleCounts.chromaticFocalShift).toBe(
+      100,
+    );
   });
 });

@@ -50,6 +50,10 @@ it.each([
     "getStrehlVsWavelengthData",
     () => worker.getStrehlVsWavelengthData(model, 0),
   ],
+  [
+    "getChromaticFocalShiftData",
+    () => worker.getChromaticFocalShiftData(model, 0),
+  ],
   ["getGeoPSFData", () => worker.getGeoPSFData(model, 0, 0)],
   ["getDiffractionPSFData", () => worker.getDiffractionPSFData(model, 0, 0)],
   ["getDiffractionMTFData", () => worker.getDiffractionMTFData(model, 0, 0)],

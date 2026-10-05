@@ -1,6 +1,7 @@
 export * from "./AnalysisPlotContainer";
 export * from "./AnalysisPlotView";
 export * from "./AstigmatismChart";
+export * from "./ChromaticFocalShiftChart";
 export * from "./DiffractionMtfChart";
 export * from "./DiffractionPsfChart";
 export * from "./FieldCurveChart";

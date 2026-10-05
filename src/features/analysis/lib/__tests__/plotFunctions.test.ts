@@ -1,9 +1,11 @@
 /** Covers typed plot dispatch, resolution-specific caching, and MTF transforms at twice the pupil sampling. */
 import { DEFAULT_ANALYSIS_RAY_COUNTS } from "@/features/analysis/lib/analysisRayCounts";
+import { DEFAULT_ANALYSIS_WAVELENGTH_SAMPLE_COUNTS } from "@/features/analysis/lib/analysisWavelengthSamples";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
   AstigmatismCurveData,
+  ChromaticFocalShiftData,
   DiffractionMtfData,
   FieldCurveData,
   LongitudinalSphericalAberrationData,
@@ -47,6 +49,16 @@ const strehlVsWavelengthData: StrehlVsWavelengthData = {
   y: [0.72, 0.94, 0.81],
   unitX: "nm",
   unitY: "",
+};
+
+const chromaticFocalShiftData: ChromaticFocalShiftData = {
+  fieldIdx: 1,
+  x: [0.02, 0, -0.01],
+  y: [486.1, 587.6, 656.3],
+  unitX: "mm",
+  unitY: "nm",
+  referenceWavelength: 587.6,
+  maxFocalShiftRange: 0.03,
 };
 
 const fieldCurveData: FieldCurveData = {
@@ -173,6 +185,9 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     getStrehlVsWavelengthData: jest
       .fn()
       .mockResolvedValue(strehlVsWavelengthData),
+    getChromaticFocalShiftData: jest
+      .fn()
+      .mockResolvedValue(chromaticFocalShiftData),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
 }
 
@@ -364,6 +379,84 @@ describe("loadAnalysisPlot", () => {
     });
   });
 
+  it("loads chromaticFocalShift through getChromaticFocalShiftData with 50 wavelength samples by default", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "chromaticFocalShift",
+      proxy,
+      model: mockModel,
+      fieldIndex: 1,
+      wavelengthIndex: 2,
+      imagePoint: "centroid",
+    });
+
+    expect(proxy.getChromaticFocalShiftData).toHaveBeenCalledWith(
+      mockModel,
+      1,
+      50,
+      15,
+    );
+    expect(result).toEqual({
+      kind: "chromaticFocalShift",
+      chromaticFocalShiftData,
+    });
+  });
+
+  it.each([
+    ["strehlVsWavelength", "getStrehlVsWavelengthData", 100, 400, ["centroid"]],
+    ["chromaticFocalShift", "getChromaticFocalShiftData", 50, 200, []],
+  ] as const)(
+    "forwards and separately caches %s wavelength sample counts",
+    async (plotType, method, defaultSamples, explicitSamples, prefix) => {
+      const proxy = makeMockProxy();
+      const params = {
+        plotType,
+        proxy,
+        model: mockModel,
+        fieldIndex: 1,
+        wavelengthIndex: 0,
+        imagePoint: "centroid" as const,
+      };
+      const explicit = {
+        ...params,
+        wavelengthSampleCounts: {
+          ...DEFAULT_ANALYSIS_WAVELENGTH_SAMPLE_COUNTS,
+          [plotType]: explicitSamples,
+        },
+      };
+
+      await loadAnalysisPlot(explicit);
+      expect(proxy[method]).toHaveBeenLastCalledWith(
+        mockModel,
+        1,
+        ...prefix,
+        explicitSamples,
+        plotType === "strehlVsWavelength" ? 21 : 15,
+      );
+      await loadAnalysisPlot(explicit);
+      expect(proxy[method]).toHaveBeenCalledTimes(1);
+      await loadAnalysisPlot({ ...params, wavelengthIndex: 2 });
+      expect(proxy[method]).toHaveBeenLastCalledWith(
+        mockModel,
+        1,
+        ...prefix,
+        defaultSamples,
+        plotType === "strehlVsWavelength" ? 21 : 15,
+      );
+      expect(proxy[method]).toHaveBeenCalledTimes(2);
+      await loadAnalysisPlot({
+        ...params,
+        wavelengthSampleCounts: {
+          ...DEFAULT_ANALYSIS_WAVELENGTH_SAMPLE_COUNTS,
+          [plotType === "strehlVsWavelength"
+            ? "chromaticFocalShift"
+            : "strehlVsWavelength"]: 200,
+        },
+      });
+      expect(proxy[method]).toHaveBeenCalledTimes(2);
+    },
+  );
+
   it("loads geoPSF through getGeoPSFData", async () => {
     const proxy = makeMockProxy();
     const result = await loadAnalysisPlot({
@@ -530,6 +623,22 @@ describe("commitAnalysisPlotResult", () => {
     );
   });
 
+  it("commits chromaticFocalShift data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult(
+      {
+        kind: "chromaticFocalShift",
+        chromaticFocalShiftData,
+      },
+      store,
+    );
+
+    expect(store.getState().chromaticFocalShiftData).toEqual(
+      chromaticFocalShiftData,
+    );
+  });
+
   it("commits fieldCurvature data into the analysis plot store", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
 
@@ -557,6 +666,37 @@ describe("commitAnalysisPlotResult", () => {
 
     expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
   });
+
+  it.each([
+    ["strehlVsWavelength", { strehlVsWavelengthData }],
+    ["chromaticFocalShift", { chromaticFocalShiftData }],
+  ] as const)(
+    "discards %s results whose wavelength sample count changed while loading",
+    (plotType, payload) => {
+      const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+      const requested = store.getState().wavelengthSampleCounts;
+      store.getState().setWavelengthSampleCount(plotType, 200);
+      const result = { kind: plotType, ...payload } as Parameters<
+        typeof commitAnalysisPlotResult
+      >[0];
+
+      commitAnalysisPlotResult(
+        result,
+        store,
+        store.getState().rayCounts,
+        requested,
+      );
+      expect(store.getState()[`${plotType}Data`]).toBeUndefined();
+
+      commitAnalysisPlotResult(
+        result,
+        store,
+        store.getState().rayCounts,
+        store.getState().wavelengthSampleCounts,
+      );
+      expect(store.getState()[`${plotType}Data`]).toBeDefined();
+    },
+  );
 
   it("does not commit surfaceBySurface3rdOrder data into the analysis plot store", () => {
     const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
@@ -591,6 +731,7 @@ describe("configurable plot sampling", () => {
       21,
       [1, "centroid", 100],
     ],
+    ["chromaticFocalShift", "getChromaticFocalShiftData", 15, [1, 50]],
     ["wavefrontMap", "getWavefrontData", 128, [1, 2, "centroid"]],
     ["geoPSF", "getGeoPSFData", 128, [1, 2]],
     ["diffractionPSF", "getDiffractionPSFData", 128, [1, 2, "centroid"]],

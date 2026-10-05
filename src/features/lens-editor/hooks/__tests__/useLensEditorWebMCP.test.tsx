@@ -114,6 +114,7 @@ describe("useLensEditorWebMCP", () => {
       "get_astigmatism_data",
       "get_longitudinal_spherical_aberration_data",
       "get_strehl_vs_wavelength_data",
+      "get_chromatic_focal_shift_data",
       "get_wavefront_map_data",
       "get_diffraction_psf_data",
       "get_diffraction_mtf_data",
@@ -168,7 +169,7 @@ describe("useLensEditorWebMCP", () => {
       },
     });
 
-    expect(registerTool).toHaveBeenCalledTimes(24);
+    expect(registerTool).toHaveBeenCalledTimes(25);
     const zernikeTool = registerTool.mock.calls.find(
       ([tool]) => tool.name === "get_zernike_terms",
     )![0];
@@ -199,7 +200,7 @@ describe("useLensEditorWebMCP", () => {
       ),
     ).toEqual({ data: [], fieldIndex: 0, imagePoint: "centroid", numRays: 64 });
     expect(getRayFanData).toHaveBeenCalledWith(model, 0, "centroid", 64);
-    expect(registerTool).toHaveBeenCalledTimes(24);
+    expect(registerTool).toHaveBeenCalledTimes(25);
     unmount();
     Object.defineProperty(document, "modelContext", {
       configurable: true,

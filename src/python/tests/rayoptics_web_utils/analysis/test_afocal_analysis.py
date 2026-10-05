@@ -1438,7 +1438,7 @@ class TestMakeAfocalRayGrid:
 
         with pytest.raises(
             ValueError,
-            match=r"^Centroid plane-wave reference requires three non-collinear valid rays\.$",
+            match=r"^Centroid plane-wave reference requires at least three valid rays\.$",
         ):
             module.make_afocal_ray_grid(
                 opm,

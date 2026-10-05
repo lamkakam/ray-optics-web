@@ -8,6 +8,10 @@ import { createAnalysisTools } from "@/features/lens-editor/lib/analysisWebMcp";
 import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import { DEFAULT_ANALYSIS_RAY_COUNTS } from "@/features/analysis/lib/analysisRayCounts";
+import {
+  DEFAULT_ANALYSIS_WAVELENGTH_SAMPLE_COUNTS,
+  type WavelengthSampledPlot,
+} from "@/features/analysis/lib/analysisWavelengthSamples";
 import type { ConfigurableAnalysisPlot } from "@/features/analysis/lib/analysisRayCounts";
 import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -144,6 +148,22 @@ const cases = [
     },
   },
   {
+    name: "get_chromatic_focal_shift_data",
+    plotType: "chromaticFocalShift",
+    method: "getChromaticFocalShiftData",
+    selectors: ["fieldIndex"],
+    options: ["wavelengthSamples"],
+    data: {
+      fieldIdx: 0,
+      x: [0.0123456789012345, 0, null],
+      y: [486.133, 587.562, 656.273],
+      unitX: "mm",
+      unitY: "nm",
+      referenceWavelength: 587.562,
+      maxFocalShiftRange: 0.0123456789012345,
+    },
+  },
+  {
     name: "get_wavefront_map_data",
     plotType: "wavefrontMap",
     method: "getWavefrontData",
@@ -235,6 +255,8 @@ function setup(testCase: PlotCase) {
       wavelengthIndex,
       imagePoint: "centroid",
       rayCounts: analysisPlotStore.getState().rayCounts,
+      wavelengthSampleCounts:
+        analysisPlotStore.getState().wavelengthSampleCounts,
     });
   return { ...deps, specsStore, worker, tool, query, chartLoad, findTool };
 }
@@ -257,6 +279,8 @@ function expectedArgs(
       return [model, fieldIndex, "centroid", numRays];
     case "strehlVsWavelength":
       return [model, fieldIndex, "centroid", 100, numRays];
+    case "chromaticFocalShift":
+      return [model, fieldIndex, 50, numRays];
     case "wavefrontMap":
       return [model, fieldIndex, wavelengthIndex, "centroid", numRays];
     case "diffractionPSF":
@@ -275,6 +299,14 @@ function expectedArgs(
 
 describe.each(cases)("$name", (testCase) => {
   const selectors: readonly string[] = testCase.selectors;
+  const options: readonly string[] =
+    "options" in testCase ? testCase.options : [];
+  const sampled =
+    testCase.plotType in DEFAULT_ANALYSIS_WAVELENGTH_SAMPLE_COUNTS;
+  const sampleKey = testCase.plotType as WavelengthSampledPlot;
+  const defaultSamples = sampled
+    ? DEFAULT_ANALYSIS_WAVELENGTH_SAMPLE_COUNTS[sampleKey]
+    : undefined;
   const configurable = testCase.plotType in DEFAULT_ANALYSIS_RAY_COUNTS;
   const countKey = testCase.plotType as ConfigurableAnalysisPlot;
   const defaultCount = configurable
@@ -301,6 +333,7 @@ describe.each(cases)("$name", (testCase) => {
       ...(selectors.includes("fieldIndex") ? { fieldIndex: 0 } : {}),
       ...(selectors.includes("wavelengthIndex") ? { wavelengthIndex: 1 } : {}),
       ...(configurable ? { numRays: defaultCount } : {}),
+      ...(sampled ? { wavelengthSamples: defaultSamples } : {}),
       ...(testCase.plotType === "spotDiagram"
         ? { radii: { geoRadius: 10, rmsRadius: Math.sqrt(65), unit: "µm" } }
         : {}),
@@ -318,9 +351,10 @@ describe.each(cases)("$name", (testCase) => {
       type: "object",
       additionalProperties: false,
     });
-    expect(Object.keys(s.tool.inputSchema?.properties ?? {})).toEqual(
-      selectors,
-    );
+    expect(Object.keys(s.tool.inputSchema?.properties ?? {})).toEqual([
+      ...selectors,
+      ...options,
+    ]);
   });
 
   it("resolves explicit selectors against committed bounds", async () => {
@@ -350,6 +384,8 @@ describe.each(cases)("$name", (testCase) => {
           invalid.push({ [selector]: value });
       } else invalid.push({ [selector]: 0 });
     }
+    if (!options.includes("wavelengthSamples"))
+      invalid.push({ wavelengthSamples: 200 });
     for (const input of invalid)
       await expect(s.query(input)).rejects.toThrow("Invalid input at /");
     expect(s.worker).not.toHaveBeenCalled();
@@ -488,10 +524,13 @@ describe.each(cases)("$name", (testCase) => {
       },
     });
     if (configurable) s.analysisPlotStore.getState().setRayCount(countKey, 64);
+    if (sampled)
+      s.analysisPlotStore.getState().setWavelengthSampleCount(sampleKey, 200);
     resolve(testCase.data);
     const result = await request;
     expect(result.data).toEqual(testCase.data);
     if (configurable) expect(result.numRays).toBe(defaultCount);
+    if (sampled) expect(result.wavelengthSamples).toBe(defaultSamples);
     if (selectors.includes("wavelengthIndex"))
       expect(result.wavelengthIndex).toBe(1);
     if (testCase.plotType === "spotDiagram")
@@ -502,6 +541,78 @@ describe.each(cases)("$name", (testCase) => {
       });
     expect(s.worker).toHaveBeenCalledWith(
       ...expectedArgs(testCase, 0, 1, defaultCount),
+    );
+  });
+});
+
+describe("get_chromatic_focal_shift_data wavelength samples", () => {
+  const chromaticCase = cases.find(
+    ({ name }) => name === "get_chromatic_focal_shift_data",
+  )!;
+  beforeEach(() => {
+    _resetAnalysisCache();
+    localStorage.clear();
+  });
+
+  it("defaults to the Settings sample count and lets an explicit count override it", async () => {
+    const s = setup(chromaticCase);
+
+    expect(await s.query()).toMatchObject({ wavelengthSamples: 50 });
+    expect(s.worker).toHaveBeenLastCalledWith(model, 0, 50, 15);
+    s.analysisPlotStore
+      .getState()
+      .setWavelengthSampleCount("chromaticFocalShift", 200);
+    expect(await s.query()).toMatchObject({ wavelengthSamples: 200 });
+    expect(s.worker).toHaveBeenLastCalledWith(model, 0, 200, 15);
+    await s.chartLoad();
+    expect(s.worker).toHaveBeenCalledTimes(2);
+
+    expect(await s.query({ wavelengthSamples: 75 })).toMatchObject({
+      wavelengthSamples: 75,
+      fieldIndex: 0,
+    });
+    expect(s.worker).toHaveBeenLastCalledWith(model, 0, 75, 15);
+    await s.query({ wavelengthSamples: 75 });
+    expect(s.worker).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([2, 1000])("accepts the %i-sample boundary", async (samples) => {
+    const s = setup(chromaticCase);
+    await s.query({ wavelengthSamples: samples });
+    expect(s.worker).toHaveBeenCalledWith(model, 0, samples, 15);
+  });
+
+  it.each([1, 0, -5, 1001, 2.5, "200", null, Infinity, NaN])(
+    "rejects wavelengthSamples %p before computing",
+    async (samples) => {
+      const s = setup(chromaticCase);
+      await expect(s.query({ wavelengthSamples: samples })).rejects.toThrow(
+        "Invalid input at /",
+      );
+      expect(s.worker).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe("get_strehl_vs_wavelength_data wavelength samples", () => {
+  const strehlCase = cases.find(
+    ({ name }) => name === "get_strehl_vs_wavelength_data",
+  )!;
+  beforeEach(() => {
+    _resetAnalysisCache();
+    localStorage.clear();
+  });
+
+  it("uses and reports the Settings sample count without accepting a sample input", async () => {
+    const s = setup(strehlCase);
+    s.analysisPlotStore
+      .getState()
+      .setWavelengthSampleCount("strehlVsWavelength", 400);
+
+    expect(await s.query()).toMatchObject({ wavelengthSamples: 400 });
+    expect(s.worker).toHaveBeenLastCalledWith(model, 0, "centroid", 400, 21);
+    await expect(s.query({ wavelengthSamples: 100 })).rejects.toThrow(
+      "Invalid input at /",
     );
   });
 });

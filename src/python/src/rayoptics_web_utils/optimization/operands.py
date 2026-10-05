@@ -10,13 +10,13 @@ grids to the traced wavelength before evaluation.
 from __future__ import annotations
 
 import numpy as np
-import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 
 from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
 from rayoptics_web_utils.analysis import get_ray_fan_data
 from rayoptics_web_utils.raygrid import make_ray_grid
-from rayoptics_web_utils.zernike.zernike import _scale_opd_grid_to_wavelength
+from rayoptics_web_utils._spot import _rms_radius, _spot_fn
+from rayoptics_web_utils.zernike.zernike import _opd_wfe, _scale_opd_grid_to_wavelength
 
 from ._types import OperandEvaluator, OperandOptions, OperandSample
 from .targets import validate_surface_index
@@ -53,31 +53,6 @@ def get_nominal_operand_sample_residual_count(sample: OperandSample) -> int:
     return 1
 
 
-def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
-    """Transverse aberration function for trace_grid.
-
-    Args:
-        p: Normalized pupil coordinate.
-        wi: Wavelength index.
-        ray_pkg: Traced ray package.
-        fld: RayOptics field specification.
-        wvl: Wavelength in nanometres.
-        foc: Focus shift in system length units.
-
-    Returns:
-        The transverse aberration vector, or `None` for a blocked ray.
-    """
-    del p, wi, wvl
-    if ray_pkg is not None:
-        image_pt = fld.ref_sphere[0]
-        ray = ray_pkg[mc.ray]
-        dist = foc / ray[-1][mc.d][2]
-        defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-        t_abr = defocused_pt - image_pt
-        return np.array([t_abr[0], t_abr[1]])
-    return None
-
-
 def compute_rms_spot_size(
     opm: OpticalModel,
     field_index: int | None,
@@ -111,12 +86,7 @@ def compute_rms_spot_size(
         form="list",
         append_if_none=False,
     )
-    points = grids[0] if grids else []
-    if len(points) == 0:
-        return PENALTY_RESIDUAL
-    xs = np.array([point[0] for point in points], dtype=float)
-    ys = np.array([point[1] for point in points], dtype=float)
-    return float(np.sqrt(np.mean(xs ** 2 + ys ** 2)))
+    return _rms_radius(grids[0] if grids else [])
 
 
 def compute_rms_wavefront_error(
@@ -151,11 +121,7 @@ def compute_rms_wavefront_error(
         num_rays=num_rays,
         image_point=image_point,
     )
-    opd_grid = _scale_opd_grid_to_wavelength(ray_grid.grid[2], opm, wavelength_nm)
-    valid = opd_grid[~np.isnan(opd_grid)]
-    if len(valid) == 0:
-        return PENALTY_RESIDUAL
-    return float(np.std(valid))
+    return _opd_wfe(_scale_opd_grid_to_wavelength(ray_grid.grid[2], opm, wavelength_nm))
 
 
 def _select_fan_samples(wavelength_fan: dict, axis: str | None) -> list[float | None]:

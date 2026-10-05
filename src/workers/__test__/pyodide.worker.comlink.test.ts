@@ -36,6 +36,7 @@ describe("Pyodide worker Comlink exposure", () => {
       "getLSAData",
       "getWavefrontData",
       "getStrehlVsWavelengthData",
+      "getChromaticFocalShiftData",
       "getGeoPSFData",
       "getDiffractionPSFData",
       "getDiffractionMTFData",

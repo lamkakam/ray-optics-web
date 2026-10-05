@@ -61,6 +61,7 @@ describe("analysis ray count settings", () => {
     ["OPD Fan", [21, 32, 64, 128], 21],
     ["Spot Diagram", [21, 32, 64, 128], 21],
     ["Strehl vs Wavelength", [21, 32, 64, 128], 21],
+    ["Chromatic Focal Shift", [15, 21, 32, 64], 15],
     ["Wavefront Map", [64, 128, 256], 128],
     ["Geometric PSF", [32, 64, 128, 256], 128],
     ["Diffraction PSF", [64, 128, 256], 128],
@@ -69,14 +70,17 @@ describe("analysis ray count settings", () => {
 
   beforeEach(() => localStorage.clear());
 
-  it("shows all eight labeled dropdowns with ordered options and defaults", () => {
+  it("shows all nine labeled dropdowns with ordered options and defaults", () => {
     render(<SettingsWithStore />);
     expect(
       screen.getByRole("heading", { name: "Analysis ray counts" }),
     ).toBeInTheDocument();
+    const section = within(
+      screen.getByRole("region", { name: "Analysis ray counts" }),
+    );
     for (const [name, options, defaultValue] of settings) {
-      const select = screen.getByRole("combobox", { name });
-      expect(screen.getByLabelText(name)).toBe(select);
+      const select = section.getByRole("combobox", { name });
+      expect(section.getByLabelText(name)).toBe(select);
       expect(select).toHaveValue(String(defaultValue));
       expect(
         within(select)
@@ -106,5 +110,70 @@ describe("analysis ray count settings", () => {
         name === "Ray Fan" ? "32" : "64",
       );
     }
+  });
+});
+
+describe("analysis wavelength sample count settings", () => {
+  const settings = [
+    ["Strehl vs Wavelength", [50, 100, 200, 400], 100],
+    ["Chromatic Focal Shift", [50, 100, 200], 50],
+  ] as const;
+
+  beforeEach(() => localStorage.clear());
+
+  it("shows a labeled section with ordered sample-count options and defaults", () => {
+    render(<SettingsWithStore />);
+    const section = within(
+      screen.getByRole("region", { name: "Analysis wavelength sample counts" }),
+    );
+    expect(
+      section.getByRole("heading", {
+        name: "Analysis wavelength sample counts",
+      }),
+    ).toBeInTheDocument();
+    expect(section.getAllByRole("combobox")).toHaveLength(settings.length);
+    for (const [label, options, defaultValue] of settings) {
+      const select = section.getByRole("combobox", {
+        name: `${label} wavelength samples`,
+      });
+      expect(section.getByText(label)).toBeInTheDocument();
+      expect(select).toHaveValue(String(defaultValue));
+      expect(
+        within(select)
+          .getAllByRole("option")
+          .map((option) => option.textContent),
+      ).toEqual(options.map((n) => `${n} samples`));
+    }
+  });
+
+  it("updates independently of ray counts and restores selections in a fresh provider", async () => {
+    const view = render(<SettingsWithStore />);
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", {
+        name: "Strehl vs Wavelength wavelength samples",
+      }),
+      "400",
+    );
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", {
+        name: "Chromatic Focal Shift wavelength samples",
+      }),
+      "200",
+    );
+    expect(
+      screen.getByRole("combobox", { name: "Strehl vs Wavelength" }),
+    ).toHaveValue("21");
+    view.unmount();
+    render(<SettingsWithStore />);
+    expect(
+      screen.getByRole("combobox", {
+        name: "Strehl vs Wavelength wavelength samples",
+      }),
+    ).toHaveValue("400");
+    expect(
+      screen.getByRole("combobox", {
+        name: "Chromatic Focal Shift wavelength samples",
+      }),
+    ).toHaveValue("200");
   });
 });
