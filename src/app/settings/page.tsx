@@ -4,6 +4,7 @@ import type React from "react";
 import { useStore } from "zustand";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { ANALYSIS_RAY_COUNT_SETTINGS } from "@/features/analysis/lib/analysisRayCounts";
+import { ANALYSIS_WAVELENGTH_SAMPLE_SETTINGS } from "@/features/analysis/lib/analysisWavelengthSamples";
 import type { Theme } from "@/shared/tokens/theme";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { Header } from "@/shared/components/primitives/Header";
@@ -21,6 +22,7 @@ const themeOptions: { value: Theme; label: string }[] = [
  * - Adapts the `<select>` change event into the `Theme` union
  * - Renders the Settings heading and theme selector inline in the route file
  * - Shows nine independent persisted analysis ray-count selectors below Theme; counts are per fan axis or grid dimension.
+ * - Shows an "Analysis wavelength sample counts" section below the ray counts with persisted Strehl vs Wavelength and Chromatic Focal Shift sample-count selectors; their accessible names end in "wavelength samples" to stay distinct from the same plots' ray-count selectors.
  * - Uses the shared `Select` primitive with bounded width for layout stability
  * - Does not render the Image point selector; image reference selection lives in the Lens Editor drawer's `Image Reference` tab
  */
@@ -28,6 +30,10 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const analysisStore = useAnalysisPlotStore();
   const rayCounts = useStore(analysisStore, (state) => state.rayCounts);
+  const wavelengthSampleCounts = useStore(
+    analysisStore,
+    (state) => state.wavelengthSampleCounts,
+  );
 
   const handleThemeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedTheme = event.target.value as Theme;
@@ -83,6 +89,48 @@ export default function SettingsPage() {
             />
           </div>
         ))}
+      </section>
+      <section
+        aria-labelledby="analysis-wavelength-samples-heading"
+        className="mt-6"
+      >
+        <Header
+          level={3}
+          id="analysis-wavelength-samples-heading"
+          className="mb-4"
+        >
+          Analysis wavelength sample counts
+        </Header>
+        {ANALYSIS_WAVELENGTH_SAMPLE_SETTINGS.map(
+          ({ plotType, label, options }) => (
+            <div key={plotType} className="mb-4">
+              <label
+                htmlFor={`settings-wavelength-samples-${plotType}`}
+                className="block text-sm font-medium mb-2"
+              >
+                {label}
+              </label>
+              <Select
+                id={`settings-wavelength-samples-${plotType}`}
+                aria-label={`${label} wavelength samples`}
+                options={options.map((n) => ({
+                  value: n,
+                  label: `${n} samples`,
+                }))}
+                value={wavelengthSampleCounts[plotType]}
+                onChange={(event) =>
+                  analysisStore
+                    .getState()
+                    .setWavelengthSampleCount(
+                      plotType,
+                      Number(event.target.value),
+                    )
+                }
+                className="max-w-[12em]"
+              />
+            </div>
+          ),
+        )}
       </section>
     </div>
   );

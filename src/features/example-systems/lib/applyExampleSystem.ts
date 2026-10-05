@@ -38,7 +38,7 @@ interface ApplyExampleSystemParams {
  * - Mirrors `model.setAutoAperture` into the Lens Editor auto-aperture flag.
  * - Performs the specs, prescription rows, auto-aperture, and loading-flag store updates before awaiting worker computations so callers can route immediately after starting the returned promise.
  * - Computes lens layout directly and loads first-order, selected analysis plot, and complete Seidel data through the shared app-lifetime model/aim-point cache.
- * - Uses persisted app-wide ray-count preferences for the selected plot and discards results if its resolution changes while loading.
+ * - Uses persisted app-wide ray-count and wavelength-sample preferences for the selected plot and discards results if either changes while loading.
  * - Passes the app-wide `imagePoint` through to selected OPD-related analysis plot loading.
  * - Commits first-order data, layout image, plot data, Seidel data, specs, and optical model to their stores. First-order and Seidel data record the exact source `model` instance; failed computations retain previous results and ownership.
  * - Commits selected plot-store-backed analysis results through `commitAnalysisPlotResult(...)`, including diffraction MTF data.
@@ -95,13 +95,14 @@ export async function applyExampleSystem({
         model.specs.wavelengths.weights.length,
       );
 
-    const rayCounts = analysisPlotStore.getState().rayCounts;
+    const { rayCounts, wavelengthSampleCounts } = analysisPlotStore.getState();
     const [fod, layout, plotResult, seidel] = await Promise.all([
       loadFirstOrderData({ proxy, model, imagePoint }),
       proxy.plotLensLayout(model, isDark),
       loadAnalysisPlot({
         plotType: selectedPlotType,
         rayCounts,
+        wavelengthSampleCounts,
         proxy,
         model,
         fieldIndex: clampedFieldIndex,
@@ -113,7 +114,12 @@ export async function applyExampleSystem({
 
     analysisDataStore.getState().setFirstOrderData(fod, model);
     lensLayoutImageStore.getState().setLayoutImage(layout);
-    commitAnalysisPlotResult(plotResult, analysisPlotStore, rayCounts);
+    commitAnalysisPlotResult(
+      plotResult,
+      analysisPlotStore,
+      rayCounts,
+      wavelengthSampleCounts,
+    );
     analysisDataStore.getState().setSeidelData(seidel, model);
     specsStore.getState().setCommittedSpecs(model.specs);
     lensStore.getState().setCommittedOpticalModel(model);

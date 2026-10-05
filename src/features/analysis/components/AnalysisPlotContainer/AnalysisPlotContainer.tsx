@@ -18,6 +18,7 @@ import {
   type PlotType,
 } from "@/features/analysis/components/AnalysisPlotView";
 import { ANALYSIS_RAY_COUNT_SETTINGS } from "@/features/analysis/lib/analysisRayCounts";
+import { ANALYSIS_WAVELENGTH_SAMPLE_SETTINGS } from "@/features/analysis/lib/analysisWavelengthSamples";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 interface AnalysisPlotContainerProps {
@@ -38,7 +39,7 @@ interface AnalysisPlotContainerProps {
  *
  *
  * Analysis-plot orchestration shared by user-driven selector changes and image-point refreshes.
- * All active plots load through the cache on mount, except Seidel, which reuses the analysis-data store. Remounts subscribe to pending or completed calculations and finish their own loading lifecycle; rejected calculations retry. Configurable plots also reload on resolution changes, including return from Settings. Only the latest mounted request may commit data, errors, or loading state. Irrelevant selector and preference changes do not reload the active plot.
+ * All active plots load through the cache on mount, except Seidel, which reuses the analysis-data store. Remounts subscribe to pending or completed calculations and finish their own loading lifecycle; rejected calculations retry. Configurable plots also reload on ray-count or wavelength-sample-count changes, including return from Settings. Only the latest mounted request may commit data, errors, or loading state. Irrelevant selector and preference changes do not reload the active plot.
  * Plot loading and store commits use the same centralized cached helpers as the editor submit flow. Cached results are still committed through the matching Zustand setter whenever a plot is selected again.
  */
 export function AnalysisPlotContainer({
@@ -90,6 +91,14 @@ export function AnalysisPlotContainer({
   const selectedRayCount = useStore(store, (s) =>
     configurablePlot === undefined ? undefined : s.rayCounts[configurablePlot],
   );
+  const sampledPlot = ANALYSIS_WAVELENGTH_SAMPLE_SETTINGS.find(
+    (setting) => setting.plotType === selectedPlotType,
+  )?.plotType;
+  const selectedWavelengthSampleCount = useStore(store, (s) =>
+    sampledPlot === undefined
+      ? undefined
+      : s.wavelengthSampleCounts[sampledPlot],
+  );
   const requestIdRef = useRef(0);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
@@ -118,8 +127,11 @@ export function AnalysisPlotContainer({
       if (!proxy || !committedOpticalModel) return;
 
       const requestId = ++requestIdRef.current;
-      const rayCounts = store.getState().rayCounts;
+      const { rayCounts, wavelengthSampleCounts } = store.getState();
       const configurable = ANALYSIS_RAY_COUNT_SETTINGS.find(
+        (setting) => setting.plotType === plotType,
+      )?.plotType;
+      const sampled = ANALYSIS_WAVELENGTH_SAMPLE_SETTINGS.find(
         (setting) => setting.plotType === plotType,
       )?.plotType;
       const isCurrent = () => {
@@ -134,7 +146,10 @@ export function AnalysisPlotContainer({
           (!PLOT_TYPE_CONFIG[plotType].wavelengthDependent ||
             state.selectedWavelengthIndex === wavelengthIndex) &&
           (configurable === undefined ||
-            state.rayCounts[configurable] === rayCounts[configurable])
+            state.rayCounts[configurable] === rayCounts[configurable]) &&
+          (sampled === undefined ||
+            state.wavelengthSampleCounts[sampled] ===
+              wavelengthSampleCounts[sampled])
         );
       };
       store.getState().setPlotLoading(true);
@@ -147,6 +162,7 @@ export function AnalysisPlotContainer({
           wavelengthIndex,
           imagePoint,
           rayCounts,
+          wavelengthSampleCounts,
         });
         if (!result || !isCurrent()) return;
 
@@ -209,7 +225,7 @@ export function AnalysisPlotContainer({
     .wavelengthDependent
     ? selectedWavelengthIndex
     : 0;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedRayCount triggers reloads; loadPlot reads the current ray-count snapshot from the store.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedRayCount and selectedWavelengthSampleCount trigger reloads; loadPlot reads the current preference snapshots from the store.
   useEffect(() => {
     if (selectedPlotType === "surfaceBySurface3rdOrder") {
       store.getState().setPlotLoading(false);
@@ -228,6 +244,7 @@ export function AnalysisPlotContainer({
     effectiveFieldIndex,
     effectiveWavelengthIndex,
     selectedRayCount,
+    selectedWavelengthSampleCount,
     loadPlot,
     store,
   ]);

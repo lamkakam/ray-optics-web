@@ -1016,3 +1016,79 @@ describe("analysis ray count preferences", () => {
     expect(store.getState().rayCounts.geoPSF).toBe(256);
   });
 });
+
+/** Wavelength sample counts persist separately from ray counts and tolerate storage failures. */
+describe("analysis wavelength sample count preferences", () => {
+  const key = "ray-optics-web-analysis-wavelength-samples";
+  const defaults = { strehlVsWavelength: 100, chromaticFocalShift: 50 };
+  beforeEach(() => localStorage.clear());
+  afterEach(() => jest.restoreAllMocks());
+
+  it("defaults Strehl to 100 and Chromatic Focal Shift to 50 samples", () => {
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual(defaults);
+  });
+
+  it("restores valid entries and defaults invalid or absent entries individually", () => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ strehlVsWavelength: 400, chromaticFocalShift: 400 }),
+    );
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual({
+      ...defaults,
+      strehlVsWavelength: 400,
+    });
+
+    localStorage.setItem(
+      key,
+      JSON.stringify({ strehlVsWavelength: "200", chromaticFocalShift: 200 }),
+    );
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual({
+      ...defaults,
+      chromaticFocalShift: 200,
+    });
+  });
+
+  it.each(["not json", "null", "[]", "42"])(
+    "defaults malformed storage %s",
+    (raw) => {
+      localStorage.setItem(key, raw);
+      expect(makeStore().getState().wavelengthSampleCounts).toEqual(defaults);
+    },
+  );
+
+  it("validates updates and persists only wavelength sample counts", () => {
+    const store = makeStore();
+    store.getState().setWavelengthSampleCount("strehlVsWavelength", 200);
+    store.getState().setWavelengthSampleCount("chromaticFocalShift", 400);
+    store.getState().setWavelengthSampleCount("chromaticFocalShift", 75);
+    store.getState().setRayCount("rayFan", 32);
+
+    expect(store.getState().wavelengthSampleCounts).toEqual({
+      ...defaults,
+      strehlVsWavelength: 200,
+    });
+    expect(JSON.parse(localStorage.getItem(key)!)).toEqual({
+      ...defaults,
+      strehlVsWavelength: 200,
+    });
+    expect(makeStore().getState().wavelengthSampleCounts).toEqual(
+      store.getState().wavelengthSampleCounts,
+    );
+    expect(makeStore().getState().rayCounts.rayFan).toBe(32);
+  });
+
+  it("keeps session preferences usable when storage is unavailable", () => {
+    jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("full");
+    });
+    const store = makeStore();
+    expect(store.getState().wavelengthSampleCounts).toEqual(defaults);
+    store.getState().setWavelengthSampleCount("chromaticFocalShift", 100);
+    expect(store.getState().wavelengthSampleCounts.chromaticFocalShift).toBe(
+      100,
+    );
+  });
+});

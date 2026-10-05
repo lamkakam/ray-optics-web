@@ -9,12 +9,12 @@ import type {
   ZernikePupilSpace,
 } from "@/features/lens-editor/types/zernikeData";
 import {
-  DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES,
   loadAnalysisPlot,
   loadZernikeData,
   type AnalysisPlotLoadResult,
 } from "@/features/analysis/lib/plotFunctions";
 import { ANALYSIS_RAY_COUNT_SETTINGS } from "@/features/analysis/lib/analysisRayCounts";
+import { ANALYSIS_WAVELENGTH_SAMPLE_SETTINGS } from "@/features/analysis/lib/analysisWavelengthSamples";
 import { calculateSpotDiagramRadii } from "@/features/analysis/lib/calculateSpotDiagramRadii";
 import {
   classicalName,
@@ -106,7 +106,8 @@ const plotInputSchemas = {
         type: "integer",
         minimum: 2,
         maximum: 1000,
-        description: `Number of uniformly spaced wavelength samples across the analysis range; defaults to ${DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES}.`,
+        description:
+          "Number of uniformly spaced wavelength samples across the analysis range; defaults to the app's Settings value.",
       },
     },
   },
@@ -203,9 +204,9 @@ interface PlotToolDefinition<K extends ToolPlotKind> {
  * Only relevant selectors are accepted as nonnegative integers in committed bounds.
  * Results contain the complete unrounded worker `data`, applicable resolved
  * selectors, imagePoint, and numRays for configurable plots. Fans, spots, and LSA
- * retain every wavelength; Strehl retains the loader's wavelength sampling.
- * Chromatic focal shift also accepts an optional integer wavelengthSamples in
- * [2, 1000], defaulting to 200, which joins its cache key and is echoed back.
+ * retain every wavelength. Strehl and chromatic focal shift use the app's wavelength sample count and echo
+ * it as wavelengthSamples; chromatic focal shift also accepts an optional integer
+ * wavelengthSamples in [2, 1000] that overrides it and joins its cache key.
  * Spot results also include unrounded GEO/RMS `radii` from all positive committed
  * spectral weights about the supplied reference origin, in µm or afocal arcsec.
  * Unavailable radii are omitted without discarding point data. Tools never commit
@@ -232,6 +233,9 @@ export function createAnalysisTools({
       selectors === "both" ||
       selectors === "fieldSamples";
     const hasSamples = selectors === "fieldSamples";
+    const sampled = ANALYSIS_WAVELENGTH_SAMPLE_SETTINGS.find(
+      (entry) => entry.plotType === plotType,
+    )?.plotType;
     const hasWavelength = selectors === "wavelength" || selectors === "both";
     const setting = ANALYSIS_RAY_COUNT_SETTINGS.find(
       (entry) => entry.plotType === plotType,
@@ -252,7 +256,7 @@ export function createAnalysisTools({
         const {
           fieldIndex = 0,
           wavelengthIndex = model.specs.wavelengths.referenceIndex,
-          wavelengthSamples = DEFAULT_CHROMATIC_FOCAL_SHIFT_SAMPLES,
+          wavelengthSamples: requestedSamples,
         } = input as PlotInput;
         if (hasField && fieldIndex >= model.specs.field.fields.length)
           throw new Error(
@@ -269,7 +273,14 @@ export function createAnalysisTools({
           throw new Error(
             `Pyodide not ready. Wait for app initialization to finish, then retry ${name}.`,
           );
-        const { rayCounts } = analysisPlotStore.getState();
+        const { rayCounts, wavelengthSampleCounts: preferredSamples } =
+          analysisPlotStore.getState();
+        const wavelengthSampleCounts =
+          hasSamples && sampled !== undefined && requestedSamples !== undefined
+            ? { ...preferredSamples, [sampled]: requestedSamples }
+            : preferredSamples;
+        const wavelengthSamples =
+          sampled === undefined ? undefined : wavelengthSampleCounts[sampled];
         const numRays =
           setting === undefined ? undefined : rayCounts[setting.plotType];
         const wavelengthWeights = model.specs.wavelengths.weights.map(
@@ -283,7 +294,7 @@ export function createAnalysisTools({
           wavelengthIndex,
           imagePoint,
           rayCounts,
-          wavelengthSamples,
+          wavelengthSampleCounts,
         });
         assertWebMcpNotCancelled(signal);
         if (result?.kind !== plotType)
@@ -299,7 +310,7 @@ export function createAnalysisTools({
           ...(hasWavelength ? { wavelengthIndex } : {}),
           imagePoint,
           numRays,
-          ...(hasSamples ? { wavelengthSamples } : {}),
+          ...(wavelengthSamples === undefined ? {} : { wavelengthSamples }),
           ...(result.kind === "spotDiagram"
             ? {
                 radii: calculateSpotDiagramRadii(
@@ -362,7 +373,7 @@ export function createAnalysisTools({
     getStrehlVsWavelengthData: createPlotTool({
       name: "get_strehl_vs_wavelength_data",
       description:
-        "Read complete Strehl vs Wavelength data with the shared loader's wavelength sampling.",
+        "Read complete Strehl vs Wavelength data using the app's Settings wavelength sample count, echoed as wavelengthSamples.",
       plotType: "strehlVsWavelength",
       selectors: "field",
       data: (result) => result.strehlVsWavelengthData,

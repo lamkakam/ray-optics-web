@@ -1,5 +1,5 @@
 /**
- * Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, chromatic-focal-shift data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+ * Zustand store for managing the analysis plot panel state, plus persisted ray-count and wavelength-sample-count preferences. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, chromatic-focal-shift data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
  *
  * @remarks
  * ## Dependencies
@@ -16,6 +16,13 @@ import {
   persistAnalysisRayCounts,
   restoreAnalysisRayCounts,
 } from "@/features/analysis/lib/analysisRayCounts";
+import {
+  type AnalysisWavelengthSampleCounts,
+  type WavelengthSampledPlot,
+  isAnalysisWavelengthSampleCount,
+  persistAnalysisWavelengthSampleCounts,
+  restoreAnalysisWavelengthSampleCounts,
+} from "@/features/analysis/lib/analysisWavelengthSamples";
 import type { PlotType } from "@/features/analysis/components";
 import type {
   AstigmatismCurveData,
@@ -37,6 +44,13 @@ export interface AnalysisPlotState {
   rayCounts: AnalysisRayCounts;
   /** Validates a dropdown count, updates just that plot, and persists only preferences. */
   setRayCount: (plotType: ConfigurableAnalysisPlot, count: number) => void;
+  /** Independent wavelength sample preferences restored from browser storage at store creation. */
+  wavelengthSampleCounts: AnalysisWavelengthSampleCounts;
+  /** Validates a dropdown sample count, updates just that plot, and persists only wavelength sample preferences. */
+  setWavelengthSampleCount: (
+    plotType: WavelengthSampledPlot,
+    count: number,
+  ) => void;
   /** Ray Fan chart payload, initially `undefined`. */
   rayFanData: RayFanData | undefined;
   /** OPD Fan chart payload, initially `undefined`. */
@@ -110,7 +124,7 @@ export interface AnalysisPlotState {
   setSelectedPlotType: (plotType: PlotType) => void;
 }
 
-/** Creates transient plot state and persistent ray-count preferences; storage failure is nonfatal. */
+/** Creates transient plot state and persistent ray-count and wavelength-sample preferences; storage failure is nonfatal. */
 export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
   set,
 ) => ({
@@ -122,6 +136,19 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (
       const rayCounts = { ...state.rayCounts, [plotType]: count };
       persistAnalysisRayCounts(rayCounts);
       return { rayCounts };
+    });
+  },
+  wavelengthSampleCounts: restoreAnalysisWavelengthSampleCounts(),
+  setWavelengthSampleCount: (plotType, count) => {
+    if (!isAnalysisWavelengthSampleCount(plotType, count)) return;
+    set((state) => {
+      if (state.wavelengthSampleCounts[plotType] === count) return state;
+      const wavelengthSampleCounts = {
+        ...state.wavelengthSampleCounts,
+        [plotType]: count,
+      };
+      persistAnalysisWavelengthSampleCounts(wavelengthSampleCounts);
+      return { wavelengthSampleCounts };
     });
   },
   rayFanData: undefined,

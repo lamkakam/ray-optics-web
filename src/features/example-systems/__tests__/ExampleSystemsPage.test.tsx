@@ -558,6 +558,33 @@ describe("ExampleSystemsPage", () => {
     );
   });
 
+  it("confirming applies Strehl vs Wavelength with the application wavelength sample count", async () => {
+    const proxy = makeProxy();
+    const { analysisPlotStore } = renderPage({ proxy });
+    analysisPlotStore.getState().setSelectedPlotType("strehlVsWavelength");
+    analysisPlotStore
+      .getState()
+      .setWavelengthSampleCount("strehlVsWavelength", 200);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Load" }));
+
+    await waitFor(() =>
+      expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(
+        expect.anything(),
+        0,
+        "centroid",
+        200,
+        21,
+      ),
+    );
+    await waitFor(() =>
+      expect(analysisPlotStore.getState().strehlVsWavelengthData).toBeDefined(),
+    );
+  });
+
   it("passes the dark theme to lens-layout rendering", async () => {
     mockTheme = "dark";
     const { proxy } = renderPage();

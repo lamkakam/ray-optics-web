@@ -103,7 +103,7 @@ export interface OpticalSystemComputationResult {
 }
 
 /**
- * Uses application ray-count preferences for the selected analysis plot and discards plot results if its resolution changes during computation.
+ * Uses application ray-count and wavelength-sample preferences for the selected analysis plot and discards plot results if either changes during computation.
  * Validates and computes the draft model, then commits every result atomically
  * from the application’s point of view. First-order and Seidel results record
  * the exact model instance committed by this recomputation or focus operation;
@@ -147,7 +147,7 @@ export async function computeOpticalSystem({
     .getState()
     .clampWavelengthIndex(selectedWavelengthIndex, draft.specs);
 
-  const rayCounts = analysisPlotStore.getState().rayCounts;
+  const { rayCounts, wavelengthSampleCounts } = analysisPlotStore.getState();
   const [firstOrderData, layoutImage, plotResult, seidelData, sequential] =
     await Promise.all([
       loadFirstOrderData({ proxy, model: draft.model, imagePoint }),
@@ -155,6 +155,7 @@ export async function computeOpticalSystem({
       loadAnalysisPlot({
         plotType: selectedPlotType,
         rayCounts,
+        wavelengthSampleCounts,
         proxy,
         model: draft.model,
         fieldIndex: clampedFieldIndex,
@@ -185,7 +186,12 @@ export async function computeOpticalSystem({
     );
   analysisDataStore.getState().setFirstOrderData(firstOrderData, draft.model);
   lensLayoutImageStore.getState().setLayoutImage(layoutImage);
-  commitAnalysisPlotResult(plotResult, analysisPlotStore, rayCounts);
+  commitAnalysisPlotResult(
+    plotResult,
+    analysisPlotStore,
+    rayCounts,
+    wavelengthSampleCounts,
+  );
   analysisDataStore.getState().setSeidelData(seidelData, draft.model);
   specsStore.getState().setCommittedSpecs(draft.specs);
   lensStore.getState().setCommittedOpticalModel(draft.model);

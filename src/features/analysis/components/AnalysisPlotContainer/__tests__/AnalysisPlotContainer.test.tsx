@@ -1281,7 +1281,7 @@ describe("AnalysisPlotContainer", () => {
       expect(proxy.getChromaticFocalShiftData).toHaveBeenCalledWith(
         testModel,
         1,
-        200,
+        50,
         15,
       );
     });
@@ -1522,6 +1522,62 @@ describe("ray-count refresh", () => {
     expect(proxy.getRayFanData).toHaveBeenCalledTimes(2);
     act(() => store.getState().setRayCount("opdFan", 64));
     expect(proxy.getRayFanData).toHaveBeenCalledTimes(2);
+  });
+
+  it("reloads Strehl when its wavelength sample count changes and ignores the superseded result", async () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+    store.getState().setSelectedPlotType("strehlVsWavelength");
+    let finishOld!: (data: StrehlVsWavelengthData) => void;
+    const proxy = makeMockProxy({
+      getStrehlVsWavelengthData: jest
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<StrehlVsWavelengthData>((resolve) => {
+              finishOld = resolve;
+            }),
+        )
+        .mockResolvedValue(strehlVsWavelengthData),
+    });
+    renderComponent(testSpecs, testModel, store, proxy);
+    await waitFor(() =>
+      expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(
+        testModel,
+        0,
+        "centroid",
+        100,
+        21,
+      ),
+    );
+
+    act(() =>
+      store.getState().setWavelengthSampleCount("strehlVsWavelength", 400),
+    );
+    await waitFor(() =>
+      expect(proxy.getStrehlVsWavelengthData).toHaveBeenLastCalledWith(
+        testModel,
+        0,
+        "centroid",
+        400,
+        21,
+      ),
+    );
+    await waitFor(() =>
+      expect(store.getState().strehlVsWavelengthData).toEqual(
+        strehlVsWavelengthData,
+      ),
+    );
+    await act(async () =>
+      finishOld({ ...strehlVsWavelengthData, fieldIdx: 99 }),
+    );
+    expect(store.getState().strehlVsWavelengthData).toEqual(
+      strehlVsWavelengthData,
+    );
+
+    act(() =>
+      store.getState().setWavelengthSampleCount("chromaticFocalShift", 200),
+    );
+    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledTimes(2);
   });
 
   it.each([true, false])(

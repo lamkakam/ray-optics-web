@@ -1,4 +1,5 @@
 import { createStore } from "zustand";
+import type { ChromaticFocalShiftData } from "@/features/analysis/types/plotData";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import {
@@ -260,6 +261,73 @@ it("uses application ray-count preferences in shared Update System and WebMCP co
   );
   expect(stores.analysisPlotStore.getState().rayCounts.rayFan).toBe(64);
   expect(result.model).not.toHaveProperty("rayCounts");
+  localStorage.clear();
+});
+
+it("uses application wavelength sample preferences in shared recomputation", async () => {
+  localStorage.clear();
+  const stores = makeStores();
+  const proxy = makeProxy({
+    getStrehlVsWavelengthData: jest.fn().mockResolvedValue({
+      fieldIdx: 2,
+      x: [],
+      y: [],
+      unitX: "nm",
+      unitY: "",
+    }),
+  });
+  stores.analysisPlotStore
+    .getState()
+    .setWavelengthSampleCount("strehlVsWavelength", 400);
+  const result = await computeOpticalSystem({
+    ...dependencies(stores, proxy),
+    selectedPlotType: "strehlVsWavelength",
+  });
+  expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(
+    result.model,
+    2,
+    "chief_ray",
+    400,
+    21,
+  );
+  expect(
+    stores.analysisPlotStore.getState().strehlVsWavelengthData,
+  ).toBeDefined();
+  localStorage.clear();
+});
+
+it("does not commit a superseded wavelength sample count after shared recomputation finishes", async () => {
+  localStorage.clear();
+  const stores = makeStores();
+  let finish!: (data: ChromaticFocalShiftData) => void;
+  const proxy = makeProxy({
+    getChromaticFocalShiftData: jest.fn(
+      () =>
+        new Promise<ChromaticFocalShiftData>((resolve) => {
+          finish = resolve;
+        }),
+    ),
+  });
+  const pending = computeOpticalSystem({
+    ...dependencies(stores, proxy),
+    selectedPlotType: "chromaticFocalShift",
+  });
+  stores.analysisPlotStore
+    .getState()
+    .setWavelengthSampleCount("chromaticFocalShift", 200);
+  finish({
+    fieldIdx: 2,
+    x: [],
+    y: [],
+    unitX: "mm",
+    unitY: "nm",
+    referenceWavelength: 587.6,
+    maxFocalShiftRange: undefined,
+  });
+  await pending;
+  expect(
+    stores.analysisPlotStore.getState().chromaticFocalShiftData,
+  ).toBeUndefined();
   localStorage.clear();
 });
 
