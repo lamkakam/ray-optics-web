@@ -20,83 +20,69 @@ from rayoptics_web_utils.analysis._wavelength_sweep import (
     _set_analysis_wavelengths,
     _wavelength_axis,
 )
+from rayoptics_web_utils.focusing._solver import _minimize_focus, _paraxial_focus_offset
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_list, _system_units
+from rayoptics_web_utils.zernike.zernike import _opd_wfe, _scale_opd_grid_to_wavelength
 
-# Relative focus step, as a fraction of |EFL|, for the finite-difference defocus response.
-_DEFOCUS_STEP_FRACTION = 1.0e-4
-# Newton iterations stop once a step changes the RMS wavefront by less than this many waves.
-_FOCUS_TOLERANCE_WAVES = 1.0e-2
-_MAX_FOCUS_ITERATIONS = 8
+# Plot-level focus tolerance as a fraction of |EFL| (1 µm for a 50 mm lens).
+_FOCUS_XATOL_FRACTION = 2.0e-5
 
 
-def _remove_piston_and_tilt(px: np.ndarray, py: np.ndarray, values: np.ndarray) -> np.ndarray:
-    """Return least-squares residuals after removing `1`, `px`, and `py` terms."""
-    basis = np.column_stack([np.ones(values.shape[0]), px, py])
-    return values - basis @ np.linalg.lstsq(basis, values, rcond=None)[0]
+def _focus_tolerance(opm: OpticalModel) -> float | None:
+    """Return the best-focus search tolerance for the plot in system length units.
 
+    The tolerance is `2e-5 |EFL|`, looser than the shared solver's default so
+    each wavelength needs fewer OPD evaluations while staying far below the
+    plotted focal-shift resolution. A non-finite or zero EFL falls back to the
+    solver default.
 
-class _FiniteBestFocus:
-    """Solve the RMS-wavefront best-focus shift for one field at any model wavelength.
+    Args:
+        opm: RayOptics optical model.
 
-    Each Newton iterate traces one chief-ray grid at the current focus estimate
-    and re-evaluates the same rays' OPD after a focus step of `1e-4 |EFL|`,
-    giving OPD `W` and the local defocus response `D = dW/dfoc` in system
-    length units. Both have piston and pupil tilt removed over the commonly
-    valid cells, and the step `-<W, D> / <D, D>` solves the first-order
-    stationarity condition of the residual RMS. `D` must come from the same
-    wavelength and a nearby focus, because residual aberrations make the
-    stationary point sensitive to its shape. Iteration stops once a step
-    changes the RMS wavefront by less than `1e-2` waves, so warm-starting from
-    a neighbouring wavelength usually needs one iterate.
+    Returns:
+        The absolute focus tolerance, or `None` for the solver default.
     """
+    xatol = _FOCUS_XATOL_FRACTION * abs(float(opm["analysis_results"]["parax_data"].fod.efl))
+    if not np.isfinite(xatol) or xatol == 0.0:
+        return None
+    return xatol
 
-    def __init__(self, opm: OpticalModel, fi: int, num_rays: int):
-        self.opm = opm
-        self.fi = fi
-        self.num_rays = num_rays
-        efl = float(opm["analysis_results"]["parax_data"].fod.efl)
-        step = _DEFOCUS_STEP_FRACTION * abs(efl)
-        if not np.isfinite(step) or step == 0.0:
-            step = _DEFOCUS_STEP_FRACTION
-        self.step = step
-        # Converts central-wavelength waves to system length units.
-        self.opd_scale = opm.nm_to_sys_units(opm["optical_spec"]["wvls"].central_wvl)
 
-    def solve(self, wavelength_nm: float, start: float) -> float:
-        """Return the best-focus shift from the image plane in system length units.
+def _finite_best_focus(
+    opm: OpticalModel,
+    fi: int,
+    wavelength_nm: float,
+    num_rays: int,
+    center: float,
+    xatol: float | None = None,
+) -> float:
+    """Return the piston-removed RMS-wavefront best-focus shift in system length units.
 
-        Args:
-            wavelength_nm: Wavelength in nanometres; it must be a model wavelength.
-            start: Initial focus shift in system length units.
+    Traces one chief-ray grid at the current image plane, then runs the bounded
+    search shared with focusing over `refocused_opd`, which re-evaluates the
+    same rays' OPD at each candidate focus without retracing or mutating the
+    model. OPD is scaled to `wavelength_nm` waves before `_opd_wfe`.
 
-        Returns:
-            The best-focus shift, or `NaN` when too few valid rays remain.
-        """
-        tolerance = _FOCUS_TOLERANCE_WAVES * self.opm.nm_to_sys_units(wavelength_nm)
-        focus = float(start)
-        for _ in range(_MAX_FOCUS_ITERATIONS):
-            ray_grid = make_ray_grid(
-                self.opm, fi=self.fi, wavelength_nm=wavelength_nm, foc=focus, num_rays=self.num_rays
-            )
-            pupil_x, pupil_y, opd_waves = np.asarray(ray_grid.grid, dtype=float)
-            opd = opd_waves * self.opd_scale
-            stepped = np.asarray(ray_grid.refocused_opd(focus + self.step), dtype=float) * self.opd_scale
-            valid = np.isfinite(opd) & np.isfinite(stepped)
-            if np.count_nonzero(valid) < 4:
-                return float("nan")
-            px = pupil_x[valid]
-            py = pupil_y[valid]
-            response = _remove_piston_and_tilt(px, py, (stepped[valid] - opd[valid]) / self.step)
-            response_power = float(np.dot(response, response))
-            if not np.isfinite(response_power) or response_power == 0.0:
-                return float("nan")
-            residual = _remove_piston_and_tilt(px, py, opd[valid])
-            step = -float(np.dot(residual, response)) / response_power
-            focus += step
-            if abs(step) * np.sqrt(response_power / response.shape[0]) < tolerance:
-                break
-        return focus
+    Args:
+        opm: RayOptics optical model with finite image conjugate.
+        fi: Field index.
+        wavelength_nm: Wavelength in nanometres; it must be a model wavelength.
+        num_rays: Pupil-grid sampling resolution.
+        center: Focus shift at the centre of the search window.
+        xatol: Absolute focus tolerance, or `None` for the solver default.
+
+    Returns:
+        The best-focus shift from the image plane, or `NaN` when no ray is valid.
+    """
+    ray_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    if not np.any(np.isfinite(np.asarray(ray_grid.grid[2], dtype=float))):
+        return float("nan")
+
+    def objective(focus: float) -> float:
+        return _opd_wfe(_scale_opd_grid_to_wavelength(ray_grid.refocused_opd(focus), opm, wavelength_nm))
+
+    return _minimize_focus(objective, center, xatol=xatol)
 
 
 def _best_vergence(opm: OpticalModel, fi: int, wavelength_nm: float, num_rays: int) -> float:
@@ -151,8 +137,10 @@ def _focus_positions(
     """Return the reference-wavelength focus metric and one value per sample.
 
     Finite image space returns best-focus shifts from the image plane in system
-    length units; infinite image space returns best-fit output vergence in
-    diopters. A sample whose trace fails is `NaN`. The model wavelengths must
+    length units, each solved independently by `_finite_best_focus` around the
+    paraxial focus offset with the `_focus_tolerance` stopping tolerance; infinite image space returns best-fit output
+    vergence in diopters. The reference wavelength's value is reused for an
+    identical sample, and a sample whose trace fails is `NaN`. The model wavelengths must
     already contain every sample and the central wavelength.
 
     Args:
@@ -166,43 +154,37 @@ def _focus_positions(
     """
     reference_wavelength = float(opm["optical_spec"]["wvls"].central_wvl)
 
-    if is_afocal_image_space(opm):
+    afocal = is_afocal_image_space(opm)
+    if afocal:
         def evaluate(wavelength: float) -> float:
             return _best_vergence(opm, fieldIndex, wavelength, num_rays)
+    else:
+        center = _paraxial_focus_offset(opm)
+        xatol = _focus_tolerance(opm)
 
-        reference_value = evaluate(reference_wavelength)
-        values = []
-        for wavelength in wavelengths:
-            try:
-                values.append(evaluate(float(wavelength)))
-            except (TraceError, ValueError):
-                values.append(float("nan"))
-        return reference_value, values
+        def evaluate(wavelength: float) -> float:
+            return _finite_best_focus(opm, fieldIndex, wavelength, num_rays, center, xatol)
 
-    solver = _FiniteBestFocus(opm, fieldIndex, num_rays)
-    reference_value = solver.solve(reference_wavelength, 0.0)
-    if not np.isfinite(reference_value):
+    reference_value = evaluate(reference_wavelength)
+    if not afocal and not np.isfinite(reference_value):
         raise ValueError("Best focus could not be resolved at the reference wavelength.")
 
     values = []
-    start = reference_value
     for wavelength in wavelengths:
         if float(wavelength) == reference_wavelength:
-            focus = reference_value
-        else:
-            try:
-                focus = solver.solve(float(wavelength), start)
-            except (TraceError, ValueError):
-                focus = float("nan")
-        values.append(focus)
-        start = focus if np.isfinite(focus) else reference_value
+            values.append(reference_value)
+            continue
+        try:
+            values.append(evaluate(float(wavelength)))
+        except (TraceError, ValueError):
+            values.append(float("nan"))
     return reference_value, values
 
 
 def get_chromatic_focal_shift_data(
     opm: OpticalModel,
     fieldIndex: int,
-    wavelength_samples: int = 200,
+    wavelength_samples: int = 50,
     num_rays: int = 15,
 ) -> dict:
     """Return chart-ready chromatic focal shift samples for one field.
@@ -214,9 +196,11 @@ def get_chromatic_focal_shift_data(
     wavelengths, weights, and reference wavelength are restored even on error.
 
     In finite image space each sample's focus is the real-ray image-plane shift
-    that minimizes chief-ray-referenced RMS wavefront error with piston and
-    pupil tilt removed for the selected field. In infinite image space it is the
-    RMS best-fit output vergence. Every value is reported relative to the same
+    that minimizes chief-ray-referenced RMS wavefront error with piston removed
+    (the same objective as focusing's Strehl strategies) for the selected field,
+    found by focusing's shared bounded search within `±5` system length units of
+    the paraxial image, stopping at a tolerance of `2e-5 |EFL|`. In infinite image space it is the RMS best-fit output
+    vergence. Every value is reported relative to the same
     quantity at the model's reference wavelength, so the curve is zero there.
 
     The result contains `fieldIdx`, focal shifts `x` (`None` for failed

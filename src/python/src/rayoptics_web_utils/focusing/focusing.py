@@ -1,7 +1,8 @@
 """Optimize image distance with shared focusing conventions.
 
-All four public strategies mutate the final sequential gap in place and center a
-bounded scalar search on the current paraxial image distance. Returned
+All four public strategies mutate the final sequential gap in place and use the
+bounded best-focus search shared with chromatic focal shift
+(``focusing._solver``), centred on the current paraxial image distance. Returned
 ``delta_thi`` remains relative to the gap thickness at call time.
 
 RMS values use a quadratic mean across fields and spectral weights, preserving
@@ -13,22 +14,18 @@ wavelength waves to the traced wavelength before either metric is evaluated.
 """
 
 import numpy as np
-from scipy.optimize import minimize_scalar
 
-import rayoptics.optical.model_constants as mc
-from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl, _scale_opd_grid_to_wavelength
-
-
-def _get_paraxial_image_distance(opm) -> float:
-    """Return the paraxial image distance for the current conjugates.
-
-    Args:
-        opm: RayOptics optical model.
-
-    Returns:
-        The paraxial image distance for the current conjugates.
-    """
-    return float(opm['analysis_results']['parax_data'].fod.img_dist)
+from rayoptics_web_utils._spot import _rms_radius, _spot_fn
+from rayoptics_web_utils.focusing._solver import (
+    DEFAULT_FOCUS_BOUNDS,
+    _minimize_focus,
+    _paraxial_focus_offset,
+)
+from rayoptics_web_utils.zernike.zernike import (
+    _monochromatic_strehl,
+    _opd_wfe,
+    _scale_opd_grid_to_wavelength,
+)
 
 
 def _resolve_field_indices(opm, field_indices: list[int] | None) -> list[int]:
@@ -47,28 +44,100 @@ def _resolve_field_indices(opm, field_indices: list[int] | None) -> list[int]:
     return list(range(num_fields))
 
 
-def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
-    """Transverse aberration function for trace_grid.
+def _aggregate(per_field_values: list[list[float]], weights, quadratic: bool) -> float:
+    """Combine per-field, per-wavelength metric values into one scalar.
+
+    Each field's values are averaged with the spectral weights (a missing
+    weight counts as `1.0`), then the field results are averaged equally.
+    Quadratic aggregation uses root-mean-square means at both levels, preserving
+    the energy interpretation of RMS metrics; otherwise arithmetic means are used.
 
     Args:
-        p: Normalized pupil coordinate.
-        wi: Wavelength index.
-        ray_pkg: Traced ray package.
-        fld: RayOptics field specification.
-        wvl: Wavelength in nanometres.
-        foc: Focus shift in system length units.
+        per_field_values: For each field, one metric value per wavelength.
+        weights: Spectral weights indexed like each field's values.
+        quadratic: Whether to use quadratic rather than arithmetic means.
 
     Returns:
-        The transverse aberration vector, or `None` for a blocked ray.
+        The aggregated metric.
     """
-    if ray_pkg is not None:
-        image_pt = fld.ref_sphere[0]
-        ray = ray_pkg[mc.ray]
-        dist = foc / ray[-1][mc.d][2]
-        defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-        t_abr = defocused_pt - image_pt
-        return np.array([t_abr[0], t_abr[1]])
-    return None
+    field_values = []
+    for values in per_field_values:
+        wl_weights = np.array(
+            [weights[wi] if wi < len(weights) else 1.0 for wi in range(len(values))],
+            dtype=float,
+        )
+        wl_values = np.asarray(values, dtype=float)
+        if quadratic:
+            field_values.append(np.sqrt(np.sum(wl_values**2 * wl_weights) / np.sum(wl_weights)))
+        else:
+            field_values.append(np.sum(wl_values * wl_weights) / np.sum(wl_weights))
+    field_array = np.asarray(field_values, dtype=float)
+    if quadratic:
+        return float(np.sqrt(np.mean(field_array**2)))
+    return float(np.mean(field_array))
+
+
+def _opd_metric(opm, fi: int, wavelength_nm: float, num_rays: int, metric) -> float:
+    """Evaluate an OPD metric for one field and wavelength at the current focus.
+
+    The OPD grid is scaled from central-wavelength waves to `wavelength_nm`
+    waves before `metric` is applied.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        wavelength_nm: Wavelength in nanometres.
+        num_rays: Pupil-grid sampling resolution.
+        metric: Function mapping an OPD grid in waves to a scalar.
+
+    Returns:
+        The metric value.
+    """
+    # Imported lazily so tests can replace the shared RayGrid factory.
+    from rayoptics_web_utils.raygrid import make_ray_grid
+
+    rg = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    return metric(_scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm))
+
+
+def _opd_metric_per_field(opm, fi_list: list[int], wavelengths, num_rays: int, metric) -> list[list[float]]:
+    """Return `metric` for every selected field and wavelength.
+
+    Args:
+        opm: RayOptics optical model.
+        fi_list: Field indices included in the calculation.
+        wavelengths: Wavelengths in nanometres.
+        num_rays: Pupil-grid sampling resolution.
+        metric: Function mapping an OPD grid in waves to a scalar.
+
+    Returns:
+        One list of per-wavelength values per field.
+    """
+    return [
+        [_opd_metric(opm, fi, wvl, num_rays, metric) for wvl in wavelengths]
+        for fi in fi_list
+    ]
+
+
+def _spot_rms_values(opm, fi: int, num_rays: int, wl) -> list[float]:
+    """Return RMS spot radii for one field from a single RayOptics grid trace.
+
+    `trace_grid` traces only the central wavelength when `wl` is given and every
+    model wavelength when it is `None`. An empty grid scores `1e6`.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        num_rays: Pupil-grid sampling resolution.
+        wl: Central wavelength for a monochromatic trace, or `None` for all.
+
+    Returns:
+        RMS spot radius per traced wavelength.
+    """
+    grids, _ = opm['seq_model'].trace_grid(
+        _spot_fn, fi, wl=wl, num_rays=num_rays, form='list', append_if_none=False
+    )
+    return [_rms_radius(grid) for grid in grids] or [_rms_radius([])]
 
 
 def _compute_mono_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
@@ -82,26 +151,9 @@ def _compute_mono_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
     Returns:
         Quadratic mean of the per-field monochromatic RMS spot radii.
     """
-    sm = opm['seq_model']
-    osp = opm['optical_spec']
-    central_wvl = osp['wvls'].central_wvl
-
-    rms_values = []
-    for fi in fi_list:
-        grids, _ = sm.trace_grid(
-            _spot_fn, fi, wl=central_wvl, num_rays=num_rays,
-            form='list', append_if_none=False
-        )
-        pts = grids[0] if grids else []
-        if len(pts) == 0:
-            rms_values.append(1e6)
-            continue
-        xs = np.array([pt[0] for pt in pts])
-        ys = np.array([pt[1] for pt in pts])
-        rms = float(np.sqrt(np.mean(xs**2 + ys**2)))
-        rms_values.append(rms)
-
-    return float(np.sqrt(np.mean(np.array(rms_values)**2)))
+    central_wvl = opm['optical_spec']['wvls'].central_wvl
+    values = [_spot_rms_values(opm, fi, num_rays, central_wvl)[:1] for fi in fi_list]
+    return _aggregate(values, [1.0], quadratic=True)
 
 
 def _compute_poly_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
@@ -115,53 +167,9 @@ def _compute_poly_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
     Returns:
         Quadratic mean of the per-field spectrally weighted RMS spot radii.
     """
-    sm = opm['seq_model']
-    osp = opm['optical_spec']
-    spectral_wts = osp['wvls'].spectral_wts
-
-    field_rms_values = []
-    for fi in fi_list:
-        grids, _ = sm.trace_grid(
-            _spot_fn, fi, wl=None, num_rays=num_rays,
-            form='list', append_if_none=False
-        )
-        wl_rms_values = []
-        wl_weights = []
-        for gi, grid in enumerate(grids):
-            w = spectral_wts[gi] if gi < len(spectral_wts) else 1.0
-            pts = grid if len(grid) > 0 else []
-            if len(pts) == 0:
-                wl_rms_values.append(1e6)
-            else:
-                xs = np.array([pt[0] for pt in pts])
-                ys = np.array([pt[1] for pt in pts])
-                wl_rms_values.append(float(np.sqrt(np.mean(xs**2 + ys**2))))
-            wl_weights.append(w)
-
-        total_w = sum(wl_weights)
-        weighted_rms = np.sqrt(sum(r**2 * w for r, w in zip(wl_rms_values, wl_weights)) / total_w)
-        field_rms_values.append(weighted_rms)
-
-    return float(np.sqrt(np.mean(np.array(field_rms_values)**2)))
-
-
-def _opd_wfe(opd_grid: np.ndarray) -> float:
-    """Return RMS wavefront error (std of OPD in waves) over valid pupil points.
-
-    Uses std (not RMS) to remove the piston term, giving the pure aberration RMS.
-    This is smooth and unimodal with respect to defocus, making it suitable as an
-    optimization objective for focusing.
-
-    Args:
-        opd_grid: Pupil-coordinate and optical-path-difference grid.
-
-    Returns:
-        RMS wavefront error over valid pupil points, or `1e6` when none are valid.
-    """
-    valid = opd_grid[~np.isnan(opd_grid)]
-    if len(valid) == 0:
-        return 1e6
-    return float(np.std(valid))
+    spectral_wts = opm['optical_spec']['wvls'].spectral_wts
+    values = [_spot_rms_values(opm, fi, num_rays, None) for fi in fi_list]
+    return _aggregate(values, spectral_wts, quadratic=True)
 
 
 def _compute_mono_wfe(opm, fi_list: list[int], num_rays: int) -> float:
@@ -175,18 +183,9 @@ def _compute_mono_wfe(opm, fi_list: list[int], num_rays: int) -> float:
     Returns:
         Quadratic mean of per-field monochromatic RMS wavefront error.
     """
-    from rayoptics_web_utils.raygrid import make_ray_grid
-
-    osp = opm['optical_spec']
-    central_wvl = osp['wvls'].central_wvl
-
-    wfe_values = []
-    for fi in fi_list:
-        rg = make_ray_grid(opm, fi=fi, wavelength_nm=central_wvl, num_rays=num_rays)
-        opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, central_wvl)
-        wfe_values.append(_opd_wfe(opd_grid))
-
-    return float(np.sqrt(np.mean(np.array(wfe_values)**2)))
+    central_wvl = opm['optical_spec']['wvls'].central_wvl
+    values = _opd_metric_per_field(opm, fi_list, [central_wvl], num_rays, _opd_wfe)
+    return _aggregate(values, [1.0], quadratic=True)
 
 
 def _compute_poly_wfe(opm, fi_list: list[int], num_rays: int) -> float:
@@ -200,28 +199,9 @@ def _compute_poly_wfe(opm, fi_list: list[int], num_rays: int) -> float:
     Returns:
         Quadratic mean of per-field spectrally weighted RMS wavefront error.
     """
-    from rayoptics_web_utils.raygrid import make_ray_grid
-
-    osp = opm['optical_spec']
-    wavelengths = osp['wvls'].wavelengths
-    spectral_wts = osp['wvls'].spectral_wts
-
-    field_wfe_values = []
-    for fi in fi_list:
-        wl_wfe = []
-        wl_weights = []
-        for wi, wvl in enumerate(wavelengths):
-            w = spectral_wts[wi] if wi < len(spectral_wts) else 1.0
-            rg = make_ray_grid(opm, fi=fi, wavelength_nm=wvl, num_rays=num_rays)
-            opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wvl)
-            wl_wfe.append(_opd_wfe(opd_grid))
-            wl_weights.append(w)
-
-        total_w = sum(wl_weights)
-        weighted_wfe = np.sqrt(sum(e**2 * w for e, w in zip(wl_wfe, wl_weights)) / total_w)
-        field_wfe_values.append(weighted_wfe)
-
-    return float(np.sqrt(np.mean(np.array(field_wfe_values)**2)))
+    wvls = opm['optical_spec']['wvls']
+    values = _opd_metric_per_field(opm, fi_list, wvls.wavelengths, num_rays, _opd_wfe)
+    return _aggregate(values, wvls.spectral_wts, quadratic=True)
 
 
 def _compute_mono_strehl(opm, fi_list: list[int], num_rays: int) -> float:
@@ -238,19 +218,9 @@ def _compute_mono_strehl(opm, fi_list: list[int], num_rays: int) -> float:
     Returns:
         Mean monochromatic Strehl ratio over the selected fields.
     """
-    from rayoptics_web_utils.raygrid import make_ray_grid
-
-    osp = opm['optical_spec']
-    central_wvl = osp['wvls'].central_wvl
-
-    strehl_values = []
-    for fi in fi_list:
-        rg = make_ray_grid(opm, fi=fi, wavelength_nm=central_wvl, num_rays=num_rays)
-        opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, central_wvl)
-        s = _monochromatic_strehl(opd_grid)
-        strehl_values.append(s)
-
-    return float(np.mean(strehl_values))
+    central_wvl = opm['optical_spec']['wvls'].central_wvl
+    values = _opd_metric_per_field(opm, fi_list, [central_wvl], num_rays, _monochromatic_strehl)
+    return _aggregate(values, [1.0], quadratic=False)
 
 
 def _compute_poly_strehl(opm, fi_list: list[int], num_rays: int) -> float:
@@ -268,36 +238,52 @@ def _compute_poly_strehl(opm, fi_list: list[int], num_rays: int) -> float:
     Returns:
         Mean spectrally weighted Strehl ratio over the selected fields.
     """
-    from rayoptics_web_utils.raygrid import make_ray_grid
+    wvls = opm['optical_spec']['wvls']
+    values = _opd_metric_per_field(opm, fi_list, wvls.wavelengths, num_rays, _monochromatic_strehl)
+    return _aggregate(values, wvls.spectral_wts, quadratic=False)
 
-    osp = opm['optical_spec']
-    wavelengths = osp['wvls'].wavelengths
-    spectral_wts = osp['wvls'].spectral_wts
 
-    field_strehl_values = []
-    for fi in fi_list:
-        wl_strehl = []
-        wl_weights = []
-        for wi, wvl in enumerate(wavelengths):
-            w = spectral_wts[wi] if wi < len(spectral_wts) else 1.0
-            rg = make_ray_grid(opm, fi=fi, wavelength_nm=wvl, num_rays=num_rays)
-            opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wvl)
-            s = _monochromatic_strehl(opd_grid)
-            wl_strehl.append(s)
-            wl_weights.append(w)
+def _focus(opm, field_indices, num_rays: int, bounds, objective_metric, report_metric) -> dict[str, float]:
+    """Refocus by minimizing `objective_metric` over the final gap thickness.
 
-        total_w = sum(wl_weights)
-        weighted_strehl = sum(s * w for s, w in zip(wl_strehl, wl_weights)) / total_w
-        field_strehl_values.append(weighted_strehl)
+    Each objective evaluation sets `sm.gaps[-1].thi` and updates the model. The
+    shared bounded search is centred on the paraxial image distance, the best
+    thickness is left applied, and `report_metric` is evaluated there.
 
-    return float(np.mean(field_strehl_values))
+    Args:
+        opm: RayOptics optical model, mutated in place.
+        field_indices: Field indices to include, or `None` for all fields.
+        num_rays: Pupil-grid sampling resolution.
+        bounds: `(lo, hi)` search offsets around the paraxial image distance.
+        objective_metric: `(opm, fi_list, num_rays) -> float` to minimize.
+        report_metric: `(opm, fi_list, num_rays) -> float` reported at the result.
+
+    Returns:
+        `{'delta_thi': float, 'metric_value': float}`.
+    """
+    sm = opm['seq_model']
+    thi_0 = sm.gaps[-1].thi
+    fi_list = _resolve_field_indices(opm, field_indices)
+
+    def apply(delta: float) -> None:
+        sm.gaps[-1].thi = thi_0 + delta
+        opm.update_model()
+
+    def objective(delta: float) -> float:
+        apply(delta)
+        return objective_metric(opm, fi_list, num_rays)
+
+    delta_thi = _minimize_focus(objective, _paraxial_focus_offset(opm), bounds)
+    apply(delta_thi)
+    metric = report_metric(opm, fi_list, num_rays)
+    return {'delta_thi': delta_thi, 'metric_value': float(metric)}
 
 
 def focus_by_mono_rms_spot(
     opm,
     field_indices: list[int] | None = None,
     num_rays: int = 21,
-    bounds: tuple[float, float] = (-5.0, 5.0),
+    bounds: tuple[float, float] = DEFAULT_FOCUS_BOUNDS,
 ) -> dict[str, float]:
     """Find optimal focus by minimizing monochromatic RMS spot radius.
 
@@ -312,30 +298,14 @@ def focus_by_mono_rms_spot(
     Returns:
         {'delta_thi': float, 'metric_value': float}
     """
-    sm = opm['seq_model']
-    thi_0 = sm.gaps[-1].thi
-    fi_list = _resolve_field_indices(opm, field_indices)
-    img_dist = _get_paraxial_image_distance(opm)
-    initial_delta = img_dist - thi_0
-    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
-
-    def objective(delta: float) -> float:
-        sm.gaps[-1].thi = thi_0 + delta
-        opm.update_model()
-        return _compute_mono_rms_spot(opm, fi_list, num_rays)
-
-    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
-    sm.gaps[-1].thi = thi_0 + result.x
-    opm.update_model()
-    metric = _compute_mono_rms_spot(opm, fi_list, num_rays)
-    return {'delta_thi': float(result.x), 'metric_value': float(metric)}
+    return _focus(opm, field_indices, num_rays, bounds, _compute_mono_rms_spot, _compute_mono_rms_spot)
 
 
 def focus_by_mono_strehl(
     opm,
     field_indices: list[int] | None = None,
     num_rays: int = 21,
-    bounds: tuple[float, float] = (-5.0, 5.0),
+    bounds: tuple[float, float] = DEFAULT_FOCUS_BOUNDS,
 ) -> dict[str, float]:
     """Find optimal focus by maximizing monochromatic Strehl ratio.
 
@@ -354,30 +324,14 @@ def focus_by_mono_strehl(
     Returns:
         {'delta_thi': float, 'metric_value': float} where metric_value is Strehl in [0,1].
     """
-    sm = opm['seq_model']
-    thi_0 = sm.gaps[-1].thi
-    fi_list = _resolve_field_indices(opm, field_indices)
-    img_dist = _get_paraxial_image_distance(opm)
-    initial_delta = img_dist - thi_0
-    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
-
-    def objective(delta: float) -> float:
-        sm.gaps[-1].thi = thi_0 + delta
-        opm.update_model()
-        return _compute_mono_wfe(opm, fi_list, num_rays)
-
-    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
-    sm.gaps[-1].thi = thi_0 + result.x
-    opm.update_model()
-    metric = _compute_mono_strehl(opm, fi_list, num_rays)
-    return {'delta_thi': float(result.x), 'metric_value': float(metric)}
+    return _focus(opm, field_indices, num_rays, bounds, _compute_mono_wfe, _compute_mono_strehl)
 
 
 def focus_by_poly_rms_spot(
     opm,
     field_indices: list[int] | None = None,
     num_rays: int = 21,
-    bounds: tuple[float, float] = (-5.0, 5.0),
+    bounds: tuple[float, float] = DEFAULT_FOCUS_BOUNDS,
 ) -> dict[str, float]:
     """Find optimal focus by minimizing polychromatic (spectrally weighted) RMS spot radius.
 
@@ -392,30 +346,14 @@ def focus_by_poly_rms_spot(
     Returns:
         {'delta_thi': float, 'metric_value': float}
     """
-    sm = opm['seq_model']
-    thi_0 = sm.gaps[-1].thi
-    fi_list = _resolve_field_indices(opm, field_indices)
-    img_dist = _get_paraxial_image_distance(opm)
-    initial_delta = img_dist - thi_0
-    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
-
-    def objective(delta: float) -> float:
-        sm.gaps[-1].thi = thi_0 + delta
-        opm.update_model()
-        return _compute_poly_rms_spot(opm, fi_list, num_rays)
-
-    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
-    sm.gaps[-1].thi = thi_0 + result.x
-    opm.update_model()
-    metric = _compute_poly_rms_spot(opm, fi_list, num_rays)
-    return {'delta_thi': float(result.x), 'metric_value': float(metric)}
+    return _focus(opm, field_indices, num_rays, bounds, _compute_poly_rms_spot, _compute_poly_rms_spot)
 
 
 def focus_by_poly_strehl(
     opm,
     field_indices: list[int] | None = None,
     num_rays: int = 21,
-    bounds: tuple[float, float] = (-5.0, 5.0),
+    bounds: tuple[float, float] = DEFAULT_FOCUS_BOUNDS,
 ) -> dict[str, float]:
     """Find optimal focus by maximizing polychromatic (spectrally weighted) Strehl ratio.
 
@@ -435,20 +373,4 @@ def focus_by_poly_strehl(
     Returns:
         {'delta_thi': float, 'metric_value': float} where metric_value is Strehl in [0,1].
     """
-    sm = opm['seq_model']
-    thi_0 = sm.gaps[-1].thi
-    fi_list = _resolve_field_indices(opm, field_indices)
-    img_dist = _get_paraxial_image_distance(opm)
-    initial_delta = img_dist - thi_0
-    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
-
-    def objective(delta: float) -> float:
-        sm.gaps[-1].thi = thi_0 + delta
-        opm.update_model()
-        return _compute_poly_wfe(opm, fi_list, num_rays)
-
-    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
-    sm.gaps[-1].thi = thi_0 + result.x
-    opm.update_model()
-    metric = _compute_poly_strehl(opm, fi_list, num_rays)
-    return {'delta_thi': float(result.x), 'metric_value': float(metric)}
+    return _focus(opm, field_indices, num_rays, bounds, _compute_poly_wfe, _compute_poly_strehl)

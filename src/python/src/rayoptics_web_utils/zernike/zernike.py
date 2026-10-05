@@ -235,6 +235,26 @@ def fit_zernike(
     return _fit_zernike_details(opd_grid, zernike_terms, weights)[0]
 
 
+def _opd_wfe(opd_grid: NDArray) -> float:
+    """Return RMS wavefront error (std of OPD in waves) over valid pupil points.
+
+    Uses std (not RMS) to remove the piston term, giving the pure aberration RMS.
+    This is smooth and unimodal with respect to defocus, making it the shared
+    best-focus objective of focusing and chromatic focal shift.
+
+    Args:
+        opd_grid: Optical path differences in waves; `NaN` marks invalid cells.
+
+    Returns:
+        RMS wavefront error over valid pupil points, or `1e6` when none are valid.
+    """
+    opd_array = np.asarray(opd_grid, dtype=float)
+    valid = opd_array[~np.isnan(opd_array)]
+    if len(valid) == 0:
+        return 1e6
+    return float(np.std(valid))
+
+
 def _monochromatic_strehl(
     opd_waves: NDArray,
     weights: NDArray | None = None,

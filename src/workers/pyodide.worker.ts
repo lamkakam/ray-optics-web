@@ -610,14 +610,14 @@ export async function _getStrehlVsWavelengthData(
 /**
  * Loads and parses chromatic focal shift data for one field with injected execution.
  *
- * @param wavelengthSamples - Number of wavelength samples; defaults to 200.
+ * @param wavelengthSamples - Number of wavelength samples; defaults to 50.
  * @param numRays - Ray-grid size; defaults to 15.
  */
 export async function _getChromaticFocalShiftData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   fieldIndex: number,
-  wavelengthSamples: number = 200,
+  wavelengthSamples: number = 50,
   numRays: number = 15,
 ): Promise<ChromaticFocalShiftData> {
   const json = (await runPython(
@@ -1290,11 +1290,11 @@ export async function getStrehlVsWavelengthData(
   });
 }
 
-/** Returns best-focus shift across wavelength for one field, using 200 wavelength samples and 15 rays by default. */
+/** Returns best-focus shift across wavelength for one field, using 50 wavelength samples and 15 rays by default. */
 export async function getChromaticFocalShiftData(
   opticalModel: OpticalModel,
   fieldIndex: number,
-  wavelengthSamples: number = 200,
+  wavelengthSamples: number = 50,
   numRays: number = 15,
 ): Promise<ChromaticFocalShiftData> {
   return runPyodideOperation("getChromaticFocalShiftData", async () => {

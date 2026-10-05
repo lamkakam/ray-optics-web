@@ -245,7 +245,7 @@ class TestGetAnalysisPlotDataSignatures:
 
         sig = inspect.signature(get_chromatic_focal_shift_data)
         assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "wavelength_samples", "num_rays"]
-        assert sig.parameters["wavelength_samples"].default == 200
+        assert sig.parameters["wavelength_samples"].default == 50
         assert sig.parameters["num_rays"].default == 15
 
     @pytest.mark.parametrize("getter_name", ["get_field_curvature_data", "get_astigmatism_curve_data"])
@@ -1169,19 +1169,13 @@ def _dispersive_afocal_model(epd: float):
 
 
 def _brute_force_best_focus(opm, field_index: int, wavelength_nm: float, num_rays: int) -> float:
-    """Minimize piston- and tilt-removed RMS OPD over the focus shift."""
+    """Minimize piston-removed RMS OPD over the focus shift, retracing every evaluation."""
     from scipy.optimize import minimize_scalar
     from rayoptics_web_utils.raygrid import make_ray_grid
 
-    central_sys = opm.nm_to_sys_units(opm["optical_spec"]["wvls"].central_wvl)
-
     def rms(foc: float) -> float:
-        grid = np.asarray(make_ray_grid(opm, field_index, wavelength_nm, foc=foc, num_rays=num_rays).grid)
-        valid = np.isfinite(grid[2])
-        basis = np.column_stack([np.ones(valid.sum()), grid[0][valid], grid[1][valid]])
-        values = grid[2][valid] * central_sys
-        residual = values - basis @ np.linalg.lstsq(basis, values, rcond=None)[0]
-        return float(np.sqrt(np.mean(residual**2)))
+        opd = np.asarray(make_ray_grid(opm, field_index, wavelength_nm, foc=foc, num_rays=num_rays).grid)[2]
+        return float(np.std(opd[np.isfinite(opd)]))
 
     return float(minimize_scalar(rms, bounds=(-2.0, 2.0), method="bounded", options={"xatol": 1.0e-8}).x)
 
@@ -1245,7 +1239,32 @@ class TestGetChromaticFocalShiftData:
         finally:
             _restore_wavelengths(cooke_triplet, spectral_region, original_state)
 
-        assert result["x"] == pytest.approx(expected, abs=1.0e-4)
+        efl = abs(float(cooke_triplet["analysis_results"]["parax_data"].fod.efl))
+        assert result["x"] == pytest.approx(expected, abs=2.0e-5 * efl)
+
+    def test_finite_focus_uses_shared_solver_centered_on_paraxial_focus(self, cooke_triplet, monkeypatch):
+        import rayoptics_web_utils.analysis.chromatic_focal_shift as module
+        from rayoptics_web_utils.focusing._solver import _minimize_focus, _paraxial_focus_offset
+
+        centers = []
+        tolerances = []
+
+        def spy_minimize_focus(objective, center, **kwargs):
+            centers.append(center)
+            tolerances.append(kwargs.get("xatol"))
+            return _minimize_focus(objective, center, **kwargs)
+
+        monkeypatch.setattr(module, "_minimize_focus", spy_minimize_focus)
+        thi_before = cooke_triplet["seq_model"].gaps[-1].thi
+
+        module.get_chromatic_focal_shift_data(cooke_triplet, fieldIndex=1, wavelength_samples=3, num_rays=7)
+
+        # One solve for the reference wavelength plus one per sample.
+        assert centers == pytest.approx([_paraxial_focus_offset(cooke_triplet)] * 4)
+        # The plot uses a looser stopping tolerance scaled to the focal length.
+        efl = abs(float(cooke_triplet["analysis_results"]["parax_data"].fod.efl))
+        assert tolerances == pytest.approx([2.0e-5 * efl] * 4)
+        assert cooke_triplet["seq_model"].gaps[-1].thi == thi_before
 
     def test_off_axis_field_changes_focal_shift_curve(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_chromatic_focal_shift_data

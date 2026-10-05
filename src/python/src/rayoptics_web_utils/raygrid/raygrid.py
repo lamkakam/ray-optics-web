@@ -232,8 +232,12 @@ class ChiefRayGrid(RayGrid):
         return self
 
 
-def _linear_opd_coefficients(raw_grid, opd_values) -> np.ndarray:
+def _linear_opd_coefficients(
+    raw_grid, opd_values, reference_name: str = "Centroid wavefront reference"
+) -> np.ndarray:
     """Fit piston and normalized-pupil phase tilts to valid OPD samples.
+
+    Shared by the finite centroid sphere and the afocal centroid plane-wave fits.
 
     Args:
         raw_grid: A rectangular nested sequence of pupil cells. Each cell is a
@@ -244,11 +248,15 @@ def _linear_opd_coefficients(raw_grid, opd_values) -> np.ndarray:
         opd_values: A two-dimensional numeric array-like with the same row and
             column shape as ``raw_grid``. Each cell is an OPD sample or a
             non-finite value for an unusable sample.
+        reference_name: Reference label that starts each error message.
 
     Returns:
         A floating-point ``np.ndarray`` with shape ``(3,)`` containing the
         least-squares coefficients ``[piston, x_tilt, y_tilt]`` in the same
         units as ``opd_values``.
+
+    Raises:
+        ValueError: If fewer than three valid samples remain or they are collinear.
     """
     coordinates = []
     values = []
@@ -258,14 +266,10 @@ def _linear_opd_coefficients(raw_grid, opd_values) -> np.ndarray:
                 coordinates.append([1.0, float(pupil_x), float(pupil_y)])
                 values.append(float(opd))
     if len(values) < 3:
-        raise ValueError(
-            "Centroid wavefront reference requires at least three valid rays."
-        )
+        raise ValueError(f"{reference_name} requires at least three valid rays.")
     design = np.asarray(coordinates, dtype=float)
     if np.linalg.matrix_rank(design) < 3:
-        raise ValueError(
-            "Centroid wavefront reference requires non-collinear valid rays."
-        )
+        raise ValueError(f"{reference_name} requires non-collinear valid rays.")
     return np.linalg.lstsq(design, np.asarray(values, dtype=float), rcond=None)[0]
 
 

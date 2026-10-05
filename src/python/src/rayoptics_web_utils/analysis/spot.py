@@ -1,10 +1,9 @@
 """Extract spot-diagram data."""
 
-import numpy as np
-import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace
 
+from rayoptics_web_utils._spot import _transverse_aberration
 from rayoptics_web_utils.raygrid.opd_reference import (
     projected_image_points,
     sample_valid_rays,
@@ -59,12 +58,7 @@ def get_spot_data(
                     references[wvl] = reference_direction(opm, fi, wvl, image_point=image_point, num_rays=num_rays)[0]
                 reference = references[wvl]
                 return angular_coordinates(output_segment(ray_pkg)[1], reference)
-            image_pt = fld.ref_sphere[0]
-            ray = ray_pkg[mc.ray]
-            dist = foc / ray[-1][mc.d][2]
-            defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-            t_abr = defocused_pt - image_pt
-            return np.array([t_abr[0], t_abr[1]])
+            return _transverse_aberration(ray_pkg, fld, foc)
         return None
 
     if image_point == "chief_ray" and not afocal:

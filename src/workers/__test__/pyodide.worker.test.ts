@@ -699,7 +699,7 @@ describe("_getChromaticFocalShiftData", () => {
     maxFocalShiftRange: 0.03,
   };
 
-  it("should call json.dumps(get_chromatic_focal_shift_data(...)) with 200 samples and 15 rays by default", async () => {
+  it("should call json.dumps(get_chromatic_focal_shift_data(...)) with 50 samples and 15 rays by default", async () => {
     let pythonScript = "";
     const result = await _getChromaticFocalShiftData(
       async (code) => {
@@ -712,7 +712,7 @@ describe("_getChromaticFocalShiftData", () => {
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain(
-      "json.dumps(get_chromatic_focal_shift_data(_build_opm(), 1, wavelength_samples=200, num_rays=15))",
+      "json.dumps(get_chromatic_focal_shift_data(_build_opm(), 1, wavelength_samples=50, num_rays=15))",
     );
     expect(result).toEqual(mockData);
   });
@@ -726,12 +726,12 @@ describe("_getChromaticFocalShiftData", () => {
       },
       allSphericalOpticalModel,
       2,
-      50,
+      100,
       21,
     );
 
     expect(pythonScript).toContain(
-      "json.dumps(get_chromatic_focal_shift_data(_build_opm(), 2, wavelength_samples=50, num_rays=21))",
+      "json.dumps(get_chromatic_focal_shift_data(_build_opm(), 2, wavelength_samples=100, num_rays=21))",
     );
   });
 });
@@ -1466,7 +1466,7 @@ describe("public worker guards before initialization", () => {
           "get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')",
         ),
         expect.stringContaining(
-          "get_chromatic_focal_shift_data(_build_opm(), 0, wavelength_samples=200, num_rays=15)",
+          "get_chromatic_focal_shift_data(_build_opm(), 0, wavelength_samples=50, num_rays=15)",
         ),
         expect.stringContaining(
           "get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=128, max_dims=1024, image_point='chief_ray')",

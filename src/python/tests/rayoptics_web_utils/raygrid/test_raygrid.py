@@ -668,6 +668,29 @@ class TestLinearOpdCoefficients:
         ):
             _linear_opd_coefficients(raw_grid, [[2.0, 5.0, 8.0]])
 
+    def test_error_messages_name_the_requested_reference(self):
+        """Callers such as the afocal plane-wave fit label their own failures."""
+        from rayoptics_web_utils.raygrid.raygrid import _linear_opd_coefficients
+
+        ray_pkg = object()
+
+        with pytest.raises(
+            ValueError,
+            match=r"^Centroid plane-wave reference requires at least three valid rays\.$",
+        ):
+            _linear_opd_coefficients(
+                [[[0.0, 0.0, ray_pkg]]], [[1.0]], "Centroid plane-wave reference"
+            )
+        with pytest.raises(
+            ValueError,
+            match=r"^Centroid plane-wave reference requires non-collinear valid rays\.$",
+        ):
+            _linear_opd_coefficients(
+                [[[0.0, 0.0, ray_pkg], [1.0, 0.0, ray_pkg], [2.0, 0.0, ray_pkg]]],
+                [[2.0, 5.0, 8.0]],
+                "Centroid plane-wave reference",
+            )
+
     @pytest.mark.parametrize(
         ("raw_grid", "opd_values"),
         [

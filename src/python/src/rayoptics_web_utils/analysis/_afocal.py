@@ -40,6 +40,7 @@ from rayoptics.raytr.waveabr import eic_distance
 from scipy.optimize import least_squares
 
 from rayoptics_web_utils.raygrid.opd_reference import _validate_image_point
+from rayoptics_web_utils.raygrid.raygrid import _linear_opd_coefficients
 
 
 ARCSEC_PER_RADIAN = 206264.806247
@@ -526,41 +527,13 @@ def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief
         return values
 
     def linear_coefficients(values: np.ndarray) -> np.ndarray:
-        """Fit and return the pupil-plane coefficients `[piston, x_slope, y_slope]`.
+        """Return the pupil-plane fit `[piston, x_slope, y_slope]` of plane-wave OPD.
 
-        The least-squares plane is fitted only to finite OPD values from valid rays:
-        `OPD = piston + x_slope * pupil_x + y_slope * pupil_y`. Three
-        non-collinear samples are required so all coefficients are identifiable.
-
-        Args:
-            values: A two-dimensional `np.ndarray` with shape
-                `(num_rays, num_rays)`, normally returned by `opd_values`. In
-                `values[i, j]`, axis `0` (`i`) selects the sampled sagittal
-                pupil-x coordinate and axis `1` (`j`) selects the sampled
-                tangential pupil-y coordinate. Each finite scalar cell is the
-                plane-wave OPD, in system length units, of the corresponding ray
-                in `raw_grid[i][j]`; `NaN` identifies a blocked or failed ray and
-                is excluded from the fit.
-
-        Returns:
-            The fitted `[piston, x_slope, y_slope]` coefficient array.
+        Delegates to the shared finite-grid fit; `values` is the
+        `(num_rays, num_rays)` system-unit OPD array from `opd_values`, with
+        `NaN` cells excluded.
         """
-        coordinates = []
-        samples = []
-        for row, value_row in zip(raw_grid, values, strict=True):
-            for (pupil_x, pupil_y, ray_pkg), value in zip(
-                row, value_row, strict=True
-            ):
-                if ray_pkg is not None and np.isfinite(value):
-                    coordinates.append([1.0, float(pupil_x), float(pupil_y)])
-                    samples.append(float(value))
-        if len(samples) < 3 or np.linalg.matrix_rank(coordinates) < 3:
-            raise ValueError(
-                "Centroid plane-wave reference requires three non-collinear valid rays."
-            )
-        return np.linalg.lstsq(
-            np.asarray(coordinates), np.asarray(samples), rcond=None
-        )[0]
+        return _linear_opd_coefficients(raw_grid, values, "Centroid plane-wave reference")
 
     if image_point == "centroid":
         sagittal, tangential = transverse_axes(reference)
