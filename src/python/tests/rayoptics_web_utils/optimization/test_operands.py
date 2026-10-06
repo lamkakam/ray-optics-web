@@ -35,12 +35,12 @@ def test_operand_registry_is_partitioned_by_target_mode():
     from rayoptics_web_utils.optimization.operands import (
         OPERAND_REGISTRY,
         RANGE_OPERAND_KINDS,
-        TARGET_OPERAND_KINDS,
-        TARGETLESS_OPERAND_KINDS,
+        ADJUSTABLE_TARGET_OPERAND_KINDS,
+        FIXED_TARGET_OPERAND_KINDS,
         operand_goal,
     )
 
-    assert TARGET_OPERAND_KINDS == {
+    assert ADJUSTABLE_TARGET_OPERAND_KINDS == {
         "focal_length",
         "f_number",
         "opd_difference",
@@ -49,12 +49,12 @@ def test_operand_registry_is_partitioned_by_target_mode():
         "rms_spot_size",
         "rms_wavefront_error",
     }
-    assert TARGETLESS_OPERAND_KINDS == {"ray_fan", "ray_fan_tangential", "ray_fan_sagittal"}
+    assert FIXED_TARGET_OPERAND_KINDS == {"ray_fan", "ray_fan_tangential", "ray_fan_sagittal"}
     assert RANGE_OPERAND_KINDS == frozenset()
-    assert TARGET_OPERAND_KINDS.isdisjoint(TARGETLESS_OPERAND_KINDS)
-    assert set(OPERAND_REGISTRY) == TARGET_OPERAND_KINDS | TARGETLESS_OPERAND_KINDS | RANGE_OPERAND_KINDS
-    assert {operand_goal(kind) for kind in TARGET_OPERAND_KINDS} == {"target"}
-    assert {operand_goal(kind) for kind in TARGETLESS_OPERAND_KINDS} == {"none"}
+    assert ADJUSTABLE_TARGET_OPERAND_KINDS.isdisjoint(FIXED_TARGET_OPERAND_KINDS)
+    assert set(OPERAND_REGISTRY) == ADJUSTABLE_TARGET_OPERAND_KINDS | FIXED_TARGET_OPERAND_KINDS | RANGE_OPERAND_KINDS
+    assert {operand_goal(kind) for kind in ADJUSTABLE_TARGET_OPERAND_KINDS} == {"adjustable_target"}
+    assert {operand_goal(kind) for kind in FIXED_TARGET_OPERAND_KINDS} == {"fixed_target"}
 
 
 def test_operand_goal_resolves_range_kinds_and_rejects_unknown_kinds(monkeypatch):

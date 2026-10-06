@@ -312,8 +312,8 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
 
     All supplied indices and target-mode fields are validated before exact-zero
     weights are filtered, so disabled UI rows cannot conceal an invalid field or
-    wavelength reference or a malformed target. Target kinds require a finite
-    ``target``; targetless kinds accept neither ``target`` nor range bounds; range
+    wavelength reference or a malformed target. Adjustable-target kinds require a
+    finite ``target``; fixed-target kinds accept neither ``target`` nor range bounds; range
     kinds require at least one finite bound with ``min <= max`` and keep only the
     supplied bounds.
 
@@ -382,8 +382,9 @@ def normalize_operand_goal_fields(kind: str, operand: OperandConfigInput) -> dic
         operand: Unnormalized operand configuration.
 
     Returns:
-        ``{"target": ...}`` for target kinds, the supplied ``min``/``max`` for
-        range kinds, or an empty mapping for targetless kinds.
+        ``{"target": ...}`` for adjustable-target kinds, the supplied
+        ``min``/``max`` for range kinds, or an empty mapping for fixed-target
+        kinds, whose zero target is implicit.
 
     Raises:
         ValueError: If the operand's fields do not match its kind's target mode.
@@ -392,11 +393,11 @@ def normalize_operand_goal_fields(kind: str, operand: OperandConfigInput) -> dic
     has_bounds = "min" in operand or "max" in operand
     if goal != "range" and has_bounds:
         raise ValueError(f"Operand {kind} does not accept range bounds")
-    if goal != "target" and "target" in operand:
+    if goal != "adjustable_target" and "target" in operand:
         raise ValueError(f"Operand {kind} does not accept a target")
-    if goal == "none":
+    if goal == "fixed_target":
         return {}
-    if goal == "target":
+    if goal == "adjustable_target":
         target = operand.get("target")
         if not _is_finite_number(target):
             raise ValueError(f"Operand {kind} requires a finite target")

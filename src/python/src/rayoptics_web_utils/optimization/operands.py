@@ -27,17 +27,17 @@ from ._types import (
     OperandOptions,
     OperandSample,
     RangeOperandKind,
-    TargetlessOperandKind,
-    TargetOperandKind,
+    FixedTargetOperandKind,
+    AdjustableTargetOperandKind,
 )
 from .targets import validate_surface_index
 
 PENALTY_RESIDUAL = 1e6
 
-TARGET_OPERAND_KINDS: frozenset[str] = frozenset(get_args(TargetOperandKind.__value__))
-"""Runtime mirror of ``TargetOperandKind``."""
-TARGETLESS_OPERAND_KINDS: frozenset[str] = frozenset(get_args(TargetlessOperandKind.__value__))
-"""Runtime mirror of ``TargetlessOperandKind``."""
+ADJUSTABLE_TARGET_OPERAND_KINDS: frozenset[str] = frozenset(get_args(AdjustableTargetOperandKind.__value__))
+"""Runtime mirror of ``AdjustableTargetOperandKind``."""
+FIXED_TARGET_OPERAND_KINDS: frozenset[str] = frozenset(get_args(FixedTargetOperandKind.__value__))
+"""Runtime mirror of ``FixedTargetOperandKind``."""
 RANGE_OPERAND_KINDS: frozenset[str] = frozenset(get_args(RangeOperandKind.__value__))
 """Runtime mirror of ``RangeOperandKind``; empty until the first range operand is registered."""
 
@@ -52,15 +52,15 @@ def operand_goal(kind: str) -> OperandGoal:
         kind: Operand kind.
 
     Returns:
-        ``"target"``, ``"none"`` (targetless), or ``"range"``.
+        ``"adjustable_target"``, ``"fixed_target"``, or ``"range"``.
 
     Raises:
         ValueError: If the kind belongs to no target-mode group.
     """
-    if kind in TARGET_OPERAND_KINDS:
-        return "target"
-    if kind in TARGETLESS_OPERAND_KINDS:
-        return "none"
+    if kind in ADJUSTABLE_TARGET_OPERAND_KINDS:
+        return "adjustable_target"
+    if kind in FIXED_TARGET_OPERAND_KINDS:
+        return "fixed_target"
     if kind in RANGE_OPERAND_KINDS:
         return "range"
     raise ValueError(f"Unknown operand kind: {kind}")
@@ -69,8 +69,8 @@ def operand_goal(kind: str) -> OperandGoal:
 def operand_goal_residual(sample: OperandSample, actual: float) -> float:
     """Return the unweighted residual of one evaluated operand value.
 
-    Target operands return ``actual - target`` and targetless operands return
-    ``actual``. Range operands return a dead-zone residual: zero inside the
+    Adjustable-target operands return ``actual - target`` and fixed-target
+    operands return ``actual`` (their implicit target is zero). Range operands return a dead-zone residual: zero inside the
     inclusive ``[min, max]`` band and the distance to the violated bound outside
     it; a missing bound is unbounded on that side.
 
@@ -82,9 +82,9 @@ def operand_goal_residual(sample: OperandSample, actual: float) -> float:
         Unweighted residual.
     """
     goal = operand_goal(sample["kind"])
-    if goal == "target":
+    if goal == "adjustable_target":
         return actual - sample["target"]
-    if goal == "none":
+    if goal == "fixed_target":
         return actual
     below = sample["min"] - actual if "min" in sample else 0.0
     above = actual - sample["max"] if "max" in sample else 0.0

@@ -33,8 +33,8 @@ export type GlassCatalogName =
   | "Sumita"
   | "Special"
   | "Custom";
-/** Operand kinds that require exactly one scalar `target`. */
-export type OptimizationTargetOperandKind =
+/** Operand kinds driven toward one user-supplied scalar `target`. */
+export type OptimizationAdjustableTargetOperandKind =
   | "focal_length"
   | "f_number"
   | "opd_difference"
@@ -42,23 +42,34 @@ export type OptimizationTargetOperandKind =
   | "opd_difference_sagittal"
   | "rms_spot_size"
   | "rms_wavefront_error";
-/** Operand kinds whose (possibly vector) values are driven toward zero without a target. */
-export type OptimizationTargetlessOperandKind =
+/**
+ * Operand kinds with an implicit, non-configurable zero target. Their (possibly
+ * vector) values are driven toward zero, so configs and reports carry no `target`.
+ */
+export type OptimizationFixedTargetOperandKind =
   | "ray_fan"
   | "ray_fan_tangential"
   | "ray_fan_sagittal";
-/** Operand kinds bounded by `min`/`max`; reserved, no kind uses range mode yet. */
+/**
+ * Operand kinds penalized only outside an inclusive `min`/`max` range. No kind
+ * uses range mode yet; every range-dependent type, metadata variant, guard, and
+ * GUI path is already in place, so adding the first kind only requires adding its
+ * literal here and its metadata entry.
+ */
 export type OptimizationRangeOperandKind = never;
 /** Worker-supported merit operand discriminators. */
 export type OptimizationOperandKind =
-  | OptimizationTargetOperandKind
-  | OptimizationTargetlessOperandKind
+  | OptimizationAdjustableTargetOperandKind
+  | OptimizationFixedTargetOperandKind
   | OptimizationRangeOperandKind;
 
-/** Inclusive operand range with at least one finite bound; a missing bound is unbounded. */
-export type OptimizationOperandRange =
-  | { readonly min: number; readonly max?: number }
-  | { readonly min?: number; readonly max: number };
+/**
+ * Inclusive operand range with at least one bound; a missing bound is unbounded.
+ * `TValue` defaults to numeric worker bounds; the GUI reuses it for string-backed defaults.
+ */
+export type OptimizationOperandRange<TValue = number> =
+  | { readonly min: TValue; readonly max?: TValue }
+  | { readonly min?: TValue; readonly max: TValue };
 
 /** Weighting and sampling fields shared by every operand configuration. */
 interface OptimizationOperandConfigBase {
@@ -75,19 +86,19 @@ interface OptimizationOperandConfigBase {
   readonly options?: { readonly num_rays?: number };
 }
 
-/** Scalar operand driven toward one target value. */
-export interface OptimizationTargetOperandConfig
+/** Scalar operand driven toward its user-supplied target value. */
+export interface OptimizationAdjustableTargetOperandConfig
   extends OptimizationOperandConfigBase {
-  readonly kind: OptimizationTargetOperandKind;
+  readonly kind: OptimizationAdjustableTargetOperandKind;
   readonly target: number;
   readonly min?: undefined;
   readonly max?: undefined;
 }
 
-/** Target-less (vector) operand driven toward zero. */
-export interface OptimizationTargetlessOperandConfig
+/** Fixed-target (possibly vector) operand driven toward its implicit zero target. */
+export interface OptimizationFixedTargetOperandConfig
   extends OptimizationOperandConfigBase {
-  readonly kind: OptimizationTargetlessOperandKind;
+  readonly kind: OptimizationFixedTargetOperandKind;
   readonly target?: undefined;
   readonly min?: undefined;
   readonly max?: undefined;
@@ -101,8 +112,8 @@ export type OptimizationRangeOperandConfig = OptimizationOperandConfigBase & {
 
 /** Operand configuration whose target fields are determined by `kind`. */
 export type OptimizationOperandConfig =
-  | OptimizationTargetOperandConfig
-  | OptimizationTargetlessOperandConfig
+  | OptimizationAdjustableTargetOperandConfig
+  | OptimizationFixedTargetOperandConfig
   | OptimizationRangeOperandConfig;
 
 /**
@@ -338,19 +349,19 @@ interface OptimizationResidualEntryBase {
   readonly weighted_residual: number;
 }
 
-/** Residual of a target operand, reporting its target. */
-export interface OptimizationTargetResidualEntry
+/** Residual of an adjustable-target operand, reporting its target. */
+export interface OptimizationAdjustableTargetResidualEntry
   extends OptimizationResidualEntryBase {
-  readonly kind: OptimizationTargetOperandKind;
+  readonly kind: OptimizationAdjustableTargetOperandKind;
   readonly target: number;
   readonly min?: undefined;
   readonly max?: undefined;
 }
 
-/** One scalar sample of a target-less vector operand. */
-export interface OptimizationTargetlessResidualEntry
+/** One scalar sample of a fixed-target operand; the implicit zero target is not reported. */
+export interface OptimizationFixedTargetResidualEntry
   extends OptimizationResidualEntryBase {
-  readonly kind: OptimizationTargetlessOperandKind;
+  readonly kind: OptimizationFixedTargetOperandKind;
   readonly target?: undefined;
   readonly min?: undefined;
   readonly max?: undefined;
@@ -364,8 +375,8 @@ export type OptimizationRangeResidualEntry = OptimizationResidualEntryBase & {
 
 /** One scalar residual whose reported target fields are determined by `kind`. */
 export type OptimizationResidualEntry =
-  | OptimizationTargetResidualEntry
-  | OptimizationTargetlessResidualEntry
+  | OptimizationAdjustableTargetResidualEntry
+  | OptimizationFixedTargetResidualEntry
   | OptimizationRangeResidualEntry;
 
 /** One chronological merit-history sample. */

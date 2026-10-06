@@ -5,8 +5,8 @@ kind, mutable targets by target kind, and result mappings allow solver-specific
 metadata. Glass-expert inputs keep categorical candidates ordered separately from
 continuous targets. Returned statuses distinguish successful evaluation/stop states,
 numeric solver statuses, and ordinary Python ``"error"`` reports. Operand configs,
-normalized samples, and residual entries are discriminated by kind into target,
-targetless, and range modes. Operand evaluators may return scalars or residual
+normalized samples, and residual entries are discriminated by kind into
+adjustable-target, fixed-target, and range modes. Operand evaluators may return scalars or residual
 vectors and receive the image-point convention explicitly. Snapshot entries retain the complete target descriptor so rollback
 preserves asphere kinds and tilt/decenter coordinate strategies.
 """
@@ -45,7 +45,7 @@ type TargetKey = BaseTargetKey | PolynomialTargetKey
 type OptimizationStatus = int | Literal["evaluated", "optimized", "no_variables", "stopped", "error"]
 
 
-type TargetOperandKind = Literal[
+type AdjustableTargetOperandKind = Literal[
     "focal_length",
     "f_number",
     "opd_difference",
@@ -54,13 +54,13 @@ type TargetOperandKind = Literal[
     "rms_spot_size",
     "rms_wavefront_error",
 ]
-"""Operand kinds that require exactly one scalar ``target``."""
-type TargetlessOperandKind = Literal["ray_fan", "ray_fan_tangential", "ray_fan_sagittal"]
-"""Operand kinds whose (possibly vector) values are driven toward zero without a target."""
+"""Operand kinds driven toward one user-supplied scalar ``target``."""
+type FixedTargetOperandKind = Literal["ray_fan", "ray_fan_tangential", "ray_fan_sagittal"]
+"""Operand kinds with an implicit, non-configurable zero target; their (possibly vector) values are driven toward zero and configs carry no ``target``."""
 type RangeOperandKind = Never
 """Operand kinds bounded by ``min``/``max``; reserved, no kind uses range mode yet."""
-type OperandKind = TargetOperandKind | TargetlessOperandKind | RangeOperandKind
-type OperandGoal = Literal["target", "none", "range"]
+type OperandKind = AdjustableTargetOperandKind | FixedTargetOperandKind | RangeOperandKind
+type OperandGoal = Literal["adjustable_target", "fixed_target", "range"]
 """Target mode shared by every operand of one kind group."""
 
 
@@ -328,13 +328,13 @@ class _OperandConfigInputBase(TypedDict, total=False):
     options: OperandOptions
 
 
-class TargetOperandConfigInput(_OperandConfigInputBase, total=False):
-    kind: Required[TargetOperandKind]
+class AdjustableTargetOperandConfigInput(_OperandConfigInputBase, total=False):
+    kind: Required[AdjustableTargetOperandKind]
     target: Required[float]
 
 
-class TargetlessOperandConfigInput(_OperandConfigInputBase, total=False):
-    kind: Required[TargetlessOperandKind]
+class FixedTargetOperandConfigInput(_OperandConfigInputBase, total=False):
+    kind: Required[FixedTargetOperandKind]
 
 
 class RangeOperandConfigInput(_OperandConfigInputBase, total=False):
@@ -345,7 +345,7 @@ class RangeOperandConfigInput(_OperandConfigInputBase, total=False):
     max: float
 
 
-type OperandConfigInput = TargetOperandConfigInput | TargetlessOperandConfigInput | RangeOperandConfigInput
+type OperandConfigInput = AdjustableTargetOperandConfigInput | FixedTargetOperandConfigInput | RangeOperandConfigInput
 
 
 class _OperandSampleBase(TypedDict):
@@ -357,13 +357,13 @@ class _OperandSampleBase(TypedDict):
     options: OperandOptions
 
 
-class TargetOperandSample(_OperandSampleBase):
-    kind: TargetOperandKind
+class AdjustableTargetOperandSample(_OperandSampleBase):
+    kind: AdjustableTargetOperandKind
     target: float
 
 
-class TargetlessOperandSample(_OperandSampleBase):
-    kind: TargetlessOperandKind
+class FixedTargetOperandSample(_OperandSampleBase):
+    kind: FixedTargetOperandKind
 
 
 class RangeOperandSample(_OperandSampleBase):
@@ -374,7 +374,7 @@ class RangeOperandSample(_OperandSampleBase):
     max: NotRequired[float]
 
 
-type OperandSample = TargetOperandSample | TargetlessOperandSample | RangeOperandSample
+type OperandSample = AdjustableTargetOperandSample | FixedTargetOperandSample | RangeOperandSample
 
 
 class MeritFunctionConfigInput(TypedDict, total=False):
@@ -471,13 +471,13 @@ class _ResidualEntryBase(TypedDict):
     weighted_residual: float
 
 
-class TargetResidualEntry(_ResidualEntryBase):
-    kind: TargetOperandKind
+class AdjustableTargetResidualEntry(_ResidualEntryBase):
+    kind: AdjustableTargetOperandKind
     target: float
 
 
-class TargetlessResidualEntry(_ResidualEntryBase):
-    kind: TargetlessOperandKind
+class FixedTargetResidualEntry(_ResidualEntryBase):
+    kind: FixedTargetOperandKind
 
 
 class RangeResidualEntry(_ResidualEntryBase):
@@ -486,7 +486,7 @@ class RangeResidualEntry(_ResidualEntryBase):
     max: NotRequired[float]
 
 
-type ResidualEntry = TargetResidualEntry | TargetlessResidualEntry | RangeResidualEntry
+type ResidualEntry = AdjustableTargetResidualEntry | FixedTargetResidualEntry | RangeResidualEntry
 
 
 class MeritFunctionSummary(TypedDict):

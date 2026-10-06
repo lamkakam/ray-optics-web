@@ -78,8 +78,26 @@ export function getOperandLabel(kind: OptimizationOperandKind): string {
   return getOptimizationOperandMetadata(kind).label;
 }
 
-function formatEvaluationValue(value: number | undefined): string {
-  return value === undefined ? "N/A" : String(value);
+/**
+ * Formats a residual's goal for the Target column: the adjustable target, the
+ * inclusive range (`[min, max]`, `≥ min`, or `≤ max`), or `N/A` for fixed-target
+ * operands whose implicit zero target is not reported.
+ */
+function formatEvaluationTarget(residual: OptimizationResidualEntry): string {
+  if (residual.target !== undefined) {
+    return String(residual.target);
+  }
+  const { min, max } = residual;
+  if (min !== undefined && max !== undefined) {
+    return `[${min}, ${max}]`;
+  }
+  if (min !== undefined) {
+    return `≥ ${min}`;
+  }
+  if (max !== undefined) {
+    return `≤ ${max}`;
+  }
+  return "N/A";
 }
 
 function formatEvaluationFixedValue(value: number | undefined): string {
@@ -97,8 +115,8 @@ export function createEvaluationRow(
 
   return {
     id: `${residual.kind}-${residual.field_index ?? "none"}-${residual.wavelength_index ?? "none"}-${index}`,
-    operandType: getOperandLabel(residual.kind as OptimizationOperandKind),
-    target: formatEvaluationValue(residual.target),
+    operandType: getOperandLabel(residual.kind),
+    target: formatEvaluationTarget(residual),
     weight: formatEvaluationFixedValue(residual.total_weight),
     value: formatEvaluationFixedValue(residual.value),
   };

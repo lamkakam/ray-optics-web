@@ -445,7 +445,7 @@ describe("optimizationStore", () => {
     ]);
   });
 
-  it("omits target from Python config for target-less ray_fan operands", () => {
+  it("omits the implicit target from Python config for fixed-target ray_fan operands", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
     store
@@ -487,7 +487,7 @@ describe("optimizationStore", () => {
     });
   });
 
-  it("omits target from Python config for axis-specific target-less ray_fan operands", () => {
+  it("omits the implicit target from Python config for axis-specific fixed-target ray_fan operands", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
     store.getState().replaceOperands([
