@@ -3,6 +3,11 @@ import {
   createPrescriptionAjv,
   finiteNumberSchema,
 } from "@/shared/lib/schemas/prescriptionSchema";
+import {
+  OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
+  OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS,
+  OPTIMIZATION_RANGE_OPERAND_KINDS,
+} from "@/features/optimization/lib/operandMetadata";
 import type { OptimizationRunConfig } from "@/features/optimization/types/optimizationWorkerTypes";
 
 const positiveIntegerSchema = {
@@ -261,6 +266,28 @@ const operandProperties = {
   options: operandOptionsSchema,
 } as const;
 
+/**
+ * Range operand branch: at least one finite bound and no `target`. JSON Schema
+ * cannot compare `min` with `max`; the GUI config adapter enforces `min <= max`.
+ */
+const rangeOperandSchema = {
+  type: "object",
+  required: ["kind", "weight"],
+  anyOf: [{ required: ["min"] }, { required: ["max"] }],
+  additionalProperties: false,
+  properties: {
+    kind: { type: "string", enum: OPTIMIZATION_RANGE_OPERAND_KINDS },
+    min: finiteNumberSchema,
+    max: finiteNumberSchema,
+    ...operandProperties,
+  },
+} as const;
+
+/**
+ * Operand schema with one branch per target mode, whose kind enums come from the
+ * shared operand metadata. The range branch is included only while at least one
+ * range kind is registered, because a JSON-schema `enum` must not be empty.
+ */
 const optimizationOperandSchema = {
   oneOf: [
     {
@@ -270,15 +297,7 @@ const optimizationOperandSchema = {
       properties: {
         kind: {
           type: "string",
-          enum: [
-            "focal_length",
-            "f_number",
-            "opd_difference",
-            "opd_difference_tangential",
-            "opd_difference_sagittal",
-            "rms_spot_size",
-            "rms_wavefront_error",
-          ],
+          enum: OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
         },
         target: finiteNumberSchema,
         ...operandProperties,
@@ -289,13 +308,13 @@ const optimizationOperandSchema = {
       required: ["kind", "weight"],
       additionalProperties: false,
       properties: {
-        kind: {
-          type: "string",
-          enum: ["ray_fan", "ray_fan_tangential", "ray_fan_sagittal"],
-        },
+        kind: { type: "string", enum: OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS },
         ...operandProperties,
       },
     },
+    ...(OPTIMIZATION_RANGE_OPERAND_KINDS.length > 0
+      ? [rangeOperandSchema]
+      : []),
   ],
 } as const;
 

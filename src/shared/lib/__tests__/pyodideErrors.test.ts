@@ -165,6 +165,26 @@ describe("Pyodide error policy", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    "ValueError: Operand focal_length requires a finite target",
+    "ValueError: Operand ray_fan does not accept a target",
+    "ValueError: Operand ray_fan_sagittal does not accept range bounds",
+    "ValueError: Operand some_range range requires at least one bound",
+    "ValueError: Operand some_range range bounds must be finite",
+    "ValueError: Operand some_range range min must not exceed max",
+  ])(
+    "maps operand target-mode validation failures to settings text: %s",
+    (raw) => {
+      expect(
+        normalizePyodideError(new Error(raw), "calculation"),
+      ).toMatchObject({
+        name: "PyodideBusinessError",
+        message:
+          "The calculation settings are invalid. Check the inputs and try again.",
+      });
+    },
+  );
+
   it("forces initialization and transport failures to error severity", async () => {
     await expect(
       runPyodideOperation("init", () => {

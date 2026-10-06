@@ -8,20 +8,58 @@ import type { OptimizationOperandRow } from "@/features/optimization/stores/opti
 import { getOperandLabel } from "@/features/optimization/lib/optimizationViewModels";
 import {
   OPTIMIZATION_OPERAND_METADATA,
-  getOptimizationOperandMetadata,
+  OPTIMIZATION_RANGE_OPERAND_KINDS,
+  isOptimizationAdjustableTargetOperandKind,
+  isOptimizationRangeOperandKind,
 } from "@/features/optimization/lib/operandMetadata";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Button } from "@/shared/components/primitives/Button";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
+type OperandRowUpdater = (
+  id: string,
+  patch: Partial<Omit<OptimizationOperandRow, "id">>,
+) => void;
+
+/** Builds the `Min` or `Max` column, editable only for range rows and `N/A` otherwise. */
+function createRangeBoundColumn(
+  bound: "min" | "max",
+  headerName: string,
+  onUpdateOperand: OperandRowUpdater,
+): ColDef<OptimizationOperandRow> {
+  return {
+    headerName,
+    width: 85,
+    editable: (params) =>
+      params.data !== undefined &&
+      isOptimizationRangeOperandKind(params.data.kind),
+    valueGetter: (params) => {
+      if (params.data === undefined) {
+        return undefined;
+      }
+      return isOptimizationRangeOperandKind(params.data.kind)
+        ? params.data[bound]
+        : "N/A";
+    },
+    valueSetter: (params) => {
+      if (
+        params.data === undefined ||
+        !isOptimizationRangeOperandKind(params.data.kind)
+      ) {
+        return false;
+      }
+
+      onUpdateOperand(params.data.id, { [bound]: String(params.newValue) });
+      return true;
+    },
+  };
+}
+
 interface OptimizationOperandsTabProps {
   readonly operands: ReadonlyArray<OptimizationOperandRow>;
   readonly onAddOperand: () => void;
   readonly onDeleteOperand: (id: string) => void;
-  readonly onUpdateOperand: (
-    id: string,
-    patch: Partial<Omit<OptimizationOperandRow, "id">>,
-  ) => void;
+  readonly onUpdateOperand: OperandRowUpdater;
   readonly onCellEditingStarted?: () => void;
   readonly onCellEditingStopped?: () => void;
 }
@@ -34,13 +72,14 @@ interface OptimizationOperandsTabProps {
  * - Keeps the content-sized Add Operand button above the grid. The grid wrapper uses `min-h-0 flex-1`, so it occupies the concrete remaining height after the button and gap, while the tab retains horizontal overflow and relies on parent layout padding instead of adding its own outer `p-4`.
  * - Uses AG Grid's normal layout so the grid owns vertical scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
  * - Applies `defaultColDef={{ sortable: false, suppressMovable: true }}` so users cannot reorder operand-table columns.
- * - Sets fixed AG Grid column widths of `215`, `85`, `90`, and `90` for Operand Kind, Target, Weight, and the delete/action column.
+ * - Sets fixed AG Grid column widths of `215`, `85`, `90`, and `90` for Operand Kind, Target, Weight, and the delete/action column, plus `85` for each of the optional Min and Max columns.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending operand edits commit when editing stops.
  * - Accepts optional AG Grid cell edit lifecycle callbacks and forwards them to `EditableAgGridReact` so the page can disable Optimize while operand edits and their post-edit evaluation refreshes are pending.
  * - Provides AG Grid `getRowId` from each operand `id` so live Operand Evaluation rerenders and replacement row objects do not interrupt the active operand editor or discard uncommitted typed text.
  * - Builds the operand-kind selector from shared operand metadata instead of hardcoding the list locally.
  * - Imports operand kind types from `features/optimization/types/optimizationWorkerTypes.ts`.
- * - Shows `N/A` and disables editing in the `Target` column for target-less operands such as combined and axis-specific Ray Fan operands.
+ * - Shows `N/A` and disables editing in the `Target` column for every operand without a user-supplied target: fixed-target operands such as combined and axis-specific Ray Fan operands (implicit zero target) and range operands.
+ * - Adds `Min` and `Max` columns between `Target` and `Weight` only while shared metadata registers at least one range operand kind. They are editable only for range rows, send `{ min }` / `{ max }` patches, and show `N/A` for other rows.
  */
 export function OptimizationOperandsTab({
   operands,
@@ -83,12 +122,12 @@ export function OptimizationOperandsTab({
         width: 85,
         editable: (params) =>
           params.data !== undefined &&
-          getOptimizationOperandMetadata(params.data.kind).requiresTarget,
+          isOptimizationAdjustableTargetOperandKind(params.data.kind),
         valueGetter: (params) => {
           if (params.data === undefined) {
             return undefined;
           }
-          return getOptimizationOperandMetadata(params.data.kind).requiresTarget
+          return isOptimizationAdjustableTargetOperandKind(params.data.kind)
             ? params.data.target
             : "N/A";
         },
@@ -97,9 +136,7 @@ export function OptimizationOperandsTab({
             return false;
           }
 
-          if (
-            !getOptimizationOperandMetadata(params.data.kind).requiresTarget
-          ) {
+          if (!isOptimizationAdjustableTargetOperandKind(params.data.kind)) {
             return false;
           }
 
@@ -107,6 +144,12 @@ export function OptimizationOperandsTab({
           return true;
         },
       },
+      ...(OPTIMIZATION_RANGE_OPERAND_KINDS.length > 0
+        ? [
+            createRangeBoundColumn("min", "Min", onUpdateOperand),
+            createRangeBoundColumn("max", "Max", onUpdateOperand),
+          ]
+        : []),
       {
         headerName: "Weight",
         width: 90,

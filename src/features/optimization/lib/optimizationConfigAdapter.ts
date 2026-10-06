@@ -1,6 +1,6 @@
 /** Pure inverse of the Optimization store's worker-config builder.
  *
- * Strict schema, target, bounds, catalog, and shared-factor validation happens
+ * Strict schema, target, operand range, bounds, catalog, and shared-factor validation happens
  * before the returned string-backed GUI snapshot can be committed by Zustand.
  */
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
@@ -497,6 +497,30 @@ function validateGlassCandidates(
   }
 }
 
+/** Validates a range operand's bounds: at least one finite bound and `min <= max`. */
+function assertOperandRange(
+  kind: string,
+  min: number | undefined,
+  max: number | undefined,
+): void {
+  if (min === undefined && max === undefined) {
+    throw new Error(`${kind} range requires at least one bound.`);
+  }
+  if (min !== undefined) {
+    assertFiniteNumber(min, `${kind} range min`);
+  }
+  if (max !== undefined) {
+    assertFiniteNumber(max, `${kind} range max`);
+  }
+  if (min !== undefined && max !== undefined && min > max) {
+    throw new Error(`${kind} range min must not exceed max.`);
+  }
+}
+
+function formatOptionalBound(value: number | undefined): string | undefined {
+  return value === undefined ? undefined : String(value);
+}
+
 function createOperandRows(
   operands: ReadonlyArray<OptimizationOperandConfig>,
   fieldCount: number,
@@ -541,10 +565,15 @@ function createOperandRows(
       sharedWavelengths ??= wavelengths;
     }
 
-    if (metadata.requiresTarget) {
+    if (metadata.goal === "adjustable_target") {
       assertFiniteNumber(operand.target, `${operand.kind} target`);
     } else if (operand.target !== undefined) {
       throw new Error(`${operand.kind} does not accept a target.`);
+    }
+    if (metadata.goal === "range") {
+      assertOperandRange(operand.kind, operand.min, operand.max);
+    } else if (operand.min !== undefined || operand.max !== undefined) {
+      throw new Error(`${operand.kind} does not accept range bounds.`);
     }
 
     assertFiniteNumber(operand.weight, `${operand.kind} weight`);
@@ -563,7 +592,16 @@ function createOperandRows(
     return {
       id: `optimization-operand-${index}`,
       kind: operand.kind,
-      target: metadata.requiresTarget ? String(operand.target) : undefined,
+      target:
+        metadata.goal === "adjustable_target"
+          ? String(operand.target)
+          : undefined,
+      ...(metadata.goal === "range"
+        ? {
+            min: formatOptionalBound(operand.min),
+            max: formatOptionalBound(operand.max),
+          }
+        : {}),
       weight: String(operand.weight),
       ...(operand.options === undefined
         ? {}

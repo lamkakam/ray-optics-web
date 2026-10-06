@@ -145,7 +145,7 @@ describe("OptimizationEvaluationPanel", () => {
     ).not.toHaveStyle({ maxHeight: "320px" });
   });
 
-  it("renders N/A targets for target-less residual rows", () => {
+  it("renders N/A targets for fixed-target residual rows", () => {
     render(
       <OptimizationEvaluationPanel
         isEvaluating={false}

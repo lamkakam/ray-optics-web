@@ -31,6 +31,68 @@ def test_operand_ray_counts_and_nominal_residual_dimensions_cover_scalar_and_fan
     ) == 1
 
 
+def test_operand_registry_is_partitioned_by_target_mode():
+    from rayoptics_web_utils.optimization.operands import (
+        OPERAND_REGISTRY,
+        RANGE_OPERAND_KINDS,
+        ADJUSTABLE_TARGET_OPERAND_KINDS,
+        FIXED_TARGET_OPERAND_KINDS,
+        operand_goal,
+    )
+
+    assert ADJUSTABLE_TARGET_OPERAND_KINDS == {
+        "focal_length",
+        "f_number",
+        "opd_difference",
+        "opd_difference_tangential",
+        "opd_difference_sagittal",
+        "rms_spot_size",
+        "rms_wavefront_error",
+    }
+    assert FIXED_TARGET_OPERAND_KINDS == {"ray_fan", "ray_fan_tangential", "ray_fan_sagittal"}
+    assert RANGE_OPERAND_KINDS == frozenset()
+    assert ADJUSTABLE_TARGET_OPERAND_KINDS.isdisjoint(FIXED_TARGET_OPERAND_KINDS)
+    assert set(OPERAND_REGISTRY) == ADJUSTABLE_TARGET_OPERAND_KINDS | FIXED_TARGET_OPERAND_KINDS | RANGE_OPERAND_KINDS
+    assert {operand_goal(kind) for kind in ADJUSTABLE_TARGET_OPERAND_KINDS} == {"adjustable_target"}
+    assert {operand_goal(kind) for kind in FIXED_TARGET_OPERAND_KINDS} == {"fixed_target"}
+
+
+def test_operand_goal_resolves_range_kinds_and_rejects_unknown_kinds(monkeypatch):
+    import rayoptics_web_utils.optimization.operands as operands_module
+
+    monkeypatch.setattr(operands_module, "RANGE_OPERAND_KINDS", frozenset({"fake_range"}))
+
+    assert operands_module.operand_goal("fake_range") == "range"
+    with pytest.raises(ValueError) as exc_info:
+        operands_module.operand_goal("unknown_metric")
+    assert exc_info.value.args == ("Unknown operand kind: unknown_metric",)
+
+
+@pytest.mark.parametrize(
+    ("sample", "actual", "expected"),
+    [
+        ({"kind": "focal_length", "target": 100.0}, 103.5, 3.5),
+        ({"kind": "focal_length", "target": 100.0}, 98.0, -2.0),
+        ({"kind": "ray_fan"}, -0.25, -0.25),
+        ({"kind": "fake_range", "min": 1.0, "max": 2.0}, 1.5, 0.0),
+        ({"kind": "fake_range", "min": 1.0, "max": 2.0}, 1.0, 0.0),
+        ({"kind": "fake_range", "min": 1.0, "max": 2.0}, 2.0, 0.0),
+        ({"kind": "fake_range", "min": 1.0, "max": 2.0}, 0.25, 0.75),
+        ({"kind": "fake_range", "min": 1.0, "max": 2.0}, 2.5, 0.5),
+        ({"kind": "fake_range", "min": 1.0}, 1e9, 0.0),
+        ({"kind": "fake_range", "min": 1.0}, -1.0, 2.0),
+        ({"kind": "fake_range", "max": 2.0}, -1e9, 0.0),
+        ({"kind": "fake_range", "max": 2.0}, 3.0, 1.0),
+    ],
+)
+def test_operand_goal_residual_follows_the_sample_target_mode(monkeypatch, sample, actual, expected):
+    import rayoptics_web_utils.optimization.operands as operands_module
+
+    monkeypatch.setattr(operands_module, "RANGE_OPERAND_KINDS", frozenset({"fake_range"}))
+
+    assert operands_module.operand_goal_residual(sample, actual) == pytest.approx(expected)
+
+
 def test_spot_function_returns_transverse_defocus_and_none_for_blocked_ray():
     import rayoptics.optical.model_constants as mc
     from rayoptics_web_utils.optimization.operands import _spot_fn

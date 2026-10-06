@@ -21,7 +21,12 @@ from ._types import (
     VariableConfig,
     VariableStateEntry,
 )
-from .operands import OPERAND_REGISTRY, PENALTY_RESIDUAL, get_nominal_operand_sample_residual_count
+from .operands import (
+    OPERAND_REGISTRY,
+    PENALTY_RESIDUAL,
+    get_nominal_operand_sample_residual_count,
+    operand_goal_residual,
+)
 from .progress import OptimizationProgress
 from .targets import (
     curvature_to_radius,
@@ -29,6 +34,10 @@ from .targets import (
     read_target_value,
     write_target_value,
 )
+
+
+OPERAND_GOAL_FIELDS = ("target", "min", "max")
+"""Normalized-sample keys copied verbatim onto each residual report entry."""
 
 
 class OptimizationProblem:
@@ -44,9 +53,9 @@ class OptimizationProblem:
     - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
     - Receives only non-zero-weight operand samples from config normalization, so disabled operands and field/wavelength combinations are neither evaluated nor reported.
     - Passes `image_point` into every operand evaluator; OPD-based operands consume it and non-OPD operands ignore it.
-    - Expands vector-valued operand outputs into one residual report entry per returned sample, so target-less operands such as Ray Fan variants can contribute many least-squares residuals from one normalized field/wavelength selection.
+    - Expands vector-valued operand outputs into one residual report entry per returned sample, so fixed-target operands such as Ray Fan variants can contribute many least-squares residuals from one normalized field/wavelength selection.
     - Exposes residual-vector, scalar-merit, and glass-safe scalar objective methods so solver adapters can choose the representation they need.
-    - For targeted scalar operands, weighted residuals remain `total_weight * (actual - target)`. For target-less vector operands, weighted residuals are `total_weight * sample_value`.
+    - Weighted residuals are `total_weight * operands.operand_goal_residual(...)`: `actual - target` for adjustable-target operands, `sample_value` for fixed-target (implicit zero target) vector operands, and the dead-zone distance outside `[min, max]` for range operands. Each residual entry copies the sample's `target` or supplied `min`/`max`.
     - The penalty residual vector length matches the nominal non-zero-weight residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per retained field/wavelength sample; for axis-specific Ray Fan operands, that means `num_rays` entries.
     - Records progress only when the evaluated optimizer vector or glass-search context changes materially.
     - `residual_jacobian(...)` reproduces SciPy's default 2-point finite-difference Jacobian (reusing the cached residuals of the last `residual_objective(...)` call as `f0`) without recording progress, so least-squares progress contains only the evaluations SciPy counts toward `max_nfev`.
@@ -171,9 +180,7 @@ class OptimizationProblem:
                 actuals = [float(actual_values)]
             total_weight = operand["weight"] * math.sqrt(operand["field_weight"]) * math.sqrt(operand["wavelength_weight"])
             for actual in actuals:
-                weighted_residual = total_weight * (
-                    actual - operand["target"] if "target" in operand else actual
-                )
+                weighted_residual = total_weight * operand_goal_residual(operand, actual)
                 residual: ResidualEntry = {
                     "kind": operand["kind"],
                     "value": actual,
@@ -184,9 +191,8 @@ class OptimizationProblem:
                     "wavelength_weight": operand["wavelength_weight"],
                     "total_weight": float(total_weight),
                     "weighted_residual": float(weighted_residual),
+                    **{key: operand[key] for key in OPERAND_GOAL_FIELDS if key in operand},
                 }
-                if "target" in operand:
-                    residual["target"] = operand["target"]
                 residuals.append(residual)
                 weighted_values.append(float(weighted_residual))
 

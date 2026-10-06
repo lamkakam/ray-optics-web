@@ -43,12 +43,12 @@
  * - `syncFromOpticalModel()` resets radius, thickness, glass, and asphere variable/pickup modes to constants when the computational editor prescription changed with the default `"resetOptimizationModes"` policy. Surface comments are excluded from that fingerprint, so comment-only edits merge into any unapplied local optimized model without replacing its computational values, resetting modes, or clearing result state.
  * - `syncFromOpticalModel()` updates `optimizationModel` and the baseline without clearing prescription modes when the editor prescription changed with `"preserveOptimizationModes"`.
  * - Algorithm settings and operand rows are never reset by editor sync.
- * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
+ * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight. Any kind change resets `target` to the new kind's default target and `min` / `max` to its default range, leaving them `undefined` when the new kind has none.
  * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius, thickness, glass, asphere, and tilt/decenter modes by index so model-shape-compatible modes survive while new targets receive default constant modes.
  * - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
  * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, `differential_evolution`, and `glass_expert`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
- * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
- * - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal`.
+ * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, target mode (`goal`) with its default target or default range, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
+ * - `buildOptimizationConfig()` narrows each row by kind group: adjustable-target kinds emit a parsed `target`; fixed-target operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal` omit their implicit zero target; range kinds emit the non-blank `min` / `max` bounds and reject rows with no bound or `min > max`. The exhaustive fallback fails compilation if a new target mode is added without a builder branch.
  * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count after combinations with an exactly zero operand, field, or wavelength weight are excluded. `ray_fan` contributes `num_rays * 2` residuals per retained field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
  * - `setOptimizationConfig()` atomically adapts a strict worker config into the string-backed form state, normalizes shared field/wavelength vectors, preserves operand options, and leaves the page-local model, sync baseline, prior report, and unapplied-result marker untouched.
  * - `applyOptimizationResult()` can create or update `surface.aspherical` and surface/Image `decenter`, preserving untouched tilt/decenter components, and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
@@ -72,6 +72,7 @@ import type {
   GlassCandidateConfig,
   OptimizationOperandKind,
   OptimizationOperandConfig,
+  OptimizationOperandRange,
   OptimizationPickupConfig,
   OptimizationRunConfig,
   OptimizationRunReport,
@@ -80,7 +81,12 @@ import type {
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { OptimizationOperandOptions } from "@/features/optimization/types/optimizationOperandTypes";
 import { adaptOptimizationRunConfigToGuiState } from "@/features/optimization/lib/optimizationConfigAdapter";
-import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
+import {
+  getOptimizationOperandMetadata,
+  isOptimizationAdjustableTargetOperandKind,
+  isOptimizationFixedTargetOperandKind,
+  isOptimizationRangeOperandKind,
+} from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import {
   formatOptimizerUiDefaultValue,
@@ -233,10 +239,16 @@ export interface DecenterOptimizationState {
   readonly y: AsphereMode;
 }
 
+/** String-backed operand form row; which target fields apply is decided by the kind's metadata `goal`. */
 export interface OptimizationOperandRow {
   readonly id: string;
   readonly kind: OptimizationOperandKind;
+  /** User-supplied target; set only for adjustable-target kinds. */
   readonly target?: string;
+  /** Inclusive lower bound text for range kinds; blank or absent means unbounded below. */
+  readonly min?: string;
+  /** Inclusive upper bound text for range kinds; blank or absent means unbounded above. */
+  readonly max?: string;
   readonly weight: string;
   /** Optional public worker sampling settings, including non-default Ray Fan counts. */
   readonly options?: OptimizationOperandOptions;
@@ -290,7 +302,7 @@ export interface OptimizationState {
   asphereStates: AsphereOptimizationState[];
   /** Tilt/decenter strategy and five independently configurable modes for surfaces and Image. */
   decenterStates: DecenterOptimizationState[];
-  /** Merit-function operand rows. Defaults to an empty array; target-less kinds store `target: undefined`. */
+  /** Merit-function operand rows. Defaults to an empty array; fixed-target and range kinds store `target: undefined`, and only range kinds store `min` / `max`. */
   operands: OptimizationOperandRow[];
   /** Whether optimization is running and the page-blocking overlay should be shown. Defaults to `false`. */
   isOptimizing: boolean;
@@ -454,10 +466,54 @@ function generateOperandId(): string {
   return `operand-${id}`;
 }
 
+/** Returns an adjustable-target kind's default target text, or `undefined` for other target modes. */
 function getDefaultOperandTarget(
   kind: OptimizationOperandKind,
 ): string | undefined {
   return getOptimizationOperandMetadata(kind).defaultTarget;
+}
+
+/** Returns a range kind's default bound texts, or unset bounds for other target modes. */
+function getDefaultOperandRange(kind: OptimizationOperandKind): {
+  readonly min?: string;
+  readonly max?: string;
+} {
+  const { defaultRange } = getOptimizationOperandMetadata(kind);
+  return { min: defaultRange?.min, max: defaultRange?.max };
+}
+
+/**
+ * Parses a range row's non-blank `min` / `max` texts into a worker range.
+ *
+ * @throws If neither bound is supplied, a bound is not a number, or `min` exceeds `max`.
+ */
+function parseOperandRange(
+  operand: OptimizationOperandRow,
+): OptimizationOperandRange {
+  const min = parseOptionalFloatValue(operand.min, "Min");
+  const max = parseOptionalFloatValue(operand.max, "Max");
+  if (min !== undefined && max !== undefined) {
+    if (min > max) {
+      throw new Error("Min must not exceed Max.");
+    }
+    return { min, max };
+  }
+  if (min !== undefined) {
+    return { min };
+  }
+  if (max !== undefined) {
+    return { max };
+  }
+  throw new Error("At least one of Min or Max is required.");
+}
+
+function parseOptionalFloatValue(
+  value: string | undefined,
+  label: string,
+): number | undefined {
+  return value === undefined || value.trim() === ""
+    ? undefined
+    : parseFloatValue(value, label);
 }
 
 function parsePositiveInteger(value: string, label: string): number {
@@ -979,12 +1035,12 @@ function buildMeritFunctionOperands(
   wavelengthWeights: ReadonlyArray<number>,
 ): OptimizationConfig["merit_function"]["operands"] {
   const configOperands: OptimizationOperandConfig[] = operands.map(
-    (operand) => {
-      const metadata = getOptimizationOperandMetadata(operand.kind);
+    (operand): OptimizationOperandConfig => {
+      const { kind } = operand;
+      const metadata = getOptimizationOperandMetadata(kind);
       const weight = parsePositiveFloat(operand.weight, "Weight");
       const base = metadata.expandsByFieldAndWavelength
         ? {
-            kind: operand.kind,
             weight,
             fields: fieldWeights.map((currentWeight, index) => ({
               index,
@@ -999,21 +1055,29 @@ function buildMeritFunctionOperands(
               : {}),
           }
         : {
-            kind: operand.kind,
             weight,
             ...((operand.options ?? metadata.defaultOptions) !== undefined
               ? { options: operand.options ?? metadata.defaultOptions }
               : {}),
           };
 
-      if (!metadata.requiresTarget) {
-        return base;
+      if (isOptimizationAdjustableTargetOperandKind(kind)) {
+        return {
+          ...base,
+          kind,
+          target: parseFloatValue(operand.target ?? "", "Target"),
+        };
       }
-
-      return {
-        ...base,
-        target: parseFloatValue(operand.target ?? "", "Target"),
-      };
+      if (isOptimizationFixedTargetOperandKind(kind)) {
+        return { ...base, kind };
+      }
+      if (isOptimizationRangeOperandKind(kind)) {
+        return { ...base, kind, ...parseOperandRange(operand) };
+      }
+      // Every target mode is handled above; this fails to compile if a new mode is added.
+      throw new Error(
+        `Unsupported operand kind: ${String(kind satisfies never)}`,
+      );
     },
   );
 
@@ -1991,18 +2055,23 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (
           return operand;
         }
 
-        const nextKind = patch.kind ?? operand.kind;
-        const nextMetadata = getOptimizationOperandMetadata(nextKind);
+        const nextKind = patch.kind;
+        if (nextKind === undefined) {
+          return {
+            ...operand,
+            ...patch,
+            target: patch.target ?? operand.target,
+            min: patch.min ?? operand.min,
+            max: patch.max ?? operand.max,
+          };
+        }
+        const defaultRange = getDefaultOperandRange(nextKind);
         return {
           ...operand,
           ...patch,
-          kind: nextKind,
-          target:
-            patch.kind !== undefined && patch.target === undefined
-              ? nextMetadata.requiresTarget
-                ? getDefaultOperandTarget(nextKind)
-                : undefined
-              : (patch.target ?? operand.target),
+          target: patch.target ?? getDefaultOperandTarget(nextKind),
+          min: patch.min ?? defaultRange.min,
+          max: patch.max ?? defaultRange.max,
         };
       }),
     })),

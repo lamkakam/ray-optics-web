@@ -104,7 +104,7 @@ describe("createEvaluationRow", () => {
     expect(createEvaluationRow(residual, 0)).toBeUndefined();
   });
 
-  it("formats target-less residuals as N/A", () => {
+  it("formats fixed-target residuals as N/A", () => {
     const residual: OptimizationResidualEntry = {
       kind: "ray_fan",
       value: 0.25,
