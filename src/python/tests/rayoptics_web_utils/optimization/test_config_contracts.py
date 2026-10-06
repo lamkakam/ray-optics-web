@@ -508,6 +508,111 @@ def test_range_operand_rejects_invalid_bounds(fake_range_operand, bounds, messag
     assert exc_info.value.args == (message,)
 
 
+@pytest.fixture
+def fake_surface_operands(monkeypatch):
+    import rayoptics_web_utils.optimization.operands as operands_module
+
+    monkeypatch.setattr(operands_module, "SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS", frozenset({"fake_surface_target"}))
+    monkeypatch.setattr(operands_module, "SURFACE_FIXED_TARGET_OPERAND_KINDS", frozenset({"fake_surface_fixed"}))
+    monkeypatch.setattr(operands_module, "SURFACE_RANGE_OPERAND_KINDS", frozenset({"fake_surface_range"}))
+    for kind in ("fake_surface_target", "fake_surface_fixed", "fake_surface_range"):
+        monkeypatch.setitem(operands_module.SURFACE_OPERAND_REGISTRY, kind, lambda *args: 0.0)
+
+
+@pytest.mark.parametrize(
+    "operand, goal_fields",
+    [
+        ({"kind": "fake_surface_target", "target": 3}, {"target": 3.0}),
+        ({"kind": "fake_surface_fixed"}, {}),
+        ({"kind": "fake_surface_range", "min": 1.0}, {"min": 1.0}),
+        ({"kind": "fake_surface_range", "min": 1.0, "max": 2.0}, {"min": 1.0, "max": 2.0}),
+    ],
+)
+@pytest.mark.parametrize("surface_index", [1, 2])
+def test_surface_operand_preserves_surface_index_on_every_sample(
+    fake_surface_operands, operand, goal_fields, surface_index
+):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    samples = normalize_operand_samples(
+        _FakeOpticalModel(),
+        {**operand, "surface_index": surface_index, "fields": [{"index": 0}, {"index": 1}], "wavelengths": [{"index": 1}]},
+    )
+
+    assert samples == [
+        {
+            "kind": operand["kind"],
+            "weight": 1.0,
+            "options": {},
+            **goal_fields,
+            "surface_index": surface_index,
+            "field_index": field_index,
+            "field_weight": 1.0,
+            "wavelength_index": 1,
+            "wavelength_weight": 1.0,
+        }
+        for field_index in (0, 1)
+    ]
+
+
+@pytest.mark.parametrize("surface_index_fields", [{}, {"surface_index": None}, {"surface_index": True}, {"surface_index": 1.0}, {"surface_index": "1"}])
+def test_surface_operand_requires_an_integer_surface_index(fake_surface_operands, surface_index_fields):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(ValueError) as exc_info:
+        normalize_operand_samples(
+            _FakeOpticalModel(),
+            {"kind": "fake_surface_target", "target": 0.0, **surface_index_fields},
+        )
+    assert exc_info.value.args == ("Operand fake_surface_target requires an integer surface_index",)
+
+
+@pytest.mark.parametrize("surface_index", [-1, 0, 3, 4])
+@pytest.mark.parametrize("weight", [1.0, 0.0])
+def test_surface_operand_rejects_object_image_and_out_of_range_surfaces(fake_surface_operands, surface_index, weight):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(IndexError) as exc_info:
+        normalize_operand_samples(
+            _FakeOpticalModel(),
+            {"kind": "fake_surface_fixed", "surface_index": surface_index, "weight": weight},
+        )
+    assert exc_info.value.args == (f"Operand fake_surface_fixed surface_index {surface_index} is out of range",)
+
+
+@pytest.mark.parametrize(
+    "operand",
+    [
+        {"kind": "focal_length", "target": 1.0, "surface_index": 1},
+        {"kind": "ray_fan", "surface_index": 1},
+    ],
+)
+def test_system_operand_rejects_surface_index(operand):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(ValueError) as exc_info:
+        normalize_operand_samples(_FakeOpticalModel(), operand)
+    assert exc_info.value.args == (f"Operand {operand['kind']} does not accept a surface_index",)
+
+
+@pytest.mark.parametrize(
+    "operand, message",
+    [
+        ({"kind": "fake_surface_target"}, "Operand fake_surface_target requires a finite target"),
+        ({"kind": "fake_surface_fixed", "target": 0.0}, "Operand fake_surface_fixed does not accept a target"),
+        ({"kind": "fake_surface_fixed", "max": 0.0}, "Operand fake_surface_fixed does not accept range bounds"),
+        ({"kind": "fake_surface_range"}, "Operand fake_surface_range range requires at least one bound"),
+        ({"kind": "fake_surface_range", "min": 2.0, "max": 1.0}, "Operand fake_surface_range range min must not exceed max"),
+    ],
+)
+def test_surface_operand_still_enforces_its_target_mode(fake_surface_operands, operand, message):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(ValueError) as exc_info:
+        normalize_operand_samples(_FakeOpticalModel(), {**operand, "surface_index": 1})
+    assert exc_info.value.args == (message,)
+
+
 def test_operand_default_field_and_wavelength_weights_are_one():
     from rayoptics_web_utils.optimization.config import normalize_operand_samples
 

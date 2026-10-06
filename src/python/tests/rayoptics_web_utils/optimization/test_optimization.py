@@ -2693,7 +2693,7 @@ class TestOptimizationProblemStateAndObjectives:
         monkeypatch,
         fresh_cooke_triplet,
     ):
-        import rayoptics_web_utils.optimization.problem as problem_module
+        import rayoptics_web_utils.optimization.operands as operands_module
         from rayoptics_web_utils.optimization.problem import OptimizationProblem
 
         problem = OptimizationProblem(
@@ -2727,8 +2727,8 @@ class TestOptimizationProblemStateAndObjectives:
             calls.append(("ray_fan", field_index, wavelength_index, options, image_point))
             return [0.25, -0.5]
 
-        monkeypatch.setitem(problem_module.OPERAND_REGISTRY, "focal_length", fake_focal)
-        monkeypatch.setitem(problem_module.OPERAND_REGISTRY, "ray_fan", fake_ray_fan)
+        monkeypatch.setitem(operands_module.OPERAND_REGISTRY, "focal_length", fake_focal)
+        monkeypatch.setitem(operands_module.OPERAND_REGISTRY, "ray_fan", fake_ray_fan)
 
         evaluation = problem.evaluate()
 
@@ -2801,6 +2801,88 @@ class TestOptimizationProblemStateAndObjectives:
         assert residuals[1]["min"] == 1.0
         assert "max" not in residuals[1]
         assert all("target" not in entry for entry in residuals)
+
+    def test_evaluate_passes_and_reports_surface_index_for_surface_operands(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.operands as operands_module
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        monkeypatch.setattr(
+            operands_module, "SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS", frozenset({"fake_surface_target"})
+        )
+        monkeypatch.setattr(operands_module, "SURFACE_FIXED_TARGET_OPERAND_KINDS", frozenset({"fake_surface_fixed"}))
+        monkeypatch.setattr(operands_module, "SURFACE_RANGE_OPERAND_KINDS", frozenset({"fake_surface_range"}))
+        surface_calls = []
+
+        def fake_surface_evaluator(opm, surface_index, field_index, wavelength_index, options, image_point):
+            surface_calls.append((surface_index, field_index, wavelength_index, image_point))
+            return float(surface_index)
+
+        for kind in ("fake_surface_target", "fake_surface_fixed", "fake_surface_range"):
+            monkeypatch.setitem(operands_module.SURFACE_OPERAND_REGISTRY, kind, fake_surface_evaluator)
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "fake_surface_target",
+                            "surface_index": 1,
+                            "target": 0.5,
+                            "weight": 2,
+                            "fields": [{"index": 0}],
+                            "wavelengths": [{"index": 0}],
+                        },
+                        {
+                            "kind": "fake_surface_fixed",
+                            "surface_index": 3,
+                            "weight": 1,
+                            "fields": [{"index": 1}],
+                            "wavelengths": [{"index": 0}],
+                        },
+                        {
+                            "kind": "fake_surface_range",
+                            "surface_index": 6,
+                            "max": 4.0,
+                            "weight": 1,
+                            "fields": [{"index": 0}],
+                            "wavelengths": [{"index": 1}],
+                        },
+                    ]
+                },
+            },
+            image_point="image_heights",
+        )
+
+        residuals = problem.evaluate()["residuals"]
+
+        assert surface_calls == [(1, 0, 0, "image_heights"), (3, 1, 0, "image_heights"), (6, 0, 1, "image_heights")]
+        assert [entry["surface_index"] for entry in residuals] == [1, 3, 6]
+        assert [entry["weighted_residual"] for entry in residuals] == [
+            pytest.approx(1.0),
+            pytest.approx(3.0),
+            pytest.approx(2.0),
+        ]
+        assert residuals[0]["target"] == 0.5
+        assert residuals[2]["max"] == 4.0
+        assert "target" not in residuals[1]
+
+    def test_evaluate_omits_surface_index_for_system_operands(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {"operands": [{"kind": "focal_length", "target": 100, "weight": 1}]},
+            },
+        )
+
+        assert "surface_index" not in problem.evaluate()["residuals"][0]
 
     def test_penalty_residual_vector_has_at_least_one_entry_for_empty_normalized_merit(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization.problem import OptimizationProblem

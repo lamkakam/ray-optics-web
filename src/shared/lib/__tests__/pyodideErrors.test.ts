@@ -172,8 +172,12 @@ describe("Pyodide error policy", () => {
     "ValueError: Operand some_range range requires at least one bound",
     "ValueError: Operand some_range range bounds must be finite",
     "ValueError: Operand some_range range min must not exceed max",
+    "ValueError: Operand focal_length does not accept a surface_index",
+    "ValueError: Operand some_surface requires an integer surface_index",
+    "IndexError: Operand some_surface surface_index 9 is out of range",
+    "IndexError: Operand some_surface surface_index -1 is out of range",
   ])(
-    "maps operand target-mode validation failures to settings text: %s",
+    "maps operand target-mode and surface-scope validation failures to settings text: %s",
     (raw) => {
       expect(
         normalizePyodideError(new Error(raw), "calculation"),

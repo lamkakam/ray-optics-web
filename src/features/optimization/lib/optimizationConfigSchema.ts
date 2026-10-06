@@ -7,6 +7,9 @@ import {
   OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
   OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS,
   OPTIMIZATION_RANGE_OPERAND_KINDS,
+  OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
+  OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS,
+  OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS,
 } from "@/features/optimization/lib/operandMetadata";
 import type { OptimizationRunConfig } from "@/features/optimization/types/optimizationWorkerTypes";
 
@@ -267,54 +270,125 @@ const operandProperties = {
 } as const;
 
 /**
- * Range operand branch: at least one finite bound and no `target`. JSON Schema
- * cannot compare `min` with `max`; the GUI config adapter enforces `min <= max`.
+ * Surface-scoped operand fields: a 1-based surface index that excludes the
+ * object surface. The GUI config adapter checks the model-dependent upper bound,
+ * which excludes the image surface.
  */
-const rangeOperandSchema = {
-  type: "object",
-  required: ["kind", "weight"],
-  anyOf: [{ required: ["min"] }, { required: ["max"] }],
-  additionalProperties: false,
-  properties: {
-    kind: { type: "string", enum: OPTIMIZATION_RANGE_OPERAND_KINDS },
-    min: finiteNumberSchema,
-    max: finiteNumberSchema,
-    ...operandProperties,
-  },
+const surfaceOperandProperties = {
+  surface_index: positiveIntegerSchema,
 } as const;
 
+/** Adjustable-target operand branch for one kind group: a finite `target` is required. */
+function createAdjustableTargetOperandSchema(
+  kinds: ReadonlyArray<string>,
+  isSurface: boolean,
+) {
+  return {
+    type: "object",
+    required: [
+      "kind",
+      "target",
+      "weight",
+      ...(isSurface ? ["surface_index"] : []),
+    ],
+    additionalProperties: false,
+    properties: {
+      kind: { type: "string", enum: kinds },
+      target: finiteNumberSchema,
+      ...operandProperties,
+      ...(isSurface ? surfaceOperandProperties : {}),
+    },
+  } as const;
+}
+
+/** Fixed-target operand branch for one kind group: neither `target` nor bounds. */
+function createFixedTargetOperandSchema(
+  kinds: ReadonlyArray<string>,
+  isSurface: boolean,
+) {
+  return {
+    type: "object",
+    required: ["kind", "weight", ...(isSurface ? ["surface_index"] : [])],
+    additionalProperties: false,
+    properties: {
+      kind: { type: "string", enum: kinds },
+      ...operandProperties,
+      ...(isSurface ? surfaceOperandProperties : {}),
+    },
+  } as const;
+}
+
 /**
- * Operand schema with one branch per target mode, whose kind enums come from the
- * shared operand metadata. The range branch is included only while at least one
- * range kind is registered, because a JSON-schema `enum` must not be empty.
+ * Range operand branch for one kind group: at least one finite bound and no
+ * `target`. JSON Schema cannot compare `min` with `max`; the GUI config adapter
+ * enforces `min <= max`.
+ */
+function createRangeOperandSchema(
+  kinds: ReadonlyArray<string>,
+  isSurface: boolean,
+) {
+  return {
+    type: "object",
+    required: ["kind", "weight", ...(isSurface ? ["surface_index"] : [])],
+    anyOf: [{ required: ["min"] }, { required: ["max"] }],
+    additionalProperties: false,
+    properties: {
+      kind: { type: "string", enum: kinds },
+      min: finiteNumberSchema,
+      max: finiteNumberSchema,
+      ...operandProperties,
+      ...(isSurface ? surfaceOperandProperties : {}),
+    },
+  } as const;
+}
+
+/** Returns a one-branch list while `kinds` is non-empty, because a JSON-schema `enum` must not be empty. */
+function branchIfRegistered<TBranch>(
+  kinds: ReadonlyArray<string>,
+  branch: TBranch,
+): TBranch[] {
+  return kinds.length > 0 ? [branch] : [];
+}
+
+/**
+ * Operand schema with one branch per target mode and scope, whose kind enums
+ * come from the shared operand metadata. System-scoped branches reject
+ * `surface_index`; surface-scoped branches require it. The range and every
+ * surface-scoped branch are included only while at least one kind of that group
+ * is registered.
  */
 const optimizationOperandSchema = {
   oneOf: [
-    {
-      type: "object",
-      required: ["kind", "target", "weight"],
-      additionalProperties: false,
-      properties: {
-        kind: {
-          type: "string",
-          enum: OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
-        },
-        target: finiteNumberSchema,
-        ...operandProperties,
-      },
-    },
-    {
-      type: "object",
-      required: ["kind", "weight"],
-      additionalProperties: false,
-      properties: {
-        kind: { type: "string", enum: OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS },
-        ...operandProperties,
-      },
-    },
-    ...(OPTIMIZATION_RANGE_OPERAND_KINDS.length > 0
-      ? [rangeOperandSchema]
-      : []),
+    createAdjustableTargetOperandSchema(
+      OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
+      false,
+    ),
+    createFixedTargetOperandSchema(
+      OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS,
+      false,
+    ),
+    ...branchIfRegistered(
+      OPTIMIZATION_RANGE_OPERAND_KINDS,
+      createRangeOperandSchema(OPTIMIZATION_RANGE_OPERAND_KINDS, false),
+    ),
+    ...branchIfRegistered(
+      OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
+      createAdjustableTargetOperandSchema(
+        OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
+        true,
+      ),
+    ),
+    ...branchIfRegistered(
+      OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS,
+      createFixedTargetOperandSchema(
+        OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS,
+        true,
+      ),
+    ),
+    ...branchIfRegistered(
+      OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS,
+      createRangeOperandSchema(OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS, true),
+    ),
   ],
 } as const;
 

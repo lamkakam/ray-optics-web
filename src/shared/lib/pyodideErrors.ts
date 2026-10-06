@@ -157,7 +157,7 @@ function classify(error: unknown, operation = ""): Classification {
   )
     return { message: MISSING_GLASS_MESSAGE, business: true };
   if (
-    /^(?:Unknown (?:optimizer|variable|pickup|operand|asphere) kind: |Unknown least-squares method: |Unknown decenter type: |Unsupported (?:optimizer option|glass catalog|glass optimizer option|glass variable key|glass optimization config key)|Duplicate (?:variable target|pickup target|glass variable surface): |Current glass at surface \d+ is outside its candidate pool|Operand [a-z_]+ (?:requires a finite target|does not accept |range )|merit_function\.operands must |(?:surface_index|coefficient_index|wavelength index) \d+ is out of range)/.test(
+    /^(?:Unknown (?:optimizer|variable|pickup|operand|asphere) kind: |Unknown least-squares method: |Unknown decenter type: |Unsupported (?:optimizer option|glass catalog|glass optimizer option|glass variable key|glass optimization config key)|Duplicate (?:variable target|pickup target|glass variable surface): |Current glass at surface \d+ is outside its candidate pool|Operand [a-z_]+ (?:requires (?:a finite target|an integer surface_index)|does not accept |range |surface_index -?\d+ is out of range)|merit_function\.operands must |(?:surface_index|coefficient_index|wavelength index) \d+ is out of range)/.test(
       message,
     )
   )

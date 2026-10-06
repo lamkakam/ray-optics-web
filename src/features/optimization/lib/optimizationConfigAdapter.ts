@@ -1,6 +1,6 @@
 /** Pure inverse of the Optimization store's worker-config builder.
  *
- * Strict schema, target, operand range, bounds, catalog, and shared-factor validation happens
+ * Strict schema, target, operand range, operand surface, bounds, catalog, and shared-factor validation happens
  * before the returned string-backed GUI snapshot can be committed by Zustand.
  */
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
@@ -521,8 +521,15 @@ function formatOptionalBound(value: number | undefined): string | undefined {
   return value === undefined ? undefined : String(value);
 }
 
+/**
+ * Validates operand configs and converts them into string-backed GUI rows.
+ * Surface-scoped operands must reference a real surface (`1 … surfaceCount`, with
+ * object and image excluded) and keep it as `surfaceIndex`; system-scoped
+ * operands must not carry `surface_index`.
+ */
 function createOperandRows(
   operands: ReadonlyArray<OptimizationOperandConfig>,
+  surfaceCount: number,
   fieldCount: number,
   wavelengthCount: number,
 ): {
@@ -575,6 +582,16 @@ function createOperandRows(
     } else if (operand.min !== undefined || operand.max !== undefined) {
       throw new Error(`${operand.kind} does not accept range bounds.`);
     }
+    if (metadata.scope === "surface") {
+      assertIntegerInRange(
+        operand.surface_index,
+        1,
+        surfaceCount,
+        `${operand.kind} surface index`,
+      );
+    } else if (operand.surface_index !== undefined) {
+      throw new Error(`${operand.kind} does not accept a surface index.`);
+    }
 
     assertFiniteNumber(operand.weight, `${operand.kind} weight`);
     if (operand.weight <= 0) {
@@ -603,6 +620,9 @@ function createOperandRows(
           }
         : {}),
       weight: String(operand.weight),
+      ...(metadata.scope === "surface"
+        ? { surfaceIndex: operand.surface_index }
+        : {}),
       ...(operand.options === undefined
         ? {}
         : { options: { ...operand.options } }),
@@ -786,6 +806,7 @@ export function adaptOptimizationRunConfigToGuiState(
 
   const operandState = createOperandRows(
     config.merit_function.operands,
+    model.surfaces.length,
     model.specs.field.fields.length,
     model.specs.wavelengths.weights.length,
   );

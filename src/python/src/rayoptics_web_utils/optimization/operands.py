@@ -6,6 +6,9 @@ or non-finite samples. OPD-based operands propagate the app-wide image-point
 reference, trace only their normalized sample's wavelength, and scale wavefront
 grids to the traced wavelength before evaluation. Every registered kind belongs to
 exactly one target-mode group, which decides how its values become residuals.
+Kinds are also scoped: system kinds live in ``OPERAND_REGISTRY``, while
+surface kinds live in ``SURFACE_OPERAND_REGISTRY`` and are evaluated at the
+sample's 1-based ``surface_index``.
 """
 
 from __future__ import annotations
@@ -26,9 +29,15 @@ from ._types import (
     OperandGoal,
     OperandOptions,
     OperandSample,
+    OperandScope,
+    OperandValue,
     RangeOperandKind,
     FixedTargetOperandKind,
     AdjustableTargetOperandKind,
+    SurfaceAdjustableTargetOperandKind,
+    SurfaceFixedTargetOperandKind,
+    SurfaceOperandEvaluator,
+    SurfaceRangeOperandKind,
 )
 from .targets import validate_surface_index
 
@@ -40,13 +49,22 @@ FIXED_TARGET_OPERAND_KINDS: frozenset[str] = frozenset(get_args(FixedTargetOpera
 """Runtime mirror of ``FixedTargetOperandKind``."""
 RANGE_OPERAND_KINDS: frozenset[str] = frozenset(get_args(RangeOperandKind.__value__))
 """Runtime mirror of ``RangeOperandKind``; empty until the first range operand is registered."""
+SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS: frozenset[str] = frozenset(
+    get_args(SurfaceAdjustableTargetOperandKind.__value__)
+)
+"""Runtime mirror of ``SurfaceAdjustableTargetOperandKind``; empty until the first such operand is registered."""
+SURFACE_FIXED_TARGET_OPERAND_KINDS: frozenset[str] = frozenset(get_args(SurfaceFixedTargetOperandKind.__value__))
+"""Runtime mirror of ``SurfaceFixedTargetOperandKind``; empty until the first such operand is registered."""
+SURFACE_RANGE_OPERAND_KINDS: frozenset[str] = frozenset(get_args(SurfaceRangeOperandKind.__value__))
+"""Runtime mirror of ``SurfaceRangeOperandKind``; empty until the first such operand is registered."""
 
 
 def operand_goal(kind: str) -> OperandGoal:
     """Return the target mode of an operand kind.
 
-    The kind groups are read at call time so range handling can be exercised
-    before any registered operand uses it.
+    System and surface kind groups of the same mode share one goal. The kind
+    groups are read at call time so range and surface handling can be exercised
+    before any registered operand uses them.
 
     Args:
         kind: Operand kind.
@@ -57,13 +75,80 @@ def operand_goal(kind: str) -> OperandGoal:
     Raises:
         ValueError: If the kind belongs to no target-mode group.
     """
-    if kind in ADJUSTABLE_TARGET_OPERAND_KINDS:
+    if kind in ADJUSTABLE_TARGET_OPERAND_KINDS or kind in SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS:
         return "adjustable_target"
-    if kind in FIXED_TARGET_OPERAND_KINDS:
+    if kind in FIXED_TARGET_OPERAND_KINDS or kind in SURFACE_FIXED_TARGET_OPERAND_KINDS:
         return "fixed_target"
-    if kind in RANGE_OPERAND_KINDS:
+    if kind in RANGE_OPERAND_KINDS or kind in SURFACE_RANGE_OPERAND_KINDS:
         return "range"
     raise ValueError(f"Unknown operand kind: {kind}")
+
+
+def operand_scope(kind: str) -> OperandScope:
+    """Return whether an operand kind evaluates the whole system or one surface.
+
+    Args:
+        kind: Operand kind.
+
+    Returns:
+        ``"surface"`` for surface-scoped kinds, otherwise ``"system"``.
+
+    Raises:
+        ValueError: If the kind belongs to no target-mode group.
+    """
+    operand_goal(kind)
+    if (
+        kind in SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS
+        or kind in SURFACE_FIXED_TARGET_OPERAND_KINDS
+        or kind in SURFACE_RANGE_OPERAND_KINDS
+    ):
+        return "surface"
+    return "system"
+
+
+def is_registered_operand_kind(kind: object) -> bool:
+    """Return whether a kind has a system or surface evaluator.
+
+    Args:
+        kind: Candidate operand kind.
+
+    Returns:
+        Whether ``kind`` is in ``OPERAND_REGISTRY`` or ``SURFACE_OPERAND_REGISTRY``.
+    """
+    return kind in OPERAND_REGISTRY or kind in SURFACE_OPERAND_REGISTRY
+
+
+def evaluate_operand_sample(opm: OpticalModel, sample: OperandSample, image_point: str) -> OperandValue:
+    """Evaluate one normalized operand sample with its registered evaluator.
+
+    Surface-scoped samples pass their ``surface_index`` before the field index;
+    system samples use the ordinary evaluator signature.
+
+    Args:
+        opm: RayOptics optical model.
+        sample: Normalized operand sample.
+        image_point: Image-point reference convention.
+
+    Returns:
+        The evaluator's scalar or vector value.
+    """
+    kind = sample["kind"]
+    if operand_scope(kind) == "surface":
+        return SURFACE_OPERAND_REGISTRY[kind](
+            opm,
+            sample["surface_index"],
+            sample["field_index"],
+            sample["wavelength_index"],
+            sample["options"],
+            image_point,
+        )
+    return OPERAND_REGISTRY[kind](
+        opm,
+        sample["field_index"],
+        sample["wavelength_index"],
+        sample["options"],
+        image_point,
+    )
 
 
 def operand_goal_residual(sample: OperandSample, actual: float) -> float:
@@ -466,3 +551,7 @@ OPERAND_REGISTRY: dict[str, OperandEvaluator] = {
     "ray_fan_tangential": compute_ray_fan_tangential,
     "ray_fan_sagittal": compute_ray_fan_sagittal,
 }
+"""Evaluators for system-scoped operand kinds."""
+
+SURFACE_OPERAND_REGISTRY: dict[str, SurfaceOperandEvaluator] = {}
+"""Evaluators for surface-scoped operand kinds; empty until the first one is registered."""

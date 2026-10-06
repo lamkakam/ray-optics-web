@@ -6,8 +6,11 @@ metadata. Glass-expert inputs keep categorical candidates ordered separately fro
 continuous targets. Returned statuses distinguish successful evaluation/stop states,
 numeric solver statuses, and ordinary Python ``"error"`` reports. Operand configs,
 normalized samples, and residual entries are discriminated by kind into
-adjustable-target, fixed-target, and range modes. Operand evaluators may return scalars or residual
-vectors and receive the image-point convention explicitly. Snapshot entries retain the complete target descriptor so rollback
+adjustable-target, fixed-target, and range modes, each in a system scope and a
+surface scope; surface-scoped operands additionally carry a 1-based
+``surface_index`` that excludes the object and image surfaces. Operand evaluators may return scalars or residual
+vectors and receive the image-point convention explicitly; surface evaluators also
+receive the surface index. Snapshot entries retain the complete target descriptor so rollback
 preserves asphere kinds and tilt/decenter coordinate strategies.
 """
 
@@ -59,9 +62,23 @@ type FixedTargetOperandKind = Literal["ray_fan", "ray_fan_tangential", "ray_fan_
 """Operand kinds with an implicit, non-configurable zero target; their (possibly vector) values are driven toward zero and configs carry no ``target``."""
 type RangeOperandKind = Never
 """Operand kinds bounded by ``min``/``max``; reserved, no kind uses range mode yet."""
-type OperandKind = AdjustableTargetOperandKind | FixedTargetOperandKind | RangeOperandKind
+type SurfaceAdjustableTargetOperandKind = Never
+"""Surface-scoped kinds driven toward a user-supplied ``target`` at one ``surface_index``; reserved, no kind uses it yet."""
+type SurfaceFixedTargetOperandKind = Never
+"""Surface-scoped kinds driven toward an implicit zero target at one ``surface_index``; reserved, no kind uses it yet."""
+type SurfaceRangeOperandKind = Never
+"""Surface-scoped kinds bounded by ``min``/``max`` at one ``surface_index``; reserved, no kind uses it yet."""
+type SurfaceOperandKind = SurfaceAdjustableTargetOperandKind | SurfaceFixedTargetOperandKind | SurfaceRangeOperandKind
+"""Operand kinds whose target or range applies to one optical surface."""
+type OperandKind = AdjustableTargetOperandKind | FixedTargetOperandKind | RangeOperandKind | SurfaceOperandKind
 type OperandGoal = Literal["adjustable_target", "fixed_target", "range"]
 """Target mode shared by every operand of one kind group."""
+type OperandScope = Literal["system", "surface"]
+"""Whether an operand kind evaluates the whole system or one 1-based ``surface_index``.
+
+Surface indices match the GUI and ``seq_model.ifcs``: ``1`` is the first real
+surface, and the object (``0``) and image (last) surfaces are excluded.
+"""
 
 
 class OperandOptions(TypedDict, total=False):
@@ -345,7 +362,34 @@ class RangeOperandConfigInput(_OperandConfigInputBase, total=False):
     max: float
 
 
-type OperandConfigInput = AdjustableTargetOperandConfigInput | FixedTargetOperandConfigInput | RangeOperandConfigInput
+class SurfaceAdjustableTargetOperandConfigInput(_OperandConfigInputBase, total=False):
+    kind: Required[SurfaceAdjustableTargetOperandKind]
+    target: Required[float]
+    surface_index: Required[int]
+
+
+class SurfaceFixedTargetOperandConfigInput(_OperandConfigInputBase, total=False):
+    kind: Required[SurfaceFixedTargetOperandKind]
+    surface_index: Required[int]
+
+
+class SurfaceRangeOperandConfigInput(_OperandConfigInputBase, total=False):
+    """Surface range operand input; bounds follow ``RangeOperandConfigInput``."""
+
+    kind: Required[SurfaceRangeOperandKind]
+    surface_index: Required[int]
+    min: float
+    max: float
+
+
+type OperandConfigInput = (
+    AdjustableTargetOperandConfigInput
+    | FixedTargetOperandConfigInput
+    | RangeOperandConfigInput
+    | SurfaceAdjustableTargetOperandConfigInput
+    | SurfaceFixedTargetOperandConfigInput
+    | SurfaceRangeOperandConfigInput
+)
 
 
 class _OperandSampleBase(TypedDict):
@@ -374,7 +418,34 @@ class RangeOperandSample(_OperandSampleBase):
     max: NotRequired[float]
 
 
-type OperandSample = AdjustableTargetOperandSample | FixedTargetOperandSample | RangeOperandSample
+class SurfaceAdjustableTargetOperandSample(_OperandSampleBase):
+    kind: SurfaceAdjustableTargetOperandKind
+    target: float
+    surface_index: int
+
+
+class SurfaceFixedTargetOperandSample(_OperandSampleBase):
+    kind: SurfaceFixedTargetOperandKind
+    surface_index: int
+
+
+class SurfaceRangeOperandSample(_OperandSampleBase):
+    """Normalized surface range sample carrying only the bounds that were supplied."""
+
+    kind: SurfaceRangeOperandKind
+    surface_index: int
+    min: NotRequired[float]
+    max: NotRequired[float]
+
+
+type OperandSample = (
+    AdjustableTargetOperandSample
+    | FixedTargetOperandSample
+    | RangeOperandSample
+    | SurfaceAdjustableTargetOperandSample
+    | SurfaceFixedTargetOperandSample
+    | SurfaceRangeOperandSample
+)
 
 
 class MeritFunctionConfigInput(TypedDict, total=False):
@@ -486,7 +557,32 @@ class RangeResidualEntry(_ResidualEntryBase):
     max: NotRequired[float]
 
 
-type ResidualEntry = AdjustableTargetResidualEntry | FixedTargetResidualEntry | RangeResidualEntry
+class SurfaceAdjustableTargetResidualEntry(_ResidualEntryBase):
+    kind: SurfaceAdjustableTargetOperandKind
+    target: float
+    surface_index: int
+
+
+class SurfaceFixedTargetResidualEntry(_ResidualEntryBase):
+    kind: SurfaceFixedTargetOperandKind
+    surface_index: int
+
+
+class SurfaceRangeResidualEntry(_ResidualEntryBase):
+    kind: SurfaceRangeOperandKind
+    surface_index: int
+    min: NotRequired[float]
+    max: NotRequired[float]
+
+
+type ResidualEntry = (
+    AdjustableTargetResidualEntry
+    | FixedTargetResidualEntry
+    | RangeResidualEntry
+    | SurfaceAdjustableTargetResidualEntry
+    | SurfaceFixedTargetResidualEntry
+    | SurfaceRangeResidualEntry
+)
 
 
 class MeritFunctionSummary(TypedDict):
@@ -577,6 +673,10 @@ class SolverResult(TypedDict):
 
 type OperandValue = float | list[float]
 type OperandEvaluator = Callable[[OpticalModel, int | None, int | None, OperandOptions | None, str], OperandValue]
+type SurfaceOperandEvaluator = Callable[
+    [OpticalModel, int, int | None, int | None, OperandOptions | None, str], OperandValue
+]
+"""Surface-scoped evaluator receiving ``(opm, surface_index, field_index, wavelength_index, options, image_point)``."""
 
 
 class OptimizationProblemProtocol(Protocol):

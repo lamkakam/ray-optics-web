@@ -93,6 +93,136 @@ def test_operand_goal_residual_follows_the_sample_target_mode(monkeypatch, sampl
     assert operands_module.operand_goal_residual(sample, actual) == pytest.approx(expected)
 
 
+def test_surface_operand_groups_are_reserved_and_empty():
+    from rayoptics_web_utils.optimization.operands import (
+        OPERAND_REGISTRY,
+        SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
+        SURFACE_FIXED_TARGET_OPERAND_KINDS,
+        SURFACE_OPERAND_REGISTRY,
+        SURFACE_RANGE_OPERAND_KINDS,
+        operand_scope,
+    )
+
+    assert SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS == frozenset()
+    assert SURFACE_FIXED_TARGET_OPERAND_KINDS == frozenset()
+    assert SURFACE_RANGE_OPERAND_KINDS == frozenset()
+    assert SURFACE_OPERAND_REGISTRY == {}
+    assert {operand_scope(kind) for kind in OPERAND_REGISTRY} == {"system"}
+
+
+@pytest.fixture
+def fake_surface_kinds(monkeypatch):
+    import rayoptics_web_utils.optimization.operands as operands_module
+
+    monkeypatch.setattr(operands_module, "SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS", frozenset({"fake_surface_target"}))
+    monkeypatch.setattr(operands_module, "SURFACE_FIXED_TARGET_OPERAND_KINDS", frozenset({"fake_surface_fixed"}))
+    monkeypatch.setattr(operands_module, "SURFACE_RANGE_OPERAND_KINDS", frozenset({"fake_surface_range"}))
+    return operands_module
+
+
+@pytest.mark.parametrize(
+    ("kind", "goal"),
+    [
+        ("fake_surface_target", "adjustable_target"),
+        ("fake_surface_fixed", "fixed_target"),
+        ("fake_surface_range", "range"),
+    ],
+)
+def test_surface_operand_kinds_share_goals_and_report_surface_scope(fake_surface_kinds, kind, goal):
+    assert fake_surface_kinds.operand_goal(kind) == goal
+    assert fake_surface_kinds.operand_scope(kind) == "surface"
+
+
+def test_operand_scope_reports_system_kinds_and_rejects_unknown_kinds(fake_surface_kinds):
+    assert fake_surface_kinds.operand_scope("focal_length") == "system"
+    assert fake_surface_kinds.operand_scope("ray_fan") == "system"
+    with pytest.raises(ValueError) as exc_info:
+        fake_surface_kinds.operand_scope("unknown_metric")
+    assert exc_info.value.args == ("Unknown operand kind: unknown_metric",)
+
+
+@pytest.mark.parametrize(
+    ("sample", "actual", "expected"),
+    [
+        ({"kind": "fake_surface_target", "target": 2.0, "surface_index": 1}, 2.5, 0.5),
+        ({"kind": "fake_surface_fixed", "surface_index": 1}, -0.75, -0.75),
+        ({"kind": "fake_surface_range", "min": 1.0, "surface_index": 1}, 0.5, 0.5),
+        ({"kind": "fake_surface_range", "max": 1.0, "surface_index": 1}, 0.5, 0.0),
+    ],
+)
+def test_operand_goal_residual_applies_to_surface_samples(fake_surface_kinds, sample, actual, expected):
+    assert fake_surface_kinds.operand_goal_residual(sample, actual) == pytest.approx(expected)
+
+
+def test_registered_operand_kinds_include_both_registries(fake_surface_kinds, monkeypatch):
+    monkeypatch.setitem(fake_surface_kinds.SURFACE_OPERAND_REGISTRY, "fake_surface_target", lambda *args: 0.0)
+
+    assert fake_surface_kinds.is_registered_operand_kind("focal_length")
+    assert fake_surface_kinds.is_registered_operand_kind("fake_surface_target")
+    assert not fake_surface_kinds.is_registered_operand_kind("fake_surface_fixed")
+    assert not fake_surface_kinds.is_registered_operand_kind("unknown_metric")
+
+
+def test_evaluate_operand_sample_passes_surface_index_to_surface_evaluators(fake_surface_kinds, monkeypatch):
+    calls = []
+    opm = object()
+
+    def fake_surface_evaluator(model, surface_index, field_index, wavelength_index, options, image_point):
+        calls.append((model, surface_index, field_index, wavelength_index, options, image_point))
+        return 1.25
+
+    monkeypatch.setitem(fake_surface_kinds.SURFACE_OPERAND_REGISTRY, "fake_surface_target", fake_surface_evaluator)
+
+    value = fake_surface_kinds.evaluate_operand_sample(
+        opm,
+        {
+            "kind": "fake_surface_target",
+            "target": 0.0,
+            "surface_index": 2,
+            "weight": 1.0,
+            "field_index": 0,
+            "field_weight": 1.0,
+            "wavelength_index": 1,
+            "wavelength_weight": 1.0,
+            "options": {"num_rays": 5},
+        },
+        "image_heights",
+    )
+
+    assert value == 1.25
+    assert calls == [(opm, 2, 0, 1, {"num_rays": 5}, "image_heights")]
+
+
+def test_evaluate_operand_sample_calls_system_evaluators_without_surface_index(monkeypatch):
+    import rayoptics_web_utils.optimization.operands as operands_module
+
+    calls = []
+    opm = object()
+
+    def fake_system_evaluator(*args):
+        calls.append(args)
+        return [0.5, -0.5]
+
+    monkeypatch.setitem(operands_module.OPERAND_REGISTRY, "ray_fan", fake_system_evaluator)
+
+    value = operands_module.evaluate_operand_sample(
+        opm,
+        {
+            "kind": "ray_fan",
+            "weight": 1.0,
+            "field_index": 1,
+            "field_weight": 1.0,
+            "wavelength_index": 0,
+            "wavelength_weight": 1.0,
+            "options": {},
+        },
+        "chief_ray",
+    )
+
+    assert value == [0.5, -0.5]
+    assert calls == [(opm, 1, 0, {}, "chief_ray")]
+
+
 def test_spot_function_returns_transverse_defocus_and_none_for_blocked_ray():
     import rayoptics.optical.model_constants as mc
     from rayoptics_web_utils.optimization.operands import _spot_fn

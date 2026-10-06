@@ -57,11 +57,36 @@ export type OptimizationFixedTargetOperandKind =
  * literal here and its metadata entry.
  */
 export type OptimizationRangeOperandKind = never;
+/**
+ * Surface-scoped operand kinds driven toward a user-supplied `target` at one
+ * `surface_index`. No kind uses this group yet.
+ */
+export type OptimizationSurfaceAdjustableTargetOperandKind = never;
+/**
+ * Surface-scoped operand kinds driven toward an implicit zero target at one
+ * `surface_index`. No kind uses this group yet.
+ */
+export type OptimizationSurfaceFixedTargetOperandKind = never;
+/**
+ * Surface-scoped operand kinds penalized only outside an inclusive `min`/`max`
+ * range at one `surface_index`. No kind uses this group yet.
+ */
+export type OptimizationSurfaceRangeOperandKind = never;
+/**
+ * Operand kinds whose target or range applies to one optical surface. Surface
+ * scope is orthogonal to the target mode: each group shares the goal semantics
+ * of its system-scope counterpart and additionally requires `surface_index`.
+ */
+export type OptimizationSurfaceOperandKind =
+  | OptimizationSurfaceAdjustableTargetOperandKind
+  | OptimizationSurfaceFixedTargetOperandKind
+  | OptimizationSurfaceRangeOperandKind;
 /** Worker-supported merit operand discriminators. */
 export type OptimizationOperandKind =
   | OptimizationAdjustableTargetOperandKind
   | OptimizationFixedTargetOperandKind
-  | OptimizationRangeOperandKind;
+  | OptimizationRangeOperandKind
+  | OptimizationSurfaceOperandKind;
 
 /**
  * Inclusive operand range with at least one bound; a missing bound is unbounded.
@@ -93,6 +118,7 @@ export interface OptimizationAdjustableTargetOperandConfig
   readonly target: number;
   readonly min?: undefined;
   readonly max?: undefined;
+  readonly surface_index?: undefined;
 }
 
 /** Fixed-target (possibly vector) operand driven toward its implicit zero target. */
@@ -102,19 +128,60 @@ export interface OptimizationFixedTargetOperandConfig
   readonly target?: undefined;
   readonly min?: undefined;
   readonly max?: undefined;
+  readonly surface_index?: undefined;
 }
 
 /** Operand penalized only outside its inclusive range. */
 export type OptimizationRangeOperandConfig = OptimizationOperandConfigBase & {
   readonly kind: OptimizationRangeOperandKind;
   readonly target?: undefined;
+  readonly surface_index?: undefined;
 } & OptimizationOperandRange;
 
-/** Operand configuration whose target fields are determined by `kind`. */
+/**
+ * 1-based optical surface index used by surface-scoped operands. It matches the
+ * GUI's surface numbering and excludes the object (0) and image surfaces.
+ */
+interface OptimizationOperandSurfaceScope {
+  readonly surface_index: number;
+}
+
+/** Surface-scoped operand driven toward its user-supplied target value. */
+export interface OptimizationSurfaceAdjustableTargetOperandConfig
+  extends OptimizationOperandConfigBase,
+    OptimizationOperandSurfaceScope {
+  readonly kind: OptimizationSurfaceAdjustableTargetOperandKind;
+  readonly target: number;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** Surface-scoped operand driven toward its implicit zero target. */
+export interface OptimizationSurfaceFixedTargetOperandConfig
+  extends OptimizationOperandConfigBase,
+    OptimizationOperandSurfaceScope {
+  readonly kind: OptimizationSurfaceFixedTargetOperandKind;
+  readonly target?: undefined;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** Surface-scoped operand penalized only outside its inclusive range. */
+export type OptimizationSurfaceRangeOperandConfig =
+  OptimizationOperandConfigBase &
+    OptimizationOperandSurfaceScope & {
+      readonly kind: OptimizationSurfaceRangeOperandKind;
+      readonly target?: undefined;
+    } & OptimizationOperandRange;
+
+/** Operand configuration whose target and surface fields are determined by `kind`. */
 export type OptimizationOperandConfig =
   | OptimizationAdjustableTargetOperandConfig
   | OptimizationFixedTargetOperandConfig
-  | OptimizationRangeOperandConfig;
+  | OptimizationRangeOperandConfig
+  | OptimizationSurfaceAdjustableTargetOperandConfig
+  | OptimizationSurfaceFixedTargetOperandConfig
+  | OptimizationSurfaceRangeOperandConfig;
 
 /**
  * Solver-specific continuous optimizer configuration.
@@ -356,6 +423,7 @@ export interface OptimizationAdjustableTargetResidualEntry
   readonly target: number;
   readonly min?: undefined;
   readonly max?: undefined;
+  readonly surface_index?: undefined;
 }
 
 /** One scalar sample of a fixed-target operand; the implicit zero target is not reported. */
@@ -365,19 +433,52 @@ export interface OptimizationFixedTargetResidualEntry
   readonly target?: undefined;
   readonly min?: undefined;
   readonly max?: undefined;
+  readonly surface_index?: undefined;
 }
 
 /** Residual of a range operand, reporting the supplied bounds. */
 export type OptimizationRangeResidualEntry = OptimizationResidualEntryBase & {
   readonly kind: OptimizationRangeOperandKind;
   readonly target?: undefined;
+  readonly surface_index?: undefined;
 } & OptimizationOperandRange;
 
-/** One scalar residual whose reported target fields are determined by `kind`. */
+/** Residual of a surface-scoped adjustable-target operand, reporting its target and surface. */
+export interface OptimizationSurfaceAdjustableTargetResidualEntry
+  extends OptimizationResidualEntryBase,
+    OptimizationOperandSurfaceScope {
+  readonly kind: OptimizationSurfaceAdjustableTargetOperandKind;
+  readonly target: number;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** One scalar sample of a surface-scoped fixed-target operand, reporting its surface. */
+export interface OptimizationSurfaceFixedTargetResidualEntry
+  extends OptimizationResidualEntryBase,
+    OptimizationOperandSurfaceScope {
+  readonly kind: OptimizationSurfaceFixedTargetOperandKind;
+  readonly target?: undefined;
+  readonly min?: undefined;
+  readonly max?: undefined;
+}
+
+/** Residual of a surface-scoped range operand, reporting the supplied bounds and surface. */
+export type OptimizationSurfaceRangeResidualEntry =
+  OptimizationResidualEntryBase &
+    OptimizationOperandSurfaceScope & {
+      readonly kind: OptimizationSurfaceRangeOperandKind;
+      readonly target?: undefined;
+    } & OptimizationOperandRange;
+
+/** One scalar residual whose reported target and surface fields are determined by `kind`. */
 export type OptimizationResidualEntry =
   | OptimizationAdjustableTargetResidualEntry
   | OptimizationFixedTargetResidualEntry
-  | OptimizationRangeResidualEntry;
+  | OptimizationRangeResidualEntry
+  | OptimizationSurfaceAdjustableTargetResidualEntry
+  | OptimizationSurfaceFixedTargetResidualEntry
+  | OptimizationSurfaceRangeResidualEntry;
 
 /** One chronological merit-history sample. */
 export interface OptimizationProgressEntry {
