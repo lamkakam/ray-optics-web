@@ -8,7 +8,9 @@ budget must cover at least one full SciPy population. Validation also enforces u
 stable option-driven residual counts after field/wavelength expansion. Tilt and
 decenter targets validate their interface and coordinate strategy, materialize
 missing target data, and leave missing pickup sources unconfigured. Operand
-normalization enforces the kind's target mode, validates every supplied field and
+normalization enforces the kind's target mode and scope (surface-scoped kinds
+require a 1-based ``surface_index`` that excludes the object and image surfaces;
+system kinds reject it), validates every supplied field and
 wavelength index, preserves sample order, and then removes combinations with an
 exactly zero operand, field, or wavelength weight.
 """
@@ -23,7 +25,12 @@ from typing import cast
 import numpy as np
 from rayoptics.environment import OpticalModel
 
-from .operands import OPERAND_REGISTRY, get_nominal_operand_sample_residual_count, operand_goal
+from .operands import (
+    get_nominal_operand_sample_residual_count,
+    is_registered_operand_kind,
+    operand_goal,
+    operand_scope,
+)
 from .targets import (
     DECENTER_KINDS,
     DECENTER_TYPES,
@@ -310,12 +317,13 @@ def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
 def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) -> list[OperandSample]:
     """Expand one operand into ordered non-zero-weight field/wavelength samples.
 
-    All supplied indices and target-mode fields are validated before exact-zero
-    weights are filtered, so disabled UI rows cannot conceal an invalid field or
-    wavelength reference or a malformed target. Adjustable-target kinds require a
-    finite ``target``; fixed-target kinds accept neither ``target`` nor range bounds; range
-    kinds require at least one finite bound with ``min <= max`` and keep only the
-    supplied bounds.
+    All supplied indices, target-mode fields, and surface-scope fields are
+    validated before exact-zero weights are filtered, so disabled UI rows cannot
+    conceal an invalid field, wavelength, or surface reference or a malformed
+    target. Adjustable-target kinds require a finite ``target``; fixed-target kinds
+    accept neither ``target`` nor range bounds; range kinds require at least one
+    finite bound with ``min <= max`` and keep only the supplied bounds.
+    Surface-scoped kinds of each mode additionally keep their ``surface_index``.
 
     Args:
         opm: RayOptics optical model.
@@ -325,7 +333,7 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
         Normalized samples in the input field-major, wavelength-minor order.
     """
     kind = operand.get("kind")
-    if kind not in OPERAND_REGISTRY:
+    if not is_registered_operand_kind(kind):
         raise ValueError(f"Unknown operand kind: {kind}")
 
     base = {
@@ -333,6 +341,7 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
         "weight": float(operand.get("weight", 1.0)),
         "options": deepcopy(operand.get("options") or {}),
         **normalize_operand_goal_fields(kind, operand),
+        **normalize_operand_scope_fields(opm, kind, operand),
     }
 
     if kind in {"focal_length", "f_number"}:
@@ -412,6 +421,38 @@ def normalize_operand_goal_fields(kind: str, operand: OperandConfigInput) -> dic
     if "min" in normalized and "max" in normalized and normalized["min"] > normalized["max"]:
         raise ValueError(f"Operand {kind} range min must not exceed max")
     return normalized
+
+
+def normalize_operand_scope_fields(opm: OpticalModel, kind: str, operand: OperandConfigInput) -> dict[str, int]:
+    """Validate and return the surface-scope fields carried by one operand.
+
+    Surface indices are 1-based and match ``seq_model.ifcs``: the object surface
+    (``0``) and the image surface (the last interface) are not valid targets.
+
+    Args:
+        opm: RayOptics optical model.
+        kind: Registered operand kind.
+        operand: Unnormalized operand configuration.
+
+    Returns:
+        ``{"surface_index": ...}`` for surface-scoped kinds, or an empty mapping
+        for system kinds.
+
+    Raises:
+        ValueError: If a system kind supplies ``surface_index`` or a surface kind
+            omits it or supplies a non-integer.
+        IndexError: If a surface kind's ``surface_index`` is not a real surface.
+    """
+    if operand_scope(kind) == "system":
+        if "surface_index" in operand:
+            raise ValueError(f"Operand {kind} does not accept a surface_index")
+        return {}
+    surface_index = operand.get("surface_index")
+    if not isinstance(surface_index, int) or isinstance(surface_index, bool):
+        raise ValueError(f"Operand {kind} requires an integer surface_index")
+    if surface_index < 1 or surface_index > len(opm["seq_model"].ifcs) - 2:
+        raise IndexError(f"Operand {kind} surface_index {surface_index} is out of range")
+    return {"surface_index": surface_index}
 
 
 def _is_finite_number(value: object) -> bool:

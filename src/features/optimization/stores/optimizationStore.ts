@@ -249,6 +249,8 @@ export interface OptimizationOperandRow {
   readonly min?: string;
   /** Inclusive upper bound text for range kinds; blank or absent means unbounded above. */
   readonly max?: string;
+  /** 1-based surface index (object and image excluded); set only for surface-scoped kinds. */
+  readonly surfaceIndex?: number;
   readonly weight: string;
   /** Optional public worker sampling settings, including non-default Ray Fan counts. */
   readonly options?: OptimizationOperandOptions;

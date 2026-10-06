@@ -4,9 +4,13 @@ import {
   OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS,
   OPTIMIZATION_OPERAND_METADATA,
   OPTIMIZATION_RANGE_OPERAND_KINDS,
+  OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
+  OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS,
+  OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS,
   isOptimizationAdjustableTargetOperandKind,
   isOptimizationFixedTargetOperandKind,
   isOptimizationRangeOperandKind,
+  isOptimizationSurfaceOperandKind,
 } from "@/features/optimization/lib/operandMetadata";
 
 describe("operand metadata registry", () => {
@@ -27,6 +31,17 @@ describe("operand metadata registry", () => {
     ]);
     expect(OPTIMIZATION_RANGE_OPERAND_KINDS).toEqual([]);
     expect(OPTIMIZATION_OPERAND_METADATA).toHaveLength(10);
+  });
+
+  it("registers no surface-scoped production kinds yet", () => {
+    expect(OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS).toEqual([]);
+    expect(OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS).toEqual([]);
+    expect(OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS).toEqual([]);
+    expect(
+      OPTIMIZATION_OPERAND_METADATA.filter(({ kind }) =>
+        isOptimizationSurfaceOperandKind(kind),
+      ),
+    ).toEqual([]);
   });
 
   it("guards each kind into exactly its own group", () => {

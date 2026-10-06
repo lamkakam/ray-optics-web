@@ -22,8 +22,8 @@ from ._types import (
     VariableStateEntry,
 )
 from .operands import (
-    OPERAND_REGISTRY,
     PENALTY_RESIDUAL,
+    evaluate_operand_sample,
     get_nominal_operand_sample_residual_count,
     operand_goal_residual,
 )
@@ -36,8 +36,8 @@ from .targets import (
 )
 
 
-OPERAND_GOAL_FIELDS = ("target", "min", "max")
-"""Normalized-sample keys copied verbatim onto each residual report entry."""
+OPERAND_REPORT_FIELDS = ("target", "min", "max", "surface_index")
+"""Normalized-sample keys copied verbatim onto each residual report entry when present."""
 
 
 class OptimizationProblem:
@@ -52,10 +52,10 @@ class OptimizationProblem:
     - Applies variables, then pickups in dependency order, then calls `opm.update_model()`.
     - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
     - Receives only non-zero-weight operand samples from config normalization, so disabled operands and field/wavelength combinations are neither evaluated nor reported.
-    - Passes `image_point` into every operand evaluator; OPD-based operands consume it and non-OPD operands ignore it.
+    - Passes `image_point` into every operand evaluator through `operands.evaluate_operand_sample(...)`; OPD-based operands consume it and non-OPD operands ignore it. Surface-scoped operands also receive their sample's `surface_index`.
     - Expands vector-valued operand outputs into one residual report entry per returned sample, so fixed-target operands such as Ray Fan variants can contribute many least-squares residuals from one normalized field/wavelength selection.
     - Exposes residual-vector, scalar-merit, and glass-safe scalar objective methods so solver adapters can choose the representation they need.
-    - Weighted residuals are `total_weight * operands.operand_goal_residual(...)`: `actual - target` for adjustable-target operands, `sample_value` for fixed-target (implicit zero target) vector operands, and the dead-zone distance outside `[min, max]` for range operands. Each residual entry copies the sample's `target` or supplied `min`/`max`.
+    - Weighted residuals are `total_weight * operands.operand_goal_residual(...)`: `actual - target` for adjustable-target operands, `sample_value` for fixed-target (implicit zero target) vector operands, and the dead-zone distance outside `[min, max]` for range operands. Each residual entry copies the sample's `target` or supplied `min`/`max`, plus `surface_index` for surface-scoped operands.
     - The penalty residual vector length matches the nominal non-zero-weight residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per retained field/wavelength sample; for axis-specific Ray Fan operands, that means `num_rays` entries.
     - Records progress only when the evaluated optimizer vector or glass-search context changes materially.
     - `residual_jacobian(...)` reproduces SciPy's default 2-point finite-difference Jacobian (reusing the cached residuals of the last `residual_objective(...)` call as `f0`) without recording progress, so least-squares progress contains only the evaluations SciPy counts toward `max_nfev`.
@@ -166,14 +166,7 @@ class OptimizationProblem:
         residuals: list[ResidualEntry] = []
         weighted_values: list[float] = []
         for operand in self.operands:
-            evaluator = OPERAND_REGISTRY[operand["kind"]]
-            actual_values = evaluator(
-                self.opm,
-                operand["field_index"],
-                operand["wavelength_index"],
-                operand["options"],
-                self.image_point,
-            )
+            actual_values = evaluate_operand_sample(self.opm, operand, self.image_point)
             if isinstance(actual_values, list):
                 actuals = [float(value) for value in actual_values]
             else:
@@ -191,7 +184,7 @@ class OptimizationProblem:
                     "wavelength_weight": operand["wavelength_weight"],
                     "total_weight": float(total_weight),
                     "weighted_residual": float(weighted_residual),
-                    **{key: operand[key] for key in OPERAND_GOAL_FIELDS if key in operand},
+                    **{key: operand[key] for key in OPERAND_REPORT_FIELDS if key in operand},
                 }
                 residuals.append(residual)
                 weighted_values.append(float(weighted_residual))

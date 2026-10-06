@@ -5,6 +5,9 @@ import type {
   OptimizationOperandKind,
   OptimizationOperandRange,
   OptimizationRangeOperandKind,
+  OptimizationSurfaceAdjustableTargetOperandKind,
+  OptimizationSurfaceFixedTargetOperandKind,
+  OptimizationSurfaceRangeOperandKind,
 } from "@/features/optimization/types/optimizationWorkerTypes";
 
 /** Optional caller-owned settings for operands that need additional sampling configuration. */
@@ -17,6 +20,13 @@ export type OptimizationOperandGoal =
   | "adjustable_target"
   | "fixed_target"
   | "range";
+
+/**
+ * Whether an operand kind evaluates the whole optical system or one optical
+ * surface selected by a 1-based `surface_index` (object and image excluded).
+ * Scope is orthogonal to `OptimizationOperandGoal`.
+ */
+export type OptimizationOperandScope = "system" | "surface";
 
 /** Metadata shared by every operand kind regardless of its target mode. */
 interface OptimizationOperandMetadataBase {
@@ -35,6 +45,7 @@ export interface OptimizationAdjustableTargetOperandMetadata
   readonly goal: "adjustable_target";
   readonly defaultTarget: string;
   readonly defaultRange?: undefined;
+  readonly scope?: undefined;
 }
 
 /** Metadata for a kind whose implicit zero target is not user-configurable. */
@@ -44,6 +55,7 @@ export interface OptimizationFixedTargetOperandMetadata
   readonly goal: "fixed_target";
   readonly defaultTarget?: undefined;
   readonly defaultRange?: undefined;
+  readonly scope?: undefined;
 }
 
 /** Metadata for a range kind, including the GUI's default string-backed bounds. */
@@ -53,13 +65,51 @@ export interface OptimizationRangeOperandMetadata
   readonly goal: "range";
   readonly defaultTarget?: undefined;
   readonly defaultRange: OptimizationOperandRange<string>;
+  readonly scope?: undefined;
 }
 
-/** Runtime metadata for one worker-supported operand kind, discriminated by its target mode (`goal`). */
+/** Metadata for a surface-scoped kind with a user-supplied target. */
+export interface OptimizationSurfaceAdjustableTargetOperandMetadata
+  extends OptimizationOperandMetadataBase {
+  readonly kind: OptimizationSurfaceAdjustableTargetOperandKind;
+  readonly goal: "adjustable_target";
+  readonly defaultTarget: string;
+  readonly defaultRange?: undefined;
+  readonly scope: "surface";
+}
+
+/** Metadata for a surface-scoped kind whose implicit zero target is not user-configurable. */
+export interface OptimizationSurfaceFixedTargetOperandMetadata
+  extends OptimizationOperandMetadataBase {
+  readonly kind: OptimizationSurfaceFixedTargetOperandKind;
+  readonly goal: "fixed_target";
+  readonly defaultTarget?: undefined;
+  readonly defaultRange?: undefined;
+  readonly scope: "surface";
+}
+
+/** Metadata for a surface-scoped range kind, including the GUI's default string-backed bounds. */
+export interface OptimizationSurfaceRangeOperandMetadata
+  extends OptimizationOperandMetadataBase {
+  readonly kind: OptimizationSurfaceRangeOperandKind;
+  readonly goal: "range";
+  readonly defaultTarget?: undefined;
+  readonly defaultRange: OptimizationOperandRange<string>;
+  readonly scope: "surface";
+}
+
+/**
+ * Runtime metadata for one worker-supported operand kind, discriminated by its
+ * target mode (`goal`) and, for surface-scoped kinds, `scope: "surface"`. System
+ * kinds omit `scope`.
+ */
 export type OptimizationOperandMetadata =
   | OptimizationAdjustableTargetOperandMetadata
   | OptimizationFixedTargetOperandMetadata
-  | OptimizationRangeOperandMetadata;
+  | OptimizationRangeOperandMetadata
+  | OptimizationSurfaceAdjustableTargetOperandMetadata
+  | OptimizationSurfaceFixedTargetOperandMetadata
+  | OptimizationSurfaceRangeOperandMetadata;
 
 /** Metadata variant whose kind group contains `TKind`, narrowed to that exact kind. */
 export type OptimizationOperandMetadataFor<
