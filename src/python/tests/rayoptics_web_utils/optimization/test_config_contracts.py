@@ -613,6 +613,63 @@ def test_surface_operand_still_enforces_its_target_mode(fake_surface_operands, o
     assert exc_info.value.args == (message,)
 
 
+@pytest.mark.parametrize(
+    "bounds",
+    [{"min": 3.0}, {"max": 5}, {"min": 3, "max": 5.0}],
+)
+def test_edge_thickness_normalizes_to_one_unexpanded_surface_sample(bounds):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    samples = normalize_operand_samples(
+        _FakeOpticalModel(),
+        {"kind": "edge_thickness", "surface_index": 2, "weight": 2.0, **bounds},
+    )
+
+    assert samples == [
+        {
+            "kind": "edge_thickness",
+            "weight": 2.0,
+            "options": {},
+            **{key: float(value) for key, value in bounds.items()},
+            "surface_index": 2,
+            "field_index": None,
+            "field_weight": 1.0,
+            "wavelength_index": None,
+            "wavelength_weight": 1.0,
+        }
+    ]
+
+
+def test_edge_thickness_with_zero_weight_has_no_samples():
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    assert normalize_operand_samples(
+        _FakeOpticalModel(), {"kind": "edge_thickness", "surface_index": 1, "min": 3.0, "weight": 0.0}
+    ) == []
+
+
+@pytest.mark.parametrize(
+    "operand, error, message",
+    [
+        ({"min": 3.0}, ValueError, "Operand edge_thickness requires an integer surface_index"),
+        ({"surface_index": 0, "min": 3.0}, IndexError, "Operand edge_thickness surface_index 0 is out of range"),
+        ({"surface_index": 3, "min": 3.0}, IndexError, "Operand edge_thickness surface_index 3 is out of range"),
+        ({"surface_index": 1, "target": 3.0}, ValueError, "Operand edge_thickness does not accept a target"),
+        ({"surface_index": 1}, ValueError, "Operand edge_thickness range requires at least one bound"),
+        ({"surface_index": 1, "min": 0.0}, ValueError, "Operand edge_thickness range bounds must be positive"),
+        ({"surface_index": 1, "max": -1.0}, ValueError, "Operand edge_thickness range bounds must be positive"),
+        ({"surface_index": 1, "min": 1.0, "max": 0.0}, ValueError, "Operand edge_thickness range bounds must be positive"),
+        ({"surface_index": 1, "min": 5.0, "max": 3.0}, ValueError, "Operand edge_thickness range min must not exceed max"),
+    ],
+)
+def test_edge_thickness_rejects_invalid_configs(operand, error, message):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(error) as exc_info:
+        normalize_operand_samples(_FakeOpticalModel(), {"kind": "edge_thickness", **operand})
+    assert exc_info.value.args == (message,)
+
+
 def test_operand_default_field_and_wavelength_weights_are_one():
     from rayoptics_web_utils.optimization.config import normalize_operand_samples
 

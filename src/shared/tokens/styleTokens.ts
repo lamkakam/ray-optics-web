@@ -125,6 +125,8 @@ export const componentTokens = {
   input: {
     color: {
       borderColor: g.color.inputBorder,
+      invalidBorderColor:
+        "aria-invalid:border-red-600 dark:aria-invalid:border-red-400",
       bgColor: g.color.surfaceBg,
       textColor: g.color.primaryText,
       focusRingColor: g.color.focusRingColor,

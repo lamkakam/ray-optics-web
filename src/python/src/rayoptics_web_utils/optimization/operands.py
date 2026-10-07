@@ -8,15 +8,19 @@ grids to the traced wavelength before evaluation. Every registered kind belongs 
 exactly one target-mode group, which decides how its values become residuals.
 Kinds are also scoped: system kinds live in ``OPERAND_REGISTRY``, while
 surface kinds live in ``SURFACE_OPERAND_REGISTRY`` and are evaluated at the
-sample's 1-based ``surface_index``.
+sample's 1-based ``surface_index``. Edge thickness is the first surface-scoped
+range operand; its bounds must be positive, and an edge thickness that cannot be
+evaluated (``NaN``) is penalized whichever bounds are supplied.
 """
 
 from __future__ import annotations
 
+import math
 from typing import get_args
 
 import numpy as np
 from rayoptics.environment import OpticalModel
+from rayoptics.raytr.traceerror import TraceError
 
 from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
 from rayoptics_web_utils.analysis import get_ray_fan_data
@@ -56,7 +60,11 @@ SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS: frozenset[str] = frozenset(
 SURFACE_FIXED_TARGET_OPERAND_KINDS: frozenset[str] = frozenset(get_args(SurfaceFixedTargetOperandKind.__value__))
 """Runtime mirror of ``SurfaceFixedTargetOperandKind``; empty until the first such operand is registered."""
 SURFACE_RANGE_OPERAND_KINDS: frozenset[str] = frozenset(get_args(SurfaceRangeOperandKind.__value__))
-"""Runtime mirror of ``SurfaceRangeOperandKind``; empty until the first such operand is registered."""
+"""Runtime mirror of ``SurfaceRangeOperandKind``."""
+POSITIVE_RANGE_OPERAND_KINDS: frozenset[str] = frozenset({"edge_thickness"})
+"""Range kinds whose ``min``/``max`` bounds must be strictly positive."""
+UNEXPANDED_OPERAND_KINDS: frozenset[str] = frozenset({"focal_length", "f_number", "edge_thickness"})
+"""Kinds evaluated once per operand rather than once per field/wavelength sample."""
 
 
 def operand_goal(kind: str) -> OperandGoal:
@@ -157,7 +165,9 @@ def operand_goal_residual(sample: OperandSample, actual: float) -> float:
     Adjustable-target operands return ``actual - target`` and fixed-target
     operands return ``actual`` (their implicit target is zero). Range operands return a dead-zone residual: zero inside the
     inclusive ``[min, max]`` band and the distance to the violated bound outside
-    it; a missing bound is unbounded on that side.
+    it; a missing bound is unbounded on that side. A non-finite range value
+    returns ``PENALTY_RESIDUAL``, because no single sentinel value lies outside
+    every possible one-sided band.
 
     Args:
         sample: Normalized operand sample.
@@ -171,6 +181,8 @@ def operand_goal_residual(sample: OperandSample, actual: float) -> float:
         return actual - sample["target"]
     if goal == "fixed_target":
         return actual
+    if not math.isfinite(actual):
+        return PENALTY_RESIDUAL
     below = sample["min"] - actual if "min" in sample else 0.0
     above = actual - sample["max"] if "max" in sample else 0.0
     return max(0.0, below) + max(0.0, above)
@@ -539,6 +551,49 @@ def compute_ray_fan_sagittal(
     return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, image_point, "Sagittal")
 
 
+def compute_edge_thickness(
+    opm: OpticalModel,
+    surface_index: int,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+    image_point: str = "chief_ray",
+) -> float:
+    """Return the physical edge thickness of the gap after one surface.
+
+    The edge thickness is ``thi + sag_next(h) - sag(h)`` measured along the gap's
+    propagation direction (``seq_model.z_dir``, so gaps after an odd number of
+    reflections still report a positive physical thickness), where ``h`` is the
+    semi-diameter (``surface_od()``) of the selected surface only and ``sag_next``
+    belongs to the following interface, which is the image for the last real
+    surface. Both sags are evaluated at ``(x, y) = (0, h)``.
+
+    Args:
+        opm: RayOptics optical model.
+        surface_index: 1-based real surface index; the object and image are excluded.
+        field_index: Field index; unused.
+        wavelength_index: Wavelength index; unused.
+        options: Normalized operand options; unused.
+        image_point: Image-point reference convention; unused.
+
+    Returns:
+        The edge thickness, or ``NaN`` when either sag is undefined at ``h`` (for
+        example a semi-diameter beyond a sphere's radius) or the result is not finite.
+    """
+    del field_index, wavelength_index, options, image_point
+    sm = opm["seq_model"]
+    surface = sm.ifcs[surface_index]
+    next_surface = sm.ifcs[surface_index + 1]
+    height = float(surface.surface_od())
+    try:
+        sag = float(surface.profile.sag(0.0, height))
+        next_sag = float(next_surface.profile.sag(0.0, height))
+    except (TraceError, ValueError, ZeroDivisionError):
+        return math.nan
+    edge_thickness = sm.z_dir[surface_index] * (float(sm.gaps[surface_index].thi) + next_sag - sag)
+    return edge_thickness if math.isfinite(edge_thickness) else math.nan
+
+
 OPERAND_REGISTRY: dict[str, OperandEvaluator] = {
     "rms_spot_size": compute_rms_spot_size,
     "rms_wavefront_error": compute_rms_wavefront_error,
@@ -553,5 +608,7 @@ OPERAND_REGISTRY: dict[str, OperandEvaluator] = {
 }
 """Evaluators for system-scoped operand kinds."""
 
-SURFACE_OPERAND_REGISTRY: dict[str, SurfaceOperandEvaluator] = {}
-"""Evaluators for surface-scoped operand kinds; empty until the first one is registered."""
+SURFACE_OPERAND_REGISTRY: dict[str, SurfaceOperandEvaluator] = {
+    "edge_thickness": compute_edge_thickness,
+}
+"""Evaluators for surface-scoped operand kinds."""

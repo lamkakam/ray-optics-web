@@ -69,9 +69,11 @@ export type OptimizationSurfaceAdjustableTargetOperandKind = never;
 export type OptimizationSurfaceFixedTargetOperandKind = never;
 /**
  * Surface-scoped operand kinds penalized only outside an inclusive `min`/`max`
- * range at one `surface_index`. No kind uses this group yet.
+ * range at one `surface_index`. `edge_thickness` bounds the physical edge
+ * thickness of the gap after that surface, measured at that surface's
+ * semi-diameter; its bounds must be positive.
  */
-export type OptimizationSurfaceRangeOperandKind = never;
+export type OptimizationSurfaceRangeOperandKind = "edge_thickness";
 /**
  * Operand kinds whose target or range applies to one optical surface. Surface
  * scope is orthogonal to the target mode: each group shares the goal semantics

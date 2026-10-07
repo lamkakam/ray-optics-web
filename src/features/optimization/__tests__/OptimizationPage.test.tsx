@@ -1276,6 +1276,7 @@ describe("OptimizationPage", () => {
       "Operand Kind",
       "Target",
       "Weight",
+      "Surface Index",
       "",
     ]);
 
@@ -1287,6 +1288,86 @@ describe("OptimizationPage", () => {
     expect(optimizationStore.getState().operands[0]).toMatchObject({
       weight: "2.75",
     });
+  });
+
+  it("shows Edge Thickness config errors in Operand Evaluation until the row is valid", async () => {
+    const proxy = makeProxy();
+    renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+    const evaluationPanel = () =>
+      screen.getByText("Operand Evaluation").closest("div")
+        ?.parentElement as HTMLElement;
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await waitFor(() =>
+      expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1),
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Operand Kind" }),
+      "edge_thickness",
+    );
+
+    expect(
+      await within(evaluationPanel()).findByText(
+        "Edge Thickness: Surface Index is required.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+    expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1);
+
+    const lowerBound = screen.getByRole("textbox", { name: /^Lower bound/ });
+    expect(lowerBound).toHaveValue("3");
+    const surfaceIndexInput = screen
+      .getAllByRole("textbox")
+      .find(
+        (input) =>
+          input.closest("td")?.cellIndex ===
+          Array.from(
+            screen.getByTestId("ag-grid-mock").querySelectorAll("th"),
+            (header) => header.textContent,
+          ).indexOf("Surface Index"),
+      ) as HTMLElement;
+    await user.click(surfaceIndexInput);
+    await user.type(surfaceIndexInput, "1{Enter}");
+    await user.tab();
+
+    await waitFor(() =>
+      expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2),
+    );
+    expect(proxy.evaluateOptimizationProblem).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        merit_function: {
+          operands: [
+            { kind: "edge_thickness", surface_index: 1, min: 3, weight: 1 },
+          ],
+        },
+      }),
+      expect.anything(),
+    );
+    expect(
+      within(evaluationPanel()).queryByText(
+        "Edge Thickness: Surface Index is required.",
+      ),
+    ).not.toBeInTheDocument();
+
+    await user.clear(lowerBound);
+    await user.type(lowerBound, "0");
+
+    expect(
+      await within(evaluationPanel()).findByText(
+        "Edge Thickness: Min must be a positive number.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.clear(lowerBound);
+
+    expect(
+      await within(evaluationPanel()).findByText(
+        "Edge Thickness: At least one of Min or Max is required.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("refreshes the live evaluation table when the optimization config changes", async () => {

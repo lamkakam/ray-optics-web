@@ -10,8 +10,12 @@ import {
   OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
   OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS,
   OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS,
+  getOptimizationOperandMetadata,
 } from "@/features/optimization/lib/operandMetadata";
-import type { OptimizationRunConfig } from "@/features/optimization/types/optimizationWorkerTypes";
+import type {
+  OptimizationOperandKind,
+  OptimizationRunConfig,
+} from "@/features/optimization/types/optimizationWorkerTypes";
 
 const positiveIntegerSchema = {
   type: "integer",
@@ -320,13 +324,18 @@ function createFixedTargetOperandSchema(
 
 /**
  * Range operand branch for one kind group: at least one finite bound and no
- * `target`. JSON Schema cannot compare `min` with `max`; the GUI config adapter
- * enforces `min <= max`.
+ * `target`. Kinds whose metadata sets `requiresPositiveBounds` (Edge Thickness)
+ * get their own branch whose bounds must be strictly positive. JSON Schema cannot
+ * compare `min` with `max`; the GUI config adapter enforces `min <= max`.
  */
 function createRangeOperandSchema(
   kinds: ReadonlyArray<string>,
   isSurface: boolean,
+  requiresPositiveBounds: boolean,
 ) {
+  const boundSchema = requiresPositiveBounds
+    ? positiveNumberSchema
+    : finiteNumberSchema;
   return {
     type: "object",
     required: ["kind", "weight", ...(isSurface ? ["surface_index"] : [])],
@@ -334,8 +343,8 @@ function createRangeOperandSchema(
     additionalProperties: false,
     properties: {
       kind: { type: "string", enum: kinds },
-      min: finiteNumberSchema,
-      max: finiteNumberSchema,
+      min: boundSchema,
+      max: boundSchema,
       ...operandProperties,
       ...(isSurface ? surfaceOperandProperties : {}),
     },
@@ -351,11 +360,39 @@ function branchIfRegistered<TBranch>(
 }
 
 /**
+ * Range branches for one range kind group, split by whether each kind's metadata
+ * requires positive bounds; a subset gets a branch only while it is non-empty.
+ */
+function createRangeOperandBranches(
+  kinds: ReadonlyArray<OptimizationOperandKind>,
+  isSurface: boolean,
+) {
+  const positiveKinds = kinds.filter(
+    (kind) => getOptimizationOperandMetadata(kind).requiresPositiveBounds,
+  );
+  const otherKinds = kinds.filter(
+    (kind) => !getOptimizationOperandMetadata(kind).requiresPositiveBounds,
+  );
+  return [
+    ...branchIfRegistered(
+      otherKinds,
+      createRangeOperandSchema(otherKinds, isSurface, false),
+    ),
+    ...branchIfRegistered(
+      positiveKinds,
+      createRangeOperandSchema(positiveKinds, isSurface, true),
+    ),
+  ];
+}
+
+/**
  * Operand schema with one branch per target mode and scope, whose kind enums
  * come from the shared operand metadata. System-scoped branches reject
  * `surface_index`; surface-scoped branches require it. The range and every
  * surface-scoped branch are included only while at least one kind of that group
- * is registered.
+ * is registered; range groups are further split into positive-bound and
+ * finite-bound branches. Today this means one surface-range branch accepting
+ * `edge_thickness` with a positive-integer `surface_index` and positive bounds.
  */
 const optimizationOperandSchema = {
   oneOf: [
@@ -367,10 +404,7 @@ const optimizationOperandSchema = {
       OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS,
       false,
     ),
-    ...branchIfRegistered(
-      OPTIMIZATION_RANGE_OPERAND_KINDS,
-      createRangeOperandSchema(OPTIMIZATION_RANGE_OPERAND_KINDS, false),
-    ),
+    ...createRangeOperandBranches(OPTIMIZATION_RANGE_OPERAND_KINDS, false),
     ...branchIfRegistered(
       OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
       createAdjustableTargetOperandSchema(
@@ -385,9 +419,9 @@ const optimizationOperandSchema = {
         true,
       ),
     ),
-    ...branchIfRegistered(
+    ...createRangeOperandBranches(
       OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS,
-      createRangeOperandSchema(OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS, true),
+      true,
     ),
   ],
 } as const;

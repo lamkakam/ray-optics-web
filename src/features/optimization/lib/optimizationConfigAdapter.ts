@@ -497,7 +497,11 @@ function validateGlassCandidates(
   }
 }
 
-/** Validates a range operand's bounds: at least one finite bound and `min <= max`. */
+/**
+ * Validates a range operand's bounds: at least one finite bound and `min <= max`.
+ * Positive-bound kinds such as Edge Thickness are already limited to positive
+ * bounds by the WebMCP schema, which runs first.
+ */
 function assertOperandRange(
   kind: string,
   min: number | undefined,

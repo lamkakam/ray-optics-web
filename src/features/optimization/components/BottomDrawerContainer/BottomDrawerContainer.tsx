@@ -94,7 +94,7 @@ export interface BottomDrawerContainerProps {
  * - Opens radius, thickness, glass, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
  * - Derives `canOptimizeGlass` from centralized optimizer capabilities so the fourth `Var.` column appears only for Glass Expert.
  * - Forwards `prescription.autoAperture` to `OptimizationLensPrescriptionGrid` so the shared semi-diameter column uses the synchronized mode.
- * - Adds, deletes, and updates operands through the optimization store.
+ * - Adds, deletes, and updates operands through the optimization store, and passes the page-local optimization model's real surface count (`0` without a model) as the Operands grid's `surfaceCount`, which bounds the Surface Index editor.
  * - Is wrapped in `React.memo` and memoizes store-backed callbacks, prescription props, and the drawer `tabs` array so unrelated `OptimizationPage` state changes, including Operand Evaluation loading and completion, do not recreate AG Grid column definitions or reset active grid editors.
  */
 export const BottomDrawerContainer = memo(function BottomDrawerContainer({
@@ -123,6 +123,10 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     (state) => state.decenterStates,
   );
   const operands = useStore(optimizationStore, (state) => state.operands);
+  const surfaceCount = useStore(
+    optimizationStore,
+    (state) => state.optimizationModel?.surfaces.length ?? 0,
+  );
 
   const handleChangeOptimizer = useCallback(
     (patch: OptimizerPatch) => {
@@ -344,6 +348,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
             onAddOperand={handleAddOperand}
             onDeleteOperand={handleDeleteOperand}
             onUpdateOperand={handleUpdateOperand}
+            surfaceCount={surfaceCount}
             onCellEditingStarted={gridEditLifecycle?.onCellEditingStarted}
             onCellEditingStopped={gridEditLifecycle?.onCellEditingStopped}
           />
@@ -363,6 +368,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
       operands,
       optimizer,
       prescriptionProps,
+      surfaceCount,
       wavelengths.rows,
     ],
   );

@@ -64,6 +64,28 @@ describe("createEvaluationRow", () => {
     });
   });
 
+  it("labels surface-scoped residuals with their surface and shows their range target", () => {
+    const residual: OptimizationResidualEntry = {
+      kind: "edge_thickness",
+      surface_index: 3,
+      min: 3,
+      value: 2.25,
+      operand_weight: 1,
+      field_weight: 1,
+      wavelength_weight: 1,
+      total_weight: 1,
+      weighted_residual: 0.75,
+    };
+
+    expect(createEvaluationRow(residual, 2)).toEqual({
+      id: "edge_thickness-none-none-2",
+      operandType: "Edge Thickness (Surface 3)",
+      target: "≥ 3",
+      weight: "1.000000",
+      value: "2.250000",
+    });
+  });
+
   it("formats weight and value with 6 decimal places", () => {
     const residual: OptimizationResidualEntry = {
       kind: "rms_spot_size",

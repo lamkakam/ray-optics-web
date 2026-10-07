@@ -1,7 +1,8 @@
 /**
- * Exercises the surface-scoped operand paths before any production kind uses them
- * by registering one fake surface kind per target mode through the operand
- * metadata registry factory.
+ * Exercises the surface-scoped operand paths for every target mode, including the
+ * groups no production kind uses yet, by registering one fake surface kind per
+ * target mode (alongside the production Edge Thickness range kind) through the
+ * operand metadata registry factory.
  */
 import {
   OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
@@ -137,6 +138,7 @@ describe("surface operand metadata registry", () => {
       "fake_surface_fixed",
     ]);
     expect(OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS).toEqual([
+      "edge_thickness",
       "fake_surface_range",
     ]);
     const systemKinds: ReadonlyArray<OptimizationOperandKind> = [

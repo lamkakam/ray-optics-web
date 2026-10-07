@@ -8,11 +8,12 @@ import type { OptimizationOperandRow } from "@/features/optimization/stores/opti
 import { getOperandLabel } from "@/features/optimization/lib/optimizationViewModels";
 import {
   OPTIMIZATION_OPERAND_METADATA,
-  OPTIMIZATION_RANGE_OPERAND_KINDS,
+  getOptimizationOperandMetadata,
   isOptimizationAdjustableTargetOperandKind,
-  isOptimizationRangeOperandKind,
+  isOptimizationSurfaceOperandKind,
 } from "@/features/optimization/lib/operandMetadata";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
+import { NumericRangeInput } from "@/shared/components/NumericRangeInput";
 import { Button } from "@/shared/components/primitives/Button";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
@@ -21,38 +22,42 @@ type OperandRowUpdater = (
   patch: Partial<Omit<OptimizationOperandRow, "id">>,
 ) => void;
 
-/** Builds the `Min` or `Max` column, editable only for range rows and `N/A` otherwise. */
-function createRangeBoundColumn(
-  bound: "min" | "max",
-  headerName: string,
-  onUpdateOperand: OperandRowUpdater,
-): ColDef<OptimizationOperandRow> {
-  return {
-    headerName,
-    width: 85,
-    editable: (params) =>
-      params.data !== undefined &&
-      isOptimizationRangeOperandKind(params.data.kind),
-    valueGetter: (params) => {
-      if (params.data === undefined) {
-        return undefined;
-      }
-      return isOptimizationRangeOperandKind(params.data.kind)
-        ? params.data[bound]
-        : "N/A";
-    },
-    valueSetter: (params) => {
-      if (
-        params.data === undefined ||
-        !isOptimizationRangeOperandKind(params.data.kind)
-      ) {
-        return false;
-      }
+/** Returns whether an operand kind is penalized only outside a `min`/`max` range, in either scope. */
+function isRangeOperandKind(kind: OptimizationOperandKind): boolean {
+  return getOptimizationOperandMetadata(kind).goal === "range";
+}
 
-      onUpdateOperand(params.data.id, { [bound]: String(params.newValue) });
-      return true;
-    },
-  };
+interface OperandRangeCellProps {
+  readonly data?: OptimizationOperandRow;
+  readonly onUpdateOperand: OperandRowUpdater;
+}
+
+/**
+ * Target cell renderer for range operands: edits `min` / `max` through `NumericRangeInput`, sending one `{ min }` or
+ * `{ max }` patch per keystroke. Bounds are flagged invalid when non-positive for kinds whose metadata sets
+ * `requiresPositiveBounds` (Edge Thickness). AG Grid renders this component directly inside the full-height
+ * `.ag-cell`, so a full-height flex wrapper centers the inputs vertically within the row.
+ */
+function OperandRangeCell({ data, onUpdateOperand }: OperandRangeCellProps) {
+  if (data === undefined) {
+    return null;
+  }
+  return (
+    <div className="flex h-full items-center">
+      <NumericRangeInput
+        min={data.min}
+        max={data.max}
+        onMinChange={(min) => onUpdateOperand(data.id, { min })}
+        onMaxChange={(max) => onUpdateOperand(data.id, { max })}
+        minAriaLabel={`Lower bound for operand ${data.id}`}
+        maxAriaLabel={`Upper bound for operand ${data.id}`}
+        positive={
+          getOptimizationOperandMetadata(data.kind).requiresPositiveBounds ===
+          true
+        }
+      />
+    </div>
+  );
 }
 
 interface OptimizationOperandsTabProps {
@@ -60,6 +65,8 @@ interface OptimizationOperandsTabProps {
   readonly onAddOperand: () => void;
   readonly onDeleteOperand: (id: string) => void;
   readonly onUpdateOperand: OperandRowUpdater;
+  /** Number of real optical surfaces (object and image excluded); the Surface Index editor's upper bound. */
+  readonly surfaceCount: number;
   readonly onCellEditingStarted?: () => void;
   readonly onCellEditingStopped?: () => void;
 }
@@ -72,20 +79,22 @@ interface OptimizationOperandsTabProps {
  * - Keeps the content-sized Add Operand button above the grid. The grid wrapper uses `min-h-0 flex-1`, so it occupies the concrete remaining height after the button and gap, while the tab retains horizontal overflow and relies on parent layout padding instead of adding its own outer `p-4`.
  * - Uses AG Grid's normal layout so the grid owns vertical scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
  * - Applies `defaultColDef={{ sortable: false, suppressMovable: true }}` so users cannot reorder operand-table columns.
- * - Sets fixed AG Grid column widths of `215`, `85`, `90`, and `90` for Operand Kind, Target, Weight, and the delete/action column, plus `85` for each of the optional Min and Max columns.
+ * - Orders the columns Operand Kind, Target, Weight, Surface Index, and the delete/action column, with fixed AG Grid widths of `215`, `190`, `90`, `110`, and `90`.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending operand edits commit when editing stops.
  * - Accepts optional AG Grid cell edit lifecycle callbacks and forwards them to `EditableAgGridReact` so the page can disable Optimize while operand edits and their post-edit evaluation refreshes are pending.
  * - Provides AG Grid `getRowId` from each operand `id` so live Operand Evaluation rerenders and replacement row objects do not interrupt the active operand editor or discard uncommitted typed text.
  * - Builds the operand-kind selector from shared operand metadata instead of hardcoding the list locally.
  * - Imports operand kind types from `features/optimization/types/optimizationWorkerTypes.ts`.
- * - Shows `N/A` and disables editing in the `Target` column for every operand without a user-supplied target: fixed-target operands such as combined and axis-specific Ray Fan operands (implicit zero target) and range operands.
- * - Adds `Min` and `Max` columns between `Target` and `Weight` only while shared metadata registers at least one range operand kind. They are editable only for range rows, send `{ min }` / `{ max }` patches, and show `N/A` for other rows.
+ * - Edits adjustable targets in the `Target` column with AG Grid's text editor, and shows `N/A` without editing for fixed-target operands such as combined and axis-specific Ray Fan operands (implicit zero target).
+ * - For range operands in either scope (such as Edge Thickness), a `cellRendererSelector` renders the shared `NumericRangeInput` in the `Target` cell: two always-visible lower/upper bound inputs labelled `Lower bound for operand <id>` / `Upper bound for operand <id>` that send a `{ min }` or `{ max }` patch on every keystroke. A blank bound means unbounded on that side; non-positive bounds are flagged invalid when the kind's metadata sets `requiresPositiveBounds`. `suppressKeyboardEvent` keeps AG Grid navigation from capturing typing, Tab, or arrow keys in those inputs. The column is not editable for range rows, so these edits do not emit AG Grid cell-editing lifecycle callbacks; each keystroke commits to the store directly.
+ * - The `Surface Index` column shows `N/A` and is not editable for system-scoped operands. For surface-scoped operands it uses AG Grid's `agNumberCellEditor` with `{ min: 1, max: surfaceCount, precision: 0, step: 1 }`, shows the row's 1-based `surfaceIndex` (empty when unset), and sends `{ surfaceIndex }` only for integers in `[1, surfaceCount]`; a cleared editor sends `{ surfaceIndex: undefined }`, and any other value is rejected without a patch. `cellDataType: false` stops AG Grid inferring a type from the mixed `N/A` / number values.
  */
 export function OptimizationOperandsTab({
   operands,
   onAddOperand,
   onDeleteOperand,
   onUpdateOperand,
+  surfaceCount,
   onCellEditingStarted,
   onCellEditingStopped,
 }: OptimizationOperandsTabProps) {
@@ -119,7 +128,13 @@ export function OptimizationOperandsTab({
       },
       {
         headerName: "Target",
-        width: 85,
+        width: 190,
+        cellRendererSelector: (params) =>
+          params.data !== undefined && isRangeOperandKind(params.data.kind)
+            ? { component: OperandRangeCell, params: { onUpdateOperand } }
+            : undefined,
+        suppressKeyboardEvent: (params) =>
+          params.data !== undefined && isRangeOperandKind(params.data.kind),
         editable: (params) =>
           params.data !== undefined &&
           isOptimizationAdjustableTargetOperandKind(params.data.kind),
@@ -144,12 +159,6 @@ export function OptimizationOperandsTab({
           return true;
         },
       },
-      ...(OPTIMIZATION_RANGE_OPERAND_KINDS.length > 0
-        ? [
-            createRangeBoundColumn("min", "Min", onUpdateOperand),
-            createRangeBoundColumn("max", "Max", onUpdateOperand),
-          ]
-        : []),
       {
         headerName: "Weight",
         width: 90,
@@ -161,6 +170,52 @@ export function OptimizationOperandsTab({
           }
 
           onUpdateOperand(params.data.id, { weight: String(params.newValue) });
+          return true;
+        },
+      },
+      {
+        headerName: "Surface Index",
+        width: 110,
+        cellDataType: false,
+        editable: (params) =>
+          params.data !== undefined &&
+          isOptimizationSurfaceOperandKind(params.data.kind),
+        cellEditor: "agNumberCellEditor",
+        cellEditorParams: { min: 1, max: surfaceCount, precision: 0, step: 1 },
+        valueGetter: (params) => {
+          if (params.data === undefined) {
+            return undefined;
+          }
+          return isOptimizationSurfaceOperandKind(params.data.kind)
+            ? params.data.surfaceIndex
+            : "N/A";
+        },
+        valueSetter: (params) => {
+          if (
+            params.data === undefined ||
+            !isOptimizationSurfaceOperandKind(params.data.kind)
+          ) {
+            return false;
+          }
+
+          const { newValue } = params;
+          if (
+            newValue === null ||
+            newValue === undefined ||
+            String(newValue).trim() === ""
+          ) {
+            onUpdateOperand(params.data.id, { surfaceIndex: undefined });
+            return true;
+          }
+          const surfaceIndex = Number(newValue);
+          if (
+            !Number.isInteger(surfaceIndex) ||
+            surfaceIndex < 1 ||
+            surfaceIndex > surfaceCount
+          ) {
+            return false;
+          }
+          onUpdateOperand(params.data.id, { surfaceIndex });
           return true;
         },
       },
@@ -179,7 +234,7 @@ export function OptimizationOperandsTab({
         ),
       },
     ],
-    [onDeleteOperand, onUpdateOperand],
+    [onDeleteOperand, onUpdateOperand, surfaceCount],
   );
 
   return (

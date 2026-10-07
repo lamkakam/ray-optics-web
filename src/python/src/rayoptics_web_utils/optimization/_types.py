@@ -66,8 +66,8 @@ type SurfaceAdjustableTargetOperandKind = Never
 """Surface-scoped kinds driven toward a user-supplied ``target`` at one ``surface_index``; reserved, no kind uses it yet."""
 type SurfaceFixedTargetOperandKind = Never
 """Surface-scoped kinds driven toward an implicit zero target at one ``surface_index``; reserved, no kind uses it yet."""
-type SurfaceRangeOperandKind = Never
-"""Surface-scoped kinds bounded by ``min``/``max`` at one ``surface_index``; reserved, no kind uses it yet."""
+type SurfaceRangeOperandKind = Literal["edge_thickness"]
+"""Surface-scoped kinds bounded by ``min``/``max`` at one ``surface_index``, such as the edge thickness after that surface."""
 type SurfaceOperandKind = SurfaceAdjustableTargetOperandKind | SurfaceFixedTargetOperandKind | SurfaceRangeOperandKind
 """Operand kinds whose target or range applies to one optical surface."""
 type OperandKind = AdjustableTargetOperandKind | FixedTargetOperandKind | RangeOperandKind | SurfaceOperandKind

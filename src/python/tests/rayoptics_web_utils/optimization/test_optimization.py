@@ -3401,3 +3401,55 @@ class TestOptimizationProgressBudget:
         assert report["status"] == "error"
         assert report["message"] == "Differential evolution max_nfev must cover at least one full population"
         assert report["optimization_progress"] == []
+
+
+class TestEdgeThicknessOperand:
+    def test_evaluation_reports_one_surface_scoped_range_residual(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization.operands import compute_edge_thickness
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [{"kind": "edge_thickness", "surface_index": 1, "min": 3.0, "weight": 2.0}]
+                },
+            },
+        )
+
+        residuals = problem.evaluate()["residuals"]
+        edge_thickness = compute_edge_thickness(fresh_cooke_triplet, 1, None, None, None, "chief_ray")
+
+        assert edge_thickness < 3.0
+        assert len(residuals) == 1
+        assert residuals[0]["kind"] == "edge_thickness"
+        assert residuals[0]["surface_index"] == 1
+        assert residuals[0]["min"] == 3.0
+        assert "max" not in residuals[0]
+        assert residuals[0]["field_index"] is None
+        assert residuals[0]["wavelength_index"] is None
+        assert residuals[0]["value"] == pytest.approx(edge_thickness)
+        assert residuals[0]["weighted_residual"] == pytest.approx(2.0 * (3.0 - edge_thickness))
+
+    def test_optimization_thickens_a_lens_until_its_edge_satisfies_the_lower_bound(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import optimize_opm
+        from rayoptics_web_utils.optimization.operands import compute_edge_thickness
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 50},
+                "variables": [{"kind": "thickness", "surface_index": 1, "min": 1.0, "max": 20.0}],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [{"kind": "edge_thickness", "surface_index": 1, "min": 3.0, "weight": 1.0}]
+                },
+            },
+        )
+
+        assert report["success"] is True
+        assert report["final_values"][0]["value"] > 4.831
+        assert compute_edge_thickness(fresh_cooke_triplet, 1, None, None, None, "chief_ray") >= 3.0 - 1e-6

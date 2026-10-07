@@ -9,8 +9,10 @@ import {
   OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS,
   isOptimizationAdjustableTargetOperandKind,
   isOptimizationFixedTargetOperandKind,
+  getOptimizationOperandMetadata,
   isOptimizationRangeOperandKind,
   isOptimizationSurfaceOperandKind,
+  isOptimizationSurfaceRangeOperandKind,
 } from "@/features/optimization/lib/operandMetadata";
 
 describe("operand metadata registry", () => {
@@ -30,18 +32,31 @@ describe("operand metadata registry", () => {
       "ray_fan_sagittal",
     ]);
     expect(OPTIMIZATION_RANGE_OPERAND_KINDS).toEqual([]);
-    expect(OPTIMIZATION_OPERAND_METADATA).toHaveLength(10);
+    expect(OPTIMIZATION_OPERAND_METADATA).toHaveLength(11);
   });
 
-  it("registers no surface-scoped production kinds yet", () => {
+  it("registers Edge Thickness as the only surface-scoped kind, a positive range with a 3 mm default lower bound", () => {
     expect(OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS).toEqual([]);
     expect(OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS).toEqual([]);
-    expect(OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS).toEqual([]);
+    expect(OPTIMIZATION_SURFACE_RANGE_OPERAND_KINDS).toEqual([
+      "edge_thickness",
+    ]);
     expect(
       OPTIMIZATION_OPERAND_METADATA.filter(({ kind }) =>
         isOptimizationSurfaceOperandKind(kind),
-      ),
-    ).toEqual([]);
+      ).map(({ kind }) => kind),
+    ).toEqual(["edge_thickness"]);
+    const metadata = getOptimizationOperandMetadata("edge_thickness");
+    expect(metadata).toMatchObject({
+      label: "Edge Thickness",
+      goal: "range",
+      scope: "surface",
+      defaultRange: { min: "3" },
+      requiresPositiveBounds: true,
+      expandsByFieldAndWavelength: false,
+    });
+    expect(metadata.defaultRange?.max).toBeUndefined();
+    expect(metadata.getNominalResidualCountPerSample()).toBe(1);
   });
 
   it("guards each kind into exactly its own group", () => {
@@ -53,5 +68,14 @@ describe("operand metadata registry", () => {
     expect(isOptimizationAdjustableTargetOperandKind("ray_fan")).toBe(false);
     expect(isOptimizationFixedTargetOperandKind("ray_fan")).toBe(true);
     expect(isOptimizationRangeOperandKind("ray_fan")).toBe(false);
+    expect(isOptimizationSurfaceRangeOperandKind("ray_fan")).toBe(false);
+    expect(isOptimizationSurfaceRangeOperandKind("focal_length")).toBe(false);
+    expect(isOptimizationSurfaceRangeOperandKind("edge_thickness")).toBe(true);
+    expect(isOptimizationSurfaceOperandKind("edge_thickness")).toBe(true);
+    expect(isOptimizationRangeOperandKind("edge_thickness")).toBe(false);
+    expect(isOptimizationAdjustableTargetOperandKind("edge_thickness")).toBe(
+      false,
+    );
+    expect(isOptimizationFixedTargetOperandKind("edge_thickness")).toBe(false);
   });
 });

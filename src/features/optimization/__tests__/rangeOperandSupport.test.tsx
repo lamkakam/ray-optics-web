@@ -257,40 +257,64 @@ describe("range operand store rows", () => {
 });
 
 describe("range operand grid", () => {
-  it("adds Min and Max columns that are editable only for range rows", async () => {
+  it("edits system range bounds through the Target cell's range inputs, without Min or Max columns", async () => {
     const user = userEvent.setup();
     const onUpdateOperand = jest.fn();
     render(
       <OptimizationOperandsTab
         operands={[
-          { id: "range-1", kind: FAKE_RANGE, weight: "1", min: "1", max: "2" },
+          { id: "range-1", kind: FAKE_RANGE, weight: "1", min: "1", max: "" },
           { id: "fan-1", kind: "ray_fan", weight: "1" },
         ]}
         onAddOperand={jest.fn()}
         onDeleteOperand={jest.fn()}
         onUpdateOperand={onUpdateOperand}
+        surfaceCount={2}
       />,
     );
 
     const grid = screen.getByTestId("ag-grid-mock");
     expect(
       Array.from(grid.querySelectorAll("th"), (header) => header.textContent),
-    ).toEqual(["Operand Kind", "Target", "Min", "Max", "Weight", ""]);
+    ).toEqual(["Operand Kind", "Target", "Weight", "Surface Index", ""]);
     const [rangeRow, fanRow] = Array.from(grid.querySelectorAll("tbody tr"));
-    expect(rangeRow.querySelectorAll("input")).toHaveLength(3);
-    expect(rangeRow).toHaveTextContent("N/A");
+    const targetCell = rangeRow.querySelectorAll("td")[1];
+    const minInput = screen.getByRole("textbox", {
+      name: "Lower bound for operand range-1",
+    });
+    const maxInput = screen.getByRole("textbox", {
+      name: "Upper bound for operand range-1",
+    });
+    expect(targetCell).toContainElement(minInput);
+    expect(targetCell).toContainElement(maxInput);
     expect(fanRow.querySelectorAll("input")).toHaveLength(1);
 
-    const [minInput, maxInput] = Array.from(rangeRow.querySelectorAll("input"));
-    await user.clear(minInput);
-    await user.type(minInput, "0.5");
-    await user.tab();
-    expect(onUpdateOperand).toHaveBeenCalledWith("range-1", { min: "0.5" });
-
-    await user.clear(maxInput);
     await user.type(maxInput, "4");
-    await user.tab();
-    expect(onUpdateOperand).toHaveBeenCalledWith("range-1", { max: "4" });
+    expect(onUpdateOperand).toHaveBeenLastCalledWith("range-1", { max: "4" });
+
+    await user.clear(minInput);
+    expect(onUpdateOperand).toHaveBeenLastCalledWith("range-1", { min: "" });
+  });
+
+  it("allows non-positive bounds for range kinds without the positive-bound requirement", () => {
+    render(
+      <OptimizationOperandsTab
+        operands={[
+          { id: "range-1", kind: FAKE_RANGE, weight: "1", min: "-2", max: "0" },
+        ]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={jest.fn()}
+        surfaceCount={2}
+      />,
+    );
+
+    expect(
+      screen.getByRole("textbox", { name: "Lower bound for operand range-1" }),
+    ).toBeValid();
+    expect(
+      screen.getByRole("textbox", { name: "Upper bound for operand range-1" }),
+    ).toBeValid();
   });
 });
 
