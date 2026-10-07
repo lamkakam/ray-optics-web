@@ -35,25 +35,28 @@ interface OperandRangeCellProps {
 /**
  * Target cell renderer for range operands: edits `min` / `max` through `NumericRangeInput`, sending one `{ min }` or
  * `{ max }` patch per keystroke. Bounds are flagged invalid when non-positive for kinds whose metadata sets
- * `requiresPositiveBounds` (Edge Thickness).
+ * `requiresPositiveBounds` (Edge Thickness). AG Grid renders this component directly inside the full-height
+ * `.ag-cell`, so a full-height flex wrapper centers the inputs vertically within the row.
  */
 function OperandRangeCell({ data, onUpdateOperand }: OperandRangeCellProps) {
   if (data === undefined) {
     return null;
   }
   return (
-    <NumericRangeInput
-      min={data.min}
-      max={data.max}
-      onMinChange={(min) => onUpdateOperand(data.id, { min })}
-      onMaxChange={(max) => onUpdateOperand(data.id, { max })}
-      minAriaLabel={`Lower bound for operand ${data.id}`}
-      maxAriaLabel={`Upper bound for operand ${data.id}`}
-      positive={
-        getOptimizationOperandMetadata(data.kind).requiresPositiveBounds ===
-        true
-      }
-    />
+    <div className="flex h-full items-center">
+      <NumericRangeInput
+        min={data.min}
+        max={data.max}
+        onMinChange={(min) => onUpdateOperand(data.id, { min })}
+        onMaxChange={(max) => onUpdateOperand(data.id, { max })}
+        minAriaLabel={`Lower bound for operand ${data.id}`}
+        maxAriaLabel={`Upper bound for operand ${data.id}`}
+        positive={
+          getOptimizationOperandMetadata(data.kind).requiresPositiveBounds ===
+          true
+        }
+      />
+    </div>
   );
 }
 
