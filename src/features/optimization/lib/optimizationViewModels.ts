@@ -104,7 +104,11 @@ function formatEvaluationFixedValue(value: number | undefined): string {
   return value === undefined ? "" : value.toFixed(6);
 }
 
-/** Formats a non-zero-weight residual for the evaluation grid; returns `undefined` for hidden zero-weight terms. */
+/**
+ * Formats a non-zero-weight residual for the evaluation grid; returns `undefined` for hidden zero-weight terms.
+ * Surface-scoped residuals append their 1-based surface, e.g. `Edge Thickness (Surface 3)`, so several rows of
+ * one surface operand stay distinguishable.
+ */
 export function createEvaluationRow(
   residual: OptimizationResidualEntry,
   index: number,
@@ -115,7 +119,10 @@ export function createEvaluationRow(
 
   return {
     id: `${residual.kind}-${residual.field_index ?? "none"}-${residual.wavelength_index ?? "none"}-${index}`,
-    operandType: getOperandLabel(residual.kind),
+    operandType:
+      residual.surface_index === undefined
+        ? getOperandLabel(residual.kind)
+        : `${getOperandLabel(residual.kind)} (Surface ${residual.surface_index})`,
     target: formatEvaluationTarget(residual),
     weight: formatEvaluationFixedValue(residual.total_weight),
     value: formatEvaluationFixedValue(residual.value),

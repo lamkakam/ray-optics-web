@@ -3,7 +3,9 @@
  *
  * @remarks
  * - Renders grid data as an HTML table with headers, rows, text inputs for editable text cells, and native selects for `agSelectCellEditor`.
- * - Exposes theme, layout, default column, column width, effective per-header sortable/filter flags, unsorted sort-icon flags, `stopEditingWhenCellsLoseFocus`, `suppressTouch`, and edit lifecycle callback presence as `data-*` attributes for component tests.
+ * - Renders `cellRenderer` for every row of its column, and `cellRendererSelector` per row: a returned `{ component, params }` renders that component with `{ data, value, ...params }`, while `undefined` falls back to the default editable or text cell.
+ * - Text inputs for `agNumberCellEditor` columns commit like AG Grid's number editor: blank text becomes `null` and other text becomes `Number(text)` before `valueParser` / `valueSetter` run.
+ * - Exposes theme, layout, default column, column width, effective per-header sortable/filter flags, unsorted sort-icon flags, per-header `cellEditor` and JSON `cellEditorParams`, `stopEditingWhenCellsLoseFocus`, `suppressTouch`, and edit lifecycle callback presence as `data-*` attributes for component tests.
  * - Keys rendered rows by AG Grid `getRowId` when provided, otherwise by row object identity, so tests can observe whether replacement row objects preserve or reset active editor state.
  * - Blurs the active mocked grid editor when `columnDefs` identity changes, matching AG Grid editor recreation closely enough for tests to catch focus-loss regressions caused by prop churn.
  * - Models pending text edits with a single-commit lifecycle: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter commits and stops editing, or an active input blur commits when `stopEditingWhenCellsLoseFocus` is `true` and then stops editing; a later blur of an already-finished editor is ignored.
@@ -24,6 +26,15 @@ interface ColDef {
     data: Record<string, unknown>;
     value: unknown;
   }) => React.ReactNode;
+  cellRendererSelector?: (params: {
+    data: Record<string, unknown>;
+    value: unknown;
+  }) =>
+    | {
+        component: React.ComponentType<Record<string, unknown>>;
+        params?: Record<string, unknown>;
+      }
+    | undefined;
   valueGetter?: (params: { data: Record<string, unknown> }) => unknown;
   valueFormatter?: (params: { value: unknown }) => string;
   valueParser?: (params: { newValue: string; oldValue: unknown }) => unknown;
@@ -118,7 +129,12 @@ function commitValue(
   inputValue: string,
 ) {
   const oldValue = value;
-  let newValue: unknown = inputValue;
+  let newValue: unknown =
+    col.cellEditor === "agNumberCellEditor"
+      ? inputValue.trim() === ""
+        ? null
+        : Number(inputValue)
+      : inputValue;
   if (col.valueParser) {
     newValue = col.valueParser({ newValue: inputValue, oldValue });
   }
@@ -574,6 +590,12 @@ export function AgGridReact({
               data-filter={resolveColumnFlag(col, defaultColDef, "filter")}
               data-filter-options={resolveFilterOptions(col)}
               data-un-sort-icon={String(col.unSortIcon === true)}
+              data-cell-editor={col.cellEditor}
+              data-cell-editor-params={
+                col.cellEditorParams === undefined
+                  ? undefined
+                  : JSON.stringify(col.cellEditorParams)
+              }
             >
               {col.headerName ?? col.field ?? ""}
             </th>
@@ -613,11 +635,22 @@ export function AgGridReact({
                     : col.editable === true;
 
                 const isSelectEditor = col.cellEditor === "agSelectCellEditor";
+                const selectedRenderer = col.cellRendererSelector?.({
+                  data: row,
+                  value,
+                });
+                const SelectedComponent = selectedRenderer?.component;
 
                 return (
                   <td key={colIdx}>
                     {col.cellRenderer ? (
                       col.cellRenderer({ data: row, value })
+                    ) : SelectedComponent !== undefined ? (
+                      <SelectedComponent
+                        data={row}
+                        value={value}
+                        {...selectedRenderer?.params}
+                      />
                     ) : isEditable && isSelectEditor ? (
                       <SelectCell
                         col={col}

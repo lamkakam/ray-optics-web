@@ -2756,3 +2756,154 @@ describe("optimizationStore", () => {
     expect(store.getState().discardConfirmOpen).toBe(false);
   });
 });
+
+describe("edge thickness operand rows", () => {
+  function createEdgeThicknessStore(
+    row: Partial<OptimizationState["operands"][number]> = {},
+  ) {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "edge_thickness",
+        min: "3",
+        surfaceIndex: 2,
+        weight: "1",
+        ...row,
+      },
+    ]);
+    return store;
+  }
+
+  it("starts with a 3 mm lower bound, no upper bound, and no surface index when a row switches to Edge Thickness", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().addOperand();
+    const id = store.getState().operands[0].id;
+
+    store.getState().updateOperand(id, { kind: "edge_thickness" });
+
+    const row = store.getState().operands[0];
+    expect(row).toMatchObject({
+      kind: "edge_thickness",
+      min: "3",
+      weight: "1",
+    });
+    expect(row.max).toBeUndefined();
+    expect(row.target).toBeUndefined();
+    expect(row.surfaceIndex).toBeUndefined();
+  });
+
+  it("stores and clears the surface index without a kind change", () => {
+    const store = createEdgeThicknessStore({ surfaceIndex: undefined });
+
+    store.getState().updateOperand("operand-1", { surfaceIndex: 1 });
+    expect(store.getState().operands[0].surfaceIndex).toBe(1);
+
+    store.getState().updateOperand("operand-1", { surfaceIndex: undefined });
+    expect(store.getState().operands[0].surfaceIndex).toBeUndefined();
+  });
+
+  it("keeps the surface index and bounds when only a bound changes", () => {
+    const store = createEdgeThicknessStore();
+
+    store.getState().updateOperand("operand-1", { max: "6" });
+
+    expect(store.getState().operands[0]).toMatchObject({
+      min: "3",
+      max: "6",
+      surfaceIndex: 2,
+    });
+  });
+
+  it("clears the surface index and bounds when the row switches back to a system operand", () => {
+    const store = createEdgeThicknessStore({ max: "6" });
+
+    store.getState().updateOperand("operand-1", { kind: "focal_length" });
+
+    const row = store.getState().operands[0];
+    expect(row).toMatchObject({ kind: "focal_length", target: "100" });
+    expect(row.surfaceIndex).toBeUndefined();
+    expect(row.min).toBeUndefined();
+    expect(row.max).toBeUndefined();
+  });
+
+  it("emits an unexpanded surface-scoped range operand with only the supplied bounds", () => {
+    const store = createEdgeThicknessStore();
+
+    expect(
+      store.getState().buildOptimizationConfig().merit_function.operands,
+    ).toEqual([
+      { kind: "edge_thickness", surface_index: 2, min: 3, weight: 1 },
+    ]);
+
+    store.getState().updateOperand("operand-1", { min: "", max: "7.5" });
+
+    expect(
+      store.getState().buildOptimizationConfig().merit_function.operands,
+    ).toEqual([
+      { kind: "edge_thickness", surface_index: 2, max: 7.5, weight: 1 },
+    ]);
+
+    store.getState().updateOperand("operand-1", { min: " 2 ", max: "7.5" });
+
+    expect(
+      store.getState().buildOptimizationConfig().merit_function.operands,
+    ).toEqual([
+      { kind: "edge_thickness", surface_index: 2, min: 2, max: 7.5, weight: 1 },
+    ]);
+  });
+
+  it.each<[string, Partial<OptimizationState["operands"][number]>, string]>([
+    [
+      "a missing surface index",
+      { surfaceIndex: undefined },
+      "Edge Thickness: Surface Index is required.",
+    ],
+    [
+      "the object surface",
+      { surfaceIndex: 0 },
+      "Edge Thickness: Surface Index must be an integer from 1 to 2.",
+    ],
+    [
+      "the image surface",
+      { surfaceIndex: 3 },
+      "Edge Thickness: Surface Index must be an integer from 1 to 2.",
+    ],
+    [
+      "a fractional surface index",
+      { surfaceIndex: 1.5 },
+      "Edge Thickness: Surface Index must be an integer from 1 to 2.",
+    ],
+    [
+      "both bounds empty",
+      { min: "", max: undefined },
+      "Edge Thickness: At least one of Min or Max is required.",
+    ],
+    [
+      "a zero lower bound",
+      { min: "0" },
+      "Edge Thickness: Min must be a positive number.",
+    ],
+    [
+      "a negative upper bound",
+      { min: "", max: "-1" },
+      "Edge Thickness: Max must be a positive number.",
+    ],
+    [
+      "a non-numeric lower bound",
+      { min: "abc" },
+      "Edge Thickness: Min must be a positive number.",
+    ],
+    [
+      "a lower bound above the upper bound",
+      { min: "5", max: "4" },
+      "Edge Thickness: Min must not exceed Max.",
+    ],
+  ])("rejects %s with a labelled message", (_, row, message) => {
+    const store = createEdgeThicknessStore(row);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(message);
+  });
+});

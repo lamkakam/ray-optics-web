@@ -46,6 +46,7 @@ export interface OptimizationAdjustableTargetOperandMetadata
   readonly defaultTarget: string;
   readonly defaultRange?: undefined;
   readonly scope?: undefined;
+  readonly requiresPositiveBounds?: undefined;
 }
 
 /** Metadata for a kind whose implicit zero target is not user-configurable. */
@@ -56,6 +57,7 @@ export interface OptimizationFixedTargetOperandMetadata
   readonly defaultTarget?: undefined;
   readonly defaultRange?: undefined;
   readonly scope?: undefined;
+  readonly requiresPositiveBounds?: undefined;
 }
 
 /** Metadata for a range kind, including the GUI's default string-backed bounds. */
@@ -66,6 +68,8 @@ export interface OptimizationRangeOperandMetadata
   readonly defaultTarget?: undefined;
   readonly defaultRange: OptimizationOperandRange<string>;
   readonly scope?: undefined;
+  /** Whether both bounds must be strictly positive, as for Edge Thickness. */
+  readonly requiresPositiveBounds?: boolean;
 }
 
 /** Metadata for a surface-scoped kind with a user-supplied target. */
@@ -76,6 +80,7 @@ export interface OptimizationSurfaceAdjustableTargetOperandMetadata
   readonly defaultTarget: string;
   readonly defaultRange?: undefined;
   readonly scope: "surface";
+  readonly requiresPositiveBounds?: undefined;
 }
 
 /** Metadata for a surface-scoped kind whose implicit zero target is not user-configurable. */
@@ -86,6 +91,7 @@ export interface OptimizationSurfaceFixedTargetOperandMetadata
   readonly defaultTarget?: undefined;
   readonly defaultRange?: undefined;
   readonly scope: "surface";
+  readonly requiresPositiveBounds?: undefined;
 }
 
 /** Metadata for a surface-scoped range kind, including the GUI's default string-backed bounds. */
@@ -96,6 +102,8 @@ export interface OptimizationSurfaceRangeOperandMetadata
   readonly defaultTarget?: undefined;
   readonly defaultRange: OptimizationOperandRange<string>;
   readonly scope: "surface";
+  /** Whether both bounds must be strictly positive, as for Edge Thickness. */
+  readonly requiresPositiveBounds?: boolean;
 }
 
 /**

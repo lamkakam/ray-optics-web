@@ -104,6 +104,16 @@ const OPTIMIZATION_OPERAND_METADATA_BY_KIND_RECORD = {
     expandsByFieldAndWavelength: true,
     getNominalResidualCountPerSample: (options) => options?.num_rays ?? 21,
   },
+  edge_thickness: {
+    kind: "edge_thickness",
+    label: "Edge Thickness",
+    goal: "range",
+    scope: "surface",
+    defaultRange: { min: "3" },
+    requiresPositiveBounds: true,
+    expandsByFieldAndWavelength: false,
+    getNominalResidualCountPerSample: () => 1,
+  },
 } as const satisfies {
   readonly [TKind in OptimizationOperandKind]: OptimizationOperandMetadataFor<TKind>;
 };
@@ -148,6 +158,10 @@ export interface OptimizationOperandMetadataRegistry {
   readonly isOptimizationSurfaceOperandKind: (
     kind: OptimizationOperandKind,
   ) => kind is OptimizationSurfaceOperandKind;
+  /** Returns whether a surface-scoped kind is penalized only outside a `min`/`max` range at its `surface_index`. */
+  readonly isOptimizationSurfaceRangeOperandKind: (
+    kind: OptimizationOperandKind,
+  ) => kind is OptimizationSurfaceRangeOperandKind;
 }
 
 /** Metadata variants of one target mode, split by scope. */
@@ -249,6 +263,10 @@ export function createOptimizationOperandMetadataRegistry(
       kind,
     ): kind is OptimizationSurfaceOperandKind =>
       getOptimizationOperandMetadata(kind).scope === "surface",
+    isOptimizationSurfaceRangeOperandKind: (
+      kind,
+    ): kind is OptimizationSurfaceRangeOperandKind =>
+      isSurfaceMetadataWithGoal(getOptimizationOperandMetadata(kind), "range"),
   };
 }
 
@@ -266,6 +284,7 @@ export const {
   isOptimizationFixedTargetOperandKind,
   isOptimizationRangeOperandKind,
   isOptimizationSurfaceOperandKind,
+  isOptimizationSurfaceRangeOperandKind,
 } = createOptimizationOperandMetadataRegistry(
   Object.values(OPTIMIZATION_OPERAND_METADATA_BY_KIND_RECORD),
 );

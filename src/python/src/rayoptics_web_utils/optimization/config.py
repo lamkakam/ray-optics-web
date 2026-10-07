@@ -10,9 +10,12 @@ decenter targets validate their interface and coordinate strategy, materialize
 missing target data, and leave missing pickup sources unconfigured. Operand
 normalization enforces the kind's target mode and scope (surface-scoped kinds
 require a 1-based ``surface_index`` that excludes the object and image surfaces;
-system kinds reject it), validates every supplied field and
+system kinds reject it), requires positive bounds for positive-range kinds
+such as ``edge_thickness``, validates every supplied field and
 wavelength index, preserves sample order, and then removes combinations with an
-exactly zero operand, field, or wavelength weight.
+exactly zero operand, field, or wavelength weight. Kinds in
+``UNEXPANDED_OPERAND_KINDS`` (focal length, f-number, and edge thickness) produce
+a single sample without field or wavelength indices.
 """
 
 from __future__ import annotations
@@ -26,6 +29,8 @@ import numpy as np
 from rayoptics.environment import OpticalModel
 
 from .operands import (
+    POSITIVE_RANGE_OPERAND_KINDS,
+    UNEXPANDED_OPERAND_KINDS,
     get_nominal_operand_sample_residual_count,
     is_registered_operand_kind,
     operand_goal,
@@ -344,7 +349,7 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
         **normalize_operand_scope_fields(opm, kind, operand),
     }
 
-    if kind in {"focal_length", "f_number"}:
+    if kind in UNEXPANDED_OPERAND_KINDS:
         if base["weight"] == 0.0:
             return []
         return [{**base, "field_index": None, "field_weight": 1.0, "wavelength_index": None, "wavelength_weight": 1.0}]
@@ -392,7 +397,8 @@ def normalize_operand_goal_fields(kind: str, operand: OperandConfigInput) -> dic
 
     Returns:
         ``{"target": ...}`` for adjustable-target kinds, the supplied
-        ``min``/``max`` for range kinds, or an empty mapping for fixed-target
+        ``min``/``max`` for range kinds (strictly positive for kinds in
+        ``POSITIVE_RANGE_OPERAND_KINDS``), or an empty mapping for fixed-target
         kinds, whose zero target is implicit.
 
     Raises:
@@ -418,6 +424,8 @@ def normalize_operand_goal_fields(kind: str, operand: OperandConfigInput) -> dic
     if not all(_is_finite_number(value) for value in bounds.values()):
         raise ValueError(f"Operand {kind} range bounds must be finite")
     normalized = {key: float(value) for key, value in bounds.items()}
+    if kind in POSITIVE_RANGE_OPERAND_KINDS and any(value <= 0.0 for value in normalized.values()):
+        raise ValueError(f"Operand {kind} range bounds must be positive")
     if "min" in normalized and "max" in normalized and normalized["min"] > normalized["max"]:
         raise ValueError(f"Operand {kind} range min must not exceed max")
     return normalized

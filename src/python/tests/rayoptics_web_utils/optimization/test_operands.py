@@ -93,20 +93,26 @@ def test_operand_goal_residual_follows_the_sample_target_mode(monkeypatch, sampl
     assert operands_module.operand_goal_residual(sample, actual) == pytest.approx(expected)
 
 
-def test_surface_operand_groups_are_reserved_and_empty():
+def test_surface_operand_groups_register_edge_thickness_as_the_only_surface_kind():
     from rayoptics_web_utils.optimization.operands import (
         OPERAND_REGISTRY,
+        POSITIVE_RANGE_OPERAND_KINDS,
         SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS,
         SURFACE_FIXED_TARGET_OPERAND_KINDS,
         SURFACE_OPERAND_REGISTRY,
         SURFACE_RANGE_OPERAND_KINDS,
+        compute_edge_thickness,
+        operand_goal,
         operand_scope,
     )
 
     assert SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS == frozenset()
     assert SURFACE_FIXED_TARGET_OPERAND_KINDS == frozenset()
-    assert SURFACE_RANGE_OPERAND_KINDS == frozenset()
-    assert SURFACE_OPERAND_REGISTRY == {}
+    assert SURFACE_RANGE_OPERAND_KINDS == {"edge_thickness"}
+    assert SURFACE_OPERAND_REGISTRY == {"edge_thickness": compute_edge_thickness}
+    assert POSITIVE_RANGE_OPERAND_KINDS == {"edge_thickness"}
+    assert operand_goal("edge_thickness") == "range"
+    assert operand_scope("edge_thickness") == "surface"
     assert {operand_scope(kind) for kind in OPERAND_REGISTRY} == {"system"}
 
 
@@ -367,3 +373,103 @@ def test_focal_length_and_f_number_read_paraxial_values_and_have_shared_defaults
     assert compute_f_number(model, None, None, None) == pytest.approx(4.0)
     assert inspect.signature(compute_focal_length).parameters["image_point"].default == "chief_ray"
     assert inspect.signature(compute_f_number).parameters["image_point"].default == "chief_ray"
+
+
+def _spherical_sag(radius: float, height: float) -> float:
+    if radius == 0:
+        return 0.0
+    curvature = 1.0 / radius
+    return curvature * height**2 / (1.0 + np.sqrt(1.0 - curvature**2 * height**2))
+
+
+@pytest.mark.parametrize(
+    ("surface_index", "radius", "next_radius", "thickness", "semi_diameter"),
+    [
+        (1, 23.713, 7331.288, 4.831, 10.009),
+        (3, -24.456, 21.896, 0.975, 4.7919),
+        (6, -20.4942, 0.0, 41.2365, 8.3321),
+    ],
+)
+def test_edge_thickness_measures_the_gap_at_the_surface_semi_diameter(
+    cooke_triplet, surface_index, radius, next_radius, thickness, semi_diameter
+):
+    from rayoptics_web_utils.optimization.operands import compute_edge_thickness
+
+    expected = thickness + _spherical_sag(next_radius, semi_diameter) - _spherical_sag(radius, semi_diameter)
+
+    assert compute_edge_thickness(cooke_triplet, surface_index, None, None, None, "chief_ray") == pytest.approx(
+        expected
+    )
+
+
+def _fake_edge_model(sags, thicknesses, semi_diameters, z_dirs):
+    class FakeProfile:
+        def __init__(self, sag):
+            self._sag = sag
+
+        def sag(self, x, y):
+            if callable(self._sag):
+                return self._sag(x, y)
+            return self._sag
+
+    ifcs = [
+        SimpleNamespace(profile=FakeProfile(sag), surface_od=lambda sd=sd: sd)
+        for sag, sd in zip(sags, semi_diameters)
+    ]
+    gaps = [SimpleNamespace(thi=thi) for thi in thicknesses]
+    return {"seq_model": SimpleNamespace(ifcs=ifcs, gaps=gaps, z_dir=z_dirs)}
+
+
+def test_edge_thickness_uses_only_the_selected_surface_semi_diameter():
+    from rayoptics_web_utils.optimization.operands import compute_edge_thickness
+
+    heights = []
+
+    def recording_sag(x, y):
+        heights.append((x, y))
+        return 0.0
+
+    model = _fake_edge_model([0.0, recording_sag, recording_sag], [0.0, 2.0, 0.0], [1.0, 5.0, 9.0], [1, 1, 1])
+
+    assert compute_edge_thickness(model, 1, None, None, None, "chief_ray") == pytest.approx(2.0)
+    assert heights == [(0.0, 5.0), (0.0, 5.0)]
+
+
+def test_edge_thickness_reports_physical_thickness_in_reversed_space():
+    from rayoptics_web_utils.optimization.operands import compute_edge_thickness
+
+    model = _fake_edge_model([0.0, 0.5, 0.2], [0.0, -3.0, 0.0], [1.0, 4.0, 4.0], [1, -1, -1])
+
+    assert compute_edge_thickness(model, 1, None, None, None, "chief_ray") == pytest.approx(3.3)
+
+
+@pytest.mark.parametrize("sag", ["raises", float("nan"), float("inf")])
+def test_edge_thickness_is_nan_when_a_sag_is_undefined_at_the_edge(sag):
+    from rayoptics.raytr.traceerror import TraceMissedSurfaceError
+
+    from rayoptics_web_utils.optimization.operands import compute_edge_thickness
+
+    def raising_sag(x, y):
+        raise TraceMissedSurfaceError()
+
+    next_sag = raising_sag if sag == "raises" else sag
+    model = _fake_edge_model([0.0, 0.1, next_sag], [0.0, 2.0, 0.0], [1.0, 5.0, 5.0], [1, 1, 1])
+
+    assert np.isnan(compute_edge_thickness(model, 1, None, None, None, "chief_ray"))
+
+
+@pytest.mark.parametrize(
+    ("sample", "actual", "expected"),
+    [
+        ({"kind": "edge_thickness", "surface_index": 1, "min": 3.0}, 2.0, 1.0),
+        ({"kind": "edge_thickness", "surface_index": 1, "min": 3.0}, 4.0, 0.0),
+        ({"kind": "edge_thickness", "surface_index": 1, "max": 5.0}, 6.5, 1.5),
+        ({"kind": "edge_thickness", "surface_index": 1, "min": 3.0}, float("nan"), 1e6),
+        ({"kind": "edge_thickness", "surface_index": 1, "max": 5.0}, float("nan"), 1e6),
+        ({"kind": "edge_thickness", "surface_index": 1, "min": 3.0}, float("inf"), 1e6),
+    ],
+)
+def test_edge_thickness_residual_uses_the_dead_zone_and_penalizes_undefined_values(sample, actual, expected):
+    from rayoptics_web_utils.optimization.operands import operand_goal_residual
+
+    assert operand_goal_residual(sample, actual) == pytest.approx(expected)

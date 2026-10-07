@@ -11,6 +11,7 @@ import {
   createOptimizationSlice,
   type OptimizationState,
 } from "@/features/optimization/stores/optimizationStore";
+import { createOptimizationRunConfigValidator } from "@/features/optimization/lib/optimizationConfigSchema";
 
 const model: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -615,6 +616,111 @@ describe("optimization config adapter", () => {
     expect(() =>
       store.getState().setOptimizationConfig(trfConfig, catalogs),
     ).toThrow(/already running/i);
+    expect(store.getState().operands).toEqual([]);
+  });
+});
+
+describe("edge thickness operand config", () => {
+  const validateConfig = createOptimizationRunConfigValidator();
+
+  function withOperand(operand: unknown): OptimizationConfig {
+    return {
+      ...trfConfig,
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [operand] },
+    } as OptimizationConfig;
+  }
+
+  it.each([{ min: 3 }, { max: 8 }, { min: 2.5, max: 8 }])(
+    "accepts a surface-scoped positive range %p",
+    (bounds) => {
+      expect(
+        validateConfig(
+          withOperand({
+            kind: "edge_thickness",
+            surface_index: 1,
+            weight: 1,
+            ...bounds,
+          }),
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it.each([
+    ["no surface index", { min: 3 }],
+    ["the object surface", { surface_index: 0, min: 3 }],
+    ["a fractional surface index", { surface_index: 1.5, min: 3 }],
+    ["no bounds", { surface_index: 1 }],
+    ["a zero lower bound", { surface_index: 1, min: 0 }],
+    ["a negative upper bound", { surface_index: 1, max: -2 }],
+    ["a target", { surface_index: 1, min: 3, target: 3 }],
+  ])("rejects %s in the WebMCP schema", (_, fields) => {
+    expect(
+      validateConfig(
+        withOperand({ kind: "edge_thickness", weight: 1, ...fields }),
+      ),
+    ).toBe(false);
+  });
+
+  it("round-trips an edge-thickness operand into a GUI row and back", () => {
+    const store = setup();
+
+    store.getState().setOptimizationConfig(
+      withOperand({
+        kind: "edge_thickness",
+        surface_index: 2,
+        min: 3,
+        weight: 1.5,
+      }),
+      catalogs,
+    );
+
+    const [row] = store.getState().operands;
+    expect(row).toMatchObject({
+      kind: "edge_thickness",
+      surfaceIndex: 2,
+      min: "3",
+      weight: "1.5",
+    });
+    expect(row.max).toBeUndefined();
+    expect(row.target).toBeUndefined();
+    expect(
+      store.getState().buildOptimizationConfig(catalogs).merit_function
+        .operands,
+    ).toEqual([
+      { kind: "edge_thickness", surface_index: 2, min: 3, weight: 1.5 },
+    ]);
+  });
+
+  it.each([
+    [
+      "the image surface",
+      { surface_index: 3, min: 3 },
+      "edge_thickness surface index is out of range.",
+    ],
+    [
+      "a lower bound above the upper bound",
+      { surface_index: 1, min: 6, max: 4 },
+      "edge_thickness range min must not exceed max.",
+    ],
+    [
+      "field weights",
+      { surface_index: 1, min: 3, fields: [] },
+      "edge_thickness does not support field/wavelength expansion.",
+    ],
+  ])("rejects %s without changing the GUI state", (_, fields, message) => {
+    const store = setup();
+
+    expect(() =>
+      store
+        .getState()
+        .setOptimizationConfig(
+          withOperand({ kind: "edge_thickness", weight: 1, ...fields }),
+          catalogs,
+        ),
+    ).toThrow(message);
     expect(store.getState().operands).toEqual([]);
   });
 });
