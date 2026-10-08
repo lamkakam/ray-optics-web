@@ -177,17 +177,46 @@ describe("Pyodide error policy", () => {
     "IndexError: Operand some_surface surface_index 9 is out of range",
     "IndexError: Operand some_surface surface_index -1 is out of range",
   ])(
-    "maps operand target-mode and surface-scope validation failures to settings text: %s",
+    "passes audited operand target-mode and surface-scope validation detail through: %s",
     (raw) => {
-      expect(
-        normalizePyodideError(new Error(raw), "calculation"),
-      ).toMatchObject({
+      const detail = raw.replace(/^\w+Error: /, "");
+      const normalized = normalizePyodideError(new Error(raw), "calculation");
+      expect(normalized).toMatchObject({
         name: "PyodideBusinessError",
-        message:
-          "The calculation settings are invalid. Check the inputs and try again.",
+        message: detail,
       });
+      expect(isPyodideBusinessError(normalized)).toBe(true);
+      expect(getPyodideErrorMessage(detail)).toBe(detail);
     },
   );
+
+  it("passes audited validation detail through failed optimization reports", () => {
+    const report = normalizeOptimizationReport(
+      {
+        success: false,
+        status: "error",
+        message: "private",
+        diagnostic: {
+          exception_type: "ValueError",
+          message: "Unknown operand kind: 'fake'",
+        },
+      },
+      "optimizeOpm",
+    );
+    expect(report.message).toBe("Unknown operand kind: 'fake'");
+    expect(getPyodideErrorMessage(report.message)).toBe(
+      "Unknown operand kind: 'fake'",
+    );
+  });
+
+  it("does not accept unaudited text as a business error", () => {
+    expect(
+      isPyodideBusinessError({
+        name: "PyodideBusinessError",
+        message: "Operand x requires a target\nprivate",
+      }),
+    ).toBe(false);
+  });
 
   it("forces initialization and transport failures to error severity", async () => {
     await expect(

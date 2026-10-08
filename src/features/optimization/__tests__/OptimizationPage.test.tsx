@@ -958,7 +958,9 @@ describe("OptimizationPage", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText("Variable minimum must be less than maximum."),
+      screen.queryByText(
+        "radius variable on surface 1: Min. (60) must be less than Max. (40).",
+      ),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByTestId("optimization-evaluation-scroll"),
@@ -983,7 +985,7 @@ describe("OptimizationPage", () => {
     });
 
     const invalidMessage = await screen.findByText(
-      "Variable minimum must be less than maximum.",
+      "radius variable on surface 1: Min. (60) must be less than Max. (40).",
     );
     const emptyState = screen.getByText(
       "Evaluation results appear here when the current optimization config is valid.",
@@ -3786,13 +3788,68 @@ describe("OptimizationPage", () => {
       await tools
         .get("set_optimization_config")
         ?.execute({ ...changedConfig }, { signal });
-      await expect(
+      const error = await Promise.resolve(
         tools.get("execute_optimization")?.execute({}, { signal }),
-      ).rejects.toThrow(
-        "Optimization requires a successful evaluation of the current configuration.",
-      );
+      ).catch((rejection: unknown) => rejection);
+      expect(JSON.parse((error as Error).message)).toEqual({
+        error: {
+          tool: "execute_optimization",
+          code: "precondition_failed",
+          message:
+            "Optimization requires a successful evaluation of the current configuration.",
+          hint: "Call evaluate_optimization_operands first, then retry execute_optimization.",
+        },
+      });
     });
     expect(proxy.optimizeOpm).not.toHaveBeenCalled();
     expect(optimizationStore.getState().isOptimizing).toBe(false);
+  });
+
+  it("explains that execution waits for the scheduled operand evaluation", async () => {
+    const registrations: WebMCP.ModelContextTool[] = [];
+    Object.defineProperty(document, "modelContext", {
+      configurable: true,
+      value: {
+        registerTool: jest.fn((tool: WebMCP.ModelContextTool) => {
+          registrations.push(tool);
+        }),
+      },
+    });
+    const proxy = makeProxy();
+    renderOptimizationPage(proxy);
+    await waitFor(() => expect(registrations).toHaveLength(9));
+    const tools = new Map(
+      registrations.map((tool) => [tool.name, tool] as const),
+    );
+    const signal = new AbortController().signal;
+
+    await act(async () => {
+      await tools.get("set_optimization_config")?.execute(
+        {
+          glass_optimizer: { num_neighbours: 7, maxiter: 1000, tol: 1e-3 },
+          glass_variables: [],
+          variables: [],
+          pickups: [],
+          merit_function: {
+            operands: [{ kind: "focal_length", target: 100, weight: 1 }],
+          },
+        },
+        { signal },
+      );
+    });
+    const error = await Promise.resolve(
+      tools.get("execute_optimization")?.execute({}, { signal }),
+    ).catch((rejection: unknown) => rejection);
+
+    expect(JSON.parse((error as Error).message)).toEqual({
+      error: {
+        tool: "execute_optimization",
+        code: "precondition_failed",
+        message:
+          "Operand evaluation of the current configuration is still in progress.",
+        hint: "Call evaluate_optimization_operands, which waits for a fresh evaluation, then retry execute_optimization.",
+      },
+    });
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
   });
 });

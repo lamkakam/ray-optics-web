@@ -4,7 +4,9 @@
  * same core operation and focusing helpers used by the visible editor. Focus
  * execution can notify the owning editor about focus and computation lifecycle
  * transitions and forwards failures before rethrowing them to WebMCP callers.
- * Both descriptors use the shared strict-input and cancellation helpers.
+ * Both descriptors use the shared strict-input and cancellation helpers, and
+ * throw `WebMcpToolError` for a missing worker (`not_ready`) or an
+ * out-of-range focus field (`invalid_input`, naming the valid range).
  */
 import type { StoreApi } from "zustand";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
@@ -31,6 +33,15 @@ import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
 } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
+
+/** Typed `not_ready` failure naming the tool to retry once Pyodide loads. */
+function pyodideNotReady(tool: string): WebMcpToolError {
+  return new WebMcpToolError(
+    "not_ready",
+    `Pyodide not ready. Wait for app initialization to finish, then retry ${tool}.`,
+  );
+}
 
 /** Empty input schema for the complete recomputation tool. */
 export const recomputeOpticalSystemInputSchema = {
@@ -162,6 +173,8 @@ export function createOpticalSystemTools(
       execute: async (input, { signal }) => {
         assertWebMcpInput(validators.recompute, input);
         assertWebMcpNotCancelled(signal);
+        if (proxy === undefined)
+          throw pyodideNotReady("recompute_optical_system");
         const result = await currentComputation(signal);
         return JSON.stringify({
           systemUpdated: true,
@@ -183,14 +196,17 @@ export function createOpticalSystemTools(
         const focusInput = input as FocusInput;
         const specs = specsStore.getState().toOpticalSpecs();
         if (focusInput.fieldIndex >= specs.field.fields.length) {
-          throw new Error(
-            `Invalid input at /fieldIndex: ${focusInput.fieldIndex} is outside the draft field range`,
+          throw new WebMcpToolError(
+            "invalid_input",
+            `Invalid input at /fieldIndex: ${focusInput.fieldIndex} is outside the draft field range; valid field indices are 0 to ${specs.field.fields.length - 1}`,
+            { path: "/fieldIndex" },
           );
         }
         const draft = buildDraftOpticalModel(lensStore, specsStore);
         try {
           onFocusStart?.();
-          if (proxy === undefined) throw new Error("Pyodide not ready");
+          if (proxy === undefined)
+            throw pyodideNotReady("focus_optical_system");
 
           const focusResult = await dispatchFocusing(proxy, draft.model, {
             chromaticity: focusInput.chromaticity,

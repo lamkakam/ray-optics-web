@@ -9,7 +9,8 @@
  * behind the leave modal: while an optimized lens prescription is pending on
  * Optimization, the supplied callback throws
  * `PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR` so the agent applies or
- * discards the result first. `resolve_optimization_navigation` still resolves a
+ * discards the result first; the shell reports that refusal as a
+ * `precondition_failed` `WebMcpToolError`. `resolve_optimization_navigation` still resolves a
  * leave modal opened by SideNav or browser history. Input and cancellation
  * checks use the shared WebMCP helper so shell and route-scoped tools expose
  * the same stable validation behavior.
@@ -24,6 +25,7 @@ import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
 } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
 
 /** Agent-facing error thrown by `set_active_page` when leaving Optimization with a pending optimized lens prescription. */
 export const PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR =
@@ -158,7 +160,11 @@ export function createPageNavigationTools(
         assertWebMcpNotCancelled(signal);
         const page = (input as SetActivePageInput).page;
         if (getPageDefinition(page) === undefined) {
-          throw new Error(`Invalid input at /page: ${page}`);
+          throw new WebMcpToolError(
+            "invalid_input",
+            `Invalid input at /page: unknown page ${page}; valid pages are ${PAGE_DEFINITIONS.map(({ key }) => key).join(", ")}`,
+            { path: "/page" },
+          );
         }
         return JSON.stringify(dependencies.navigateToPage(page));
       },

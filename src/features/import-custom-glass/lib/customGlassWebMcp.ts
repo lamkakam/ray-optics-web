@@ -24,6 +24,7 @@ import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
 } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
 
 /** Live page dependencies shared by the descriptors and visible GUI. */
 export interface CustomGlassWebMcpDependencies {
@@ -104,16 +105,31 @@ function currentDependencies(
   return typeof source === "function" ? source() : source;
 }
 
-function semanticError(path: string, message: string): never {
-  throw new Error(`Invalid input at ${path}: ${message}`);
+function semanticError(path: string, message: string, hint: string): never {
+  throw new WebMcpToolError(
+    "invalid_input",
+    `Invalid input at ${path}: ${message}`,
+    { path, hint },
+  );
 }
+
+const UNKNOWN_GLASS_HINT =
+  "Call get_custom_glasses to list the exact custom-glass labels.";
+const DUPLICATE_GLASS_HINT =
+  "Choose another label, or call update_custom_glass to change the existing glass.";
+const RETRY_HINT =
+  "Wait for app initialization to finish loading the custom-glass catalog, then retry.";
 
 /** Rejects incomplete catalog hydration before any membership lookup or side effect. */
 function requireCustomGlassCatalog(
   dependencies: CustomGlassWebMcpDependencies,
 ): UserDefinedMaterialsData {
   if (dependencies.customGlasses === undefined) {
-    throw new Error("Custom-glass catalog is not ready.");
+    throw new WebMcpToolError(
+      "not_ready",
+      "Custom-glass catalog is not ready.",
+      { hint: RETRY_HINT },
+    );
   }
   return dependencies.customGlasses;
 }
@@ -122,7 +138,11 @@ function operationDependencies(
   dependencies: CustomGlassWebMcpDependencies,
 ): CustomGlassOperationDependencies {
   if (dependencies.proxy === undefined) {
-    throw new Error("Custom-glass worker is not available.");
+    throw new WebMcpToolError(
+      "not_ready",
+      "Custom-glass worker is not available.",
+      { hint: RETRY_HINT },
+    );
   }
   return {
     proxy: dependencies.proxy,
@@ -138,7 +158,10 @@ function requireGlass(
   glass: UserDefinedMaterialsData[string] | undefined,
 ): UserDefinedMaterialsData[string] {
   if (glass === undefined) {
-    throw new Error(`Worker did not return custom glass ${name}.`);
+    throw new WebMcpToolError(
+      "internal_error",
+      `Worker did not return custom glass ${name}.`,
+    );
   }
   return glass;
 }
@@ -148,6 +171,9 @@ function requireGlass(
  * validates input and cancellation, then requires a hydrated catalog before lookups
  * or mutations. Only own catalog properties count as glass names, including labels
  * shared with Object.prototype. Stable descriptors observe hydration through source.
+ * Failures throw `WebMcpToolError`: an unhydrated catalog or missing worker is
+ * `not_ready`, unknown or duplicate labels are `invalid_input` with a
+ * corrective hint, and a missing worker result is `internal_error`.
  */
 export function createCustomGlassWebMcpTools(
   source: DependenciesSource,
@@ -167,7 +193,11 @@ export function createCustomGlassWebMcpTools(
         const { name } = input as GetInput;
         if (name === undefined) return JSON.stringify({ customGlasses });
         if (!Object.hasOwn(customGlasses, name))
-          semanticError("/name", `unknown custom glass ${name}`);
+          semanticError(
+            "/name",
+            `unknown custom glass ${name}`,
+            UNKNOWN_GLASS_HINT,
+          );
         const glass = customGlasses[name];
         return JSON.stringify({ customGlasses: { [name]: glass } });
       },
@@ -184,7 +214,11 @@ export function createCustomGlassWebMcpTools(
         const dependencies = currentDependencies(source);
         const customGlasses = requireCustomGlassCatalog(dependencies);
         if (Object.hasOwn(customGlasses, input.name)) {
-          semanticError("/name", "custom glass already exists");
+          semanticError(
+            "/name",
+            `custom glass ${input.name} already exists`,
+            DUPLICATE_GLASS_HINT,
+          );
         }
         const result = await addCustomGlass(
           input,
@@ -214,13 +248,18 @@ export function createCustomGlassWebMcpTools(
           semanticError(
             "/currentName",
             `unknown custom glass ${input.currentName}`,
+            UNKNOWN_GLASS_HINT,
           );
         }
         if (
           input.name !== input.currentName &&
           Object.hasOwn(customGlasses, input.name)
         ) {
-          semanticError("/name", "custom glass already exists");
+          semanticError(
+            "/name",
+            `custom glass ${input.name} already exists`,
+            "Choose another label, or delete the existing glass with delete_custom_glass first.",
+          );
         }
         const result = await updateCustomGlass(
           input.currentName,
@@ -248,7 +287,11 @@ export function createCustomGlassWebMcpTools(
         const dependencies = currentDependencies(source);
         const customGlasses = requireCustomGlassCatalog(dependencies);
         if (!Object.hasOwn(customGlasses, input.name)) {
-          semanticError("/name", `unknown custom glass ${input.name}`);
+          semanticError(
+            "/name",
+            `unknown custom glass ${input.name}`,
+            UNKNOWN_GLASS_HINT,
+          );
         }
         const result = await deleteCustomGlasses(
           [input.name],

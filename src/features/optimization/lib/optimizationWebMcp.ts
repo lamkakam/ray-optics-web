@@ -5,6 +5,7 @@ import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
 } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
 import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
 import type { OptimizationState } from "@/features/optimization/stores/optimizationStore";
 import type {
@@ -162,13 +163,49 @@ const validators = (() => {
   };
 })();
 
+/** Rejects a worker report whose status is `error`; solver outcomes still resolve. */
+function assertNotErrorReport<T extends { status: unknown; message: string }>(
+  report: T,
+): T {
+  if (report.status === "error")
+    throw new WebMcpToolError("calculation_failed", report.message, {
+      details: { report },
+    });
+  return report;
+}
+
+const CONFIG_HINT =
+  "Call get_optimization_config to inspect it, then set_optimization_config with a corrected configuration.";
+
+/** Builds the canonical config, reporting an invalid current page state as `invalid_state`. */
+function buildCurrentConfig(dependencies: OptimizationWebMcpDependencies) {
+  try {
+    return dependencies.optimizationStore
+      .getState()
+      .buildOptimizationConfig(dependencies.catalogs);
+  } catch (error: unknown) {
+    throw new WebMcpToolError(
+      "invalid_state",
+      `The current Optimization configuration is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      { hint: CONFIG_HINT },
+    );
+  }
+}
+
 function currentDependencies(
   source: OptimizationWebMcpDependenciesSource,
 ): OptimizationWebMcpDependencies {
   return typeof source === "function" ? source() : source;
 }
 
-/** Creates strict descriptors bound to one live Optimization page. */
+/**
+ * Creates strict descriptors bound to one live Optimization page. A worker
+ * report with `status: "error"` rejects evaluation and execution with a
+ * `calculation_failed` `WebMcpToolError` carrying the sanitized report in
+ * `details.report`; unconverged and stopped reports still resolve. Store
+ * rejections of a supplied config are `invalid_input`, a run in progress is
+ * `precondition_failed`, and an unbuildable current config is `invalid_state`.
+ */
 export function createOptimizationWebMcpTools(
   source: OptimizationWebMcpDependenciesSource,
 ): OptimizationWebMcpTools {
@@ -183,15 +220,27 @@ export function createOptimizationWebMcpTools(
         assertWebMcpInput(validators.config, input);
         assertWebMcpNotCancelled(signal);
         const dependencies = currentDependencies(source);
-        dependencies.optimizationStore
-          .getState()
-          .setOptimizationConfig(
+        const state = dependencies.optimizationStore.getState();
+        if (state.isOptimizing)
+          throw new WebMcpToolError(
+            "precondition_failed",
+            "Cannot change optimization configuration while a run is already running.",
+            {
+              hint: "Wait for execute_optimization to settle, or call stop_optimization.",
+            },
+          );
+        try {
+          state.setOptimizationConfig(
             input as OptimizationRunConfig,
             dependencies.catalogs,
           );
-        const config = dependencies.optimizationStore
-          .getState()
-          .buildOptimizationConfig(dependencies.catalogs);
+        } catch (error: unknown) {
+          throw new WebMcpToolError(
+            "invalid_input",
+            `Invalid optimization config: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        const config = buildCurrentConfig(dependencies);
         assertWebMcpNotCancelled(signal);
         return JSON.stringify({ configured: true, config });
       },
@@ -204,10 +253,7 @@ export function createOptimizationWebMcpTools(
       execute: async (input, { signal }) => {
         assertWebMcpInput(validators.empty, input);
         assertWebMcpNotCancelled(signal);
-        const dependencies = currentDependencies(source);
-        const config = dependencies.optimizationStore
-          .getState()
-          .buildOptimizationConfig(dependencies.catalogs);
+        const config = buildCurrentConfig(currentDependencies(source));
         assertWebMcpNotCancelled(signal);
         return JSON.stringify(config);
       },
@@ -223,7 +269,7 @@ export function createOptimizationWebMcpTools(
         assertWebMcpNotCancelled(signal);
         const report = await currentDependencies(source).evaluate(signal);
         assertWebMcpNotCancelled(signal);
-        return JSON.stringify(report);
+        return JSON.stringify(assertNotErrorReport(report));
       },
     },
     executeOptimization: {
@@ -237,7 +283,7 @@ export function createOptimizationWebMcpTools(
         assertWebMcpNotCancelled(signal);
         const report = await currentDependencies(source).execute(signal);
         assertWebMcpNotCancelled(signal);
-        return JSON.stringify(report);
+        return JSON.stringify(assertNotErrorReport(report));
       },
     },
     applyOptimizationToEditor: {

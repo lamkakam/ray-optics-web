@@ -73,6 +73,41 @@ describe("useWebMCP", () => {
     expect(registerTool).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects failed executions with a JSON error envelope naming the tool", async () => {
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    setModelContext({ registerTool });
+    const execute = jest.fn(() => {
+      throw new Error("Boom");
+    });
+    renderHook(() => useWebMCP(tool(execute)));
+    const registered = registerTool.mock.calls[0][0] as WebMCP.ModelContextTool;
+
+    const error = await Promise.resolve(
+      registered.execute({}, { signal: new AbortController().signal }),
+    ).catch((rejection: unknown) => rejection);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(JSON.parse((error as Error).message)).toEqual({
+      error: { tool: "example_tool", code: "internal_error", message: "Boom" },
+    });
+  });
+
+  it("rejects asynchronous failures with a JSON error envelope", async () => {
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    setModelContext({ registerTool });
+    const execute = jest.fn().mockRejectedValue(new Error("Later"));
+    renderHook(() => useWebMCP(tool(execute)));
+    const registered = registerTool.mock.calls[0][0] as WebMCP.ModelContextTool;
+
+    const error = await Promise.resolve(
+      registered.execute({}, { signal: new AbortController().signal }),
+    ).catch((rejection: unknown) => rejection);
+
+    expect(JSON.parse((error as Error).message)).toMatchObject({
+      error: { tool: "example_tool", message: "Later" },
+    });
+  });
+
   it("supplies a signal when the native callback omits execution options", async () => {
     const registerTool = jest.fn().mockResolvedValue(undefined);
     setModelContext({ registerTool });

@@ -254,6 +254,52 @@ describe("optical-system WebMCP tools", () => {
     expect(stores.lensStore.getState().rows).toBe(before);
   });
 
+  it("explains the valid draft field range for an out-of-range focus field", async () => {
+    const { execute } = setup();
+
+    await expect(
+      execute("focus_optical_system", {
+        chromaticity: "mono",
+        metric: "rmsSpot",
+        fieldIndex: 3,
+      }),
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      path: "/fieldIndex",
+      message: expect.stringMatching(
+        /^Invalid input at \/fieldIndex: 3 is outside the draft field range; valid field indices are 0 to \d+$/,
+      ),
+    });
+  });
+
+  it.each([
+    ["recompute_optical_system", {}],
+    [
+      "focus_optical_system",
+      { chromaticity: "mono", metric: "rmsSpot", fieldIndex: 0 },
+    ],
+  ])(
+    "reports %s as not ready with a retry hint before Pyodide loads",
+    async (name, input) => {
+      const stores = makeStores();
+      const tool = Object.values(
+        createOpticalSystemTools({
+          ...stores,
+          proxy: undefined,
+          lookupMaps,
+          isDark: false,
+        }),
+      ).find((candidate) => candidate.name === name)!;
+
+      await expect(
+        tool.execute(input, { signal: new AbortController().signal }),
+      ).rejects.toMatchObject({
+        code: "not_ready",
+        message: `Pyodide not ready. Wait for app initialization to finish, then retry ${name}.`,
+      });
+    },
+  );
+
   it("leaves the focus thickness staged when recomputation fails", async () => {
     const error = new Error("recompute failed");
     const proxy = makeProxy({

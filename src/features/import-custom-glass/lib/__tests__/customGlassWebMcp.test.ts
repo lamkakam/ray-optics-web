@@ -74,10 +74,35 @@ describe("custom-glass WebMCP tools", () => {
       const deps = dependencies({ customGlasses: undefined });
       const tools = createCustomGlassWebMcpTools(deps);
 
-      await expect(tools[key].execute(input, { signal })).rejects.toThrow(
-        "Custom-glass catalog is not ready.",
+      await expect(tools[key].execute(input, { signal })).rejects.toMatchObject(
+        {
+          code: "not_ready",
+          message: "Custom-glass catalog is not ready.",
+          hint: expect.stringContaining("retry"),
+        },
       );
       expectNoSideEffects(deps);
+    },
+  );
+
+  it.each([
+    ["addCustomGlass", { name: "NEW", pairs }],
+    ["updateCustomGlass", { currentName: "EXISTING", name: "NEW", pairs }],
+    ["deleteCustomGlass", { name: "EXISTING" }],
+  ] as const)(
+    "reports %s as not ready while the worker is unavailable",
+    async (key, input) => {
+      const deps = dependencies({ proxy: undefined });
+      const tools = createCustomGlassWebMcpTools(deps);
+
+      await expect(tools[key].execute(input, { signal })).rejects.toMatchObject(
+        {
+          code: "not_ready",
+          message: "Custom-glass worker is not available.",
+          hint: expect.stringContaining("retry"),
+        },
+      );
+      expect(deps.storeActions.upsertCustomGlasses).not.toHaveBeenCalled();
     },
   );
 
@@ -141,9 +166,12 @@ describe("custom-glass WebMCP tools", () => {
               ? "/currentName"
               : "/name";
 
-          await expect(calls[operation]()).rejects.toThrow(
-            `Invalid input at ${path}: unknown custom glass ${name}`,
-          );
+          await expect(calls[operation]()).rejects.toMatchObject({
+            code: "invalid_input",
+            path,
+            message: `Invalid input at ${path}: unknown custom glass ${name}`,
+            hint: expect.stringContaining("get_custom_glasses"),
+          });
           expectNoSideEffects(deps);
           expect(deps.customGlasses).toEqual({});
         },
@@ -207,17 +235,22 @@ describe("custom-glass WebMCP tools", () => {
 
         await expect(
           tools.addCustomGlass.execute({ name, pairs }, { signal }),
-        ).rejects.toThrow(
-          "Invalid input at /name: custom glass already exists",
-        );
+        ).rejects.toMatchObject({
+          code: "invalid_input",
+          path: "/name",
+          message: `Invalid input at /name: custom glass ${name} already exists`,
+          hint: expect.stringContaining("update_custom_glass"),
+        });
         await expect(
           tools.updateCustomGlass.execute(
             { currentName: "EXISTING", name, pairs },
             { signal },
           ),
-        ).rejects.toThrow(
-          "Invalid input at /name: custom glass already exists",
-        );
+        ).rejects.toMatchObject({
+          code: "invalid_input",
+          path: "/name",
+          message: `Invalid input at /name: custom glass ${name} already exists`,
+        });
         expectNoSideEffects(deps);
       });
 
@@ -323,7 +356,9 @@ describe("custom-glass WebMCP tools", () => {
     ).rejects.toThrow("Invalid input at /pairs");
     await expect(
       tools.addCustomGlass.execute({ name: "EXISTING", pairs }, { signal }),
-    ).rejects.toThrow("Invalid input at /name: custom glass already exists");
+    ).rejects.toThrow(
+      /^Invalid input at \/name: custom glass .+ already exists$/,
+    );
     await expect(
       tools.updateCustomGlass.execute(
         { currentName: "MISSING", name: "NEW", pairs },

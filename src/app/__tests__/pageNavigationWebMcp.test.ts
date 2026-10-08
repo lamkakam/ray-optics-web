@@ -181,7 +181,11 @@ describe("page navigation WebMCP tools", () => {
     );
     await expect(
       execute("setActivePage", { page: "not-a-page" }),
-    ).rejects.toThrow(/input.*\/page/i);
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      path: "/page",
+      message: `Invalid input at /page: must be equal to one of the allowed values (${PAGE_DEFINITIONS.map(({ key }) => key).join(", ")})`,
+    });
     await expect(
       execute("setActivePage", { page: "about", extra: true }),
     ).rejects.toThrow(/input.*\/extra/i);
@@ -190,7 +194,9 @@ describe("page navigation WebMCP tools", () => {
     );
     await expect(
       execute("resolveOptimizationNavigation", { action: "discard" }),
-    ).rejects.toThrow(/input.*\/action/i);
+    ).rejects.toThrow(
+      "Invalid input at /action: must be equal to one of the allowed values (stay, leave, apply_to_editor)",
+    );
     await expect(
       execute("resolveOptimizationNavigation", {
         action: "stay",

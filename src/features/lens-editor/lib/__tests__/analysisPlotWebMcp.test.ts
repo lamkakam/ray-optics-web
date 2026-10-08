@@ -391,17 +391,39 @@ describe.each(cases)("$name", (testCase) => {
     expect(s.worker).not.toHaveBeenCalled();
   });
 
+  it("names the valid committed range for out-of-range selectors", async () => {
+    const s = setup(testCase);
+    for (const selector of ["fieldIndex", "wavelengthIndex"]) {
+      if (!selectors.includes(selector)) continue;
+      const label = selector === "fieldIndex" ? "field" : "wavelength";
+      await expect(s.query({ [selector]: 3 })).rejects.toMatchObject({
+        code: "invalid_input",
+        path: `/${selector}`,
+        message: expect.stringMatching(
+          new RegExp(
+            `^Invalid input at /${selector}: 3 is outside the committed ${label} range; valid ${label} indices are 0 to \\d+$`,
+          ),
+        ),
+      });
+    }
+    expect(s.worker).not.toHaveBeenCalled();
+  });
+
   it("guides callers when the model or worker is unavailable", async () => {
     const s = setup(testCase);
     s.lensStore.setState({ committedOpticalModel: undefined });
-    await expect(s.query()).rejects.toThrow("recompute_optical_system");
+    await expect(s.query()).rejects.toMatchObject({
+      code: "precondition_failed",
+      message: expect.stringContaining("recompute_optical_system"),
+    });
     s.lensStore.getState().setCommittedOpticalModel(model);
     const tool = s.findTool(createAnalysisTools({ ...s, proxy: undefined }));
     await expect(
       tool.execute({}, { signal: new AbortController().signal }),
-    ).rejects.toThrow(
-      `Pyodide not ready. Wait for app initialization to finish, then retry ${testCase.name}.`,
-    );
+    ).rejects.toMatchObject({
+      code: "not_ready",
+      message: `Pyodide not ready. Wait for app initialization to finish, then retry ${testCase.name}.`,
+    });
     expect(s.worker).not.toHaveBeenCalled();
   });
 
