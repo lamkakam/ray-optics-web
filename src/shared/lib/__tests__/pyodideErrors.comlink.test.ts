@@ -13,6 +13,7 @@ it.each([
     "ProjectedPupilGeometryError: Projected-pupil mapping contains a fold or orientation reversal.",
     true,
   ],
+  ["IndexError: Operand some_surface surface_index 9 is out of range", true],
   ["RuntimeError: private failure", false],
 ])("serializes safe errors through Comlink: %s", async (message, business) => {
   const warn = jest.spyOn(console, "warn").mockImplementation(() => {});

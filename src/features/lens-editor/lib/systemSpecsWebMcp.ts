@@ -4,7 +4,9 @@
  * deliberately owned by `recompute_optical_system`. The `set_half_field` setter
  * remains relative-only and populates the neutral field store with
  * `isRelative: true`. All descriptor executions use the shared WebMCP
- * validation and cancellation boundary helpers.
+ * validation and cancellation boundary helpers. A draft that fails the shared
+ * OpticalSpecs schema makes `get_system_specs` throw an `invalid_state`
+ * `WebMcpToolError` pointing at the invalid draft field.
  */
 import type { StoreApi } from "zustand";
 import type { OpticalSpecs, PupilSpec } from "@/shared/lib/types/opticalModel";
@@ -19,7 +21,9 @@ import {
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
+  describeSchemaError,
 } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
 
 /** Empty input accepted by the current-draft System Specs read tool. */
 export const getSystemSpecsInputSchema = {
@@ -71,7 +75,19 @@ export function createSystemSpecsTools(
         assertWebMcpInput(validators.get, input);
         assertWebMcpNotCancelled(signal);
         const specs = store.getState().toOpticalSpecs();
-        assertWebMcpInput(validators.specs, specs);
+        if (!validators.specs(specs)) {
+          const { path, message } = describeSchemaError(
+            validators.specs.errors,
+          );
+          throw new WebMcpToolError(
+            "invalid_state",
+            `Current draft System Specs are invalid at ${path}: ${message}`,
+            {
+              path,
+              hint: "Replace the invalid part with set_system_aperture, set_half_field, or set_wavelengths.",
+            },
+          );
+        }
         return JSON.stringify(specs);
       },
     },
@@ -107,7 +123,14 @@ export function createSystemSpecsTools(
         assertWebMcpNotCancelled(signal);
         const field = input as OpticalSpecs["field"];
         if (!field.isRelative) {
-          throw new Error("set_half_field requires relative field samples.");
+          throw new WebMcpToolError(
+            "invalid_input",
+            "Invalid input at /isRelative: set_half_field requires relative field samples.",
+            {
+              path: "/isRelative",
+              hint: "Set isRelative to true and give fields as fractions of maxField.",
+            },
+          );
         }
         store.getState().setField({
           space: field.space,

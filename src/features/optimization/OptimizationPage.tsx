@@ -67,6 +67,8 @@ import { useImagePoint } from "@/shared/components/providers/ImagePointProvider"
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import { useOptimizationWebMCP } from "./hooks/useOptimizationWebMCP";
 import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
+import { getOptimizationBlockingReason } from "./lib/optimizationBlockingReason";
 import type {
   OptimizationDiscardResult,
   OptimizationProgressSnapshot,
@@ -182,6 +184,7 @@ function buildCurrentEditorModel(
  * - Page-level AG Grid edit lifecycle tracking increments on `onCellEditingStarted`, decrements on `onCellEditingStopped`, increments an edit-stop revision so even no-op edits schedule a refresh, and marks the committed post-edit state as pending until the next debounced Operand Evaluation request settles; invalid config or missing worker prerequisites clear that pending gate without running an evaluation.
  * - `Optimize` does not blur active AG Grid editors to force a commit. If the handler is triggered programmatically while editing, waiting for post-edit evaluation, evaluating, invalid, or zero-contribution, it returns without calling either optimizer RPC.
  * - `Optimize` validates the store state against the live catalog snapshot, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id and optional interrupt buffer, branches between `proxy.optimizeOpm` and `proxy.optimizeGlasses`, and streams merit-history updates into the modal chart through a Comlink progress callback. Rejected calls and resolved `status: "error"` reports display shared approved messages; unsuccessful completed solver reports display `Optimization did not converge.`. Logging belongs to the worker boundary. Locally generated configuration warnings remain specific.
+ * - The evaluation and optimization operations shared with WebMCP explain refusals through `getOptimizationBlockingReason(...)`, which reports the first blocking condition in `canOptimize` order (active run, Pyodide readiness, missing model, missing glass, invalid config, zero contribution, open grid edit, pending evaluation, page warning, missing successful evaluation) as a typed `WebMcpToolError` with an actionable hint. An unbuildable configuration during evaluation is reported as `invalid_state`, and a configuration changed since its last evaluation is `precondition_failed`.
  * - The page checks `proxy.canInterruptOptimization()` and disables the progress modal Stop control when Pyodide interrupt support or `SharedArrayBuffer` is unavailable.
  * - Clicking Stop is idempotent for the active run: it writes Pyodide's interrupt signal into the shared interrupt buffer immediately, calls `proxy.requestOptimizationStop(activeRunId)` for worker-side run validation, disables the Stop button while the run is settling, and leaves the progress modal open. The signal takes effect only once the worker's solver phase arms interrupts, so a Stop requested before the worker starts the run or during model build or setup still settles as a zero-progress `status: "stopped"` report rather than an error.
  * - A stopped report with `status: "stopped"` is treated as a successful partial optimization result: the page applies its `final_values`, preserves the final chart history, switches the modal to completed `OK` controls in the normal `finally` path, and does not show a warning for that user-requested status.
@@ -622,6 +625,35 @@ export function OptimizationPage({
     !hasActiveGridEdit &&
     !isPostEditEvaluationPending &&
     !isEvaluating;
+  /** Render-time gates mirrored from `canOptimize` so shared operations can explain a refusal. */
+  const hasSuccessfulEvaluation = evaluationReport?.success === true;
+  const optimizationReadiness = useMemo(
+    () => ({
+      isReady,
+      hasProxy: proxy !== undefined,
+      hasModel: optimizationModel !== undefined,
+      missingGlassMessage,
+      invalidConfigMessage,
+      hasNonZeroContribution,
+      hasActiveGridEdit,
+      isEvaluationPending: isEvaluating || isPostEditEvaluationPending,
+      evaluationWarningMessage: optimizationWarningMessage,
+      hasSuccessfulEvaluation,
+    }),
+    [
+      hasActiveGridEdit,
+      hasNonZeroContribution,
+      hasSuccessfulEvaluation,
+      invalidConfigMessage,
+      isEvaluating,
+      isPostEditEvaluationPending,
+      isReady,
+      missingGlassMessage,
+      optimizationModel,
+      optimizationWarningMessage,
+      proxy,
+    ],
+  );
   const { canUseBounds } = getOptimizationAlgorithmCapabilities(
     optimizer.kind === "least_squares"
       ? { kind: optimizer.kind, method: optimizer.method }
@@ -689,7 +721,13 @@ export function OptimizationPage({
           setIsEvaluating(false);
           setIsPostEditEvaluationPending(false);
         }
-        throw error;
+        throw new WebMcpToolError(
+          "invalid_state",
+          `The Optimization configuration is invalid: ${error instanceof Error ? error.message : "Optimization config is invalid."}`,
+          {
+            hint: "Call get_optimization_config to inspect it, then set_optimization_config with a corrected configuration.",
+          },
+        );
       }
 
       if (proxy === undefined) {
@@ -698,7 +736,9 @@ export function OptimizationPage({
           setIsEvaluating(false);
           setIsPostEditEvaluationPending(false);
         }
-        throw new Error("Pyodide is not ready.");
+        throw new WebMcpToolError("not_ready", "Pyodide is not ready.", {
+          hint: "Wait for app initialization to finish, then retry.",
+        });
       }
 
       try {
@@ -821,16 +861,23 @@ export function OptimizationPage({
   const evaluateCurrentOptimization = useCallback(
     async (signal: AbortSignal): Promise<OptimizationReport> => {
       assertWebMcpNotCancelled(signal);
-      if (optimizationStore.getState().isOptimizing) {
-        throw new Error(
-          "Cannot evaluate operands while optimization is running.",
+      const blockingReason = getOptimizationBlockingReason(
+        {
+          ...optimizationReadiness,
+          isOptimizing: optimizationStore.getState().isOptimizing,
+          invalidConfigMessage: undefined,
+        },
+        "evaluate",
+      );
+      if (
+        blockingReason !== undefined ||
+        proxy === undefined ||
+        optimizationModel === undefined
+      ) {
+        throw (
+          blockingReason ??
+          new WebMcpToolError("not_ready", "Pyodide is not ready.")
         );
-      }
-      if (!isReady || proxy === undefined || optimizationModel === undefined) {
-        throw new Error("Optimization is not ready for operand evaluation.");
-      }
-      if (missingGlassMessage !== undefined) {
-        throw new Error(missingGlassMessage);
       }
 
       cancelDebouncedEvaluation();
@@ -851,9 +898,8 @@ export function OptimizationPage({
       catalogs,
       evaluateOptimizationOperation,
       imagePoint,
-      isReady,
-      missingGlassMessage,
       optimizationModel,
+      optimizationReadiness,
       optimizationStore,
       proxy,
     ],
@@ -908,20 +954,25 @@ export function OptimizationPage({
   const executeOptimizationOperation = useCallback(
     async (signal: AbortSignal): Promise<OptimizationRunReport> => {
       assertWebMcpNotCancelled(signal);
-      if (
-        optimizationStore.getState().isOptimizing ||
-        optimizationRunIdRef.current !== undefined
-      ) {
-        throw new Error("Optimization is already running.");
-      }
+      const blockingReason = getOptimizationBlockingReason(
+        {
+          ...optimizationReadiness,
+          isOptimizing:
+            optimizationStore.getState().isOptimizing ||
+            optimizationRunIdRef.current !== undefined,
+        },
+        "execute",
+      );
+      if (blockingReason !== undefined) throw blockingReason;
       if (
         !canOptimize ||
         proxy === undefined ||
-        optimizationModel === undefined ||
-        missingGlassMessage !== undefined
-      ) {
-        throw new Error("Optimization is not ready to run.");
-      }
+        optimizationModel === undefined
+      )
+        throw new WebMcpToolError(
+          "internal_error",
+          "Optimization is not ready to run.",
+        );
 
       const runId =
         typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -938,13 +989,20 @@ export function OptimizationPage({
         evaluatedOptimizationRunConfigSignatureRef.current !==
         JSON.stringify(config)
       ) {
-        throw new Error(
+        throw new WebMcpToolError(
+          "precondition_failed",
           "Optimization requires a successful evaluation of the current configuration.",
+          {
+            hint: "Call evaluate_optimization_operands first, then retry execute_optimization.",
+          },
         );
       }
       if (!hasNonZeroOptimizationContribution(config)) {
         setOptimizationWarningMessage(ZERO_WEIGHT_WARNING_MESSAGE);
-        throw new Error(ZERO_WEIGHT_WARNING_MESSAGE);
+        throw new WebMcpToolError(
+          "precondition_failed",
+          ZERO_WEIGHT_WARNING_MESSAGE,
+        );
       }
 
       optimizationRunIdRef.current = runId;
@@ -1037,9 +1095,9 @@ export function OptimizationPage({
       canStopOptimization,
       catalogs,
       imagePoint,
-      missingGlassMessage,
       onError,
       optimizationModel,
+      optimizationReadiness,
       optimizationStore,
       proxy,
       requestOptimizationStop,
@@ -1072,7 +1130,8 @@ export function OptimizationPage({
         return { state: "already_stopping" };
       }
       if (optimizationInterruptBufferRef.current === undefined) {
-        throw new Error(
+        throw new WebMcpToolError(
+          "precondition_failed",
           "This environment cannot interrupt the running optimization. Wait for execute_optimization to settle.",
         );
       }
@@ -1098,7 +1157,8 @@ export function OptimizationPage({
         optimizationStore.getState().isOptimizing ||
         optimizationRunIdRef.current !== undefined
       ) {
-        throw new Error(
+        throw new WebMcpToolError(
+          "precondition_failed",
           "Cannot dismiss the Optimization Progress modal while optimization is still running. Wait for execute_optimization to settle or cancel it first.",
         );
       }
@@ -1138,16 +1198,28 @@ export function OptimizationPage({
         optimizationStore.getState().isOptimizing ||
         optimizationRunIdRef.current !== undefined
       ) {
-        throw new Error(
+        throw new WebMcpToolError(
+          "precondition_failed",
           "Cannot apply optimization while a run is already running.",
+          {
+            hint: "Wait for execute_optimization to settle, or call stop_optimization.",
+          },
         );
       }
       const model = optimizationStore.getState().optimizationModel;
       if (model === undefined) {
-        throw new Error("No optimized optical model is available.");
+        throw new WebMcpToolError(
+          "precondition_failed",
+          "No optimized optical model is available.",
+          {
+            hint: "Call execute_optimization to produce an optimized model first.",
+          },
+        );
       }
       if (proxy === undefined) {
-        throw new Error("Pyodide is not ready.");
+        throw new WebMcpToolError("not_ready", "Pyodide is not ready.", {
+          hint: "Wait for app initialization to finish, then retry apply_optimization_to_editor.",
+        });
       }
       await applyOptimizationModelToEditor({
         model,
@@ -1182,8 +1254,12 @@ export function OptimizationPage({
         optimizationStore.getState().isOptimizing ||
         optimizationRunIdRef.current !== undefined
       ) {
-        throw new Error(
+        throw new WebMcpToolError(
+          "precondition_failed",
           "Cannot discard optimization result while a run is already running.",
+          {
+            hint: "Wait for execute_optimization to settle, or call stop_optimization.",
+          },
         );
       }
       const lensState = lensStore.getState();

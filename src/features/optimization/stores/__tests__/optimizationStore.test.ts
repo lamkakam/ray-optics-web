@@ -2108,7 +2108,9 @@ describe("optimizationStore", () => {
       ]);
     expect(() =>
       thicknessRangeStore.getState().buildOptimizationConfig(),
-    ).toThrow(/out of range/);
+    ).toThrow(
+      /^thickness pickup on surface 1: source surface index 3 is out of range \(valid 1 to \d+\)\.$/,
+    );
 
     const sameSurfaceStore = createStore<OptimizationState>(
       createOptimizationSlice,
@@ -2132,13 +2134,29 @@ describe("optimizationStore", () => {
 
   it("rejects independently non-finite and inverted variable bounds", () => {
     const cases = [
-      ["Infinity", "60"],
-      ["40", "Infinity"],
-      ["60", "40"],
-      ["40", "40"],
+      [
+        "Infinity",
+        "60",
+        "radius variable on surface 1: Min. must be a number.",
+      ],
+      [
+        "40",
+        "Infinity",
+        "radius variable on surface 1: Max. must be a number.",
+      ],
+      [
+        "60",
+        "40",
+        "radius variable on surface 1: Min. (60) must be less than Max. (40).",
+      ],
+      [
+        "40",
+        "40",
+        "radius variable on surface 1: Min. (40) must be less than Max. (40).",
+      ],
     ] as const;
 
-    for (const [min, max] of cases) {
+    for (const [min, max, message] of cases) {
       const store = createStore<OptimizationState>(createOptimizationSlice);
       store.getState().initializeFromOpticalModel(baseModel);
       store.getState().setRadiusMode(1, { mode: "variable", min, max });
@@ -2147,9 +2165,7 @@ describe("optimizationStore", () => {
         .replaceOperands([
           { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
         ]);
-      expect(() => store.getState().buildOptimizationConfig()).toThrow(
-        /Min\. must be a number|Max\. must be a number|maximum/,
-      );
+      expect(() => store.getState().buildOptimizationConfig()).toThrow(message);
     }
   });
 

@@ -17,8 +17,6 @@ const RAY_TRACE_MESSAGE =
   "A ray could not be traced through the optical system. Check the prescription and aperture settings.";
 const PROJECTED_PUPIL_MESSAGE =
   "The projected pupil could not be calculated. Check the optical geometry and aperture settings.";
-const VALIDATION_MESSAGE =
-  "The calculation settings are invalid. Check the inputs and try again.";
 const MISSING_GLASS_MESSAGE =
   "The requested user-defined glass could not be found.";
 const CANCELLED_MESSAGE = "The calculation was cancelled.";
@@ -67,7 +65,6 @@ const businessMessages = new Set([
   EXACT_SPEC_MESSAGE,
   RAY_TRACE_MESSAGE,
   PROJECTED_PUPIL_MESSAGE,
-  VALIDATION_MESSAGE,
   DUPLICATE_GLASS_MESSAGE,
   MISSING_GLASS_MESSAGE,
   OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE,
@@ -75,6 +72,30 @@ const businessMessages = new Set([
   WAVEFRONT_REFERENCE_MESSAGE,
   GLASS_CANDIDATE_MESSAGE,
 ]);
+
+/**
+ * Prefixes of Python configuration-validation messages whose remaining text only
+ * echoes the caller's own optimization configuration (kinds, indices, option
+ * keys). Matching single-line messages are passed through verbatim so callers,
+ * including WebMCP agents, learn exactly which setting is invalid.
+ */
+const AUDITED_SETTINGS_DETAIL =
+  /^(?:Unknown (?:optimizer|variable|pickup|operand|asphere) kind: |Unknown least-squares method: |Unknown decenter type: |Unsupported (?:optimizer option|glass catalog|glass optimizer option|glass variable key|glass optimization config key)|Duplicate (?:variable target|pickup target|glass variable surface): |Current glass at surface \d+ is outside its candidate pool|Operand [a-z_]+ (?:requires (?:a finite target|an integer surface_index)|does not accept |range |surface_index -?\d+ is out of range)|merit_function\.operands must |(?:surface_index|coefficient_index|wavelength index) \d+ is out of range)/;
+const MAX_AUDITED_DETAIL_LENGTH = 300;
+
+/** Whether a message is a single-line, bounded, audited settings-validation detail. */
+function isAuditedSettingsDetail(message: string): boolean {
+  return (
+    !/[\r\n]/.test(message) &&
+    message.length <= MAX_AUDITED_DETAIL_LENGTH &&
+    AUDITED_SETTINGS_DETAIL.test(message)
+  );
+}
+
+/** Whether a message is approved for business errors: an exact allowlisted text or an audited settings detail. */
+function isApprovedBusinessMessage(message: string): boolean {
+  return businessMessages.has(message) || isAuditedSettingsDetail(message);
+}
 
 type FailureSource = "worker" | "transport";
 type Classification = { readonly message: string; readonly business: boolean };
@@ -115,9 +136,15 @@ function exceptionDetails(error: unknown): { type: string; message: string } {
   };
 }
 
+/**
+ * Maps a raw or normalized failure to approved text. Exact allowlisted messages
+ * and audited settings-validation details pass through verbatim; other known
+ * failure families collapse to fixed category text, and anything else is a
+ * fatal calculation failure. Idempotent on its own output.
+ */
 function classify(error: unknown, operation = ""): Classification {
   const { type, message } = exceptionDetails(error);
-  if (businessMessages.has(message)) return { message, business: true };
+  if (isApprovedBusinessMessage(message)) return { message, business: true };
   if (
     /^Zernike design matrix (?:is rank deficient|is ill-conditioned|has invalid singular values)/.test(
       message,
@@ -156,12 +183,7 @@ function classify(error: unknown, operation = ""): Classification {
     /^(get|delete|update)UserDefinedGlasses$/.test(operation)
   )
     return { message: MISSING_GLASS_MESSAGE, business: true };
-  if (
-    /^(?:Unknown (?:optimizer|variable|pickup|operand|asphere) kind: |Unknown least-squares method: |Unknown decenter type: |Unsupported (?:optimizer option|glass catalog|glass optimizer option|glass variable key|glass optimization config key)|Duplicate (?:variable target|pickup target|glass variable surface): |Current glass at surface \d+ is outside its candidate pool|Operand [a-z_]+ (?:requires (?:a finite target|an integer surface_index)|does not accept |range |surface_index -?\d+ is out of range)|merit_function\.operands must |(?:surface_index|coefficient_index|wavelength index) \d+ is out of range)/.test(
-      message,
-    )
-  )
-    return { message: VALIDATION_MESSAGE, business: true };
+  if (isAuditedSettingsDetail(message)) return { message, business: true };
   return { message: CALCULATION_FAILED_MESSAGE, business: false };
 }
 
@@ -185,7 +207,7 @@ export function isPyodideBusinessError(error: unknown): boolean {
   return (
     value?.name === "PyodideBusinessError" &&
     typeof value.message === "string" &&
-    businessMessages.has(value.message)
+    isApprovedBusinessMessage(value.message)
   );
 }
 

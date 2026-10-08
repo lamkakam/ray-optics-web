@@ -241,6 +241,124 @@ describe("optimization WebMCP tools", () => {
     expect(readProgress).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    ["evaluateOptimizationOperands", "evaluate"],
+    ["executeOptimization", "execute"],
+  ] as const)(
+    "rejects %s with calculation_failed when the worker report has status error",
+    async (toolKey, dependencyKey) => {
+      const failed: OptimizationReport = {
+        ...report,
+        success: false,
+        status: "error",
+        message: "Operand rms_spot surface_index 5 is out of range",
+      };
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      const tools = createOptimizationWebMcpTools({
+        optimizationStore: store,
+        catalogs: undefined,
+        evaluate: jest.fn().mockResolvedValue(report),
+        execute: jest.fn().mockResolvedValue(report),
+        apply: jest.fn(),
+        discard: jest.fn(),
+        dismissProgress: jest.fn(),
+        stop: jest.fn(),
+        readProgress: jest.fn(),
+        [dependencyKey]: jest.fn().mockResolvedValue(failed),
+      });
+
+      await expect(
+        tools[toolKey].execute({}, { signal: new AbortController().signal }),
+      ).rejects.toMatchObject({
+        code: "calculation_failed",
+        message: "Operand rms_spot surface_index 5 is out of range",
+        details: { report: failed },
+      });
+    },
+  );
+
+  it("still returns unsuccessful solver reports that are not errors", async () => {
+    const unconverged: OptimizationReport = {
+      ...report,
+      success: false,
+      status: 0,
+      message: "Optimization did not converge.",
+    };
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    const tools = createOptimizationWebMcpTools({
+      optimizationStore: store,
+      catalogs: undefined,
+      evaluate: jest.fn(),
+      execute: jest.fn().mockResolvedValue(unconverged),
+      apply: jest.fn(),
+      discard: jest.fn(),
+      dismissProgress: jest.fn(),
+      stop: jest.fn(),
+      readProgress: jest.fn(),
+    });
+
+    await expect(
+      tools.executeOptimization.execute(
+        {},
+        { signal: new AbortController().signal },
+      ),
+    ).resolves.toBe(JSON.stringify(unconverged));
+  });
+
+  it("classifies configuration rejections from the store", async () => {
+    const setOptimizationConfig = jest.fn(() => {
+      throw new Error("Asphere surface 9 is out of range.");
+    });
+    const buildOptimizationConfig = jest.fn(() => {
+      throw new Error("At least one operand is required.");
+    });
+    let isOptimizing = false;
+    const store = {
+      getState: () => ({
+        isOptimizing,
+        setOptimizationConfig,
+        buildOptimizationConfig,
+      }),
+    } as unknown as StoreApi<OptimizationState>;
+    const tools = createOptimizationWebMcpTools({
+      optimizationStore: store,
+      catalogs: undefined,
+      evaluate: jest.fn(),
+      execute: jest.fn(),
+      apply: jest.fn(),
+      discard: jest.fn(),
+      dismissProgress: jest.fn(),
+      stop: jest.fn(),
+      readProgress: jest.fn(),
+    });
+    const signal = new AbortController().signal;
+
+    await expect(
+      tools.setOptimizationConfig.execute({ ...config }, { signal }),
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      message:
+        "Invalid optimization config: Asphere surface 9 is out of range.",
+    });
+    await expect(
+      tools.getOptimizationConfig.execute({}, { signal }),
+    ).rejects.toMatchObject({
+      code: "invalid_state",
+      message:
+        "The current Optimization configuration is invalid: At least one operand is required.",
+      hint: expect.stringContaining("set_optimization_config"),
+    });
+
+    isOptimizing = true;
+    await expect(
+      tools.setOptimizationConfig.execute({ ...config }, { signal }),
+    ).rejects.toMatchObject({
+      code: "precondition_failed",
+      message:
+        "Cannot change optimization configuration while a run is already running.",
+    });
+  });
+
   it("returns the discard operation error to the caller while optimization is running", async () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     const tools = createOptimizationWebMcpTools({

@@ -27,6 +27,7 @@ import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
 } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
 
 /** Explicit freshness contract shared by all committed analysis descriptions. */
 const committedSystemDescription =
@@ -35,6 +36,37 @@ const committedSystemDescription =
 /** Stored payloads need ownership matching the committed model, including after Apply. */
 const storedResultDescription =
   "Stored results must belong to that exact model; after optimization Apply, call `recompute_optical_system` if results are missing or stale.";
+
+/** Typed failure for a tool that needs a committed optical system first. */
+function noComputedSystem(): WebMcpToolError {
+  return new WebMcpToolError(
+    "precondition_failed",
+    "No computed optical system. Call recompute_optical_system first.",
+  );
+}
+
+/** Typed failure naming the tool to retry once Pyodide loads. */
+function pyodideNotReady(tool: string): WebMcpToolError {
+  return new WebMcpToolError(
+    "not_ready",
+    `Pyodide not ready. Wait for app initialization to finish, then retry ${tool}.`,
+  );
+}
+
+/** Rejects a selector outside the committed model, naming its valid range. */
+function assertCommittedIndex(
+  selector: "fieldIndex" | "wavelengthIndex",
+  index: number,
+  count: number,
+): void {
+  if (index < count) return;
+  const label = selector === "fieldIndex" ? "field" : "wavelength";
+  throw new WebMcpToolError(
+    "invalid_input",
+    `Invalid input at /${selector}: ${index} is outside the committed ${label} range; valid ${label} indices are 0 to ${count - 1}`,
+    { path: `/${selector}` },
+  );
+}
 
 /** Stored analysis getters accept only an empty object. */
 const emptyInputSchema = {
@@ -212,6 +244,12 @@ interface PlotToolDefinition<K extends ToolPlotKind> {
  * Unavailable radii are omitted without discarding point data. Tools never commit
  * chart data, selections, loading flags, or preferences; pending edits require
  * explicit recomputation. Cancellation only rejects the requesting caller.
+ *
+ * Failures throw `WebMcpToolError`: a missing committed model or stale stored
+ * data is `precondition_failed` (call `recompute_optical_system`), selectors
+ * outside the committed model are `invalid_input` naming the valid index range,
+ * an unloaded worker is `not_ready`, and a mismatched loader result is
+ * `internal_error`. Worker failures propagate unchanged.
  */
 export function createAnalysisTools({
   lensStore,
@@ -249,30 +287,25 @@ export function createAnalysisTools({
         assertWebMcpInput(validators.plot[selectors], input);
         assertWebMcpNotCancelled(signal);
         const model = lensStore.getState().committedOpticalModel;
-        if (model === undefined)
-          throw new Error(
-            "No computed optical system. Call recompute_optical_system first.",
-          );
+        if (model === undefined) throw noComputedSystem();
         const {
           fieldIndex = 0,
           wavelengthIndex = model.specs.wavelengths.referenceIndex,
           wavelengthSamples: requestedSamples,
         } = input as PlotInput;
-        if (hasField && fieldIndex >= model.specs.field.fields.length)
-          throw new Error(
-            `Invalid input at /fieldIndex: ${fieldIndex} is outside the committed field range`,
+        if (hasField)
+          assertCommittedIndex(
+            "fieldIndex",
+            fieldIndex,
+            model.specs.field.fields.length,
           );
-        if (
-          hasWavelength &&
-          wavelengthIndex >= model.specs.wavelengths.weights.length
-        )
-          throw new Error(
-            `Invalid input at /wavelengthIndex: ${wavelengthIndex} is outside the committed wavelength range`,
+        if (hasWavelength)
+          assertCommittedIndex(
+            "wavelengthIndex",
+            wavelengthIndex,
+            model.specs.wavelengths.weights.length,
           );
-        if (proxy === undefined)
-          throw new Error(
-            `Pyodide not ready. Wait for app initialization to finish, then retry ${name}.`,
-          );
+        if (proxy === undefined) throw pyodideNotReady(name);
         const { rayCounts, wavelengthSampleCounts: preferredSamples } =
           analysisPlotStore.getState();
         const wavelengthSampleCounts =
@@ -298,7 +331,8 @@ export function createAnalysisTools({
         });
         assertWebMcpNotCancelled(signal);
         if (result?.kind !== plotType)
-          throw new Error(
+          throw new WebMcpToolError(
+            "internal_error",
             `No ${plotType} data returned for the committed optical system.`,
           );
         return JSON.stringify({
@@ -424,7 +458,8 @@ export function createAnalysisTools({
           model === undefined ||
           firstOrderDataModel !== model
         )
-          throw new Error(
+          throw new WebMcpToolError(
+            "precondition_failed",
             "Paraxial data is missing or stale for the current committed optical system. Call recompute_optical_system first.",
           );
         return JSON.stringify(firstOrderData);
@@ -445,7 +480,8 @@ export function createAnalysisTools({
           model === undefined ||
           seidelDataModel !== model
         )
-          throw new Error(
+          throw new WebMcpToolError(
+            "precondition_failed",
             "Seidel data is missing or stale for the current committed optical system. Call recompute_optical_system first.",
           );
         return JSON.stringify(seidelData);
@@ -460,38 +496,34 @@ export function createAnalysisTools({
         assertWebMcpInput(validators.zernike, input);
         assertWebMcpNotCancelled(signal);
         const model = lensStore.getState().committedOpticalModel;
-        if (model === undefined)
-          throw new Error(
-            "No computed optical system. Call recompute_optical_system first.",
-          );
+        if (model === undefined) throw noComputedSystem();
         const {
           fieldIndex = 0,
           wavelengthIndex = model.specs.wavelengths.referenceIndex,
           ordering = "fringe",
           pupilSpace = "entrance",
         } = input as ZernikeInput;
-        if (fieldIndex >= model.specs.field.fields.length) {
-          throw new Error(
-            `Invalid input at /fieldIndex: ${fieldIndex} is outside the committed field range`,
-          );
-        }
-        if (wavelengthIndex >= model.specs.wavelengths.weights.length) {
-          throw new Error(
-            `Invalid input at /wavelengthIndex: ${wavelengthIndex} is outside the committed wavelength range`,
-          );
-        }
+        assertCommittedIndex(
+          "fieldIndex",
+          fieldIndex,
+          model.specs.field.fields.length,
+        );
+        assertCommittedIndex(
+          "wavelengthIndex",
+          wavelengthIndex,
+          model.specs.wavelengths.weights.length,
+        );
         if (
           pupilSpace === "exit" &&
           Math.abs(model.surfaces.at(-1)?.thickness ?? 0) > 1e8
         ) {
-          throw new Error(
+          throw new WebMcpToolError(
+            "invalid_input",
             "Invalid input at /pupilSpace: exit pupil requires finite image space. Use entrance for this committed optical system.",
+            { path: "/pupilSpace" },
           );
         }
-        if (proxy === undefined)
-          throw new Error(
-            "Pyodide not ready. Wait for app initialization to finish, then retry get_zernike_terms.",
-          );
+        if (proxy === undefined) throw pyodideNotReady("get_zernike_terms");
         const numTerms =
           ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
         const data = await loadZernikeData({

@@ -26,6 +26,11 @@ import {
 } from "@/app/pageNavigationWebMcp";
 import { useWebMCP } from "@/shared/hooks/useWebMCP";
 import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
+
+/** Agent-facing next step when an Optimization leave confirmation cannot be applied. */
+const APPLY_NAVIGATION_HINT =
+  "The leave confirmation is still pending. Retry apply_to_editor later, or call resolve_optimization_navigation with stay or leave.";
 
 /** Returns the current path, query, and hash without the origin. */
 function getCurrentWindowHref() {
@@ -239,7 +244,10 @@ export function useAppShellNavigation(
         definition.path !== "/optimization" &&
         optimizationStore.getState().hasUnappliedOptimizationResult
       ) {
-        throw new Error(PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR);
+        throw new WebMcpToolError(
+          "precondition_failed",
+          PENDING_OPTIMIZATION_RESULT_NAVIGATION_ERROR,
+        );
       }
 
       proceedToHref(definition.path);
@@ -293,7 +301,7 @@ export function useAppShellNavigation(
     return getPageDefinitionForPathname(getPathnameFromHref(pendingHref))?.key;
   }, []);
 
-  /** Shared Stay/Leave/Apply implementation. Forwards cancellation to the editor commit boundary so a cancelled pending Apply retains the result and destination without mutating editor/specs stores or navigating. */
+  /** Shared Stay/Leave/Apply implementation. Forwards cancellation to the editor commit boundary so a cancelled pending Apply retains the result and destination without mutating editor/specs stores or navigating. Apply rejects with `precondition_failed` after dismissing the confirmation when no optimized model exists (matching the modal's Apply button), and with `not_ready` while keeping the destination pending when Pyodide is unavailable. */
   const resolveOptimizationNavigation = useCallback(
     async (
       action: OptimizationNavigationAction,
@@ -327,10 +335,18 @@ export function useAppShellNavigation(
       if (model === undefined) {
         pendingNavigationHrefRef.current = undefined;
         setPendingNavigationHref(undefined);
-        return { status: "no_pending_navigation" };
+        throw new WebMcpToolError(
+          "precondition_failed",
+          "No optimized lens prescription is available to apply, so the pending navigation was cancelled and the page stayed on Optimization.",
+          { hint: "Call set_active_page to navigate again." },
+        );
       }
       if (proxy === undefined) {
-        return { status: "no_pending_navigation" };
+        throw new WebMcpToolError(
+          "not_ready",
+          "Pyodide is not ready, so the optimized lens prescription cannot be applied yet.",
+          { hint: APPLY_NAVIGATION_HINT },
+        );
       }
 
       try {

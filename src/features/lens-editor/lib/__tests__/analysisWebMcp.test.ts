@@ -451,9 +451,10 @@ describe("analysis WebMCP tools", () => {
     await expect(s.execute(tools.get3rdOrderSeidelData)).resolves.toBe(
       JSON.stringify(seidel),
     );
-    await expect(s.execute(tools.getZernikeTerms)).rejects.toThrow(
-      /Pyodide.*ready/,
-    );
+    await expect(s.execute(tools.getZernikeTerms)).rejects.toMatchObject({
+      code: "not_ready",
+      message: expect.stringMatching(/Pyodide.*ready/),
+    });
   });
 
   it("provides a recompute action when committed data is missing", async () => {
@@ -462,7 +463,10 @@ describe("analysis WebMCP tools", () => {
     s.analysisDataStore.getState().setFirstOrderData(undefined);
     s.analysisDataStore.getState().setSeidelData(undefined);
     for (const tool of Object.values(s.tools)) {
-      await expect(s.execute(tool)).rejects.toThrow("recompute_optical_system");
+      await expect(s.execute(tool)).rejects.toMatchObject({
+        code: "precondition_failed",
+        message: expect.stringContaining("recompute_optical_system"),
+      });
     }
     expect(s.getZernikeCoefficients).not.toHaveBeenCalled();
   });
@@ -609,7 +613,11 @@ describe("analysis WebMCP tools", () => {
         ...model,
         surfaces: [{ ...model.surfaces[0], thickness }],
       });
-      await expect(s.query({ pupilSpace: "exit" })).rejects.toThrow(/entrance/);
+      await expect(s.query({ pupilSpace: "exit" })).rejects.toMatchObject({
+        code: "invalid_input",
+        path: "/pupilSpace",
+        message: expect.stringMatching(/entrance/),
+      });
       expect(s.getZernikeCoefficients).not.toHaveBeenCalled();
       await expect(s.query()).resolves.toEqual(expect.any(String));
     },

@@ -178,6 +178,20 @@ describe("System Specs WebMCP tools", () => {
     expect(draftSnapshot(store)).toEqual(before);
   });
 
+  it("reports invalid draft state, not invalid input, when the current specs fail validation", async () => {
+    const { store, execute } = setup();
+    store.setState({ pupilValue: Number.NaN });
+
+    await expect(execute("get_system_specs", {})).rejects.toMatchObject({
+      code: "invalid_state",
+      path: "/pupil/value",
+      message: expect.stringMatching(
+        /^Current draft System Specs are invalid at \/pupil\/value: /,
+      ),
+      hint: expect.stringContaining("set_system_aperture"),
+    });
+  });
+
   it("rejects an already cancelled execution before changing draft state", async () => {
     const { store, execute } = setup();
     const before = draftSnapshot(store);

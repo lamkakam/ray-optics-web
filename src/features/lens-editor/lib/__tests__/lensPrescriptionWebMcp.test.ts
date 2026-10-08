@@ -216,9 +216,14 @@ describe("lens prescription WebMCP tools", () => {
     const { store, execute } = setup();
     const before = snapshot(store);
 
-    await expect(execute("get_lens_prescription", { row: 2 })).rejects.toThrow(
-      "Invalid input at /row: 2 does not exist",
-    );
+    await expect(
+      execute("get_lens_prescription", { row: 2 }),
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      path: "/row",
+      message:
+        "Invalid input at /row: surface 2 does not exist; valid rows are object, 1 to 1, or image",
+    });
 
     expect(snapshot(store)).toEqual(before);
   });
@@ -370,8 +375,26 @@ describe("lens prescription WebMCP tools", () => {
   });
 
   it.each([
-    [lookupMaps, /\/surfaces\/0\/medium.*unknown/i],
-    [undefined, /\/object\/medium.*catalog.*unavailable/i],
+    [
+      lookupMaps,
+      {
+        code: "invalid_input",
+        path: "/surfaces/0/medium",
+        message:
+          "Invalid input at /surfaces/0/medium: unknown medium Acme: Mystery",
+        hint: expect.stringContaining("get_all_glasses"),
+      },
+    ],
+    [
+      undefined,
+      {
+        code: "not_ready",
+        path: "/object/medium",
+        message:
+          "Cannot validate media at /object/medium: glass catalogs are unavailable.",
+        hint: expect.stringContaining("Wait for app initialization"),
+      },
+    ],
   ])(
     "rejects unresolved set media without changing rows or revision %#",
     async (maps, message) => {
@@ -392,7 +415,7 @@ describe("lens prescription WebMCP tools", () => {
             };
       await expect(
         execute("set_lens_prescription", replacement),
-      ).rejects.toThrow(message);
+      ).rejects.toMatchObject(message);
       expect(snapshot(store)).toEqual(before);
     },
   );
@@ -414,7 +437,7 @@ describe("lens prescription WebMCP tools", () => {
     const before = snapshot(store);
     await expect(
       execute("update_lens_row", { row: 1, values: { thickness: 6 } }),
-    ).rejects.toThrow(/\/object\/medium.*catalog.*unavailable/i);
+    ).rejects.toMatchObject({ code: "not_ready", path: "/object/medium" });
     expect(snapshot(store)).toEqual(before);
   });
 
@@ -440,9 +463,14 @@ describe("lens prescription WebMCP tools", () => {
     const { store, execute } = setup();
     const before = snapshot(store);
 
-    await expect(execute("insert_lens_surface", { after: 2 })).rejects.toThrow(
-      "Invalid input at /after: 2 does not exist",
-    );
+    await expect(
+      execute("insert_lens_surface", { after: 2 }),
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      path: "/after",
+      message:
+        "Invalid input at /after: surface 2 does not exist; valid insertion points are object or 1 to 1",
+    });
 
     expect(snapshot(store)).toEqual(before);
   });
@@ -682,7 +710,12 @@ describe("lens prescription WebMCP tools", () => {
     );
     await expect(
       execute("delete_lens_surface", { surface: 1 }),
-    ).rejects.toThrow("Invalid input at /surface: 1 does not exist");
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      path: "/surface",
+      message:
+        "Invalid input at /surface: surface 1 does not exist; the prescription has no surfaces",
+    });
   });
 
   it("honours execution cancellation before reading or mutating state", async () => {

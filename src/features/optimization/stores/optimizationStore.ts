@@ -670,17 +670,55 @@ type SurfaceModeEntry = RadiusMode & {
   readonly kind: SurfaceModeKind;
 };
 
+/** Parses finite bounds, prefixing errors with the variable they belong to. */
 function parseVariableBounds(
+  label: string,
   minValue: string,
   maxValue: string,
 ): { readonly min: number; readonly max: number } {
-  const min = parseFloatValue(minValue, "Min.");
-  const max = parseFloatValue(maxValue, "Max.");
+  const min = parseFloatValue(minValue, `${label}: Min.`);
+  const max = parseFloatValue(maxValue, `${label}: Max.`);
   if (min >= max) {
-    throw new Error("Variable minimum must be less than maximum.");
+    throw new Error(`${label}: Min. (${min}) must be less than Max. (${max}).`);
   }
 
   return { min, max };
+}
+
+/** Names a variable by worker kind, surface, and coefficient for error messages. */
+function describeVariable(
+  variable: OptimizationConfig["variables"][number],
+): string {
+  const coefficient =
+    "coefficient_index" in variable
+      ? ` (coefficient ${variable.coefficient_index})`
+      : "";
+  return `${variable.kind} variable${coefficient} on surface ${variable.surface_index}`;
+}
+
+/** Validates a pickup source against its target surface and valid range. */
+function validatePickupSource(
+  kind: string,
+  surfaceIndex: number,
+  sourceValue: string,
+  maxIndex: number,
+): number {
+  const label = `${kind} pickup on surface ${surfaceIndex}`;
+  const source = parsePositiveInteger(
+    sourceValue,
+    `${label}: Source surface index`,
+  );
+  if (source === surfaceIndex) {
+    throw new Error(
+      `${label}: source surface index must not equal the target surface index.`,
+    );
+  }
+  if (source > maxIndex) {
+    throw new Error(
+      `${label}: source surface index ${source} is out of range (valid 1 to ${maxIndex}).`,
+    );
+  }
+  return source;
 }
 
 function buildOptimizerConfig(
@@ -793,20 +831,12 @@ function parseSurfacePickupSourceIndex(
   mode: Extract<SurfaceModeEntry, { mode: "pickup" }>,
   maxIndex: number,
 ): number {
-  const sourceSurfaceIndex = parsePositiveInteger(
+  return validatePickupSource(
+    mode.kind,
+    mode.surfaceIndex,
     mode.sourceSurfaceIndex,
-    "Source surface index",
+    maxIndex,
   );
-  if (sourceSurfaceIndex === mode.surfaceIndex) {
-    throw new Error(
-      "Pickup source surface index must not equal the target surface index.",
-    );
-  }
-  if (sourceSurfaceIndex > maxIndex) {
-    throw new Error("Pickup source surface index is out of range.");
-  }
-
-  return sourceSurfaceIndex;
 }
 
 function createVariableConfig(
@@ -819,7 +849,11 @@ function createVariableConfig(
     return baseVariable;
   }
 
-  const { min, max } = parseVariableBounds(minValue, maxValue);
+  const { min, max } = parseVariableBounds(
+    describeVariable(baseVariable),
+    minValue,
+    maxValue,
+  );
   return { ...baseVariable, min, max };
 }
 
@@ -1061,16 +1095,12 @@ function buildDecenterPickups(
     DECENTER_COMPONENTS.flatMap(([component, kind]) => {
       const mode = state[component];
       if (mode.mode !== "pickup") return [];
-      const source = parsePositiveInteger(
+      const source = validatePickupSource(
+        kind,
+        state.surfaceIndex,
         mode.sourceSurfaceIndex,
-        "Source surface index",
+        states.length,
       );
-      if (source === state.surfaceIndex)
-        throw new Error(
-          "Pickup source surface index must not equal the target surface index.",
-        );
-      if (source > states.length)
-        throw new Error("Pickup source surface index is out of range.");
       return [
         {
           kind,

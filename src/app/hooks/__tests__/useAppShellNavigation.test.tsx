@@ -162,11 +162,17 @@ describe("useAppShellNavigation", () => {
       useAppShellNavigation(proxy, openErrorModal),
     );
 
-    await expect(
+    const error = await Promise.resolve(
       execute("set_active_page", { page: "settings" }),
-    ).rejects.toThrow(
-      "Cannot leave the Optimization page while an optimized lens prescription is pending. Call apply_optimization_to_editor to apply it to the Lens Editor, or call discard_optimization_result to discard it, then call set_active_page again.",
-    );
+    ).catch((rejection: unknown) => rejection);
+    expect(JSON.parse((error as Error).message)).toEqual({
+      error: {
+        tool: "set_active_page",
+        code: "precondition_failed",
+        message:
+          "Cannot leave the Optimization page while an optimized lens prescription is pending. Call apply_optimization_to_editor to apply it to the Lens Editor, or call discard_optimization_result to discard it, then call set_active_page again.",
+      },
+    });
     expect(mockRouter.push).not.toHaveBeenCalled();
     expect(result.current.confirmationModalProps.isOpen).toBe(false);
     expect(JSON.parse(String(await execute("get_active_page", {})))).toEqual({
@@ -298,6 +304,65 @@ describe("useAppShellNavigation", () => {
       expect(openErrorModal).not.toHaveBeenCalled();
     },
   );
+
+  it("rejects WebMCP Apply and keeps the destination pending when Pyodide is not ready", async () => {
+    const { result } = renderHook(() =>
+      useAppShellNavigation(undefined, openErrorModal),
+    );
+    act(() => {
+      result.current.guardedNavigate("/settings");
+    });
+
+    const error = await Promise.resolve(
+      execute("resolve_optimization_navigation", { action: "apply_to_editor" }),
+    ).catch((rejection: unknown) => rejection);
+
+    const payload = JSON.parse((error as Error).message);
+    expect(payload.error).toMatchObject({
+      tool: "resolve_optimization_navigation",
+      code: "not_ready",
+      message:
+        "Pyodide is not ready, so the optimized lens prescription cannot be applied yet.",
+    });
+    expect(payload.error.hint).toContain("stay");
+    expect(payload.error.hint).toContain("leave");
+    expect(result.current.confirmationModalProps.isOpen).toBe(true);
+    expect(JSON.parse(String(await execute("get_active_page", {})))).toEqual({
+      page: "optimization",
+      pendingNavigation: "settings",
+    });
+    expect(mockRouter.push).not.toHaveBeenCalled();
+  });
+
+  it("rejects WebMCP Apply without a model and reports the cancelled navigation", async () => {
+    mockOptimizationStore.setState({ optimizationModel: undefined });
+    const { result } = renderHook(() =>
+      useAppShellNavigation(proxy, openErrorModal),
+    );
+    act(() => {
+      result.current.guardedNavigate("/settings");
+    });
+
+    const error = await act(() =>
+      Promise.resolve(
+        execute("resolve_optimization_navigation", {
+          action: "apply_to_editor",
+        }),
+      ).catch((rejection: unknown) => rejection),
+    );
+
+    expect(JSON.parse((error as Error).message)).toEqual({
+      error: {
+        tool: "resolve_optimization_navigation",
+        code: "precondition_failed",
+        message:
+          "No optimized lens prescription is available to apply, so the pending navigation was cancelled and the page stayed on Optimization.",
+        hint: "Call set_active_page to navigate again.",
+      },
+    });
+    expect(result.current.confirmationModalProps.isOpen).toBe(false);
+    expect(mockRouter.push).not.toHaveBeenCalled();
+  });
 
   it("restores the full Optimization history entry before offering the attempted destination", () => {
     const activeState = { __NA: true, tree: ["optimization"], key: "active" };

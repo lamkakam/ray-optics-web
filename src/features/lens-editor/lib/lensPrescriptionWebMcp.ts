@@ -4,6 +4,10 @@
  * again with the compiled application-side AJV schema before Zustand is accessed.
  * Strict input errors and cancellation checks are supplied by the shared WebMCP
  * validation module so feature-local tools use the same boundary contract.
+ * Failures throw `WebMcpToolError`: missing selectors are `invalid_input` and
+ * name the valid selectors for the current surface count, unknown media are
+ * `invalid_input` with a glass-lookup hint, unloaded catalogs are `not_ready`,
+ * and impossible post-mutation lookups are `internal_error`.
  */
 import type { StoreApi } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -31,8 +35,9 @@ import {
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
-  webMcpErrorPath,
+  describeSchemaError,
 } from "@/shared/lib/webMcpValidation";
+import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
 
 type RowSelector = "object" | "image" | number;
 type JsonRecord = Record<string, unknown>;
@@ -166,11 +171,43 @@ function mutationResult(state: LensEditorState, extra: JsonRecord): string {
   });
 }
 
-function semanticError(
-  path: "/after" | "/row" | "/surface",
-  message: string,
+type SelectorPath = "/after" | "/row" | "/surface";
+
+function semanticError(path: SelectorPath, message: string): never {
+  throw new WebMcpToolError(
+    "invalid_input",
+    `Invalid input at ${path}: ${message}`,
+    { path },
+  );
+}
+
+/** Describes the selectors accepted at `path` for the current surface count. */
+function validSelectors(path: SelectorPath, surfaceCount: number): string {
+  const range = `1 to ${surfaceCount}`;
+  if (path === "/row")
+    return surfaceCount === 0
+      ? "valid rows are object or image"
+      : `valid rows are object, ${range}, or image`;
+  if (path === "/after")
+    return surfaceCount === 0
+      ? "the only valid insertion point is object"
+      : `valid insertion points are object or ${range}`;
+  return surfaceCount === 0
+    ? "the prescription has no surfaces"
+    : `valid surfaces are ${range}`;
+}
+
+/** Rejects a positive selector that points past the current visible surfaces. */
+function missingSelectorError(
+  path: SelectorPath,
+  selector: RowSelector,
+  rows: GridRow[],
 ): never {
-  throw new Error(`Invalid input at ${path}: ${message}`);
+  const surfaceCount = rows.filter((row) => row.kind === "surface").length;
+  semanticError(
+    path,
+    `${typeof selector === "number" ? `surface ${selector}` : `${selector} row`} does not exist; ${validSelectors(path, surfaceCount)}`,
+  );
 }
 
 const applicableFields = {
@@ -241,13 +278,23 @@ function assertResolvedMedia<T extends Surfaces>(
 ): T {
   if (result.kind === "resolved") return result.model;
   if (result.kind === "catalog-unavailable") {
-    throw new Error(
-      `Invalid input at ${result.path}: glass catalogs are unavailable`,
+    throw new WebMcpToolError(
+      "not_ready",
+      `Cannot validate media at ${result.path}: glass catalogs are unavailable.`,
+      {
+        path: result.path,
+        hint: "Wait for app initialization to finish loading the glass catalogs, then retry.",
+      },
     );
   }
   const issue = result.issues[0];
-  throw new Error(
+  throw new WebMcpToolError(
+    "invalid_input",
     `Invalid input at ${issue.path}: unknown medium ${issue.manufacturer.trim() === "" ? "Custom" : issue.manufacturer}: ${issue.medium}`,
+    {
+      path: issue.path,
+      hint: "Use get_all_glasses or get_custom_glasses for exact catalog and glass names; see this tool's description for special materials, reflective surfaces, and model glass.",
+    },
   );
 }
 
@@ -293,7 +340,7 @@ export function createLensPrescriptionTools(
         if (selector === undefined)
           return JSON.stringify(gridRowsToSurfaces(rows));
         const row = resolveRow(rows, selector);
-        if (!row) semanticError("/row", `${String(selector)} does not exist`);
+        if (!row) missingSelectorError("/row", selector, rows);
         return JSON.stringify(externalRow(row));
       },
     },
@@ -332,7 +379,7 @@ export function createLensPrescriptionTools(
         const after = input.after as "object" | number;
         const row = resolveRow(state.rows, after);
         if (!row || row.kind === "image")
-          semanticError("/after", `${String(after)} does not exist`);
+          missingSelectorError("/after", after, state.rows);
         state.addRowAfter(row.id);
         const next = store.getState();
         const insertedIndex =
@@ -343,7 +390,10 @@ export function createLensPrescriptionTools(
             ) + 1;
         const insertedRow = resolveRow(next.rows, insertedIndex);
         if (!insertedRow)
-          semanticError("/surface", `${insertedIndex} does not exist`);
+          throw new WebMcpToolError(
+            "internal_error",
+            `Inserted surface ${insertedIndex} could not be found after insertion.`,
+          );
         return mutationResult(next, {
           surface: insertedIndex,
           row: externalRow(insertedRow),
@@ -365,7 +415,7 @@ export function createLensPrescriptionTools(
         const state = store.getState();
         const selector = input.row as RowSelector;
         const row = resolveRow(state.rows, selector);
-        if (!row) semanticError("/row", `${String(selector)} does not exist`);
+        if (!row) missingSelectorError("/row", selector, state.rows);
         const values = input.values as JsonRecord | undefined;
         if (row.kind === "surface" && values?.semiDiameter !== undefined) {
           if (state.autoAperture)
@@ -388,9 +438,14 @@ export function createLensPrescriptionTools(
           candidateRows(state.rows, row.id, patch),
         );
         if (!validators.set(prescription)) {
-          const error = validators.set.errors?.[0];
-          throw new Error(
-            `Invalid candidate prescription at ${webMcpErrorPath(error)}: ${error?.message ?? "schema check failed"}`,
+          const { path, message } = describeSchemaError(validators.set.errors);
+          throw new WebMcpToolError(
+            "invalid_input",
+            `Invalid candidate prescription at ${path}: ${message}`,
+            {
+              path,
+              hint: "The path refers to the complete prescription returned by get_lens_prescription after applying this update.",
+            },
           );
         }
         const resolvedPrescription = assertResolvedMedia(
@@ -409,7 +464,10 @@ export function createLensPrescriptionTools(
         const next = store.getState();
         const updatedRow = resolveRow(next.rows, selector);
         if (!updatedRow)
-          semanticError("/row", `${String(selector)} does not exist`);
+          throw new WebMcpToolError(
+            "internal_error",
+            `Updated row ${String(selector)} could not be found after the update.`,
+          );
         return mutationResult(next, {
           row: selector,
           value: externalRow(updatedRow),
@@ -429,7 +487,7 @@ export function createLensPrescriptionTools(
         const surface = input.surface as number;
         const row = resolveRow(state.rows, surface);
         if (row?.kind !== "surface")
-          semanticError("/surface", `${surface} does not exist`);
+          missingSelectorError("/surface", surface, state.rows);
         state.deleteRow(row.id);
         return mutationResult(store.getState(), { surface });
       },
