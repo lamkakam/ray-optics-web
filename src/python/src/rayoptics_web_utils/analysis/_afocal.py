@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import copy
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 import numpy as np
 import rayoptics.optical.model_constants as mc
@@ -42,11 +43,20 @@ from scipy.optimize import least_squares
 from rayoptics_web_utils.raygrid.opd_reference import _validate_image_point
 from rayoptics_web_utils.raygrid.raygrid import _linear_opd_coefficients
 
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike, NDArray
+    from rayoptics.coord_geometry_types import Dir3d, Ray3d, Vec3d
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr import RayPkg
+    from rayoptics.raytr.opticalspec import Field
+
+    from rayoptics_web_utils._rayoptics_types import RawRayGrid
+
 
 ARCSEC_PER_RADIAN = 206264.806247
 
 
-def is_afocal_image_space(opm) -> bool:
+def is_afocal_image_space(opm: OpticalModel) -> bool:
     """Return whether the model declares an infinite image conjugate.
 
     Args:
@@ -59,7 +69,7 @@ def is_afocal_image_space(opm) -> bool:
     return optical_spec is not None and optical_spec.conjugate_type("image") == "infinite"
 
 
-def _unit(vector) -> np.ndarray:
+def _unit(vector: ArrayLike) -> NDArray[np.float64]:
     """Returns the unit vector of the input vector.
     A zero-length direction, a non-finite norm, or a norm made non-finite by non-finite components raises `ValueError`.
     All direction comparisons, averages, and transverse bases therefore operate on unit vectors.
@@ -77,7 +87,7 @@ def _unit(vector) -> np.ndarray:
     return value / norm
 
 
-def output_segment(ray_pkg):
+def output_segment(ray_pkg: RayPkg) -> Ray3d:
     """Return position and direction (unit vector) immediately after the penultimate surface from `ray_pkg[mc.ray]`.
 
     - The returned point is copied into a floating-point array.
@@ -92,7 +102,7 @@ def output_segment(ray_pkg):
     return np.asarray(ray[-2][mc.p], dtype=float), _unit(ray[-2][mc.d])
 
 
-def _chief_ray_pkg(opm, fld, wavelength_nm):
+def _chief_ray_pkg(opm: OpticalModel, fld: Field, wavelength_nm: float) -> RayPkg:
     """Return the chief ray package after optional exact-field preparation.
 
     Optical specifications may expose the internal
@@ -119,7 +129,7 @@ def _chief_ray_pkg(opm, fld, wavelength_nm):
     return chief_ray[0]
 
 
-def _raw_grid(opm, fld, wavelength_nm, num_rays):
+def _raw_grid(opm: OpticalModel, fld: Field, wavelength_nm: float, num_rays: int) -> RawRayGrid:
     """Returns a ray grid, preserving blocked rays as `None` packages instead of dropping them.
     The returned grid is a list of lists of `(p_x, p_y, ray_pkg)` tuples.
     `fld.vignetting_bbox` has already transformed the normalized pupil bounds, so
@@ -149,7 +159,7 @@ def _raw_grid(opm, fld, wavelength_nm, num_rays):
     )
 
 
-def reference_direction(opm, fi, wavelength_nm, image_point="chief_ray", num_rays=21, grid=None):
+def reference_direction(opm: OpticalModel, fi: int, wavelength_nm: float, image_point: str = "chief_ray", num_rays: int = 21, grid: RawRayGrid | None = None) -> tuple[Dir3d, RayPkg]:
     """Resolve chief-ray or angular-centroid output direction.
 
     - For `image_point == "chief_ray"`, it returns the chief-ray output direction and chief ray package.
@@ -195,7 +205,7 @@ def reference_direction(opm, fi, wavelength_nm, image_point="chief_ray", num_ray
     return _unit(np.mean(directions, axis=0)), chief_pkg
 
 
-def transverse_axes(reference) -> tuple[np.ndarray, np.ndarray]:
+def transverse_axes(reference: ArrayLike) -> tuple[Dir3d, Dir3d]:
     """Return a 2-tuple of sagittal and tangential axes normal to the reference direction.
 
 
@@ -227,7 +237,7 @@ def transverse_axes(reference) -> tuple[np.ndarray, np.ndarray]:
     return sagittal, tangential
 
 
-def angular_coordinates(direction, reference, axes=None) -> np.ndarray:
+def angular_coordinates(direction: ArrayLike, reference: ArrayLike, axes: tuple[Dir3d, Dir3d] | None = None) -> NDArray[np.float64]:
     """Return sagittal/tangential direction angles relative to reference, in arcsec.
 
     - Normalizes the ray and reference directions and either constructs the transverse basis or uses the supplied axes.
@@ -255,7 +265,7 @@ def angular_coordinates(direction, reference, axes=None) -> np.ndarray:
     ])
 
 
-def _trace_pkg(opm, pupil, fld, wavelength_nm):
+def _trace_pkg(opm: OpticalModel, pupil: ArrayLike, fld: Field, wavelength_nm: float) -> RayPkg | None:
     """Traces one normalized-pupil ray with aperture checking and vignetting enabled.
     - This helper returns `None` whenever `result.err` is present and otherwise returns `result.pkg`.
 
@@ -276,7 +286,7 @@ def _trace_pkg(opm, pupil, fld, wavelength_nm):
     return None if result.err is not None else result.pkg
 
 
-def _finite_output_segment(ray_pkg):
+def _finite_output_segment(ray_pkg: RayPkg) -> Ray3d | None:
     """Return a perturbed ray's finite output point and unit direction, or `None`.
 
     Point and direction components are inspected before normalization. A ray with
@@ -297,7 +307,7 @@ def _finite_output_segment(ray_pkg):
     return point, _unit(direction)
 
 
-def exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=None):
+def exit_pupil_plane(opm: OpticalModel, fld: Field, wavelength_nm: float, chief_pkg: RayPkg | None = None) -> tuple[Vec3d, Dir3d]:
     """Returns the local-tangent exit-pupil plane from neighboring chief rays.
 
 
@@ -378,7 +388,7 @@ def exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=None):
     return chief_point + distance * chief_dir, chief_dir
 
 
-def _plane_distance(point, direction, plane_point, plane_normal) -> float:
+def _plane_distance(point: Vec3d, direction: Dir3d, plane_point: Vec3d, plane_normal: Dir3d) -> float:
     """Returns the signed geometric distance `s` along a ray to a plane:
 
     ```
@@ -402,7 +412,14 @@ def _plane_distance(point, direction, plane_point, plane_normal) -> float:
     return float(np.dot(plane_point - point, plane_normal) / denominator)
 
 
-def afocal_opd(opm, ray_pkg, chief_pkg, plane_point, reference_direction, wavelength_nm) -> float:
+def afocal_opd(
+    opm: OpticalModel,
+    ray_pkg: RayPkg,
+    chief_pkg: RayPkg,
+    plane_point: Vec3d,
+    reference_direction: Dir3d,
+    wavelength_nm: float,
+) -> float:
     """Return plane-wave OPD in system length units, relative to the chief ray.
 
 
@@ -457,7 +474,7 @@ def afocal_opd(opm, ray_pkg, chief_pkg, plane_point, reference_direction, wavele
     return float(-n_obj * e1 - ray_pkg[mc.op] - n_img * ray_to_plane + chief_opl)
 
 
-def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief_ray"):
+def make_afocal_ray_grid(opm: OpticalModel, fi: int, wavelength_nm: float, num_rays: int = 64, image_point: str = "chief_ray") -> SimpleNamespace:
     """Return a RayGrid-compatible pupil/plane-wave-OPD grid in central-wavelength waves.
 
     - Creates one already-vignetted raw grid and reuses it for the angular-centroid calculation when that reference is requested. The bounding box applies vignetting once and tracing retains aperture checks with a second vignetting transform disabled. It estimates the exit-pupil point from the chief ray, converts the model's central spectral wavelength to system length units, and allocates a floating-point array of shape `(3, num_rays, num_rays)`:
@@ -538,7 +555,7 @@ def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief
     if image_point == "centroid":
         sagittal, tangential = transverse_axes(reference)
 
-        def candidate(angles):
+        def candidate(angles: NDArray[np.float64]) -> Dir3d:
             return _unit(reference + angles[0] * sagittal + angles[1] * tangential)
 
         solution = least_squares(
@@ -583,7 +600,7 @@ def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief
     )
 
 
-def projected_exit_pupil_diameters(opm, fi, wavelength_nm, image_point="chief_ray"):
+def projected_exit_pupil_diameters(opm: OpticalModel, fi: int, wavelength_nm: float, image_point: str = "chief_ray") -> tuple[float, float]:
     """Return sagittal and tangential projected clear-pupil diameters.
 
     - It finds sagittal and tangential clear-pupil diameters projected onto the plane normal to **d_ref**. For each axis, it traces the two normalized boundary pupils with coordinates `-1` and `+1` on that axis and zero on the other. Each valid ray is intersected with the exit-pupil plane, and its signed coordinate is
@@ -624,7 +641,7 @@ def projected_exit_pupil_diameters(opm, fi, wavelength_nm, image_point="chief_ra
     return float(diameters[0]), float(diameters[1])
 
 
-def _system_units_per_metre(opm) -> float:
+def _system_units_per_metre(opm: OpticalModel) -> float:
     """Lowercases `opm.system_spec.dimensions` and looks it up in the fixed `m`, `cm`, `mm`, and `in` conversion table. Multiplying an inverse-system-unit quantity by this value produces inverse metres. An unsupported unit string raises `KeyError`; there is no guessed conversion.
 
     Args:
@@ -637,7 +654,13 @@ def _system_units_per_metre(opm) -> float:
     return {"m": 1.0, "cm": 100.0, "mm": 1000.0, "in": 39.37007874015748}[units]
 
 
-def _vergence_coordinates(ray_pkg, chief_at_pupil, plane_point, reference, transverse_axis):
+def _vergence_coordinates(
+    ray_pkg: RayPkg,
+    chief_at_pupil: Vec3d,
+    plane_point: Vec3d,
+    reference: Dir3d,
+    transverse_axis: Dir3d,
+) -> tuple[float, float]:
     """Return a ray's signed exit-pupil height and exact local direction slope.
 
     The ray is intersected with the plane through `plane_point` normal to the
@@ -667,7 +690,7 @@ def _vergence_coordinates(ray_pkg, chief_at_pupil, plane_point, reference, trans
     return height, slope
 
 
-def output_vergence(opm, fld, wavelength_nm, pupil, axis: int) -> float:
+def output_vergence(opm: OpticalModel, fld: Field, wavelength_nm: float, pupil: ArrayLike, axis: int) -> float:
     """Return the ray's sagittal or tangential output vergence in diopters.
 
     - Computes finite-pupil output vergence relative to the chief ray, using the chief output direction as **d_ref**. It intersects both rays with the chief-derived exit-pupil plane and projects their separation onto the requested transverse axis:
@@ -725,7 +748,7 @@ def output_vergence(opm, fld, wavelength_nm, pupil, axis: int) -> float:
     return float(-n_img * ray_slope / height * _system_units_per_metre(opm))
 
 
-def differential_output_vergence(opm, fld, wavelength_nm, axis: int) -> float:
+def differential_output_vergence(opm: OpticalModel, fld: Field, wavelength_nm: float, axis: int) -> float:
     """Return paraxial output vergence from symmetric differential pupil rays.
 
     - Traces normalized pupil coordinates `-1e-4` and `+1e-4` on the requested axis, with the other coordinate zero. Axis `0` supplies sagittal vergence and axis `1` supplies tangential vergence.

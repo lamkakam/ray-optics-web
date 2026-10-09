@@ -3,17 +3,18 @@
 from __future__ import annotations
 
 import math
-from typing import Self
+from typing import TYPE_CHECKING, Self, cast
 
 import numpy as np
-from rayoptics.environment import OpticalModel
 from scipy.optimize._numdiff import approx_derivative
 
 from .config import normalize_config, pickup_order
 from ._types import (
     FloatArray,
+    MutableTarget,
     NormalizedOptimizationConfig,
     OptimizationConfig,
+    OptimizerSummary,
     PickupReportEntry,
     ProblemEvaluation,
     ProgressReporter,
@@ -34,6 +35,9 @@ from .targets import (
     read_target_value,
     write_target_value,
 )
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 OPERAND_REPORT_FIELDS = ("target", "min", "max", "surface_index")
@@ -141,7 +145,9 @@ class OptimizationProblem:
             write_target_value(self.opm, variable, self._from_internal_value(variable, float(value)))
         pickup_reports: list[PickupReportEntry] = []
         for pickup in self.ordered_pickups:
-            source_target = {
+            # The source shares the pickup's kind; only the identity and
+            # descriptor keys that read_target_value consults are copied.
+            source_target = cast("MutableTarget", {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
                 **({"decenter_type": pickup["decenter_type"], "materialize": False} if "decenter_type" in pickup else {}),
@@ -151,11 +157,11 @@ class OptimizationProblem:
                     if pickup["kind"] == "asphere_polynomial_coefficient"
                     else {}
                 ),
-            }
+            })
             source_value = read_target_value(self.opm, source_target)
             value = pickup["scale"] * source_value + pickup["offset"]
             write_target_value(self.opm, pickup, value)
-            pickup_reports.append({**pickup, "value": float(value)})
+            pickup_reports.append(cast("PickupReportEntry", {**pickup, "value": float(value)}))
         self.opm.update_model()
         return pickup_reports
 
@@ -174,8 +180,9 @@ class OptimizationProblem:
             total_weight = operand["weight"] * math.sqrt(operand["field_weight"]) * math.sqrt(operand["wavelength_weight"])
             for actual in actuals:
                 weighted_residual = total_weight * operand_goal_residual(operand, actual)
-                residual: ResidualEntry = {
-                    "kind": operand["kind"],
+                # The residual mirrors the operand variant it was evaluated from.
+                residual = cast("ResidualEntry", {
+                    "kind": operand["kind"],  # pyright: ignore[reportGeneralTypeIssues]  # reserved operand variants type "kind" as Never
                     "value": actual,
                     "field_index": operand["field_index"],
                     "wavelength_index": operand["wavelength_index"],
@@ -184,14 +191,14 @@ class OptimizationProblem:
                     "wavelength_weight": operand["wavelength_weight"],
                     "total_weight": float(total_weight),
                     "weighted_residual": float(weighted_residual),
-                    **{key: operand[key] for key in OPERAND_REPORT_FIELDS if key in operand},
-                }
+                    **{key: operand[key] for key in OPERAND_REPORT_FIELDS if key in operand},  # pyright: ignore[reportGeneralTypeIssues]  # variant-specific report keys
+                })
                 residuals.append(residual)
                 weighted_values.append(float(weighted_residual))
 
         sum_of_squares = float(sum(value ** 2 for value in weighted_values))
         rss = float(math.sqrt(sum_of_squares))
-        optimizer_summary = {"kind": self.optimizer["kind"]}
+        optimizer_summary: OptimizerSummary = {"kind": self.optimizer["kind"]}
         if "method" in self.optimizer:
             optimizer_summary["method"] = self.optimizer["method"]
         return {
@@ -208,7 +215,7 @@ class OptimizationProblem:
         }
 
     def variable_state(self) -> list[VariableStateEntry]:
-        return [
+        return cast("list[VariableStateEntry]", [
             {
                 "kind": variable["kind"],
                 "surface_index": variable["surface_index"],
@@ -220,7 +227,7 @@ class OptimizationProblem:
                 **({"max": variable["max"]} if "max" in variable else {}),
             }
             for variable in self.variables
-        ]
+        ])
 
     def penalty_residual_vector(self) -> np.ndarray:
         size = max(
@@ -288,7 +295,8 @@ class OptimizationProblem:
             f0=f0,
             bounds=bounds,
         )
-        return np.atleast_2d(jacobian)
+        # Dense two-point differences always return an ndarray Jacobian.
+        return np.atleast_2d(cast("FloatArray", jacobian))
 
     def scalar_objective(self, vector: FloatArray) -> float:
         try:

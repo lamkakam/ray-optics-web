@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.optimize import minimize
 
 from rayoptics_web_utils.optimization._types import FloatArray, ProgressReporter, SolverResult
+
+if TYPE_CHECKING:
+    from rayoptics_web_utils.optimization.problem import OptimizationProblem
 
 
 GLASS_OBJECTIVE_PENALTY = 1e10
@@ -22,7 +26,7 @@ class LBFGSBSolver:
     evaluations to the glass-expert penalty.
     """
 
-    def __init__(self, problem, maxiter: int, tol: float):
+    def __init__(self, problem: OptimizationProblem, maxiter: int, tol: float):
         self.problem = problem
         self.maxiter = maxiter
         self.tol = tol

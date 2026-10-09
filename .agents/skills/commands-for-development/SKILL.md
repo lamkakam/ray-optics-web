@@ -29,6 +29,12 @@ npm run dev
 npm run type-check
 ```
 
+### Type check the internal Python package (Pyright; requires the initialized venv):
+
+```bash
+npm run type-check:python
+```
+
 ### Lint:
 
 ```bash

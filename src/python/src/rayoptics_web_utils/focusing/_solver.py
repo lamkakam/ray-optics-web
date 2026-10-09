@@ -1,14 +1,20 @@
 """Share one bounded best-focus search between focusing and focus analyses."""
 
+from __future__ import annotations
+
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from scipy.optimize import minimize_scalar
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 # Search window, in system length units, around the paraxial image position.
 DEFAULT_FOCUS_BOUNDS: tuple[float, float] = (-5.0, 5.0)
 
 
-def _paraxial_focus_offset(opm) -> float:
+def _paraxial_focus_offset(opm: OpticalModel) -> float:
     """Return the paraxial image distance minus the current final gap thickness.
 
     This is the focus shift from the current image plane to the paraxial image

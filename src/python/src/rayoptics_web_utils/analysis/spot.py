@@ -1,6 +1,9 @@
 """Extract spot-diagram data."""
 
-from rayoptics.environment import OpticalModel
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from rayoptics.raytr import trace
 
 from rayoptics_web_utils._spot import _transverse_aberration
@@ -17,6 +20,14 @@ from rayoptics_web_utils.analysis._afocal import (
     reference_direction,
 )
 from rayoptics_web_utils.utils import _json_float_list, _system_units
+
+if TYPE_CHECKING:
+    import numpy as np
+    from numpy.typing import NDArray
+    from rayoptics.coord_geometry_types import Dir3d
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr import RayPkg
+    from rayoptics.raytr.opticalspec import Field
 
 
 def get_spot_data(
@@ -49,9 +60,11 @@ def get_spot_data(
     """
     sm = opm.seq_model
     afocal = is_afocal_image_space(opm)
-    references = {}
+    references: dict[float, Dir3d] = {}
 
-    def _spot(p, wi, ray_pkg, fld, wvl, foc):
+    def _spot(
+        p: NDArray[np.float64], wi: int, ray_pkg: RayPkg | None, fld: Field, wvl: float, foc: float
+    ) -> NDArray[np.float64] | None:
         if ray_pkg is not None:
             if afocal:
                 if wvl not in references:
@@ -129,8 +142,9 @@ def get_spot_data(
             vig_bbox = fld.vignetting_bbox(opm["osp"]["pupil"])
             grid_def = [vig_bbox[0], vig_bbox[1], num_rays]
             ref_sphere, chief_ray = trace.setup_pupil_coords(opm, fld, wvl, foc)
-            fld.chief_ray = chief_ray
-            fld.ref_sphere = ref_sphere
+            # RayOptics declares Field.chief_ray/ref_sphere as None.
+            fld.chief_ray = chief_ray  # pyright: ignore[reportAttributeAccessIssue]
+            fld.ref_sphere = ref_sphere  # pyright: ignore[reportAttributeAccessIssue]
             grids.append(trace.trace_grid(
                 opm, grid_def, fld, wvl, foc, form="list",
                 append_if_none=False,

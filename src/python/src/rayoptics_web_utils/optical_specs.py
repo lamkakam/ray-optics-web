@@ -46,11 +46,16 @@ reflection, unreachable targets, and non-converged numerical solves raise an
 exact-spec exception and never fall back to a paraxial launch.
 """
 
+from collections.abc import Callable, Mapping, Sequence
 import math
+from typing import TYPE_CHECKING, Any, NoReturn, Protocol, Self, cast
 
 import numpy as np
+from numpy.typing import NDArray
+from rayoptics.coord_geometry_types import Ray3d, Vec2d, Vec3d
 import rayoptics.optical.model_constants as mc
 from rayoptics.optical.opticalmodel import OpticalModel
+from rayoptics.parax.specsheet import SpecSheet
 from rayoptics.raytr import RayPkg
 from rayoptics.raytr import raytrace
 from rayoptics.raytr.opticalspec import Field, FieldSpec, OpticalSpecs
@@ -67,7 +72,17 @@ from rayoptics.raytr.vigcalc import (
 )
 from rayoptics.raytr.waveabr import transfer_to_exit_pupil
 from rayoptics.raytr.wideangle import eval_real_image_ht
-from scipy.optimize import least_squares, root_scalar
+from rayoptics.seq.sequential import SequentialModel
+from rayoptics.typing import RayPkg as RawRayPkg
+from scipy.optimize import OptimizeResult, RootResults, least_squares, root_scalar
+
+# This module is also inlined into exported standalone scripts, after other
+# code, so it cannot use ``from __future__ import annotations`` or import this
+# package at runtime. Annotations naming type-checking-only imports are quoted.
+if TYPE_CHECKING:
+    from rayoptics.typing import RaySeg
+
+    from rayoptics_web_utils._rayoptics_types import ChiefRayPkg
 
 
 EXACT_SPEC_RELATIVE_TOLERANCE = 1.0e-9
@@ -78,8 +93,47 @@ _MAX_SCALAR_CONTINUATION_STEPS = 256
 _MIN_VECTOR_CONTINUATION_SUBDIVISIONS = 8
 _MAX_HEIGHT_CONTINUATION_STEP = 0.1
 
+type FloatVector = Sequence[float] | NDArray[np.float64]
+"""A real-valued vector given as a plain sequence or a NumPy array."""
 
-def _least_squares_vector_solver(residual, initial, *, method=None, options=None):
+type VectorResidual = Callable[[FloatVector], NDArray[np.float64]]
+"""Residual evaluated by an exact-spec vector solver."""
+
+type ObjectHeightSolution = tuple[NDArray[np.float64], Ray3d, ChiefRayPkg | None]
+"""Forward tangent, object-space launch and verified chief ray (``None`` before verification)."""
+
+type ImageHeightSolution = tuple[NDArray[np.float64], Ray3d, float, ChiefRayPkg]
+"""Reverse tangent, object-space launch, RayOptics aim info and verified chief ray."""
+
+type CoordinateKey = tuple[float, ...]
+"""Hashable absolute field coordinate used to key exact-spec caches."""
+
+type NativeImageHeightEvaluator = Callable[[OpticalModel, Field, float], tuple[Ray3d, float]]
+"""RayOptics-compatible real-image-height launch evaluator returning ``(launch, aim_info)``."""
+
+
+class VectorSolver(Protocol):
+    """Injectable solver for exact-spec real-ray vector residuals."""
+
+    def __call__(
+        self,
+        residual: VectorResidual,
+        initial: NDArray[np.float64],
+        *,
+        method: str | None = None,
+        options: Mapping[str, float] | None = None,
+    ) -> OptimizeResult:
+        """Return a SciPy result whose ``x`` zeroes ``residual``."""
+        ...
+
+
+def _least_squares_vector_solver(
+    residual: VectorResidual,
+    initial: NDArray[np.float64],
+    *,
+    method: str | None = None,
+    options: Mapping[str, float] | None = None,
+) -> OptimizeResult:
     """Solve a real-ray vector residual with strict trust-region tolerances."""
     del method
     options = options or {}
@@ -105,7 +159,7 @@ class ExactSpecConvergenceError(ExactSpecError):
     """A required exact-spec root solve did not converge to tolerance."""
 
 
-def _normalize(vector):
+def _normalize(vector: FloatVector) -> NDArray[np.float64]:
     """Return ``vector`` normalized, rejecting a zero or non-finite norm."""
     vector = np.asarray(vector, dtype=float)
     magnitude = float(np.linalg.norm(vector))
@@ -114,7 +168,7 @@ def _normalize(vector):
     return vector / magnitude
 
 
-def _angle_between(first, second):
+def _angle_between(first: FloatVector, second: FloatVector) -> float:
     """Return the unsigned angle between two ray directions."""
     first = _normalize(first)
     second = _normalize(second)
@@ -122,7 +176,7 @@ def _angle_between(first, second):
     return math.acos(cosine)
 
 
-def _raise_trace_error(error, context):
+def _raise_trace_error(error: TraceError, context: str) -> NoReturn:
     """Translate a RayOptics trace failure into a stable exact-spec error."""
     surface = getattr(error, "surf", None)
     suffix = "" if surface is None else f" at surface {surface}"
@@ -137,7 +191,7 @@ def _raise_trace_error(error, context):
     ) from error
 
 
-def _stop_index_and_center(seq_model):
+def _stop_index_and_center(seq_model: SequentialModel) -> tuple[int, Vec2d]:
     """Return the physical stop index and its local aperture centre."""
     stop_index = 1 if seq_model.stop_surface is None else seq_model.stop_surface
     stop_interface = seq_model.ifcs[stop_index]
@@ -155,7 +209,7 @@ def _stop_index_and_center(seq_model):
     return stop_index, centre
 
 
-def _is_close(actual, expected):
+def _is_close(actual: float | FloatVector, expected: float | FloatVector) -> bool:
     """Return whether scalar or vector residuals meet the exact-spec tolerance."""
     return bool(
         np.allclose(
@@ -167,12 +221,12 @@ def _is_close(actual, expected):
     )
 
 
-def _is_exact_stack_enabled(optical_spec):
+def _is_exact_stack_enabled(optical_spec: OpticalSpecs) -> bool:
     """Return whether the field explicitly opts into exact real-ray handling."""
     return getattr(optical_spec["fov"], "is_wide_angle", False) is True
 
 
-def set_vig_respecting_exact_pupil(opm):
+def set_vig_respecting_exact_pupil(opm: OpticalModel) -> None:
     """Set vignetting without searching beyond an exact Object-NA pupil.
 
     Wide-angle Object NA defines radius one as the requested physical angular
@@ -236,7 +290,7 @@ def set_vig_respecting_exact_pupil(opm):
     return None
 
 
-def _cache_verified_chief_ray(optical_spec, forward_ray, context):
+def _cache_verified_chief_ray(optical_spec: OpticalSpecs, forward_ray: RawRayPkg, context: str) -> "ChiefRayPkg":
     """Return an OPD-compatible chief cache for verified real-ray geometry.
 
     Strict specification verification uses ``trace_raw`` over every model gap.
@@ -278,7 +332,7 @@ def _cache_verified_chief_ray(optical_spec, forward_ray, context):
 class ExactOpticalSpecs(OpticalSpecs):
     """Optical specs whose opted-in launches use the model's resolved pupil."""
 
-    def update_optical_properties(self, **kwargs):
+    def update_optical_properties(self, **kwargs: Any) -> None:
         """Resolve opted-in exact fields after current first-order properties.
 
         Opted-in Object NA is validated first: RayOptics' first-order
@@ -311,7 +365,7 @@ class ExactOpticalSpecs(OpticalSpecs):
         field_of_view._resolve_all_fields()
         return result
 
-    def _prepare_analysis_field(self, field):
+    def _prepare_analysis_field(self, field: Field) -> None:
         """Attach an exact chief cache to an uncached analysis field copy.
 
         Afocal analysis differentiates neighboring chief rays by updating
@@ -331,7 +385,7 @@ class ExactOpticalSpecs(OpticalSpecs):
         ):
             field_of_view.obj_coords(field)
 
-    def ray_start_from_osp(self, pupil, fld, pupil_type):
+    def ray_start_from_osp(self, pupil: FloatVector, fld: Field, pupil_type: str) -> Ray3d:
         """Return an exact physical start when the pupil requires resolution."""
         if pupil_type != "rel pupil" or not _is_exact_stack_enabled(self):
             return super().ray_start_from_osp(pupil, fld, pupil_type)
@@ -368,7 +422,7 @@ class ExactOpticalSpecs(OpticalSpecs):
 
         return super().ray_start_from_osp(pupil, fld, pupil_type)
 
-    def _start_from_object_epd(self, pupil, fld, object_epd):
+    def _start_from_object_epd(self, pupil: FloatVector, fld: Field, object_epd: float) -> Ray3d:
         """Launch through an exact-chief-centred object-space pupil plane."""
         point, chief_direction = self.obj_coords(fld)
         point = np.asarray(point, dtype=float)
@@ -410,7 +464,7 @@ class ExactOpticalSpecs(OpticalSpecs):
         )
         return point, _normalize(pupil_target - point)
 
-    def _start_from_exact_object_na(self, pupil, fld, direction_sine):
+    def _start_from_exact_object_na(self, pupil: FloatVector, fld: Field, direction_sine: float) -> Ray3d:
         """Launch a unit-disk cone linear in object-space direction sine."""
         point, chief_direction = self.obj_coords(fld)
         chief_direction = _normalize(chief_direction)
@@ -444,7 +498,7 @@ class ExactOpticalSpecs(OpticalSpecs):
         return np.asarray(point, dtype=float), _normalize(direction)
 
     @staticmethod
-    def _transverse_axes(chief_direction):
+    def _transverse_axes(chief_direction: NDArray[np.float64]) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Return object-local +X/+Y axes orthogonal to ``chief_direction``."""
         x_reference = np.array([1.0, 0.0, 0.0], dtype=float)
         x_axis = x_reference - np.dot(x_reference, chief_direction) * chief_direction
@@ -462,19 +516,19 @@ class ExactOpticalSpecs(OpticalSpecs):
 class ExactObjectHeightFieldSpec(FieldSpec):
     """Exact object-height launches cached by absolute field coordinate."""
 
-    def __init__(self, *args, vector_solver=None, **kwargs):
+    def __init__(self, *args: Any, vector_solver: VectorSolver | None = None, **kwargs: Any):
         """Initialize an injectable direction solver and empty launch caches."""
         self._vector_solver = vector_solver or _least_squares_vector_solver
         self._clear_solution_cache()
         super().__init__(*args, **kwargs)
 
-    def _clear_solution_cache(self):
+    def _clear_solution_cache(self) -> None:
         """Discard launches and analysis rays resolved for prior geometry."""
-        self._coordinate_launches = {}
-        self._coordinate_tangents = {}
-        self._coordinate_chief_rays = {}
+        self._coordinate_launches: dict[CoordinateKey, Ray3d] = {}
+        self._coordinate_tangents: dict[CoordinateKey, NDArray[np.float64]] = {}
+        self._coordinate_chief_rays: dict[CoordinateKey, ChiefRayPkg | None] = {}
 
-    def update_model(self, **kwargs):
+    def update_model(self, **kwargs: Any) -> Self:
         """Clear stale state and validate the opted-in finite field contract."""
         self._clear_solution_cache()
         result = super().update_model(**kwargs)
@@ -491,10 +545,10 @@ class ExactObjectHeightFieldSpec(FieldSpec):
                 )
         return result
 
-    def obj_coords(self, fld):
+    def obj_coords(self, fld: Field) -> Ray3d:
         """Resolve a coordinate without replacing a chromatic chief cache."""
         if self.key != ("object", "height") or self.is_wide_angle is not True:
-            return super().obj_coords(fld)
+            return cast("Ray3d", super().obj_coords(fld))
         self._require_finite_object_conjugate()
 
         coordinate = self._absolute_field_coordinate(fld)
@@ -510,7 +564,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
 
-    def _require_finite_object_conjugate(self):
+    def _require_finite_object_conjugate(self) -> None:
         """Reject exact Object Height when no finite object point exists."""
         if self.optical_spec.conjugate_type("object") != "finite":
             raise ExactSpecError(
@@ -519,23 +573,23 @@ class ExactObjectHeightFieldSpec(FieldSpec):
             )
 
     @staticmethod
-    def _coordinate_key(coordinate):
+    def _coordinate_key(coordinate: Vec2d) -> CoordinateKey:
         """Return a stable lookup key for an absolute object coordinate."""
         return tuple(float(value) for value in coordinate)
 
     @staticmethod
-    def _object_point(coordinate):
+    def _object_point(coordinate: Vec2d) -> Vec3d:
         """Return the fixed object-interface launch point for ``coordinate``."""
         return np.array(
             [float(coordinate[0]), float(coordinate[1]), 0.0],
             dtype=float,
         )
 
-    def _absolute_field_coordinate(self, fld):
+    def _absolute_field_coordinate(self, fld: Field) -> Vec2d:
         """Return the requested absolute object-local X/Y field coordinate."""
         return np.array([float(fld.xv), float(fld.yv)], dtype=float)
 
-    def _resolve_all_fields(self):
+    def _resolve_all_fields(self) -> None:
         """Resolve unique configured points by continuation from the axis."""
         self._clear_solution_cache()
         self._require_finite_object_conjugate()
@@ -567,7 +621,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
                 self._store_coordinate_solution(coordinate, solution)
             self._apply_coordinate_solution(field, coordinate)
 
-    def _store_coordinate_solution(self, coordinate, solution):
+    def _store_coordinate_solution(self, coordinate: Vec2d, solution: ObjectHeightSolution) -> None:
         """Cache one verified point, tangent, launch, and analysis chief ray."""
         tangent, launch, chief_ray = solution
         key = self._coordinate_key(coordinate)
@@ -575,13 +629,14 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         self._coordinate_launches[key] = launch
         self._coordinate_chief_rays[key] = chief_ray
 
-    def _apply_coordinate_solution(self, field, coordinate):
+    def _apply_coordinate_solution(self, field: Field, coordinate: Vec2d) -> None:
         """Restore coordinate-matched analysis metadata on a field."""
         key = self._coordinate_key(coordinate)
         field.aim_info = None
-        field.chief_ray = self._coordinate_chief_rays[key]
+        # RayOptics declares Field.chief_ray as None; it holds a ChiefRayPkg here.
+        field.chief_ray = self._coordinate_chief_rays[key]  # pyright: ignore[reportAttributeAccessIssue]
 
-    def _solve_coordinate_from_axis(self, coordinate):
+    def _solve_coordinate_from_axis(self, coordinate: Vec2d) -> ObjectHeightSolution:
         """Resolve an ad-hoc coordinate from the cached or newly solved axis."""
         axial_coordinate = np.array([0.0, 0.0], dtype=float)
         axial_key = self._coordinate_key(axial_coordinate)
@@ -604,10 +659,10 @@ class ExactObjectHeightFieldSpec(FieldSpec):
 
     def _continue_forward_solution(
         self,
-        start_coordinate,
-        target_coordinate,
-        initial_tangent,
-    ):
+        start_coordinate: Vec2d,
+        target_coordinate: Vec2d,
+        initial_tangent: FloatVector,
+    ) -> ObjectHeightSolution:
         """Continue the axial direction with bounded object-height steps."""
         tangent = np.asarray(initial_tangent, dtype=float)
         solution = None
@@ -636,11 +691,11 @@ class ExactObjectHeightFieldSpec(FieldSpec):
 
     def _solve_forward_direction(
         self,
-        object_coordinate,
-        initial_tangent,
+        object_coordinate: Vec2d,
+        initial_tangent: FloatVector,
         *,
-        verify=True,
-    ):
+        verify: bool = True,
+    ) -> ObjectHeightSolution:
         """Solve a fixed point's normalized forward direction to the stop.
 
         The candidate direction is ``normalize([t_x, t_y, z_dir])``.  Ray
@@ -665,9 +720,9 @@ class ExactObjectHeightFieldSpec(FieldSpec):
             raise ExactSpecError("Exact Object Height stop path is empty")
         z_direction = float(stop_path[0][mc.Zdir])
         object_point = self._object_point(object_coordinate)
-        last_stop_ray = None
+        last_stop_ray: RawRayPkg | None = None
 
-        def residual(tangent):
+        def residual(tangent: FloatVector) -> NDArray[np.float64]:
             nonlocal last_stop_ray
             direction = _normalize([tangent[0], tangent[1], z_direction])
             try:
@@ -692,7 +747,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         )
         initial_meridional_residual = residual(meridional_tangent)
         is_centred_meridional = (
-            _is_close(object_coordinate[0], 0.0)
+            _is_close(float(object_coordinate[0]), 0.0)
             and _is_close(stop_centre[0], 0.0)
             and _is_close(initial_tangent[0], 0.0)
             and _is_close(initial_meridional_residual[0], 0.0)
@@ -700,7 +755,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
 
         if is_centred_meridional:
 
-            def meridional_residual(tangent):
+            def meridional_residual(tangent: FloatVector) -> NDArray[np.float64]:
                 tangent = np.atleast_1d(tangent)
                 return np.array(
                     [residual([0.0, float(tangent[0])])[1]],
@@ -767,11 +822,11 @@ class ExactObjectHeightFieldSpec(FieldSpec):
 
     def _verify_forward_launch(
         self,
-        launch,
-        stop_index,
-        stop_centre,
-        wavelength,
-    ):
+        launch: Ray3d,
+        stop_index: int,
+        stop_centre: Vec2d,
+        wavelength: float,
+    ) -> RawRayPkg:
         """Fully trace and verify the fixed object point and local stop hit."""
         seq_model = self.optical_spec.opt_model["seq_model"]
         point, direction = launch
@@ -813,10 +868,10 @@ class ExactImageHeightFieldSpec(FieldSpec):
 
     def __init__(
         self,
-        *args,
-        vector_solver=None,
-        native_image_height_evaluator=None,
-        **kwargs,
+        *args: Any,
+        vector_solver: VectorSolver | None = None,
+        native_image_height_evaluator: NativeImageHeightEvaluator | None = None,
+        **kwargs: Any,
     ):
         """Initialize injectable native evaluation and refinement solvers."""
         self._vector_solver = vector_solver or _least_squares_vector_solver
@@ -826,14 +881,14 @@ class ExactImageHeightFieldSpec(FieldSpec):
         self._clear_solution_cache()
         super().__init__(*args, **kwargs)
 
-    def _clear_solution_cache(self):
+    def _clear_solution_cache(self) -> None:
         """Discard launches and RayOptics analysis caches from prior geometry."""
-        self._coordinate_launches = {}
-        self._coordinate_tangents = {}
-        self._coordinate_aim_info = {}
-        self._coordinate_chief_rays = {}
+        self._coordinate_launches: dict[CoordinateKey, Ray3d] = {}
+        self._coordinate_tangents: dict[CoordinateKey, NDArray[np.float64]] = {}
+        self._coordinate_aim_info: dict[CoordinateKey, float] = {}
+        self._coordinate_chief_rays: dict[CoordinateKey, ChiefRayPkg] = {}
 
-    def update_model(self, **kwargs):
+    def update_model(self, **kwargs: Any) -> Self:
         """Clear stale exact state and otherwise follow RayOptics' field update."""
         self._clear_solution_cache()
         result = super().update_model(**kwargs)
@@ -843,10 +898,10 @@ class ExactImageHeightFieldSpec(FieldSpec):
             )
         return result
 
-    def obj_coords(self, fld):
+    def obj_coords(self, fld: Field) -> Ray3d:
         """Resolve a coordinate without replacing a chromatic chief cache."""
         if self.key != ("image", "height") or self.is_wide_angle is not True:
-            return super().obj_coords(fld)
+            return cast("Ray3d", super().obj_coords(fld))
 
         coordinate = self._absolute_field_coordinate(fld)
         key = self._coordinate_key(coordinate)
@@ -864,16 +919,16 @@ class ExactImageHeightFieldSpec(FieldSpec):
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
 
-    def _absolute_field_coordinate(self, fld):
+    def _absolute_field_coordinate(self, fld: Field) -> Vec2d:
         """Return the requested local image-surface x/y intersection."""
         return np.array([float(fld.xv), float(fld.yv)], dtype=float)
 
     @staticmethod
-    def _coordinate_key(coordinate):
+    def _coordinate_key(coordinate: Vec2d) -> CoordinateKey:
         """Return a stable lookup key for a solved image coordinate."""
         return tuple(float(value) for value in coordinate)
 
-    def _resolve_all_fields(self):
+    def _resolve_all_fields(self) -> None:
         """Resolve configured fields natively or by radial continuation."""
         self._clear_solution_cache()
         if len(self.fields) == 0:
@@ -918,7 +973,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
                 self._store_coordinate_solution(coordinate, solution)
             self._apply_coordinate_solution(field, coordinate)
 
-    def _store_coordinate_solution(self, coordinate, solution):
+    def _store_coordinate_solution(self, coordinate: Vec2d, solution: ImageHeightSolution) -> None:
         """Cache a verified coordinate launch and its RayOptics metadata."""
         tangent, launch, aim_info, chief_ray = solution
         key = self._coordinate_key(coordinate)
@@ -927,13 +982,15 @@ class ExactImageHeightFieldSpec(FieldSpec):
         self._coordinate_aim_info[key] = aim_info
         self._coordinate_chief_rays[key] = chief_ray
 
-    def _apply_coordinate_solution(self, field, coordinate):
+    def _apply_coordinate_solution(self, field: Field, coordinate: Vec2d) -> None:
         """Restore coordinate-matched analysis metadata on a field."""
         key = self._coordinate_key(coordinate)
-        field.aim_info = self._coordinate_aim_info[key]
-        field.chief_ray = self._coordinate_chief_rays[key]
+        # RayOptics declares Field.aim_info and Field.chief_ray as None; they
+        # hold the real entrance-pupil aim value and a ChiefRayPkg here.
+        field.aim_info = self._coordinate_aim_info[key]  # pyright: ignore[reportAttributeAccessIssue]
+        field.chief_ray = self._coordinate_chief_rays[key]  # pyright: ignore[reportAttributeAccessIssue]
 
-    def _solve_coordinate_from_axis(self, coordinate):
+    def _solve_coordinate_from_axis(self, coordinate: Vec2d) -> ImageHeightSolution:
         """Solve an ad-hoc field coordinate from the cached axial real ray."""
         axial_coordinate = np.array([0.0, 0.0], dtype=float)
         axial_key = self._coordinate_key(axial_coordinate)
@@ -952,10 +1009,10 @@ class ExactImageHeightFieldSpec(FieldSpec):
 
     def _continue_reverse_solution(
         self,
-        start_coordinate,
-        target_coordinate,
-        initial_tangent,
-    ):
+        start_coordinate: Vec2d,
+        target_coordinate: Vec2d,
+        initial_tangent: FloatVector,
+    ) -> ImageHeightSolution:
         """Continue a verified real reverse ray to ``target_coordinate``."""
         tangent = np.asarray(initial_tangent, dtype=float)
         solution = None
@@ -986,7 +1043,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
             )
         return solution
 
-    def _supports_native_image_height_evaluator(self):
+    def _supports_native_image_height_evaluator(self) -> bool:
         """Return whether RayOptics supports this exact image-height geometry."""
         if self.optical_spec.conjugate_type("object") != "infinite":
             return False
@@ -1003,7 +1060,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
             return False
         return getattr(stop_interface, "decenter", None) is None
 
-    def _solve_native_first(self, field, image_coordinate):
+    def _solve_native_first(self, field: Field, image_coordinate: Vec2d) -> ImageHeightSolution:
         """Use RayOptics' launch, refining only failed strict verification."""
         opm = self.optical_spec.opt_model
         wavelength = self.optical_spec["wvls"].central_wvl
@@ -1048,10 +1105,11 @@ class ExactImageHeightFieldSpec(FieldSpec):
         return initial_tangent, launch, aim_info, chief_ray
 
     @staticmethod
-    def _reverse_tangent_from_forward_ray(forward_ray):
+    def _reverse_tangent_from_forward_ray(forward_ray: RawRayPkg) -> NDArray[np.float64]:
         """Return a reverse-image tangent seeded by a forward chief ray."""
+        ray_segments = cast("list[RaySeg]", forward_ray[mc.ray])
         reverse_direction = -np.asarray(
-            forward_ray[mc.ray][-1][mc.d],
+            ray_segments[-1][mc.d],
             dtype=float,
         )
         if abs(float(reverse_direction[2])) <= np.finfo(float).eps:
@@ -1060,7 +1118,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
             )
         return reverse_direction[:2] / abs(float(reverse_direction[2]))
 
-    def _solve_reverse_direction(self, image_coordinate, initial_tangent):
+    def _solve_reverse_direction(self, image_coordinate: Vec2d, initial_tangent: FloatVector) -> ImageHeightSolution:
         """Solve a reverse real direction through the physical stop centre.
 
         A centred Y-only target has no sagittal degree of freedom in a centred
@@ -1083,9 +1141,9 @@ class ExactImageHeightFieldSpec(FieldSpec):
         reverse_stop_index = len(seq_model.ifcs) - stop_index - 1
         z_sign = float(reverse_path[0][mc.Zdir])
         image_point = self._image_surface_point(image_coordinate)
-        last_reverse_ray = None
+        last_reverse_ray: RawRayPkg | None = None
 
-        def residual(tangent):
+        def residual(tangent: FloatVector) -> NDArray[np.float64]:
             nonlocal last_reverse_ray
             direction = _normalize([tangent[0], tangent[1], z_sign])
             try:
@@ -1113,7 +1171,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
         )
         initial_meridional_residual = residual(meridional_tangent)
         is_centred_meridional = (
-            _is_close(image_coordinate[0], 0.0)
+            _is_close(float(image_coordinate[0]), 0.0)
             and _is_close(stop_centre[0], 0.0)
             and _is_close(initial_tangent[0], 0.0)
             and _is_close(initial_meridional_residual[0], 0.0)
@@ -1121,7 +1179,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
 
         if is_centred_meridional:
 
-            def meridional_residual(tangent):
+            def meridional_residual(tangent: FloatVector) -> NDArray[np.float64]:
                 tangent = np.atleast_1d(tangent)
                 return np.array(
                     [residual([0.0, float(tangent[0])])[1]],
@@ -1207,9 +1265,10 @@ class ExactImageHeightFieldSpec(FieldSpec):
         chief_ray = self._chief_ray_cache(forward_ray)
         return final_tangent, launch, aim_info, chief_ray
 
-    def _aim_info_from_reverse_ray(self, reverse_ray):
+    def _aim_info_from_reverse_ray(self, reverse_ray: RawRayPkg) -> float:
         """Derive RayOptics' scalar real entrance-pupil cache value."""
-        first_surface_segment = reverse_ray[mc.ray][-2]
+        ray_segments = cast("list[RaySeg]", reverse_ray[mc.ray])
+        first_surface_segment = ray_segments[-2]
         first_surface_point = np.asarray(
             first_surface_segment[mc.p],
             dtype=float,
@@ -1237,7 +1296,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
             / transverse_direction
         )
 
-    def _chief_ray_cache(self, forward_ray):
+    def _chief_ray_cache(self, forward_ray: RawRayPkg) -> "ChiefRayPkg":
         """Build a geometrically verified, OPD-compatible chief-ray package.
 
         ``_trace_forward_retrace`` deliberately uses ``trace_raw`` across the
@@ -1253,7 +1312,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
             "Exact image-height",
         )
 
-    def _image_surface_point(self, image_coordinate):
+    def _image_surface_point(self, image_coordinate: Vec2d) -> Vec3d:
         """Return the exact local point on the possibly curved image profile."""
         image_interface = self.optical_spec.opt_model["seq_model"].ifcs[-1]
         try:
@@ -1272,12 +1331,12 @@ class ExactImageHeightFieldSpec(FieldSpec):
 
     def _verify_forward_retrace(
         self,
-        launch,
-        image_coordinate,
-        stop_index,
-        stop_centre,
-        wavelength,
-    ):
+        launch: Ray3d,
+        image_coordinate: Vec2d,
+        stop_index: int,
+        stop_centre: Vec2d,
+        wavelength: float,
+    ) -> RawRayPkg:
         """Forward retrace a reverse solution and verify stop/image residuals."""
         forward_ray, stop_residual, image_residual = self._trace_forward_retrace(
             launch,
@@ -1299,12 +1358,12 @@ class ExactImageHeightFieldSpec(FieldSpec):
 
     def _trace_forward_retrace(
         self,
-        launch,
-        image_coordinate,
-        stop_index,
-        stop_centre,
-        wavelength,
-    ):
+        launch: Ray3d,
+        image_coordinate: Vec2d,
+        stop_index: int,
+        stop_centre: Vec2d,
+        wavelength: float,
+    ) -> tuple[RawRayPkg, Vec2d, Vec2d]:
         """Trace a candidate launch and return its stop and image residuals."""
         seq_model = self.optical_spec.opt_model["seq_model"]
         point, direction = launch
@@ -1337,15 +1396,15 @@ class ExactOpticalModel(OpticalModel):
 
     def __init__(
         self,
-        radius_mode=False,
-        specsheet=None,
-        scalar_solver=None,
-        **kwargs,
+        radius_mode: bool = False,
+        specsheet: SpecSheet | None = None,
+        scalar_solver: Callable[..., RootResults] | None = None,
+        **kwargs: Any,
     ):
         """Create a model with exact launch state and injectable scalar solver."""
-        self._scalar_solver = scalar_solver or root_scalar
-        self._resolved_object_epd = None
-        self._resolved_object_na_direction_sine = None
+        self._scalar_solver: Callable[..., RootResults] = scalar_solver or root_scalar
+        self._resolved_object_epd: float | None = None
+        self._resolved_object_na_direction_sine: float | None = None
         self._exact_pupil_resolve_count = 0
         self.optical_spec = ExactOpticalSpecs(
             self,
@@ -1359,16 +1418,16 @@ class ExactOpticalModel(OpticalModel):
         )
 
     @property
-    def resolved_object_epd(self):
+    def resolved_object_epd(self) -> float | None:
         """Return the current exact object-space beam diameter, if applicable."""
         return self._resolved_object_epd
 
     @property
-    def exact_pupil_resolve_count(self):
+    def exact_pupil_resolve_count(self) -> int:
         """Return the number of successful post-update pupil resolutions."""
         return self._exact_pupil_resolve_count
 
-    def update_model(self, **kwargs):
+    def update_model(self, **kwargs: Any) -> None:
         """Update RayOptics, resolving pupils only for explicit wide-angle use."""
         self._resolved_object_epd = None
         self._resolved_object_na_direction_sine = None
@@ -1379,7 +1438,7 @@ class ExactOpticalModel(OpticalModel):
         if self["seq_model"].do_apertures and len(self["seq_model"].ifcs) > 2:
             self["seq_model"].set_clear_apertures()
 
-    def _resolve_exact_pupil(self):
+    def _resolve_exact_pupil(self) -> None:
         """Resolve and verify the requested valid pupil combination."""
         pupil = self["optical_spec"]["pupil"]
         if pupil.key == ("image", "f/#"):
@@ -1394,7 +1453,7 @@ class ExactOpticalModel(OpticalModel):
             )
         self._exact_pupil_resolve_count += 1
 
-    def _on_axis_field(self):
+    def _on_axis_field(self) -> Field:
         """Return an existing axial field or a temporary exact axial sample."""
         field_of_view = self["optical_spec"]["fov"]
         for field in field_of_view.fields:
@@ -1402,7 +1461,7 @@ class ExactOpticalModel(OpticalModel):
                 return field
         return Field(x=0.0, y=0.0, fov=field_of_view)
 
-    def _trace_axial_pupil_ray(self, pupil_coordinate, context):
+    def _trace_axial_pupil_ray(self, pupil_coordinate: FloatVector, context: str) -> RayPkg:
         """Trace one unclipped axial pupil ray and translate physical errors."""
         optical_spec = self["optical_spec"]
         field = self._on_axis_field()
@@ -1419,7 +1478,7 @@ class ExactOpticalModel(OpticalModel):
         except TraceError as error:
             _raise_trace_error(error, context)
 
-    def _real_image_space_angle(self):
+    def _real_image_space_angle(self) -> float:
         """Return the real local image-space chief-to-+Y marginal angle."""
         chief = self._trace_axial_pupil_ray(
             [0.0, 0.0],
@@ -1434,7 +1493,7 @@ class ExactOpticalModel(OpticalModel):
             marginal[mc.ray][-1][mc.d],
         )
 
-    def _resolve_image_f_number(self, f_number):
+    def _resolve_image_f_number(self, f_number: float) -> None:
         """Root solve object-space beam diameter for geometric Image F/#."""
         if not math.isfinite(f_number) or f_number <= 0.0:
             raise ExactSpecError("Image F/# must be finite and greater than zero")
@@ -1477,7 +1536,7 @@ class ExactOpticalModel(OpticalModel):
                 "Exact Image F/# continuation did not bracket the target"
             )
 
-        def residual(object_epd):
+        def residual(object_epd: float) -> float:
             self._resolved_object_epd = float(object_epd)
             return self._real_image_space_angle() - target_angle
 
@@ -1502,7 +1561,7 @@ class ExactOpticalModel(OpticalModel):
                 "the required tolerance"
             )
 
-    def _validated_object_na_index(self, numerical_aperture):
+    def _validated_object_na_index(self, numerical_aperture: float) -> float:
         """Return the reference object index after validating Object NA.
 
         Args:
@@ -1531,7 +1590,7 @@ class ExactOpticalModel(OpticalModel):
             )
         return object_index
 
-    def _resolve_object_na(self, numerical_aperture):
+    def _resolve_object_na(self, numerical_aperture: float) -> None:
         """Resolve reference-wavelength Object NA as a direction sine."""
         object_index = self._validated_object_na_index(numerical_aperture)
 

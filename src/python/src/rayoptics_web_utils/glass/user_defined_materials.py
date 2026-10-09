@@ -31,9 +31,10 @@ User-defined material data uses the same frontend camelCase glass property names
 - The render-safe glass code uses the d-line refractive index and Vd-style Abbe number, encoded as `NNNVVV`.
 - Exported dict keys are camelCase to match the TypeScript worker contract directly; no frontend raw-data normalizer is required."""
 
-from collections.abc import MutableMapping
+from collections.abc import Iterator, MutableMapping
 from opticalglass import opticalmedium
 from rayoptics_web_utils.glass.helper import (
+    GlassEntry,
     _WL_C,
     _WL_D,
     _WL_E,
@@ -69,7 +70,7 @@ class UserDefinedMaterial(MutableMapping):
     def __getitem__(self, key: str) -> opticalmedium.InterpolatedMedium:
         return self.map[key]
 
-    def get_one_material_data(self, label: str) -> dict[str, dict[str, dict]]:
+    def get_one_material_data(self, label: str) -> dict[str, GlassEntry]:
         if label not in self.map:
             raise KeyError(f"Material '{label}' does not exist.")
 
@@ -98,15 +99,15 @@ class UserDefinedMaterial(MutableMapping):
             }
         }
 
-    def get_materials_data(self, keys: list[str]) -> dict[str, dict[str, dict]]:
-        data = {}
+    def get_materials_data(self, keys: list[str]) -> dict[str, GlassEntry]:
+        data: dict[str, GlassEntry] = {}
         for key in keys:
             if key not in self.map:
                 raise KeyError(f"Material '{key}' does not exist.")
             data.update(self.get_one_material_data(key))
         return data
 
-    def get_all_materials_data(self) -> dict[str, dict[str, dict]]:
+    def get_all_materials_data(self) -> dict[str, GlassEntry]:
         return self.get_materials_data(list(self.map.keys()))
 
     def __setitem__(self, key: str, value: list[tuple[float, float]]) -> None:
@@ -127,7 +128,7 @@ class UserDefinedMaterial(MutableMapping):
     def __delitem__(self, key: str) -> None:
         del self.map[key]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self.map)
 
     def __len__(self) -> int:

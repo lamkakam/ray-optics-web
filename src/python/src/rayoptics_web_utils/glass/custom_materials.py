@@ -12,11 +12,15 @@ override the corresponding derived catalog values when present.
 """
 
 from __future__ import annotations
+from collections.abc import Callable
 import importlib.resources
+from typing import cast
+
 import yaml
 from opticalglass.rindexinfo import create_material
 from opticalglass.rindexinfo import RIIMedium
 from rayoptics_web_utils.glass.helper import (
+    GlassEntry,
     _WL_C,
     _WL_D,
     _WL_E,
@@ -75,7 +79,7 @@ def _formula2(dispersion_coeffs: list[float], wavelengthInMicron: float) -> floa
     return squared_refractive_idx ** 0.5
 
 
-_map_equation_name_to_dispersion_equation: dict[str, callable[[list[float], float], float]] = {
+_map_equation_name_to_dispersion_equation: dict[str, Callable[[list[float], float], float]] = {
     'formula 1': _formula1,
     'formula 2': _formula2,
 }
@@ -98,13 +102,14 @@ def load_custom_material(filename: str, material_name: str) -> RIIMedium:
         The bundled material as an ``RIIMedium``.
     """
     material_yaml = _load_material_yaml(filename)
-    return create_material(material_yaml, material_name, 'rii-main', 'data-nk')
+    # opticalglass returns RIIMedium for formula data; every bundled file uses a formula.
+    return cast("RIIMedium", create_material(material_yaml, material_name, 'rii-main', 'data-nk'))
 
 
 def _build_sellmeier_special_material_data(
     filename: str,
     material_name: str,
-) -> dict:
+) -> GlassEntry:
     """Build one frontend glass entry from bundled Sellmeier-style YAML.
 
     Evaluates Fraunhofer indices using the declared equation, derives Abbe numbers and
@@ -120,8 +125,9 @@ def _build_sellmeier_special_material_data(
     """
     material = load_custom_material(filename, material_name)
 
-    equation_type = material.yaml_data['DATA'][0]['type']
-    coeffs_str = material.yaml_data['DATA'][0]['coefficients']
+    # opticalglass attaches the source YAML as an undeclared ``yaml_data`` attribute.
+    equation_type = material.yaml_data['DATA'][0]['type']  # pyright: ignore[reportAttributeAccessIssue]
+    coeffs_str = material.yaml_data['DATA'][0]['coefficients']  # pyright: ignore[reportAttributeAccessIssue]
     raw_dispersion_coeffs = [float(x) for x in coeffs_str.split()][1:]
 
     if len(raw_dispersion_coeffs) % 2 != 0:
@@ -141,7 +147,7 @@ def _build_sellmeier_special_material_data(
     ng = dispersion_fn(raw_dispersion_coeffs, _WL_G)
     abbe_number_d = _abbe_number(nd, nF, nC)
     abbe_number_e = _abbe_number(ne, nF, nC)
-    properties = material.yaml_data.get('PROPERTIES', {})
+    properties = material.yaml_data.get('PROPERTIES', {})  # pyright: ignore[reportAttributeAccessIssue]
     nd = float(properties.get('nd', nd))
     abbe_number_d = float(properties.get('Vd', abbe_number_d))
 
@@ -177,11 +183,11 @@ def _build_sellmeier_special_material_data(
     }
 
 
-def _build_formula1_six_coeff_special_material_data(filename: str, material_name: str) -> dict:
+def _build_formula1_six_coeff_special_material_data(filename: str, material_name: str) -> GlassEntry:
     return _build_sellmeier_special_material_data(filename, material_name)
 
 
-def _get_caf2_data() -> dict:
+def _get_caf2_data() -> GlassEntry:
     """Return CaF2 formula-1 data in squared-Ci ``Sellmeier3T`` layout.
 
     Args:
@@ -193,7 +199,7 @@ def _get_caf2_data() -> dict:
     return _build_formula1_six_coeff_special_material_data('CaF2_Malitson.yml', 'CaF2')
 
 
-def _get_fused_silica_data() -> dict:
+def _get_fused_silica_data() -> GlassEntry:
     """Return fused-silica formula-1 data in squared-Ci ``Sellmeier3T`` layout.
 
     Args:
@@ -205,7 +211,7 @@ def _get_fused_silica_data() -> dict:
     return _build_formula1_six_coeff_special_material_data('FusedSilica_Malitson.yml', 'Fused Silica')
 
 
-def _get_water_data() -> dict:
+def _get_water_data() -> GlassEntry:
     """Return water formula-2 data in four-term ``Sellmeier4T`` layout.
 
     Args:
@@ -217,7 +223,7 @@ def _get_water_data() -> dict:
     return _build_sellmeier_special_material_data('Water_Daimon-20.0C.yml', 'Water')
 
 
-def _get_d263teco_data() -> dict:
+def _get_d263teco_data() -> GlassEntry:
     """Return D263TECO formula-2 data in ``Sellmeier3T`` layout.
 
     Args:
@@ -229,7 +235,7 @@ def _get_d263teco_data() -> dict:
     return _build_sellmeier_special_material_data('D263TECO.yml', 'D263TECO')
 
 
-def get_special_materials_data() -> dict[str, dict[str, dict]]:
+def get_special_materials_data() -> dict[str, dict[str, GlassEntry]]:
     """Return the bundled materials under the ``Special`` catalog key.
 
     The nested map contains CaF2, Fused Silica, Water, and D263TECO entries.

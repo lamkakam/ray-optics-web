@@ -14,17 +14,17 @@ from copy import deepcopy
 from dataclasses import dataclass
 from functools import lru_cache
 import math
-from collections.abc import Mapping
-from typing import NotRequired, TypedDict, cast
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, NotRequired, TypedDict, cast
 
 from opticalglass.glassfactory import create_glass
 from opticalglass.modelglass import ModelGlass
-from rayoptics.environment import OpticalModel
 
 from .config import normalize_merit_function, normalize_pickups, normalize_variables
 from ._types import (
     GlassOptimizationConfig,
     MeritFunctionConfig,
+    MeritFunctionConfigInput,
     NormalizedGlassOptimizerConfig,
     NormalizedLeastSquaresOptimizerConfig,
     NormalizedOptimizationConfig,
@@ -32,6 +32,10 @@ from ._types import (
     VariableConfig,
 )
 from .targets import target_key, validate_surface_index
+
+if TYPE_CHECKING:
+    from opticalglass.opticalmedium import OpticalMedium
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 MANUFACTURER_GLASS_CATALOGS = frozenset(
@@ -49,7 +53,7 @@ GLASS_CONFIG_KEYS = frozenset(
 GLASS_VARIABLE_KEYS = frozenset({"surface_index", "candidates"})
 GLASS_CANDIDATE_KEYS = frozenset({"name", "catalog"})
 
-type CandidateMaterials = Mapping[str, Mapping[str, object]]
+type CandidateMaterials = Mapping[str, Mapping[str, OpticalMedium]]
 
 
 @dataclass(frozen=True)
@@ -58,7 +62,7 @@ class ResolvedGlassCandidate:
 
     name: str
     catalog: str
-    medium: object
+    medium: OpticalMedium
     nd: float
     vd: float
 
@@ -92,7 +96,7 @@ class NormalizedGlassOptimizationConfig(TypedDict):
     candidate_materials: CandidateMaterials | None
 
 
-def _native_material_identity(medium: object) -> tuple[str, str]:
+def _native_material_identity(medium: OpticalMedium) -> tuple[str, str]:
     """Read a medium's native RayOptics name and catalog as strings.
 
     Vendor catalogs are matched case-insensitively and reported with their
@@ -101,8 +105,8 @@ def _native_material_identity(medium: object) -> tuple[str, str]:
     returned unchanged.
     """
     try:
-        name = str(medium.name())  # type: ignore[attr-defined]
-        catalog = str(medium.catalog_name())  # type: ignore[attr-defined]
+        name = str(medium.name())
+        catalog = str(medium.catalog_name())
     except (AttributeError, TypeError) as error:
         raise ValueError("Unsupported current material for glass optimization") from error
     for manufacturer_catalog in MANUFACTURER_GLASS_CATALOGS:
@@ -112,7 +116,7 @@ def _native_material_identity(medium: object) -> tuple[str, str]:
 
 
 def _injected_material_identity(
-    medium: object,
+    medium: OpticalMedium,
     candidate_materials: CandidateMaterials | None,
 ) -> tuple[str, str] | None:
     """Return the canonical injected identity matched by object reference."""
@@ -129,7 +133,7 @@ def _injected_material_identity(
 
 
 def _material_identity(
-    medium: object,
+    medium: OpticalMedium,
     candidate_materials: CandidateMaterials | None = None,
 ) -> tuple[str, str]:
     """Read canonical injected identity first, then the medium's native identity."""
@@ -141,7 +145,7 @@ def _material_identity(
 
 def material_report_entry(
     surface_index: int,
-    medium: object,
+    medium: OpticalMedium,
     candidate_materials: CandidateMaterials | None = None,
 ) -> dict[str, str | int]:
     """Return one JSON-safe canonical material identity with its surface index."""
@@ -152,7 +156,7 @@ def material_report_entry(
 _COORDINATE_ERROR_PREFIX = "Unable to calculate glass nd/Vd coordinates"
 
 
-def _read_finite_coordinate(reader, label: str) -> float:
+def _read_finite_coordinate(reader: Callable[[], float], label: str) -> float:
     """Read one coordinate and label conversion or finiteness failures."""
     try:
         value = float(reader())
@@ -168,7 +172,7 @@ def _read_finite_coordinate(reader, label: str) -> float:
     return value
 
 
-def _raw_nd_vd(medium: object) -> tuple[float, float]:
+def _raw_nd_vd(medium: OpticalMedium) -> tuple[float, float]:
     """Calculate finite raw coordinates with coordinate-specific chained errors."""
     if isinstance(medium, ModelGlass):
         nd = _read_finite_coordinate(lambda: medium.n, "n_d")
@@ -176,15 +180,15 @@ def _raw_nd_vd(medium: object) -> tuple[float, float]:
         return nd, vd
 
     nd = _read_finite_coordinate(
-        lambda: medium.rindex("d"),  # type: ignore[attr-defined]
+        lambda: medium.rindex("d"),
         "n_d",
     )
     n_f = _read_finite_coordinate(
-        lambda: medium.rindex("F"),  # type: ignore[attr-defined]
+        lambda: medium.rindex("F"),
         "n_f",
     )
     n_c = _read_finite_coordinate(
-        lambda: medium.rindex("C"),  # type: ignore[attr-defined]
+        lambda: medium.rindex("C"),
         "n_c",
     )
     denominator = n_f - n_c
@@ -303,7 +307,7 @@ def _normalize_glass_optimizer(config: GlassOptimizationConfig) -> NormalizedGla
     if isinstance(source.get("tol", 1e-3), bool):
         raise ValueError("tol must be a positive finite number")
     try:
-        tol = float(source.get("tol", 1e-3))
+        tol = float(source.get("tol", 1e-3))  # pyright: ignore[reportArgumentType]  # untrusted option; TypeError is reported
     except (TypeError, ValueError) as error:
         raise ValueError("tol must be a positive finite number") from error
     if not math.isfinite(tol) or tol <= 0.0:
@@ -321,8 +325,8 @@ def _validate_numeric_bounds(entries: list[dict[str, object]]) -> None:
         if not has_min:
             continue
         try:
-            minimum = float(entry["min"])
-            maximum = float(entry["max"])
+            minimum = float(entry["min"])  # pyright: ignore[reportArgumentType]  # untrusted bound; TypeError is reported
+            maximum = float(entry["max"])  # pyright: ignore[reportArgumentType]  # untrusted bound; TypeError is reported
         except (TypeError, ValueError) as error:
             raise ValueError("Glass optimization variable bounds must satisfy finite min < max") from error
         if not math.isfinite(minimum) or not math.isfinite(maximum) or minimum >= maximum:
@@ -347,6 +351,7 @@ def _resolve_glass_variables(
         if isinstance(surface_index, bool):
             raise IndexError(f"surface_index {surface_index} is out of range")
         validate_surface_index(gaps, surface_index, "surface_index")
+        surface_index = cast(int, surface_index)  # validated above
         if surface_index in seen_surfaces:
             raise ValueError(f"Duplicate glass variable surface: {surface_index}")
         seen_surfaces.add(surface_index)
@@ -459,7 +464,7 @@ def normalize_glass_optimization_config(
     )
     merit_function = normalize_merit_function(
         opm,
-        cast(dict, deepcopy(config.get("merit_function") or {})),
+        cast(MeritFunctionConfigInput, deepcopy(config.get("merit_function") or {})),
     )
     glass_variables = _resolve_glass_variables(
         opm,

@@ -1,11 +1,17 @@
 """Extract geometric point-spread-function point clouds."""
 
-from rayoptics.environment import OpticalModel
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from rayoptics.raytr import sampler
 from rayoptics.raytr.analyses import RayList
 
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 from rayoptics_web_utils.analysis._afocal import angular_coordinates, is_afocal_image_space, output_segment, reference_direction
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict:

@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from scipy.optimize import least_squares
 
-from rayoptics_web_utils.optimization._types import OptimizationProblemProtocol, ProgressReporter, SolverResult
+from rayoptics_web_utils.optimization._types import (
+    NormalizedLeastSquaresOptimizerConfig,
+    OptimizationProblemProtocol,
+    ProgressReporter,
+    SolverResult,
+)
 
 from .base import SolverAdapter
 
@@ -27,7 +32,8 @@ def build_least_squares_kwargs(problem: OptimizationProblemProtocol) -> dict[str
     Returns:
         Keyword arguments excluding the objective and initial vector.
     """
-    method = problem.optimizer["method"]
+    # Only problems normalized for the least-squares optimizer reach this adapter.
+    method = cast("NormalizedLeastSquaresOptimizerConfig", problem.optimizer)["method"]
     kwargs: dict[str, Any] = {
         "method": method,
         "ftol": problem.optimizer.get("ftol", 1e-8),

@@ -4,8 +4,9 @@ Analysis plots intentionally consume typed data in the frontend rather than bein
 rendered by this module.
 """
 
+from typing import cast
+
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 from rayoptics.environment import (
     OpticalModel,
     InteractiveLayout,
@@ -33,7 +34,7 @@ def plot_lens_layout(opm: OpticalModel, show_ray_fan_vs_wvls: bool = False, is_d
     Returns:
         Base64-encoded PNG of the lens layout.
     """
-    def _create_ray_fan_vs_wvl(fig: Figure, opt_model: OpticalModel, num_rays: int = 21) -> list[RayFanBundle]:
+    def _create_ray_fan_vs_wvl(fig: InteractiveLayout, opt_model: OpticalModel, num_rays: int = 21) -> list[RayFanBundle]:
         ray_fan_bundles = []
         _, start_offset = fig.sl_so
         fov = opt_model['optical_spec']['fov']
@@ -54,7 +55,7 @@ def plot_lens_layout(opm: OpticalModel, show_ray_fan_vs_wvls: bool = False, is_d
         entity_factory = _create_ray_fan_vs_wvl, (opm,), {'num_rays': 3}
         eflist = [entity_factory]
 
-        fig = plt.figure(
+        fig = cast("InteractiveLayout", plt.figure(
             FigureClass=InteractiveLayout,
             opt_model=opm,
             do_draw_rays=False,
@@ -63,15 +64,15 @@ def plot_lens_layout(opm: OpticalModel, show_ray_fan_vs_wvls: bool = False, is_d
             do_paraxial_layout=do_paraxial_layout,
             is_dark=is_dark,
             entity_factory_list=eflist,
-        )
+        ))
     else:
-        fig = plt.figure(
+        fig = cast("InteractiveLayout", plt.figure(
             FigureClass=InteractiveLayout,
             opt_model=opm,
             do_draw_rays=True,
             do_paraxial_layout=do_paraxial_layout,
             is_dark=is_dark,
-        )
+        ))
     try:
         fig.plot()
         return _fig_to_base64(fig)

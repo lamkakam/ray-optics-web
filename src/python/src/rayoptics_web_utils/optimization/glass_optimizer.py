@@ -13,10 +13,9 @@ from __future__ import annotations
 from contextlib import nullcontext
 from dataclasses import dataclass
 import math
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
-from rayoptics.environment import OpticalModel
 from scipy.cluster.vq import kmeans2
 
 from .glass_config import (
@@ -38,12 +37,16 @@ from ._types import (
     GlassStateEntry,
     InterruptScope,
     OptimizationReport,
+    OptimizerSummary,
     ProgressReporter,
     SnapshotEntry,
     SolverResult,
     TargetKey,
     VariableStateEntry,
 )
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 @dataclass
@@ -66,7 +69,7 @@ def select_global_representatives(
         return list(candidates)
 
     points = np.array([(candidate.nd, candidate.vd) for candidate in candidates], dtype=float)
-    centroids, labels = kmeans2(points, keep, minit="points", seed=1234)
+    centroids, labels = kmeans2(points, keep, minit="points", rng=1234)
     selected: list[ResolvedGlassCandidate] = []
     for cluster_index in range(keep):
         indices = np.flatnonzero(np.asarray(labels) == cluster_index)
@@ -282,7 +285,7 @@ class GlassExpertOptimizer:
         self.final_result = result
         return result
 
-    def optimizer_summary(self) -> dict[str, object]:
+    def optimizer_summary(self) -> OptimizerSummary:
         """Return normalized settings and aggregate nested-solver metadata."""
         return {
             "kind": "glass_expert",
@@ -327,7 +330,7 @@ class GlassExpertOptimizer:
         report["success"] = success
         report["status"] = status
         report["message"] = message
-        report["optimizer"] = cast(dict, self.optimizer_summary())
+        report["optimizer"] = self.optimizer_summary()
         report["initial_values"] = cast(list[VariableStateEntry], self.initial_values)
         report["optimization_progress"] = list(self.problem.optimization_progress)
         glass_report = cast(GlassOptimizationReport, report)

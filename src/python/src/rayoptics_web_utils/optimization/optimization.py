@@ -22,10 +22,9 @@ bounds passed to SciPy; unbounded ``lm`` evaluation is unaffected.
 from __future__ import annotations
 
 from contextlib import nullcontext
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
-from scipy.optimize import least_squares
-from rayoptics.environment import OpticalModel
+from scipy.optimize import OptimizeResult, least_squares
 
 import rayoptics_web_utils.optimization.operands as _operands_module
 from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
@@ -36,7 +35,10 @@ from rayoptics_web_utils.optimization._types import (
     OptimizationReport,
     ProblemEvaluation,
     ProgressReporter,
+    SnapshotEntry,
     SolverResult,
+    TargetKey,
+    VariableStateEntry,
 )
 from rayoptics_web_utils.optimization.failure_reports import (
     build_optimization_failure_report,
@@ -49,6 +51,9 @@ from rayoptics_web_utils.optimization.solvers import DifferentialEvolutionSolver
 from rayoptics_web_utils.optimization.solvers.least_squares import build_least_squares_kwargs
 from rayoptics_web_utils.optimization.targets import restore_state as _restore_state
 from rayoptics_web_utils.optimization.targets import snapshot_state as _snapshot_state
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 _SOLVER_REGISTRY = {
     "differential_evolution": DifferentialEvolutionSolver,
@@ -74,7 +79,7 @@ class _OptimizationProblem(OptimizationProblem):
     def _record_progress(self, vector: FloatArray, evaluation: ProblemEvaluation) -> bool:
         return self.progress.record(vector, evaluation, self._progress_reporter)
 
-    def optimize(self, progress_reporter: ProgressReporter | None = None):
+    def optimize(self, progress_reporter: ProgressReporter | None = None) -> OptimizeResult:
         x0 = self.current_vector()
         self._progress_reporter = progress_reporter
         try:
@@ -148,7 +153,7 @@ def evaluate_optimization_problem(
 
 def _build_stopped_report(
     problem: _OptimizationProblem,
-    initial_values,
+    initial_values: list[VariableStateEntry],
 ) -> OptimizationReport:
     best_vector = problem.progress.best_vector
     if best_vector is None:
@@ -170,7 +175,7 @@ def _build_stopped_report(
     return report
 
 
-def _restore_failure_snapshot(opm: OpticalModel, snapshot) -> None:
+def _restore_failure_snapshot(opm: OpticalModel, snapshot: dict[TargetKey, SnapshotEntry]) -> None:
     """Best-effort restore all captured targets before returning an error report."""
     try:
         _restore_state(opm, snapshot)
@@ -259,6 +264,8 @@ def optimize_opm(
         solver = _SOLVER_REGISTRY[problem.optimizer["kind"]](problem)
         with (interrupt_scope or nullcontext)():
             result = solver.solve(progress_reporter)
+        # Interrupt scopes never suppress exceptions, so the solve completed.
+        result = cast("SolverResult", result)
         report = problem.evaluate(result["x"])
     except KeyboardInterrupt:
         return _build_stopped_report(problem, initial_values)
@@ -280,6 +287,6 @@ def optimize_opm(
     report["initial_values"] = initial_values
     for key in ("nfev", "njev", "nit", "cost", "optimality"):
         if key in result:
-            report["optimizer"][key] = result[key]
+            report["optimizer"][key] = result[key]  # pyright: ignore[reportGeneralTypeIssues, reportTypedDictNotRequiredAccess]  # guarded copy of same-named optional counters
     report["optimization_progress"] = list(problem.optimization_progress)
     return report

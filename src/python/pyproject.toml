@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rayoptics-web-utils"
-version = "0.39.0"
+version = "0.40.0"
 requires-python = ">=3.12"
 dependencies = [
     "anytree==2.13.0",
@@ -33,3 +33,12 @@ rayoptics_web_utils = ["data/*.yml"]
 [tool.mutmut]
 source_paths = ["src/rayoptics_web_utils"]
 pytest_add_cli_args_test_selection = ["tests/"]
+
+[tool.pyright]
+include = ["src"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+reportMissingParameterType = "error"

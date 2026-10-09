@@ -1,10 +1,21 @@
 """Share wavelength-axis sampling and temporary model wavelengths across sweeps."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
 import numpy as np
-from rayoptics.environment import OpticalModel
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr.opticalspec import WvlSpec
+
+type WavelengthState = tuple[list[float], list[float], int]
+"""Saved ``(wavelengths, spectral_wts, reference_wvl)`` of a spectral region."""
 
 
-def _wavelength_axis(wavelengths, wavelength_samples: int) -> np.ndarray:
+def _wavelength_axis(wavelengths: Iterable[float], wavelength_samples: int) -> np.ndarray:
     """Return uniformly spaced analysis wavelengths in nanometres.
 
     Two or more distinct configured wavelengths define the sampled range from
@@ -42,7 +53,7 @@ def _unique_preserving_order(values: list[float]) -> list[float]:
     return unique_values
 
 
-def _set_analysis_wavelengths(opm: OpticalModel, sampled_wavelengths: np.ndarray):
+def _set_analysis_wavelengths(opm: OpticalModel, sampled_wavelengths: np.ndarray) -> tuple[WvlSpec, WavelengthState]:
     """Temporarily replace model wavelengths with the sampled analysis wavelengths.
 
     RayOptics traces only wavelengths in its sequential index table, so the
@@ -75,7 +86,7 @@ def _set_analysis_wavelengths(opm: OpticalModel, sampled_wavelengths: np.ndarray
     return spectral_region, original_state
 
 
-def _restore_wavelengths(opm: OpticalModel, spectral_region, original_state) -> None:
+def _restore_wavelengths(opm: OpticalModel, spectral_region: WvlSpec, original_state: WavelengthState) -> None:
     """Restore the wavelengths, weights, and reference saved by `_set_analysis_wavelengths`.
 
     Args:

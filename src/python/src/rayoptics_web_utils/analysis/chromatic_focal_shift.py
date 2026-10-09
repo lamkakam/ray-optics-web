@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
 import numpy as np
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr.traceerror import TraceError
 
 from rayoptics_web_utils.analysis._afocal import (
@@ -24,6 +25,11 @@ from rayoptics_web_utils.focusing._solver import _minimize_focus, _paraxial_focu
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 from rayoptics_web_utils.zernike.zernike import _opd_wfe, _scale_opd_grid_to_wavelength
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+
+    from rayoptics_web_utils.raygrid.raygrid import ChiefRayGrid
 
 # Plot-level focus tolerance as a fraction of |EFL| (0.05 µm for a 50 mm lens).
 _FOCUS_XATOL_FRACTION = 1.0e-6
@@ -74,7 +80,9 @@ def _finite_best_focus(
     Returns:
         The best-focus shift from the image plane, or `NaN` when no ray is valid.
     """
-    ray_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    # A finite image conjugate with the default chief-ray reference always
+    # yields a ChiefRayGrid, the only grid that supports ``refocused_opd``.
+    ray_grid = cast("ChiefRayGrid", make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays))
     if not np.any(np.isfinite(np.asarray(ray_grid.grid[2], dtype=float))):
         return float("nan")
 

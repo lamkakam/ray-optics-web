@@ -1,14 +1,18 @@
 """Extract third-order Seidel aberration data."""
 
-from typing import Literal
+from __future__ import annotations
 
-from rayoptics.environment import OpticalModel
+from typing import TYPE_CHECKING, Literal
+
 from rayoptics.parax.thirdorder import (
     compute_third_order,
     seidel_to_field_curv,
     seidel_to_transverse_aberration,
     seidel_to_wavefront,
 )
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 key_of_3rd_order_seidel_data = Literal["surfaceBySurface", "transverse", "wavefront", "curvature"]
 

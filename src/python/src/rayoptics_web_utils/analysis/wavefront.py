@@ -1,10 +1,16 @@
 """Extract wavefront-map data."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
-from rayoptics.environment import OpticalModel
 
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_grid, _json_float_list
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 def get_wavefront_data(

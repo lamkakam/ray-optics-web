@@ -2320,7 +2320,7 @@ class TestOptimizationValidation:
                     "tol": 1e-4,
                     "mutation": 0.8,
                     "recombination": 0.6,
-                    "seed": 9,
+                    "rng": 9,
                     "polish": True,
                     "init": "random",
                     "atol": 1e-8,
@@ -3293,7 +3293,7 @@ class TestOptimizationProgressBudget:
                     "popsize": 1,
                     "tol": 0.0,
                     "atol": 0.0,
-                    "seed": 1,
+                    "rng": 1,
                 },
                 "variables": [
                     {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
@@ -3319,7 +3319,7 @@ class TestOptimizationProgressBudget:
                     "init": "sobol",
                     "tol": 0.0,
                     "atol": 0.0,
-                    "seed": 1,
+                    "rng": 1,
                 },
                 "variables": [
                     {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
@@ -3340,7 +3340,7 @@ class TestOptimizationProgressBudget:
         report = optimize_opm(
             fresh_cooke_triplet,
             {
-                "optimizer": {"kind": "differential_evolution", "max_nfev": 30, "init": "sobol", "seed": 1},
+                "optimizer": {"kind": "differential_evolution", "max_nfev": 30, "init": "sobol", "rng": 1},
                 "variables": [
                     {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
                     {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},

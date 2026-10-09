@@ -453,7 +453,7 @@ class TestGlassSearchHelpers:
             vd=vd,
         )
 
-    def test_global_sampling_uses_deterministic_point_seed(self, monkeypatch):
+    def test_global_sampling_uses_deterministic_point_rng(self, monkeypatch):
         import rayoptics_web_utils.optimization.glass_optimizer as module
 
         candidates = [
@@ -463,8 +463,8 @@ class TestGlassSearchHelpers:
         ]
         captured = {}
 
-        def fake_kmeans2(data, count, *, minit, seed):
-            captured.update(data=data, count=count, minit=minit, seed=seed)
+        def fake_kmeans2(data, count, *, minit, rng):
+            captured.update(data=data, count=count, minit=minit, rng=rng)
             return np.array([[1.5, 50.0], [1.7, 30.0]]), np.array([0, 0, 1])
 
         monkeypatch.setattr(module, "kmeans2", fake_kmeans2)
@@ -474,7 +474,7 @@ class TestGlassSearchHelpers:
         assert [entry.name for entry in selected] == ["A", "C"]
         assert captured["count"] == 2
         assert captured["minit"] == "points"
-        assert captured["seed"] == 1234
+        assert captured["rng"] == 1234
         assert captured["data"].tolist() == [[1.5, 50.0], [1.6, 60.0], [1.7, 30.0]]
 
     def test_single_candidate_bypasses_kmeans(self, monkeypatch):

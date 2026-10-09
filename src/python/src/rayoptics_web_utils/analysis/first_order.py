@@ -1,6 +1,11 @@
 """Extract first-order paraxial data."""
 
-from rayoptics.environment import OpticalModel
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+
 
 
 def get_first_order_data(opm: OpticalModel) -> dict[str, float]:

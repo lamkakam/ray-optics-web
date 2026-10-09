@@ -1,13 +1,30 @@
 """Prepare the headless Pyodide environment for RayOptics."""
 
+from __future__ import annotations
+
 import sys
 import types
-from opticalglass.opticalmedium import OpticalMedium
+from typing import TYPE_CHECKING, TypedDict
 
 from rayoptics_web_utils.env.rii import use_empty_refractiveindex_database
 
+if TYPE_CHECKING:
+    from opticalglass.rindexinfo import RIIMedium
 
-def init() -> dict[str, OpticalMedium]:
+    from rayoptics_web_utils.glass.user_defined_materials import UserDefinedMaterial
+
+
+class SharedMaterials(TypedDict):
+    """Bundled media and the user-defined-material registry returned by ``init``."""
+
+    caf2: RIIMedium
+    fused_silica: RIIMedium
+    water: RIIMedium
+    d263teco: RIIMedium
+    user_defined: UserDefinedMaterial
+
+
+def init() -> SharedMaterials:
     """Initialize RayOptics for use in Pyodide and return shared materials.
 
     Call this before importing analysis or plotting modules. It first points
@@ -42,7 +59,7 @@ def init() -> dict[str, OpticalMedium]:
     fake_guiappcmds = types.ModuleType('rayoptics.qtgui.guiappcmds')
     sys.modules['rayoptics.qtgui'] = fake_qtgui
     sys.modules['rayoptics.qtgui.guiappcmds'] = fake_guiappcmds
-    fake_qtgui.guiappcmds = fake_guiappcmds
+    fake_qtgui.guiappcmds = fake_guiappcmds  # pyright: ignore[reportAttributeAccessIssue]  # stub module attribute
 
     # We don't do `from rayoptics.environment import *` here because that would
     # only affect this module's namespace. The worker will do its own import.

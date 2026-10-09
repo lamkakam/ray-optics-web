@@ -43,6 +43,7 @@ jobs:
       - name: Fetch lens data fixtures
         run: bash scripts/fetch-lens-data.sh
       - run: npm run type-check
+      - run: npm run type-check:python
       - run: npm run lint
       - run: npm run format:check
       - run: npm run test

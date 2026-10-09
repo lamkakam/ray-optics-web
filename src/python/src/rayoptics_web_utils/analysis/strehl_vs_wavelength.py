@@ -1,6 +1,8 @@
 """Extract Strehl ratio as a function of wavelength."""
 
-from rayoptics.environment import OpticalModel
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from rayoptics_web_utils.analysis._wavelength_sweep import (
     _restore_wavelengths,
@@ -9,6 +11,9 @@ from rayoptics_web_utils.analysis._wavelength_sweep import (
 )
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl, _scale_opd_grid_to_wavelength
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 def get_strehl_vs_wavelength_data(

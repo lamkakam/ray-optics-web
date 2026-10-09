@@ -1166,7 +1166,9 @@ describe("buildExportScript", () => {
     expect(modelIdx).toBeGreaterThan(helpersIdx);
     expect(modelIdx).toBeGreaterThan(fieldIdx);
     expect(modelIdx).toBeGreaterThan(objectFieldIdx);
-    expect(script).toContain("def set_vig_respecting_exact_pupil(opm):");
+    expect(script).toContain(
+      "def set_vig_respecting_exact_pupil(opm: OpticalModel) -> None:",
+    );
   });
 
   it("omits the exact helper block from non-wide standalone exports", () => {
@@ -1191,7 +1193,9 @@ describe("buildExportScript", () => {
   it("defines OffsetCircular and Annular inline in the export preamble", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("class OffsetCircular(Circular):");
-    expect(script).toContain("def edge_pt_target(self, rel_dir):");
+    expect(script).toContain(
+      'def edge_pt_target(self, rel_dir: "Sequence[float] | NDArray[np.float64]") -> list[float]:',
+    );
     expect(script).toContain("self.x_offset + self.radius * rel_dir[0]");
     expect(script).toContain("self.y_offset + self.radius * rel_dir[1]");
     expect(script).toContain("class Annular(Aperture):");
@@ -1208,9 +1212,11 @@ describe("buildExportScript", () => {
     expect(script).toContain(
       "def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:",
     );
-    expect(script).toContain("def edge_pt_target(self, rel_dir):");
+    expect(script).toContain(
+      'def edge_pt_target(self, rel_dir: "Sequence[float] | NDArray[np.float64]") -> list[float]:',
+    );
     expect(script).toMatch(
-      /class OffsetRotatedRectangular\(Rectangular\):[\s\S]*def set_dimension\(self, x, y\):[\s\S]*target = abs\(x\)[\s\S]*max_projection = max\(/,
+      /class OffsetRotatedRectangular\(Rectangular\):[\s\S]*def set_dimension\(self, x: float, y: float\) -> None:[\s\S]*target = abs\(x\)[\s\S]*max_projection = max\(/,
     );
   });
 
@@ -1221,9 +1227,11 @@ describe("buildExportScript", () => {
     expect(script).toContain(
       "def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:",
     );
-    expect(script).toContain("def apply_scale_factor(self, scale_factor):");
     expect(script).toContain(
-      "def set_vig_with_ronchi_envelopes(opm, set_vig_fn=None):",
+      "def apply_scale_factor(self, scale_factor: float) -> None:",
+    );
+    expect(script).toContain(
+      'def set_vig_with_ronchi_envelopes(\n    opm: "OpticalModel", set_vig_fn: "Callable[[OpticalModel], object] | None" = None\n) -> object:',
     );
   });
 

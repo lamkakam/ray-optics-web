@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from typing import cast
 
 import numpy as np
 
@@ -66,12 +67,12 @@ class OptimizationProgress:
             return False
 
         merit_function_value = float(evaluation["merit_function"]["sum_of_squares"])
-        progress_entry = {
+        progress_entry = cast("OptimizationProgressEntry", {
             "iteration": len(self.entries),
             "merit_function_value": merit_function_value,
             "log10_merit_function_value": float(math.log10(max(merit_function_value, MERIT_LOG_EPSILON))),
             **(normalized_context or {}),
-        }
+        })
         self.entries.append(progress_entry)
         self._last_vector = candidate
         self._last_context = normalized_context

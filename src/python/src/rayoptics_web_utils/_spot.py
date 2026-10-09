@@ -1,13 +1,25 @@
 """Share finite-image transverse-aberration spot sampling."""
 
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, cast
+
 import numpy as np
 import rayoptics.optical.model_constants as mc
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike, NDArray
+    from rayoptics.raytr import RayPkg
+    from rayoptics.raytr.opticalspec import Field
+
+    from rayoptics_web_utils._rayoptics_types import RefSphere
 
 # Returned for an empty spot so optimizers see a large finite metric.
 _EMPTY_SPOT_RMS = 1e6
 
 
-def _transverse_aberration(ray_pkg, fld, foc: float) -> np.ndarray:
+def _transverse_aberration(ray_pkg: RayPkg, fld: Field, foc: float) -> NDArray[np.float64]:
     """Return the xy offset of a final ray from the field reference point after refocus.
 
     The final ray segment is projected by `foc / direction_z` along its
@@ -22,7 +34,7 @@ def _transverse_aberration(ray_pkg, fld, foc: float) -> np.ndarray:
     Returns:
         The transverse aberration `[x, y]` in system length units.
     """
-    image_pt = fld.ref_sphere[0]
+    image_pt = cast("RefSphere", fld.ref_sphere)[0]
     ray = ray_pkg[mc.ray]
     dist = foc / ray[-1][mc.d][2]
     defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
@@ -30,7 +42,9 @@ def _transverse_aberration(ray_pkg, fld, foc: float) -> np.ndarray:
     return np.array([t_abr[0], t_abr[1]])
 
 
-def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
+def _spot_fn(
+    p: ArrayLike, wi: int, ray_pkg: RayPkg | None, fld: Field, wvl: float, foc: float
+) -> NDArray[np.float64] | None:
     """Transverse aberration function for `trace_grid`.
 
     Args:
@@ -50,7 +64,7 @@ def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
     return None
 
 
-def _rms_radius(points) -> float:
+def _rms_radius(points: Sequence[NDArray[np.float64]]) -> float:
     """Return the RMS radius of transverse spot points.
 
     Args:

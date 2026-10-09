@@ -1,11 +1,18 @@
 """Provide internal rendering and JSON-normalization helpers."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 from io import BytesIO
 import base64
+from typing import TYPE_CHECKING
+
 import numpy as np
-from rayoptics.environment import OpticalModel
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 def _fig_to_base64(fig: Figure, dpi: int=150) -> str:
@@ -56,7 +63,7 @@ def _system_units(opm: OpticalModel) -> str:
     return opm.system_spec.dimensions
 
 
-def _json_float(value) -> float | None:
+def _json_float(value: float | np.floating) -> float | None:
     """Return a plain float, mapping ``None`` and NaN to ``None``.
 
     Args:
@@ -71,7 +78,7 @@ def _json_float(value) -> float | None:
     return value
 
 
-def _json_float_list(values) -> list[float | None]:
+def _json_float_list(values: Iterable[float | np.floating | None]) -> list[float | None]:
     """Return JSON-safe floats while preserving invalid samples as ``None``.
 
     Args:
@@ -83,7 +90,7 @@ def _json_float_list(values) -> list[float | None]:
     return [None if value is None else _json_float(value) for value in values]
 
 
-def _json_float_grid(values) -> list[list[float | None]]:
+def _json_float_grid(values: Iterable[Iterable[float | np.floating]]) -> list[list[float | None]]:
     """Return a 2-D JSON-safe float grid with invalid cells as ``None``.
 
     Args:

@@ -7,7 +7,7 @@ Build metadata for the internal `rayoptics-web-utils` Python package that is com
 ## Project Metadata
 
 - Package name: `rayoptics-web-utils`
-- Current version: `0.39.0`
+- Current version: `0.40.0`
 - Requires Python `>=3.12`
 - Uses `setuptools.build_meta` with `setuptools>=68.0`
 
@@ -44,6 +44,10 @@ It pins the scientific and runtime packages that the worker loads from the Pyodi
 `setuptools` discovers packages under `src/python/src`.
 
 The package includes YAML data files under `rayoptics_web_utils/data/*.yml`, which are bundled into the wheel for client-side Pyodide use.
+
+## Static Type Checking
+
+`[tool.pyright]` configures `npm run type-check:python` to check only `src/` (the package sources, not tests or the Mutmut `mutants/` copy) against the `.venv` interpreter environment, targeting Python 3.12 in Pyright's `basic` mode. Missing parameter annotations are errors. `rayoptics` and `opticalglass` ship partial inline annotations but no `py.typed` marker, so missing-stub reports are disabled and Pyright reads their sources for types. `tests/rayoptics_web_utils/test_type_annotations.py` additionally requires every package function to annotate its return.
 
 ## Mutation Testing
 

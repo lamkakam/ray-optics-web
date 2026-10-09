@@ -11,16 +11,27 @@ This module only imports narrow RayOptics tracing modules. It never imports
 ``rayoptics.environment`` or GUI modules.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 import rayoptics.optical.model_constants as mc
 from rayoptics.raytr import trace, wideangle
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr import RayResult
+    from rayoptics.raytr.opticalspec import Field
 
 #: Pupil positions sampled when the upstream search fails. Bracketing the
 #: stop-center crossing of the 40-degree afocal case needs at least 257.
 _SCAN_SAMPLES = 257
 
 
-def _scan_stop_crossing(opm, stop_idx, fld, wvl, z_center):
+def _scan_stop_crossing(
+    opm: OpticalModel, stop_idx: int, fld: Field, wvl: float, z_center: float
+) -> tuple[float, float, float, float] | None:
     """Return the sign-change bracket of stop heights nearest ``z_center``.
 
     Traces chief-ray candidates through pupil positions sampled uniformly over
@@ -42,13 +53,13 @@ def _scan_stop_crossing(opm, stop_idx, fld, wvl, z_center):
     args = (opm["seq_model"], stop_idx, direction, fod.obj_dist, wvl)
     span = max(abs(z_center), 1.0)
 
-    samples = []
+    samples: list[tuple[float, float | None]] = []
     for z_enp in np.linspace(z_center - span, z_center + span, _SCAN_SAMPLES):
         stop_point, ray_result = wideangle.enp_z_coordinate(z_enp, *args)
         height = stop_point[mc.y] if ray_result.err is None else None
         samples.append((float(z_enp), height))
 
-    best = None
+    best: tuple[float, tuple[float, float, float, float]] | None = None
     for (z_a, height_a), (z_b, height_b) in zip(samples, samples[1:]):
         if height_a is None or height_b is None or height_a * height_b > 0:
             continue
@@ -58,7 +69,14 @@ def _scan_stop_crossing(opm, stop_idx, fld, wvl, z_center):
     return None if best is None else best[1]
 
 
-def find_real_enp_with_fallback(opm, stop_idx, fld, wvl, *args, **kwargs):
+def find_real_enp_with_fallback(
+    opm: OpticalModel,
+    stop_idx: int | None,
+    fld: Field,
+    wvl: float,
+    *args: Any,
+    **kwargs: Any,
+) -> tuple[float | None, RayResult | None]:
     """Locate the wide-angle entrance pupil, scanning when upstream gives up.
 
     Returns RayOptics' ``wideangle.find_real_enp`` result whenever it finds a

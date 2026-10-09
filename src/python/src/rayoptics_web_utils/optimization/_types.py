@@ -18,11 +18,13 @@ from __future__ import annotations
 
 import math
 from contextlib import AbstractContextManager
-from typing import Callable, Literal, Never, NotRequired, Protocol, Required, TypedDict
+from typing import TYPE_CHECKING, Callable, Literal, Never, NotRequired, Protocol, Required, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
-from rayoptics.environment import OpticalModel
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 type FloatArray = NDArray[np.float64]
@@ -99,7 +101,7 @@ class DifferentialEvolutionOptimizerOptions(TypedDict, total=False):
     tol: float
     mutation: float | tuple[float, float]
     recombination: float
-    seed: int | np.random.RandomState | np.random.Generator | None
+    rng: int | np.random.Generator | None
     polish: bool
     init: str | FloatArray
     atol: float
@@ -241,6 +243,18 @@ type TargetConfig = (
     | AspherePolynomialTarget
     | DecenterTarget
 )
+
+
+class TargetIdentity(TypedDict):
+    """Target kind and surface, plus the coefficient index of polynomial targets.
+
+    Carries only the fields encoded in a ``TargetKey``; asphere and decenter
+    descriptors are not recoverable from a key.
+    """
+
+    kind: TargetKind
+    surface_index: int
+    coefficient_index: NotRequired[int]
 
 
 class BasePickupConfigInput(TypedDict, total=False):
