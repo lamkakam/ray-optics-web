@@ -1,7 +1,15 @@
 """Shared fixtures for rayoptics_web_utils tests."""
 
 import pytest
-from rayoptics.raytr.vigcalc import set_vig
+
+from rayoptics_web_utils.env.rii import use_empty_refractiveindex_database
+
+# RayOptics imports below and in test modules load opticalglass.glassfactory
+# during collection, before any fixture runs. Configure the empty
+# RefractiveIndex.INFO database first so that import never downloads one.
+use_empty_refractiveindex_database()
+
+from rayoptics.raytr.vigcalc import set_vig  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -162,6 +162,27 @@ def test_native_material_identity_reports_unsupported_media_with_cause():
     assert raised.value.__cause__ is not None
 
 
+def test_native_material_identity_canonicalizes_manufacturer_catalog_case():
+    """AGF media report lowercase vendor catalogs such as ``schott``."""
+    medium = SimpleNamespace(name=lambda: "K7", catalog_name=lambda: "schott")
+
+    assert glass_config._native_material_identity(medium) == ("K7", "Schott")
+
+
+def test_native_material_identity_keeps_other_catalog_names_unchanged():
+    medium = SimpleNamespace(name=lambda: "air", catalog_name=lambda: "rindexinfo")
+
+    assert glass_config._native_material_identity(medium) == ("air", "rindexinfo")
+
+
+def test_resolves_spreadsheet_dropped_glass_through_agf_in_its_vendor_catalog():
+    """Legacy catalog glasses resolve with the frontend's vendor identity."""
+    candidate = glass_config.resolve_glass_candidate("K7", "Schott")
+
+    assert (candidate.name, candidate.catalog) == ("K7", "Schott")
+    assert candidate.nd == pytest.approx(1.51112, abs=1e-5)
+
+
 def test_model_glass_coordinates_use_exact_labels_and_values():
     """ModelGlass coordinates expose n_d and Vd directly."""
     medium = ModelGlass(1.5, 50.0, "model")

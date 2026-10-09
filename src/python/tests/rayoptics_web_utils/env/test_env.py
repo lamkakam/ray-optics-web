@@ -45,6 +45,73 @@ def test_python_suite_collection_rejects_pyside6_imports():
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def test_worker_imports_load_no_qt_or_gui_packages():
+    """init() plus the worker's import block must not import Qt or GUI packages.
+
+    The Pyodide worker installs RayOptics without its GUI requirements, so any
+    import of PySide6, IPython, Jupyter widgets, or Qt helpers would fail there.
+    """
+    python_root = Path(__file__).parents[3]
+    import_script = textwrap.dedent(
+        """
+        import importlib.abc
+        import sys
+
+        GUI_PACKAGES = {
+            "PySide6", "IPython", "ipywidgets", "ipykernel",
+            "qtconsole", "qdarkstyle", "qtpy",
+        }
+
+
+        class RejectGuiImports(importlib.abc.MetaPathFinder):
+            def find_spec(self, fullname, path=None, target=None):
+                if fullname.split(".")[0] in GUI_PACKAGES:
+                    raise ImportError(f"GUI import rejected: {fullname}")
+                return None
+
+
+        sys.meta_path.insert(0, RejectGuiImports())
+
+        from rayoptics_web_utils import init
+        init()
+
+        from rayoptics.environment import *
+        from rayoptics.raytr.vigcalc import set_vig
+        from rayoptics.elem.surface import DecenterData, Circular
+        from rayoptics.elem.profiles import XToroid, YToroid
+        from rayoptics.seq.medium import decode_medium
+        import rayoptics_web_utils.aperture
+        import rayoptics_web_utils.optical_specs
+        import rayoptics_web_utils.analysis
+        import rayoptics_web_utils.plotting
+        import rayoptics_web_utils.focusing
+        import rayoptics_web_utils.optimization
+        import rayoptics_web_utils.optimization.failure_reports
+        from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
+
+        get_all_glass_catalogs_data()
+
+        assert "opticalglass.glassmapviewer" not in sys.modules
+        assert sys.modules["rayoptics.qtgui"].__spec__ is None, "real rayoptics.qtgui imported"
+        assert all(
+            sys.modules[name].__spec__ is None
+            for name in sys.modules
+            if name.split(".")[0] == "PySide6"
+        ), "real PySide6 module imported"
+        """
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", import_script],
+        cwd=python_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 class TestInit:
     """Tests for the init() function."""
 

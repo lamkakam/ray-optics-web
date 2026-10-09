@@ -93,12 +93,21 @@ class NormalizedGlassOptimizationConfig(TypedDict):
 
 
 def _native_material_identity(medium: object) -> tuple[str, str]:
-    """Read a medium's native RayOptics name and catalog as strings."""
+    """Read a medium's native RayOptics name and catalog as strings.
+
+    Vendor catalogs are matched case-insensitively and reported with their
+    ``MANUFACTURER_GLASS_CATALOGS`` spelling, because opticalglass AGF media
+    report lowercase catalog names such as ``schott``. Other catalogs are
+    returned unchanged.
+    """
     try:
         name = str(medium.name())  # type: ignore[attr-defined]
         catalog = str(medium.catalog_name())  # type: ignore[attr-defined]
     except (AttributeError, TypeError) as error:
         raise ValueError("Unsupported current material for glass optimization") from error
+    for manufacturer_catalog in MANUFACTURER_GLASS_CATALOGS:
+        if catalog.casefold() == manufacturer_catalog.casefold():
+            return name, manufacturer_catalog
     return name, catalog
 
 

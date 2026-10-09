@@ -279,7 +279,19 @@ class ExactOpticalSpecs(OpticalSpecs):
     """Optical specs whose opted-in launches use the model's resolved pupil."""
 
     def update_optical_properties(self, **kwargs):
-        """Resolve opted-in exact fields after current first-order properties."""
+        """Resolve opted-in exact fields after current first-order properties.
+
+        Opted-in Object NA is validated first: RayOptics' first-order
+        calculation evaluates ``asin(NA / n)`` and would otherwise fail with a
+        bare ``ValueError`` before the exact pupil reports ``ExactSpecError``.
+        """
+        if (
+            _is_exact_stack_enabled(self)
+            and self["pupil"].key == ("object", "NA")
+            and isinstance(self.opt_model, ExactOpticalModel)
+        ):
+            self.opt_model._validated_object_na_index(float(self["pupil"].value))
+
         field_of_view = self["fov"]
         if (
             not _is_exact_stack_enabled(self)
@@ -1490,8 +1502,19 @@ class ExactOpticalModel(OpticalModel):
                 "the required tolerance"
             )
 
-    def _resolve_object_na(self, numerical_aperture):
-        """Resolve reference-wavelength Object NA as a direction sine."""
+    def _validated_object_na_index(self, numerical_aperture):
+        """Return the reference object index after validating Object NA.
+
+        Args:
+            numerical_aperture: Requested object-space numerical aperture.
+
+        Returns:
+            The absolute reference-wavelength object-space index.
+
+        Raises:
+            ExactSpecError: If the NA is non-finite, negative, or not smaller
+                than the object index.
+        """
         spectral_region = self["optical_spec"]["wvls"]
         reference_index = spectral_region.reference_wvl
         object_index = abs(
@@ -1506,6 +1529,11 @@ class ExactOpticalModel(OpticalModel):
                 "Object NA must be non-negative and smaller than the "
                 f"reference-wavelength object index ({object_index})"
             )
+        return object_index
+
+    def _resolve_object_na(self, numerical_aperture):
+        """Resolve reference-wavelength Object NA as a direction sine."""
+        object_index = self._validated_object_na_index(numerical_aperture)
 
         self._resolved_object_na_direction_sine = (
             0.0

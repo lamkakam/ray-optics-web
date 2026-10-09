@@ -1823,11 +1823,13 @@ class TestOpticalSamplingConvergence:
                     image_point=image_point,
                     num_rays=33,
                 )
+                # The full-field vignetted pupil needs 257 boundary samples to
+                # meet both convergence tolerances.
                 resolved = build_finite_projected_pupil_samples(
                     reference_grid,
                     sasian_triplet_autoaperture,
                     wavelength,
-                    max_boundary_resolution=129,
+                    max_boundary_resolution=257,
                 )
                 assert resolved.boundary_converged
                 assert resolved.boundary_resolution >= 129
@@ -1838,7 +1840,11 @@ class TestOpticalSamplingConvergence:
                     (0, 0), (1, 1), (1, -1), (2, 0), (2, -2),
                     (2, 2), (3, -1), (3, 1), (4, 0),
                 ]
-                for resolution in (9, 17, 33):
+                # Converge toward a 65-sample reference: refining from 17 to 33
+                # samples must move every metric closer to it. The defocus
+                # coefficient oscillates between neighboring coarse grids, so
+                # successive differences are not a reliable convergence signal.
+                for resolution in (17, 33, 65):
                     samples = build_finite_projected_pupil_samples(
                         reference_grid,
                         sasian_triplet_autoaperture,
@@ -1864,10 +1870,11 @@ class TestOpticalSamplingConvergence:
                     )
                     defocus_coefficients.append(float(coefficients[3]))
 
-                assert abs(areas[2] - areas[1]) < abs(areas[1] - areas[0])
-                assert abs(rms_values[2] - rms_values[1]) < abs(
-                    rms_values[1] - rms_values[0]
-                )
-                assert abs(defocus_coefficients[2] - defocus_coefficients[1]) < abs(
-                    defocus_coefficients[1] - defocus_coefficients[0]
-                )
+                for metric in (areas, rms_values, defocus_coefficients):
+                    *coarse, reference = metric
+                    errors = [abs(value - reference) for value in coarse]
+                    assert errors[1] < errors[0], (
+                        image_point,
+                        field_index,
+                        metric,
+                    )

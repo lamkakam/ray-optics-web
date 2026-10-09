@@ -24,7 +24,7 @@
  * collected after execution; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.38.0` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.39.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -245,6 +245,14 @@ export function _getOptimizationInterruptStateForTesting(): {
  * binds the Python globals required by generated scripts, including circular,
  * annular, rectangular, and Ronchi aperture helpers.
  *
+ * `rayoptics`, `opticalglass`, and the eagerly imported Zemax helpers
+ * `zemaxglass` (via `opticalglass.glassfactory`) and `zmxtools` (via
+ * `rayoptics.environment`) install with `deps=False`: their declared
+ * requirements exceed Pyodide's numpy/scipy/matplotlib and include PySide6 and
+ * other Qt/GUI packages that must never load here. `_rwu_init()` runs before any
+ * RayOptics import so the headless stubs, the empty RefractiveIndex.INFO
+ * database, and the wide-angle pupil fallback are in place first.
+ *
  * @param runPython - Injected asynchronous Python executor.
  * @param wheelUrl - Absolute URL of the local `rayoptics_web_utils` wheel.
  * @param onProgress - Optional receiver for the 60%, 75%, and 85% milestones.
@@ -257,8 +265,10 @@ export async function _init(
   await emitInitProgress(onProgress, 60, "Installing RayOptics packages");
   await runPython(`
 import micropip
-await micropip.install("rayoptics==0.9.8", deps=False)
-await micropip.install("opticalglass==1.1.1", deps=False)
+await micropip.install("rayoptics==0.9.10", deps=False)
+await micropip.install("opticalglass==2.0.2", deps=False)
+await micropip.install("zemaxglass==2.0.1", deps=False)
+await micropip.install("zmxtools==0.1.5", deps=False)
 `);
 
   await emitInitProgress(onProgress, 75, "Installing supporting packages");
@@ -269,7 +279,7 @@ await micropip.install([
     'transforms3d==0.4.2',
     'json-tricks==3.17.3',
     'openpyxl==3.1.5',
-    'parsimonious==0.10.0',
+    'parsimonious==0.11.0',
 ])
 `);
 
@@ -346,7 +356,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
         ]);
 
         const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-        const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.38.0-py3-none-any.whl`;
+        const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.39.0-py3-none-any.whl`;
 
         await _init(
           createInitializationExecutor(pyodide),

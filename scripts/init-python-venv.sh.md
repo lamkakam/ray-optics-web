@@ -12,8 +12,9 @@ One-time setup of the local Python development environment at `src/python/.venv`
 4. Installs `pytest` into the venv.
 5. Installs `pip-licenses`, which generates the Python third-party dependency license report.
 6. Installs the pinned on-demand mutation-testing tool `mutmut==3.7.0` into the venv.
-7. Installs the package in editable mode (`pip install -e .`), making local source changes immediately visible without rebuilding.
-8. Prints the activation command on success:
+7. Installs the RayOptics packages pinned in `src/python/requirements-nodeps.txt` (`rayoptics`, `opticalglass`, `zemaxglass`, `zmxtools`) with `pip install --no-deps`, mirroring the Pyodide worker's `deps=False` installs. Their declared requirements (newer numpy/scipy/matplotlib than Pyodide ships, plus PySide6 and other Qt/GUI packages) are intentionally not installed; the runtime dependencies they actually need are pinned in `src/python/pyproject.toml`. During the following editable install, pip prints a "dependency conflicts" report listing these unmet RayOptics requirements; it is expected and does not fail the script.
+8. Installs the package in editable mode (`pip install -e .`), making local source changes immediately visible without rebuilding.
+9. Prints the activation command on success:
    ```
    source src/python/.venv/bin/activate
    ```
@@ -26,7 +27,7 @@ One-time setup of the local Python development environment at `src/python/.venv`
 ## Output / Side-effects
 
 - Creates (or reuses) `src/python/.venv/`.
-- Installs `pytest`, `pip-licenses`, `mutmut==3.7.0`, and the editable package into the venv.
+- Installs `pytest`, `pip-licenses`, `mutmut==3.7.0`, the no-deps RayOptics packages, and the editable package into the venv. A fresh venv contains no PySide6 or other Qt/GUI packages, matching the headless Pyodide runtime.
 - Does **not** build or publish the wheel — use `build-python-wheel.sh` for that.
 
 ## Usage
