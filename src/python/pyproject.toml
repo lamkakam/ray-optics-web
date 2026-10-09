@@ -33,3 +33,12 @@ rayoptics_web_utils = ["data/*.yml"]
 [tool.mutmut]
 source_paths = ["src/rayoptics_web_utils"]
 pytest_add_cli_args_test_selection = ["tests/"]
+
+[tool.pyright]
+include = ["src"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+reportMissingParameterType = "error"

@@ -1,20 +1,33 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
 import numpy as np
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace
 
 from rayoptics_web_utils.raygrid import _resolve_image_point
 from rayoptics_web_utils.raygrid.raygrid import _reference_sphere
 from rayoptics_web_utils.analysis._afocal import is_afocal_image_space
 
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike, NDArray
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr import RayPkg
+    from rayoptics.raytr.opticalspec import Field
+
+type FanFilter = Callable[[NDArray[np.float64], int, RayPkg, Field, float, float], float | None]
+"""Fan ordinate callback ``(pupil, xy, ray_pkg, fld, wavelength_nm, foc)`` matching RayOptics' ``trace_fan``."""
+
 
 def _trace_fan_series(
     opm: OpticalModel,
     fi: int,
     xy: int,
-    fan_filter,
+    fan_filter: FanFilter,
     image_point: str = "chief_ray",
     wvl_idx: int | None = None,
-    finite_reference_point=None,
+    finite_reference_point: ArrayLike | None = None,
     num_rays: int = 21,
 ) -> tuple[list[list[float]], list[list[float | None]]]:
     """Trace one pupil fan at one or every configured wavelength.
@@ -56,8 +69,10 @@ def _trace_fan_series(
         central_sphere, central_chief_ray = trace.setup_pupil_coords(
             opm, fld, central_wavelength, foc
         )
-        fld.chief_ray = central_chief_ray
-        fld.ref_sphere = central_sphere
+        # RayOptics declares Field.chief_ray/ref_sphere as None; they hold
+        # the chief-ray package and reference sphere during analysis.
+        fld.chief_ray = central_chief_ray  # pyright: ignore[reportAttributeAccessIssue]
+        fld.ref_sphere = central_sphere  # pyright: ignore[reportAttributeAccessIssue]
         chief_reference_point = central_sphere[0]
 
     fan_start = np.array([0.0, 0.0])
@@ -96,8 +111,8 @@ def _trace_fan_series(
             # RayOptics accepts only transverse overrides and otherwise replaces
             # the curved-surface axial coordinate with ``foc``.
             ref_sphere = _reference_sphere(opm, chief_ray, image_pt)
-        fld.chief_ray = chief_ray
-        fld.ref_sphere = ref_sphere
+        fld.chief_ray = chief_ray  # pyright: ignore[reportAttributeAccessIssue]
+        fld.ref_sphere = ref_sphere  # pyright: ignore[reportAttributeAccessIssue]
         wavelength_x: list[float] = []
         wavelength_y: list[float | None] = []
         start = np.array(fan_def[0])

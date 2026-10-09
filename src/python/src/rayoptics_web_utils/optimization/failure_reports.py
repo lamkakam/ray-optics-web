@@ -105,9 +105,9 @@ def _continuous_family(
     optimizer = _config_mapping(_config_mapping(config).get("optimizer"))
     kind = optimizer.get("kind")
     if kind == "differential_evolution":
-        return kind, None
+        return "differential_evolution", None
     method = optimizer.get("method")
-    return "least_squares", method if method in {"trf", "lm"} else None
+    return "least_squares", cast(str, method) if method in {"trf", "lm"} else None
 
 
 def _continuous_penalty_merit(
@@ -237,7 +237,7 @@ def _positive_float_setting(
     if isinstance(value, bool):
         return default
     try:
-        normalized = float(value)
+        normalized = float(value)  # pyright: ignore[reportArgumentType]  # untrusted settings fall back on TypeError
     except (TypeError, ValueError):
         return default
     if not math.isfinite(normalized) or normalized <= 0.0:

@@ -15,12 +15,18 @@ from opticalglass's AGF data. Bundled special materials may additionally use
 from __future__ import annotations
 import math
 from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, cast
 
 import pandas as pd
 from rayoptics_web_utils.glass.helper import (_partial_dispersion)
 
+if TYPE_CHECKING:
+    from opticalglass.agf_glass import AGFMedium
 
-def _available_index(indices: Mapping, line: str) -> float | None:
+    from rayoptics_web_utils.glass.helper import DispersionCoefficients, GlassEntry
+
+
+def _available_index(indices: Mapping[str, float] | pd.Series, line: str) -> float | None:
     """Return one catalog refractive index, or ``None`` when it is unavailable.
 
     Args:
@@ -37,7 +43,7 @@ def _available_index(indices: Mapping, line: str) -> float | None:
     return value if math.isfinite(value) else None
 
 
-def _partial_dispersions(data: Mapping) -> dict[str, float]:
+def _partial_dispersions(data: Mapping[str, Mapping[str, float]] | pd.Series) -> dict[str, float]:
     """Return P_fe, P_Fd, and P_gF from indexed refractive indices.
 
     A dispersion whose indices are unavailable, or whose F–C denominator is zero,
@@ -50,13 +56,13 @@ def _partial_dispersions(data: Mapping) -> dict[str, float]:
     Returns:
         P_fe, P_Fd, and P_gF from indexed refractive indices.
     """
-    indices = data["refractive indices"]
+    indices = cast("Mapping[str, float] | pd.Series", data["refractive indices"])
     nF, ne, nd, nC, ng = (
         _available_index(indices, line) for line in ("F", "e", "d", "C", "g")
     )
 
-    def partial(n_short, n_long):
-        if None in (n_short, n_long, nF, nC):
+    def partial(n_short: float | None, n_long: float | None) -> float:
+        if n_short is None or n_long is None or nF is None or nC is None:
             return 0.0
         return _partial_dispersion(n_short, n_long, nF, nC)
 
@@ -66,7 +72,7 @@ def _partial_dispersions(data: Mapping) -> dict[str, float]:
         "P_gF": partial(ng, nF),
     }
 
-def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]:
+def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> DispersionCoefficients:
     """Return normalized coefficient kind and values for one catalog glass.
 
     CDGM rows carrying Sellmeier ``K``/``L`` coefficients export as six-value
@@ -83,11 +89,11 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
         Normalized coefficient kind and values for one catalog glass.
     """
 
-    def schott2x4() -> dict[str, str | list[float]]:
+    def schott2x4() -> DispersionCoefficients:
         keys= ["A0", "A1", "A2", "A3", "A4", "A5"]
         dispersion_coeffs = []
         for key in keys:
-            dispersion_coeffs.append(float(data["dispersion coefficients"][key]))
+            dispersion_coeffs.append(float(data["dispersion coefficients"][key]))  # pyright: ignore[reportArgumentType]  # MultiIndex lookup yields a scalar
 
             # pad to 6 coeffs to match with schott2x6 used by Hikari
             for _ in range(6 - len(keys)):
@@ -98,7 +104,7 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             "dispersion_coeffs": dispersion_coeffs,
         }
 
-    def hikari() -> dict[str, str | list[float]]:
+    def hikari() -> DispersionCoefficients:
         keys = ["A0", "A1･λ^2", "A2･λ^4", "A3/λ^2", "A4/λ^4", "A5/λ^6", "A6/λ^8", "A7/λ^10", "A8/λ^12"]
         dispersion_coeffs = []
         for key in keys:
@@ -106,14 +112,14 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             if unparsed_coeff == "-":
                 parsed_coeff = 0.0
             else:
-                parsed_coeff = float(unparsed_coeff)
+                parsed_coeff = float(unparsed_coeff)  # pyright: ignore[reportArgumentType]  # MultiIndex lookup yields a scalar
             dispersion_coeffs.append(parsed_coeff)
         return {
             "dispersion_coeffs_kind": "Schott2x6",
             "dispersion_coeffs": dispersion_coeffs,
         }
 
-    def sellmeier3t(catalog_name: str) -> dict[str, str | list[float]]:
+    def sellmeier3t(catalog_name: str) -> DispersionCoefficients:
         if catalog_name == "Schott":
             keys = ["B1", "B2", "B3", "C1", "C2", "C3"]
         elif catalog_name == "Ohara":
@@ -123,13 +129,13 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
 
         dispersion_coeffs = []
         for key in keys:
-            dispersion_coeffs.append(float(data["dispersion coefficients"][key]))
+            dispersion_coeffs.append(float(data["dispersion coefficients"][key]))  # pyright: ignore[reportArgumentType]  # MultiIndex lookup yields a scalar
         return {
             "dispersion_coeffs_kind": "Sellmeier3T",
             "dispersion_coeffs": dispersion_coeffs,
         }
 
-    def cdgm() -> dict[str, str | list[float]]:
+    def cdgm() -> DispersionCoefficients:
         from opticalglass.cdgm import decode_dispersion_coefs
 
         coefs, interp_formula = decode_dispersion_coefs(data)
@@ -158,7 +164,7 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
 
 
 
-def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | dict[str, float] | list[float]]:
+def _build_glass_entry(catalog_name: str, data: pd.Series) -> GlassEntry:
     """Return one frontend glass entry from an ``opticalglass`` data series.
 
     Includes d/e indices and Abbe numbers, partial dispersions, coefficient kind, and
@@ -171,11 +177,12 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
     Returns:
         One frontend glass entry from an ``opticalglass`` data series.
     """
-    nd = data["refractive indices"]["d"]
-    ne = data["refractive indices"]["e"]
+    # MultiIndex lookups yield scalars; pandas types them as ``Series | Any``.
+    nd = cast("float", data["refractive indices"]["d"])
+    ne = cast("float", data["refractive indices"]["e"])
 
-    vd = data["abbe number"]["vd"]
-    ve = data["abbe number"]["ve"]
+    vd = cast("float", data["abbe number"]["vd"])
+    ve = cast("float", data["abbe number"]["ve"])
 
     partial_dispersions = _partial_dispersions(data)
     dispersion_coeff_data = _get_dispersion_coefficients(catalog_name, data)
@@ -191,7 +198,7 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
     }
 
 
-def _agf_dispersion_coefficients(glass_record: Mapping) -> dict[str, str | list[float]]:
+def _agf_dispersion_coefficients(glass_record: Mapping[str, Any]) -> DispersionCoefficients:
     """Return normalized coefficient kind and values for one Zemax AGF glass.
 
     AGF formula 1 (Schott) exports six ``Schott2x6`` values, formula 13 (Hikari)
@@ -221,7 +228,7 @@ def _agf_dispersion_coefficients(glass_record: Mapping) -> dict[str, str | list[
             raise ValueError(f"Unsupported AGF dispersion formula: {unsupported}")
 
 
-def _build_agf_glass_entry(medium) -> dict[str, float | dict[str, float] | list[float]]:
+def _build_agf_glass_entry(medium: AGFMedium) -> GlassEntry:
     """Return one frontend glass entry computed from an opticalglass AGF medium.
 
     Indices are evaluated from the AGF dispersion formula. ``vd`` uses the d, F,
@@ -248,7 +255,7 @@ def _build_agf_glass_entry(medium) -> dict[str, float | dict[str, float] | list[
     }
 
 
-def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
+def get_glass_catalog_data(catalog_name: str) -> dict[str, GlassEntry]:
     """Return every valid glass entry in a named vendor catalog.
 
     Reads the vendor spreadsheet catalog from opticalglass's central ``xls``
@@ -266,18 +273,19 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
     from rayoptics_web_utils.glass.legacy_glasses import LEGACY_AGF_GLASSES
 
     catalog = og_glass_libs["xls"][catalog_name]
-    result: dict[str, dict] = {}
+    result: dict[str, GlassEntry] = {}
     for name in catalog.get_glass_names():
         data = catalog.glass_data(name)
         entry = _build_glass_entry(catalog_name, data)
         result[str(name)] = entry
     for name in LEGACY_AGF_GLASSES.get(catalog_name, ()):
         if name not in result:
-            result[name] = _build_agf_glass_entry(create_glass(name, catalog_name))
+            # Legacy names resolve only through opticalglass's AGF library.
+            result[name] = _build_agf_glass_entry(cast("AGFMedium", create_glass(name, catalog_name)))
     return result
 
 
-def get_all_glass_catalogs_data() -> dict[str, dict[str, dict]]:
+def get_all_glass_catalogs_data() -> dict[str, dict[str, GlassEntry]]:
     """Return the six standard catalogs plus bundled ``Special`` materials.
 
     Args:

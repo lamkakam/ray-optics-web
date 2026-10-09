@@ -7,9 +7,10 @@ Private math helpers for diffraction MTF extraction.
 """
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 
-def _diffraction_limited_mtf(freqs, cutoff: float) -> np.ndarray:
+def _diffraction_limited_mtf(freqs: ArrayLike, cutoff: float) -> np.ndarray:
     """Return the incoherent circular-pupil diffraction-limited MTF. Returns zero outside the cutoff.
 
     Args:
@@ -32,7 +33,7 @@ def _diffraction_limited_mtf(freqs, cutoff: float) -> np.ndarray:
     return mtf
 
 
-def _directional_na_from_ray_dirs(chief_dir, negative_dir, positive_dir, axis: int) -> float:
+def _directional_na_from_ray_dirs(chief_dir: ArrayLike, negative_dir: ArrayLike, positive_dir: ArrayLike, axis: int) -> float:
     """Return one directional image-space NA from marginal directions relative to the chief ray.
 
     - Two marginal rays (from `negative_dir` and `positive_dir`) are compared against the chief ray direction along the specified axis (`axis`).

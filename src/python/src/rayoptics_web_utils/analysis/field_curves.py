@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr.trace import setup_pupil_coords, trace_astigmatism
 from rayoptics.raytr.opticalspec import Field
 
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 from rayoptics_web_utils.analysis._afocal import differential_output_vergence, is_afocal_image_space
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 def _field_unit(opm: OpticalModel) -> str:
@@ -44,8 +48,9 @@ def _trace_field_curves(opm: OpticalModel, wvl_idx: int, num_points: int = 21) -
             t_foc = differential_output_vergence(opm, fld, wvl, axis=1)
         else:
             ref_sphere, cr_pkg = setup_pupil_coords(opm, fld, wvl, foc)
-            fld.chief_ray = cr_pkg
-            fld.ref_sphere = ref_sphere
+            # RayOptics declares Field.chief_ray/ref_sphere as None.
+            fld.chief_ray = cr_pkg  # pyright: ignore[reportAttributeAccessIssue]
+            fld.ref_sphere = ref_sphere  # pyright: ignore[reportAttributeAccessIssue]
             s_foc, t_foc = trace_astigmatism(opm, fld, wvl, foc)
         sagittal_focus.append(s_foc)
         tangential_focus.append(t_foc)

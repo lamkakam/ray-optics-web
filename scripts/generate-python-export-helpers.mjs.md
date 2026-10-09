@@ -34,3 +34,4 @@ The mutation-testing hook generates both helpers before Stryker copies its sandb
 - Both generated TypeScript outputs are ignored by git and should not be committed.
 - Normal dev, check, test, and build commands regenerate the output before consuming TypeScript, so developers do not need to remember a manual codegen step.
 - No Python code is executed; the script only reads Python source files as text.
+- Because the exported script inlines these sources after other code, they must not use `from __future__ import annotations`, and signature annotations that name type-checking-only imports must be quoted. `src/python/tests/rayoptics_web_utils/test_export_helper_sources.py` executes the same concatenation to enforce this.

@@ -21,10 +21,19 @@ amplitude assumption, not a searched peak Strehl. No OSLO ordering or
 minimum-RMS reference optimization is implied.
 """
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 import math
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+
+    from rayoptics_web_utils.raygrid.raygrid import FiniteRayGrid, WavefrontGrid
 
 
 ZernikeTerm = tuple[int, int]
@@ -117,7 +126,7 @@ def zernike_polynomial(n: int, m: int, rho: NDArray, theta: NDArray) -> NDArray:
     return Z
 
 
-def _validated_zernike_terms(zernike_terms) -> list[ZernikeTerm]:
+def _validated_zernike_terms(zernike_terms: Iterable[object]) -> list[ZernikeTerm]:
     """Return validated tuple terms from Python or JSON-decoded pair sequences."""
     if not zernike_terms:
         raise ValueError("At least one Zernike term is required.")
@@ -287,7 +296,7 @@ def _monochromatic_strehl(
     return float(np.abs(coherent_mean) ** 2)
 
 
-def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray:
+def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm: OpticalModel, wavelength_nm: float) -> NDArray:
     """Scale OPD values from the model's central wavelength to wavelength_nm.
 
     Args:
@@ -303,7 +312,7 @@ def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) 
     return np.asarray(opd_grid, dtype=float) * scale
 
 
-def _extract_normalized_input_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
+def _extract_normalized_input_pupil_grid(rg: WavefrontGrid, opm: OpticalModel, wavelength_nm: float) -> NDArray:
     """Return normalized input-pupil coordinates with wavelength-scaled OPD.
 
     Args:
@@ -318,7 +327,7 @@ def _extract_normalized_input_pupil_grid(rg, opm, wavelength_nm: float) -> NDArr
     return np.array([rg.grid[0], rg.grid[1], opd_grid], dtype=float)
 
 
-def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
+def _extract_exit_pupil_grid(rg: WavefrontGrid, opm: OpticalModel, wavelength_nm: float) -> NDArray:
     """Compatibility helper for the historical afocal-only normalized grid."""
     if getattr(rg, "grid_pkg", None) is not None:
         raise ValueError(
@@ -328,7 +337,7 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
 
 
 def get_zernike_coefficients(
-    opm,
+    opm: OpticalModel,
     field_index: int,
     wvl_index: int,
     zernike_terms: list[ZernikeTerm],
@@ -407,7 +416,8 @@ def get_zernike_coefficients(
             build_finite_projected_pupil_samples,
         )
 
-        samples = build_finite_projected_pupil_samples(rg, opm, wavelength_nm)
+        # Only finite image space carries ``grid_pkg``, so ``rg`` is a finite grid here.
+        samples = build_finite_projected_pupil_samples(cast("FiniteRayGrid", rg), opm, wavelength_nm)
         grid = samples.grid
         weights = samples.weights
         sample_metadata = {

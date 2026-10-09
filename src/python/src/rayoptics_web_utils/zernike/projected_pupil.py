@@ -16,11 +16,19 @@ change indicates a folded or singular projected-pupil map.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 import rayoptics.optical.model_constants as mc
+
+if TYPE_CHECKING:
+    from rayoptics.coord_geometry_types import Mat3d, Vec3d
+    from rayoptics.optical.opticalmodel import OpticalModel
+
+    from rayoptics_web_utils._rayoptics_types import RawRayGrid
+    from rayoptics_web_utils.raygrid.raygrid import FiniteRayGrid
 
 
 class ProjectedPupilGeometryError(ValueError):
@@ -54,7 +62,7 @@ class ProjectedPupilSamples:
     boundary_converged: bool
 
 
-def _finite_vector(value, name: str) -> NDArray[np.float64]:
+def _finite_vector(value: ArrayLike, name: str) -> NDArray[np.float64]:
     """Return one finite Cartesian three-vector or raise a geometry error."""
     vector = np.asarray(value, dtype=float)
     if vector.shape != (3,) or not np.all(np.isfinite(vector)):
@@ -63,9 +71,9 @@ def _finite_vector(value, name: str) -> NDArray[np.float64]:
 
 
 def build_reference_sphere_geometry(
-    center,
-    pupil_reference,
-    preferred_x_axis,
+    center: ArrayLike,
+    pupil_reference: ArrayLike,
+    preferred_x_axis: ArrayLike,
 ) -> ReferenceSphereGeometry:
     """Build a sphere and deterministic transverse axes in one frame.
 
@@ -87,7 +95,7 @@ def build_reference_sphere_geometry(
         basis = np.eye(3)[int(np.argmin(np.abs(ez)))]
         transverse = basis - np.dot(basis, ez) * ez
     ex = transverse / np.linalg.norm(transverse)
-    ey = np.cross(ez, ex)
+    ey = cast("NDArray[np.float64]", np.cross(ez, ex))
     ey /= np.linalg.norm(ey)
     return ReferenceSphereGeometry(
         center=center_vector,
@@ -100,8 +108,8 @@ def build_reference_sphere_geometry(
 
 
 def intersect_pupil_side_sphere(
-    ray_origin,
-    ray_direction,
+    ray_origin: ArrayLike,
+    ray_direction: ArrayLike,
     geometry: ReferenceSphereGeometry,
 ) -> NDArray[np.float64]:
     """Intersect a complete ray line with the sphere's pupil-side hemisphere.
@@ -146,7 +154,7 @@ def intersect_pupil_side_sphere(
 
 
 def project_reference_sphere_point(
-    point,
+    point: ArrayLike,
     geometry: ReferenceSphereGeometry,
 ) -> tuple[float, float]:
     """Orthographically project a sphere point relative to the pupil reference."""
@@ -158,7 +166,7 @@ def project_reference_sphere_point(
     return float(np.dot(relative, geometry.ex)), float(np.dot(relative, geometry.ey))
 
 
-def _twice_signed_triangle_area(a, b, c) -> float:
+def _twice_signed_triangle_area(a: NDArray[np.float64], b: NDArray[np.float64], c: NDArray[np.float64]) -> float:
     """Return twice the signed area of one projected triangle."""
     ab = b - a
     ac = c - a
@@ -174,7 +182,8 @@ def _reject_overlapping_triangles(vertices: NDArray) -> None:
     Coordinates are translated and scaled before testing, with roundoff-sized
     tolerances so connected cells sharing an edge are not mistaken for overlap.
     """
-    from scipy.spatial import cKDTree
+    # SciPy re-exports cKDTree through a star import of a compiled module.
+    from scipy.spatial import cKDTree  # pyright: ignore[reportAttributeAccessIssue]
 
     vertices = vertices - np.min(vertices, axis=(0, 1))
     vertices /= np.max(vertices)
@@ -303,7 +312,7 @@ def projected_area_vertex_weights(
     return weights
 
 
-def reference_sphere_geometry_from_ray_grid(rg, opm) -> ReferenceSphereGeometry:
+def reference_sphere_geometry_from_ray_grid(rg: FiniteRayGrid, opm: OpticalModel) -> ReferenceSphereGeometry:
     """Recover the RayGrid reference sphere in the model's global frame.
 
     The centre uses the image surface's full global transform.  The pupil
@@ -316,8 +325,9 @@ def reference_sphere_geometry_from_ray_grid(rg, opm) -> ReferenceSphereGeometry:
         )
     image_point = np.asarray(rg.ref_sphere[0], dtype=float)
     chief_ray, chief_exit_segment = rg.chief_ray_pkg
-    last_rotation, last_translation = opm.seq_model.gbl_tfrms[-2]
-    image_rotation, image_translation = opm.seq_model.gbl_tfrms[-1]
+    # Global surface transforms always carry a rotation matrix.
+    last_rotation, last_translation = cast("tuple[Mat3d, Vec3d]", opm.seq_model.gbl_tfrms[-2])
+    image_rotation, image_translation = cast("tuple[Mat3d, Vec3d]", opm.seq_model.gbl_tfrms[-1])
     center = image_rotation @ image_point + image_translation
     exit_distance = float(chief_exit_segment[2])
     chief_point = np.asarray(chief_ray.ray[-2][mc.p], dtype=float)
@@ -338,13 +348,15 @@ def reference_sphere_geometry_from_ray_grid(rg, opm) -> ReferenceSphereGeometry:
     return geometry
 
 
-def _project_raw_grid(raw_grid, opm, geometry: ReferenceSphereGeometry):
+def _project_raw_grid(
+    raw_grid: RawRayGrid, opm: OpticalModel, geometry: ReferenceSphereGeometry
+) -> tuple[NDArray[np.float64], NDArray[np.bool_]]:
     """Project valid outgoing rays while preserving the regular input grid."""
     rows = len(raw_grid)
     columns = len(raw_grid[0]) if rows else 0
     coordinates = np.full((rows, columns, 2), np.nan, dtype=float)
     valid = np.zeros((rows, columns), dtype=bool)
-    last_rotation, last_translation = opm.seq_model.gbl_tfrms[-2]
+    last_rotation, last_translation = cast("tuple[Mat3d, Vec3d]", opm.seq_model.gbl_tfrms[-2])
     for row_index, row in enumerate(raw_grid):
         if len(row) != columns:
             raise ValueError("Projected-pupil input ray grid must be rectangular.")
@@ -370,7 +382,9 @@ def _project_raw_grid(raw_grid, opm, geometry: ReferenceSphereGeometry):
     return coordinates, valid
 
 
-def _opd_for_frozen_reference(raw_grid, rg, opm, wavelength_nm: float):
+def _opd_for_frozen_reference(
+    raw_grid: RawRayGrid, rg: FiniteRayGrid, opm: OpticalModel, wavelength_nm: float
+) -> NDArray[np.float64]:
     """Evaluate refined rays against the already selected RayGrid reference."""
     from rayoptics.raytr import waveabr
     from rayoptics_web_utils._finite_opd import model_view_for_wavelength_opd
@@ -400,8 +414,8 @@ def _opd_for_frozen_reference(raw_grid, rg, opm, wavelength_nm: float):
 
 
 def build_finite_projected_pupil_samples(
-    rg,
-    opm,
+    rg: FiniteRayGrid,
+    opm: OpticalModel,
     wavelength_nm: float,
     *,
     boundary_tolerance: float = 5.0e-3,

@@ -16,10 +16,9 @@ evaluated (``NaN``) is penalized whichever bounds are supplied.
 from __future__ import annotations
 
 import math
-from typing import get_args
+from typing import TYPE_CHECKING, get_args
 
 import numpy as np
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr.traceerror import TraceError
 
 from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
@@ -44,6 +43,9 @@ from ._types import (
     SurfaceRangeOperandKind,
 )
 from .targets import validate_surface_index
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 PENALTY_RESIDUAL = 1e6
 
@@ -140,11 +142,11 @@ def evaluate_operand_sample(opm: OpticalModel, sample: OperandSample, image_poin
     Returns:
         The evaluator's scalar or vector value.
     """
-    kind = sample["kind"]
+    kind = sample["kind"]  # pyright: ignore[reportGeneralTypeIssues]  # reserved operand variants type "kind" as Never
     if operand_scope(kind) == "surface":
         return SURFACE_OPERAND_REGISTRY[kind](
             opm,
-            sample["surface_index"],
+            sample["surface_index"],  # pyright: ignore[reportGeneralTypeIssues]  # only surface-scoped variants reach here
             sample["field_index"],
             sample["wavelength_index"],
             sample["options"],
@@ -176,9 +178,9 @@ def operand_goal_residual(sample: OperandSample, actual: float) -> float:
     Returns:
         Unweighted residual.
     """
-    goal = operand_goal(sample["kind"])
+    goal = operand_goal(sample["kind"])  # pyright: ignore[reportGeneralTypeIssues]  # reserved operand variants type "kind" as Never
     if goal == "adjustable_target":
-        return actual - sample["target"]
+        return actual - sample["target"]  # pyright: ignore[reportGeneralTypeIssues]  # only adjustable-target variants reach here
     if goal == "fixed_target":
         return actual
     if not math.isfinite(actual):
@@ -210,9 +212,9 @@ def get_nominal_operand_sample_residual_count(sample: OperandSample) -> int:
     Returns:
         The stable residual count contributed by one normalized operand sample.
     """
-    if sample["kind"] == "ray_fan":
+    if sample["kind"] == "ray_fan":  # pyright: ignore[reportGeneralTypeIssues]  # reserved operand variants type "kind" as Never
         return get_operand_num_rays(sample.get("options")) * 2
-    if sample["kind"] in {"ray_fan_tangential", "ray_fan_sagittal"}:
+    if sample["kind"] in {"ray_fan_tangential", "ray_fan_sagittal"}:  # pyright: ignore[reportGeneralTypeIssues]  # reserved operand variants type "kind" as Never
         return get_operand_num_rays(sample.get("options"))
     return 1
 

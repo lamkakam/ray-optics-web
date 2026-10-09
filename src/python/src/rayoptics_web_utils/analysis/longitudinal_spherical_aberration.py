@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import rayoptics.optical.model_constants as mc
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr.trace import trace_ray
 
 from rayoptics_web_utils.utils import _json_float_list
 from rayoptics_web_utils.analysis._afocal import is_afocal_image_space, output_vergence
 
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr import RaySeg
 
-def _focus_shift_from_ray(ray) -> float:
+
+def _focus_shift_from_ray(ray: list[RaySeg]) -> float:
     image_height = ray[-1][mc.p][1]
     previous_direction = ray[-2][mc.d]
     direction_slope = previous_direction[1] / previous_direction[2]

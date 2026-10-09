@@ -6,13 +6,23 @@ uses only the ruling's circular outer envelope so RayOptics does not mistake an
 internal opaque band for the pupil rim.
 """
 
+from collections.abc import Callable, Sequence
 from math import cos, hypot, isfinite, radians, remainder, sin, ulp
+from typing import TYPE_CHECKING
 
 from rayoptics.elem.surface import Aperture
 from rayoptics.raytr.vigcalc import set_vig as _rayoptics_set_vig
 
+# Inlined into exported scripts after other code, so this module avoids
+# ``from __future__ import annotations`` and quotes type-checking-only names.
+if TYPE_CHECKING:
+    import numpy as np
+    from numpy.typing import NDArray
+    from rayoptics.elem.surface import Surface
+    from rayoptics.optical.opticalmodel import OpticalModel
 
-def _require_finite(name, value):
+
+def _require_finite(name: str, value: float) -> None:
     """Raise ``ValueError`` unless *value* is a finite real number."""
     try:
         finite = isfinite(value)
@@ -22,7 +32,7 @@ def _require_finite(name, value):
         raise ValueError(f"{name} must be a finite number")
 
 
-def _require_positive_finite(name, value):
+def _require_positive_finite(name: str, value: float) -> None:
     """Raise ``ValueError`` unless *value* is finite and greater than zero."""
     _require_finite(name, value)
     if value <= 0:
@@ -58,11 +68,11 @@ class RonchiRuling(Aperture):
 
     def __init__(
         self,
-        radius=1.0,
-        lpmm=10.0,
-        rotation=0.0,
-        x_offset=0.0,
-        y_offset=0.0,
+        radius: float = 1.0,
+        lpmm: float = 10.0,
+        rotation: float = 0.0,
+        x_offset: float = 0.0,
+        y_offset: float = 0.0,
     ):
         _require_positive_finite("radius", radius)
         _require_positive_finite("lpmm", lpmm)
@@ -77,22 +87,22 @@ class RonchiRuling(Aperture):
         self.radius = radius
         self.lpmm = lpmm
 
-    def listobj_str(self):
+    def listobj_str(self) -> str:
         """Return RayOptics' object-list representation for the ruling."""
         o_str = f"ca: Ronchi radius={self.radius} lpmm={self.lpmm}\n"
         o_str += super().listobj_str()
         return o_str
 
-    def dimension(self):
+    def dimension(self) -> tuple[float, float]:
         """Return the circular envelope half dimensions."""
         return (self.radius, self.radius)
 
-    def set_dimension(self, x, y):
+    def set_dimension(self, x: float, y: float) -> None:
         """Set only the circular envelope radius from the X dimension."""
         _require_positive_finite("radius", x)
         self.radius = x
 
-    def max_dimension(self):
+    def max_dimension(self) -> float:
         """Return the circular envelope radius."""
         return self.radius
 
@@ -120,14 +130,14 @@ class RonchiRuling(Aperture):
         # allows this safety margin without meaningfully widening the clear band.
         return wrapped_distance <= pitch / 4 + fuzz + 4 * ulp(pitch)
 
-    def edge_pt_target(self, rel_dir):
+    def edge_pt_target(self, rel_dir: "Sequence[float] | NDArray[np.float64]") -> list[float]:
         """Return a target on the translated circular outer envelope."""
         return [
             self.x_offset + self.radius * rel_dir[0],
             self.y_offset + self.radius * rel_dir[1],
         ]
 
-    def apply_scale_factor(self, scale_factor):
+    def apply_scale_factor(self, scale_factor: float) -> None:
         """Scale the envelope and offsets without changing ruling density."""
         super().apply_scale_factor(scale_factor)
         self.radius *= scale_factor
@@ -136,7 +146,7 @@ class RonchiRuling(Aperture):
 class _RonchiEnvelope(Aperture):
     """Temporary clear circle used only while RayOptics sizes vignetting."""
 
-    def __init__(self, ruling):
+    def __init__(self, ruling: RonchiRuling):
         super().__init__(
             x_offset=ruling.x_offset,
             y_offset=ruling.y_offset,
@@ -148,7 +158,7 @@ class _RonchiEnvelope(Aperture):
         """Check only the translated circular envelope, not ruling bands."""
         return hypot(x - self.x_offset, y - self.y_offset) <= self.radius + fuzz
 
-    def edge_pt_target(self, rel_dir):
+    def edge_pt_target(self, rel_dir: "Sequence[float] | NDArray[np.float64]") -> list[float]:
         """Target the translated circular envelope for pupil-edge aiming."""
         return [
             self.x_offset + self.radius * rel_dir[0],
@@ -156,7 +166,9 @@ class _RonchiEnvelope(Aperture):
         ]
 
 
-def set_vig_with_ronchi_envelopes(opm, set_vig_fn=None):
+def set_vig_with_ronchi_envelopes(
+    opm: "OpticalModel", set_vig_fn: "Callable[[OpticalModel], object] | None" = None
+) -> object:
     """Calculate vignetting without treating opaque bands as pupil edges.
 
     Each ``RonchiRuling`` in an interface's clear-aperture list is temporarily
@@ -172,7 +184,7 @@ def set_vig_with_ronchi_envelopes(opm, set_vig_fn=None):
         The return value of the selected vignetting function.
     """
     calculate_vignetting = _rayoptics_set_vig if set_vig_fn is None else set_vig_fn
-    replaced_aperture_lists = []
+    replaced_aperture_lists: list[tuple[Surface, list[Aperture]]] = []
 
     for interface in opm["seq_model"].ifcs:
         original_apertures = interface.clear_apertures

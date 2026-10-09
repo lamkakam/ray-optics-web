@@ -6,11 +6,13 @@ Centroid OPD conventions are documented in
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, Self, cast
+
 import numpy as np
 import rayoptics.optical.model_constants as mc
 from scipy.optimize import least_squares
 
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace, waveabr
 from rayoptics.raytr.analyses import RayGrid
 
@@ -20,8 +22,24 @@ from rayoptics_web_utils.raygrid.opd_reference import (
     sample_valid_rays,
 )
 
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+    from rayoptics.coord_geometry_types import Mat3d, Vec3d
+    from rayoptics.elem.surface import Surface
+    from rayoptics.optical.opticalmodel import OpticalModel
 
-def _reference_sphere(opm, chief_ray_pkg, image_point: np.ndarray):
+    from rayoptics_web_utils._finite_opd import FirstOrderDataModelView
+    from rayoptics_web_utils._rayoptics_types import ChiefRayPkg, RawRayGrid, RefSphere
+
+type PreCalcGrid = list[list[Any]]
+"""Rows of RayOptics ``wave_abr_pre_calc`` packages, ``None`` for blocked rays."""
+
+
+def _reference_sphere(
+    opm: OpticalModel | FirstOrderDataModelView,
+    chief_ray_pkg: ChiefRayPkg,
+    image_point: np.ndarray,
+) -> RefSphere:
     """Build a RayOptics sphere from geometry expressed in one global frame.
 
     Args:
@@ -49,8 +67,10 @@ def _reference_sphere(opm, chief_ray_pkg, image_point: np.ndarray):
     if image_point.shape != (3,) or not np.all(np.isfinite(image_point)):
         raise ValueError("Reference-sphere image point must be a finite 3-vector.")
     seq_model = opm.seq_model
-    last_rotation, last_translation = seq_model.gbl_tfrms[-2]
-    image_rotation, image_translation = seq_model.gbl_tfrms[-1]
+    # Global surface transforms always carry a rotation matrix; RayOptics'
+    # Tfm3d alias also admits None for local transforms without rotation.
+    last_rotation, last_translation = cast("tuple[Mat3d, Vec3d]", seq_model.gbl_tfrms[-2])
+    image_rotation, image_translation = cast("tuple[Mat3d, Vec3d]", seq_model.gbl_tfrms[-1])
     sphere_center_global = image_rotation @ image_point + image_translation
     exit_distance = float(chief_exit_pupil_segment[2])
     chief_last_point = np.asarray(chief_ray.ray[-2][mc.p], dtype=float)
@@ -89,7 +109,7 @@ def _reference_sphere(opm, chief_ray_pkg, image_point: np.ndarray):
     )
 
 
-def _chief_image_point(chief_ray_pkg, foc: float) -> np.ndarray:
+def _chief_image_point(chief_ray_pkg: ChiefRayPkg, foc: float) -> np.ndarray:
     """Return the complete chief-ray image point after the requested focus shift."""
     chief_ray, _ = chief_ray_pkg
     point = np.asarray(chief_ray.ray[-1][mc.p], dtype=float).copy()
@@ -110,7 +130,7 @@ class ChiefRayGrid(RayGrid):
     shift without retracing or changing the built grid.
     """
 
-    def __init__(self, opt_model, f, wl, foc, num_rays):
+    def __init__(self, opt_model: OpticalModel, f: int, wl: float, foc: float, num_rays: int):
         """Initialize and immediately build a chief-ray-referenced finite grid."""
         self.opt_model = opt_model
         self.fld = opt_model.optical_spec.field_of_view.fields[f]
@@ -128,7 +148,13 @@ class ChiefRayGrid(RayGrid):
         }
         self.update_data()
 
-    def _hopkins_opd(self, wavelength_model, chief_ray_pkg, raw_grid, foc: float):
+    def _hopkins_opd(
+        self,
+        wavelength_model: FirstOrderDataModelView,
+        chief_ray_pkg: ChiefRayPkg,
+        raw_grid: RawRayGrid,
+        foc: float,
+    ) -> tuple[np.ndarray, RefSphere, PreCalcGrid, NDArray[np.float64]]:
         """Return the chief sphere, preprocessing, and OPD waves for traced rays at ``foc``.
 
         Ray tracing does not depend on focus; only the chief-ray image point,
@@ -148,7 +174,7 @@ class ChiefRayGrid(RayGrid):
         image_point = _chief_image_point(chief_ray_pkg, foc)
         ref_sphere = _reference_sphere(wavelength_model, chief_ray_pkg, image_point)
         first_order_data = wavelength_model["analysis_results"]["parax_data"].fod
-        updated_grid = []
+        updated_grid: PreCalcGrid = []
         opd_values = np.full((self.num_rays, self.num_rays), np.nan, dtype=float)
         central_wavelength = self.opt_model.optical_spec.spectral_region.central_wvl
         waves_scale = 1.0 / self.opt_model.nm_to_sys_units(central_wavelength)
@@ -198,7 +224,7 @@ class ChiefRayGrid(RayGrid):
             self._wavelength_model, self.chief_ray_pkg, self.raw_grid, foc
         )[3]
 
-    def update_data(self, **kwargs):
+    def update_data(self, **kwargs: Any) -> Self:
         """Rebuild rays and Hopkins OPD against the transformed chief sphere."""
         wavelength_model = model_view_for_wavelength_opd(self.opt_model, self.wvl)
         _, chief_ray_pkg = trace.setup_pupil_coords(
@@ -206,7 +232,7 @@ class ChiefRayGrid(RayGrid):
         )
         # Chief-ray aiming is wavelength dependent and must be refreshed before
         # pupil rays are launched from the optical specification.
-        self.fld.chief_ray = chief_ray_pkg
+        self.fld.chief_ray = chief_ray_pkg  # pyright: ignore[reportAttributeAccessIssue]  # declared None upstream
         raw_grid = sample_valid_rays(
             self.opt_model, self.fld, self.wvl, self.foc, self.num_rays
         )
@@ -227,13 +253,15 @@ class ChiefRayGrid(RayGrid):
         self.ref_sphere = ref_sphere
         self.chief_ray_pkg = chief_ray_pkg
         self._wavelength_model = wavelength_model
-        self.fld.chief_ray = chief_ray_pkg
-        self.fld.ref_sphere = ref_sphere
+        self.fld.chief_ray = chief_ray_pkg  # pyright: ignore[reportAttributeAccessIssue]  # declared None upstream
+        self.fld.ref_sphere = ref_sphere  # pyright: ignore[reportAttributeAccessIssue]  # declared None upstream
         return self
 
 
 def _linear_opd_coefficients(
-    raw_grid, opd_values, reference_name: str = "Centroid wavefront reference"
+    raw_grid: RawRayGrid,
+    opd_values: NDArray[np.float64],
+    reference_name: str = "Centroid wavefront reference",
 ) -> np.ndarray:
     """Fit piston and normalized-pupil phase tilts to valid OPD samples.
 
@@ -286,7 +314,7 @@ class CentroidRayGrid(RayGrid):
     ``None``.
     """
 
-    def __init__(self, opt_model, f, wl, foc, num_rays):
+    def __init__(self, opt_model: OpticalModel, f: int, wl: float, foc: float, num_rays: int):
         """Initialize and immediately build a centroid-referenced ray grid.
 
         Args:
@@ -317,7 +345,7 @@ class CentroidRayGrid(RayGrid):
         }
         self.update_data()
 
-    def update_data(self, **kwargs):
+    def update_data(self, **kwargs: Any) -> Self:
         """Rebuild the best-fit reference and its piston-free OPD grid.
 
         Args:
@@ -351,10 +379,10 @@ class CentroidRayGrid(RayGrid):
             wavelength_model, self.fld, self.wvl, self.foc
         )
         first_order_data = wavelength_model["analysis_results"]["parax_data"].fod
-        image_profile = self.opt_model.seq_model.ifcs[-1].profile
+        image_profile = cast("Surface", self.opt_model.seq_model.ifcs[-1]).profile
 
-        def evaluate(transverse):
-            sag = float(image_profile.sag(float(transverse[0]), float(transverse[1])))
+        def evaluate(transverse: NDArray[np.float64]) -> tuple[NDArray[np.float64], RefSphere, NDArray[np.float64]]:
+            sag = float(image_profile.sag(float(transverse[0]), float(transverse[1])))  # pyright: ignore[reportArgumentType]  # SurfaceProfile.sag stub returns None upstream
             image_point = np.array(
                 [float(transverse[0]), float(transverse[1]), sag + self.foc]
             )
@@ -381,7 +409,7 @@ class CentroidRayGrid(RayGrid):
                 opd_rows.append(opd_row)
             return image_point, ref_sphere, np.asarray(opd_rows, dtype=float)
 
-        def residual(transverse):
+        def residual(transverse: NDArray[np.float64]) -> np.ndarray:
             _, _, opd_values = evaluate(transverse)
             return _linear_opd_coefficients(raw_grid, opd_values)[1:]
 
@@ -440,9 +468,16 @@ class CentroidRayGrid(RayGrid):
         self.image_point = image_point
         self.ref_sphere = ref_sphere
         self.chief_ray_pkg = chief_ray_pkg
-        self.fld.chief_ray = chief_ray_pkg
-        self.fld.ref_sphere = ref_sphere
+        self.fld.chief_ray = chief_ray_pkg  # pyright: ignore[reportAttributeAccessIssue]  # declared None upstream
+        self.fld.ref_sphere = ref_sphere  # pyright: ignore[reportAttributeAccessIssue]  # declared None upstream
         return self
+
+
+type FiniteRayGrid = ChiefRayGrid | CentroidRayGrid
+"""Finite-conjugate ray grid carrying an explicit chief ray and reference sphere."""
+
+type WavefrontGrid = FiniteRayGrid | SimpleNamespace
+"""Finite chief or centroid ray grid, or the afocal RayGrid-compatible namespace."""
 
 
 def make_ray_grid(
@@ -452,7 +487,7 @@ def make_ray_grid(
     foc: float = 0.0,
     num_rays: int = 64,
     image_point: str = "chief_ray",
-):
+) -> WavefrontGrid:
     """Create wavefront samples with standard aperture and vignetting semantics.
 
     ``wavelength_nm`` is a plain float in nm. Finite image space lazily imports

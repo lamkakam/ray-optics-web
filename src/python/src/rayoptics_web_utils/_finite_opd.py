@@ -10,9 +10,14 @@ other first-order quantities remain unchanged.
 from __future__ import annotations
 
 import copy
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.parax.firstorder import FirstOrderData
 
 
-def first_order_data_for_wavelength(opm, wavelength_nm: float):
+def first_order_data_for_wavelength(opm: OpticalModel, wavelength_nm: float) -> FirstOrderData:
     """Return copied first-order data with indices for ``wavelength_nm``.
 
     The first and last sequential gaps define object and image space. Their
@@ -44,7 +49,7 @@ class FirstOrderDataModelView:
     changing its cached analysis results.
     """
 
-    def __init__(self, opm, first_order_data):
+    def __init__(self, opm: OpticalModel, first_order_data: FirstOrderData):
         """Create a delegating model view for one first-order-data copy."""
         self._opm = opm
         parax_data = opm["analysis_results"]["parax_data"]._replace(
@@ -53,18 +58,18 @@ class FirstOrderDataModelView:
         self._analysis_results = dict(opm["analysis_results"])
         self._analysis_results["parax_data"] = parax_data
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         """Return replacement analysis results or delegate model indexing."""
         if key == "analysis_results":
             return self._analysis_results
         return self._opm[key]
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to the original optical model."""
         return getattr(self._opm, name)
 
 
-def model_view_for_wavelength_opd(opm, wavelength_nm: float):
+def model_view_for_wavelength_opd(opm: OpticalModel, wavelength_nm: float) -> FirstOrderDataModelView:
     """Return a model view whose finite OPD uses traced-wavelength indices."""
     return FirstOrderDataModelView(
         opm,

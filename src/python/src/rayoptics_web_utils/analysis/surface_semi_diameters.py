@@ -1,7 +1,14 @@
 """Extract sequential-interface semi-diameters."""
 
+from __future__ import annotations
 
-def get_surface_semi_diameters(opm) -> list[float]:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
+
+
+def get_surface_semi_diameters(opm: OpticalModel) -> list[float]:
     """Return ``surface_od`` for Object, physical surfaces, and Image in order.
 
     Returns built-in `float` values from `surface_od()` for every `opm.seq_model.ifcs` entry in sequential order, including Object and Image.

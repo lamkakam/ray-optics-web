@@ -79,7 +79,9 @@ class DifferentialEvolutionSolver(SolverAdapter):
                 tol=self.problem.optimizer.get("tol", 0.01),
                 mutation=self.problem.optimizer.get("mutation", (0.5, 1)),
                 recombination=self.problem.optimizer.get("recombination", 0.7),
-                seed=self.problem.optimizer.get("seed"),
+                # SciPy 1.17 declares ``rng``; ``seed`` remains its legacy alias and
+                # keeps the RandomState stream seeded configurations reproduce.
+                seed=self.problem.optimizer.get("seed"),  # pyright: ignore[reportCallIssue]
                 polish=self.problem.optimizer.get("polish", False),
                 init=self.problem.optimizer.get("init", "latinhypercube"),
                 atol=self.problem.optimizer.get("atol", 0.0),

@@ -1,8 +1,16 @@
 """Provide a RayOptics annular aperture."""
 
+from collections.abc import Sequence
 from math import sqrt
+from typing import TYPE_CHECKING, Any
 
 from rayoptics.elem.surface import Aperture
+
+# Inlined into exported scripts after other code, so this module avoids
+# ``from __future__ import annotations`` and quotes type-checking-only names.
+if TYPE_CHECKING:
+    import numpy as np
+    from numpy.typing import NDArray
 
 
 class Annular(Aperture):
@@ -15,29 +23,29 @@ class Annular(Aperture):
     - `edge_pt_target(rel_dir)` targets the outer radius and includes `x_offset` / `y_offset`.
     - `apply_scale_factor(scale_factor)` scales offsets, outer radius, and obstruction radius."""
 
-    def __init__(self, radius=1.0, obstruction_radius=0.5, **kwargs):
+    def __init__(self, radius: float = 1.0, obstruction_radius: float = 0.5, **kwargs: Any):
         super().__init__(**kwargs)
         self.radius = radius
         self.obstruction_radius = obstruction_radius
         self._validate_obstruction_radius()
 
-    def _validate_obstruction_radius(self):
+    def _validate_obstruction_radius(self) -> None:
         if self.obstruction_radius <= 0 or self.obstruction_radius >= self.radius:
             raise ValueError("obstruction_radius must be greater than 0 and smaller than radius")
 
-    def listobj_str(self):
+    def listobj_str(self) -> str:
         o_str = f"ca: annular radius={self.radius} obstruction_radius={self.obstruction_radius}\n"
         o_str += super().listobj_str()
         return o_str
 
-    def dimension(self):
+    def dimension(self) -> tuple[float, float]:
         return (self.radius, self.radius)
 
-    def set_dimension(self, x, y):
+    def set_dimension(self, x: float, y: float) -> None:
         self.radius = x
         self._validate_obstruction_radius()
 
-    def max_dimension(self):
+    def max_dimension(self) -> float:
         return self.radius
 
     def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:
@@ -45,13 +53,13 @@ class Annular(Aperture):
         radius = sqrt(x * x + y * y)
         return self.obstruction_radius - fuzz <= radius <= self.radius + fuzz
 
-    def edge_pt_target(self, rel_dir):
+    def edge_pt_target(self, rel_dir: "Sequence[float] | NDArray[np.float64]") -> list[float]:
         return [
             self.x_offset + self.radius * rel_dir[0],
             self.y_offset + self.radius * rel_dir[1],
         ]
 
-    def apply_scale_factor(self, scale_factor):
+    def apply_scale_factor(self, scale_factor: float) -> None:
         super().apply_scale_factor(scale_factor)
         self.radius *= scale_factor
         self.obstruction_radius *= scale_factor

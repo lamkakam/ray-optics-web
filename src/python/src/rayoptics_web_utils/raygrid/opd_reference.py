@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Literal, cast, overload
 
 import numpy as np
 import rayoptics.optical.model_constants as mc
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr.analyses import trace_ray_grid
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike, NDArray
+    from rayoptics.elem.surface import Surface
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr.opticalspec import Field
+
+    from rayoptics_web_utils._rayoptics_types import RawRayGrid
 
 type ImagePoint = Literal["chief_ray", "centroid"]
 
@@ -18,7 +26,7 @@ def _validate_image_point(image_point: str) -> ImagePoint:
     raise ValueError(f"Unsupported image point: {image_point}")
 
 
-def weighted_centroid(values, weights) -> np.ndarray:
+def weighted_centroid(values: Iterable[ArrayLike], weights: Iterable[float]) -> np.ndarray:
     """Return the finite, positively weighted arithmetic centroid.
 
     Non-positive weights do not contribute. Samples with non-finite values or
@@ -59,7 +67,7 @@ def weighted_centroid(values, weights) -> np.ndarray:
     )
 
 
-def sample_valid_rays(opm, fld, wavelength_nm: float, foc: float, num_rays: int):
+def sample_valid_rays(opm: OpticalModel, fld: Field, wavelength_nm: float, foc: float, num_rays: int) -> RawRayGrid:
     """Trace valid rays uniformly over the already-vignetted pupil box.
 
     ``Field.vignetting_bbox`` has already transformed the normalized pupil,
@@ -95,7 +103,7 @@ def sample_valid_rays(opm, fld, wavelength_nm: float, foc: float, num_rays: int)
     )
 
 
-def projected_image_points(grid, foc: float) -> list[np.ndarray]:
+def projected_image_points(grid: RawRayGrid, foc: float) -> list[np.ndarray]:
     """Return finite final-ray points projected through the requested focus.
 
     Args:
@@ -147,6 +155,18 @@ def projected_image_points(grid, foc: float) -> list[np.ndarray]:
     return points
 
 
+@overload
+def _resolve_image_point(
+    opm: OpticalModel,
+    fi: int,
+    wavelength_nm: float,
+    foc: float,
+    num_rays: int,
+    image_point: Literal["centroid"],
+) -> NDArray[np.float64]: ...
+
+
+@overload
 def _resolve_image_point(
     opm: OpticalModel,
     fi: int,
@@ -154,7 +174,17 @@ def _resolve_image_point(
     foc: float,
     num_rays: int,
     image_point: str = "chief_ray",
-):
+) -> NDArray[np.float64] | None: ...
+
+
+def _resolve_image_point(
+    opm: OpticalModel,
+    fi: int,
+    wavelength_nm: float,
+    foc: float,
+    num_rays: int,
+    image_point: str = "chief_ray",
+) -> NDArray[np.float64] | None:
     """Return the RayOptics image-point override for the requested convention.
 
     ``"chief_ray"`` returns ``None``. ``"centroid"`` samples the already
@@ -184,8 +214,8 @@ def _resolve_image_point(
     if not points:
         raise ValueError("No valid rays are available to compute centroid image point.")
     transverse = np.mean(np.asarray(points, dtype=float)[:, :2], axis=0)
-    image_profile = opm.seq_model.ifcs[-1].profile
-    sag = float(image_profile.sag(float(transverse[0]), float(transverse[1])))
+    image_profile = cast("Surface", opm.seq_model.ifcs[-1]).profile
+    sag = float(image_profile.sag(float(transverse[0]), float(transverse[1])))  # pyright: ignore[reportArgumentType]  # SurfaceProfile.sag stub returns None upstream
     if not np.isfinite(sag):
         raise ValueError("Centroid is not projectable onto the image surface.")
     return np.array([transverse[0], transverse[1], sag + foc], dtype=float)

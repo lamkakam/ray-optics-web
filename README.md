@@ -82,6 +82,10 @@ npm run test
 # Unit tests for the internal Python package
 bash scripts/run-python-tests.sh
 
+# Type check the internal Python package with Pyright
+# (requires the initialized Python venv above)
+npm run type-check:python
+
 # E2E tests (Playwright)
 npm run test:e2e
 

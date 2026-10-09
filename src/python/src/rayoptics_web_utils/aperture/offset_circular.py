@@ -1,6 +1,15 @@
 """Provide an offset-aware circular aperture target."""
 
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
 from rayoptics.elem.surface import Circular
+
+# Inlined into exported scripts after other code, so this module avoids
+# ``from __future__ import annotations`` and quotes type-checking-only names.
+if TYPE_CHECKING:
+    import numpy as np
+    from numpy.typing import NDArray
 
 
 class OffsetCircular(Circular):
@@ -13,7 +22,7 @@ class OffsetCircular(Circular):
       - `y_offset + radius * rel_dir[1]`
     - Expects `rel_dir` to provide at least two numeric entries, matching the base class contract."""
 
-    def edge_pt_target(self, rel_dir):
+    def edge_pt_target(self, rel_dir: "Sequence[float] | NDArray[np.float64]") -> list[float]:
         """Return an aperture edge target shifted by x/y offsets.
 
         Args:

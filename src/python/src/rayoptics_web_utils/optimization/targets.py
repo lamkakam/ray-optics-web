@@ -7,11 +7,25 @@ materialized targets safely.
 
 from __future__ import annotations
 
-from rayoptics.environment import OpticalModel
-from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, XToroid, YToroid
+from collections.abc import Sized
+from typing import TYPE_CHECKING, TypeGuard, cast
+
+from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, SurfaceProfile, XToroid, YToroid
 from rayoptics.elem.surface import DecenterData
 
-from ._types import MutableTarget, PickupConfig, SnapshotEntry, TargetConfig, TargetKey, VariableConfig
+from ._types import (
+    AsphereKind,
+    MutableTarget,
+    PickupConfig,
+    PolynomialTargetKey,
+    SnapshotEntry,
+    TargetIdentity,
+    TargetKey,
+    VariableConfig,
+)
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 DECENTER_KINDS = {
     "decenter_alpha": ("euler", 0),
@@ -21,6 +35,9 @@ DECENTER_KINDS = {
     "decenter_y": ("dec", 1),
 }
 DECENTER_TYPES = {"bend", "dec and return", "decenter", "reverse"}
+
+type AsphereProfile = EvenPolynomial | RadialPolynomial | YToroid
+"""Profiles installed by ``ensure_asphere_profile``; ``XToroid`` subclasses ``YToroid``."""
 
 
 def radius_to_curvature(radius: float) -> float:
@@ -76,18 +93,18 @@ def restore_state(opm: OpticalModel, snapshot: dict[TargetKey, SnapshotEntry]) -
 def target_key(entry: MutableTarget) -> TargetKey:
     kind = entry["kind"]
     surface_index = entry["surface_index"]
-    if kind == "asphere_polynomial_coefficient":
-        return kind, surface_index, entry["coefficient_index"]
+    if entry["kind"] == "asphere_polynomial_coefficient":
+        return entry["kind"], surface_index, entry["coefficient_index"]
     return kind, surface_index
 
 
-def entry_from_target_key(key: TargetKey) -> TargetConfig:
+def entry_from_target_key(key: TargetKey) -> TargetIdentity:
     if key[0] == "asphere_polynomial_coefficient":
-        return {"kind": key[0], "surface_index": key[1], "coefficient_index": key[2]}
+        return {"kind": key[0], "surface_index": key[1], "coefficient_index": cast("PolynomialTargetKey", key)[2]}
     return {"kind": key[0], "surface_index": key[1]}
 
 
-def asphere_kinds():
+def asphere_kinds() -> dict[AsphereKind, type[SurfaceProfile]]:
     return {
         "Conic": EvenPolynomial,
         "EvenAspherical": EvenPolynomial,
@@ -97,22 +114,22 @@ def asphere_kinds():
     }
 
 
-def validate_surface_index(seq, index: int, label: str) -> None:
+def validate_surface_index(seq: Sized, index: object, label: str) -> None:
     if not isinstance(index, int) or index < 0 or index >= len(seq):
         raise IndexError(f"{label} {index} is out of range")
 
 
-def surface_profile(opm: OpticalModel, surface_index: int):
+def surface_profile(opm: OpticalModel, surface_index: int) -> SurfaceProfile:
     sm = opm["seq_model"]
     validate_surface_index(sm.ifcs, surface_index, "surface_index")
     return sm.ifcs[surface_index].profile
 
 
-def supports_polynomials(profile) -> bool:
+def supports_polynomials(profile: SurfaceProfile) -> bool:
     return hasattr(profile, "coefs")
 
 
-def is_toroid(profile) -> bool:
+def is_toroid(profile: SurfaceProfile) -> TypeGuard[YToroid]:
     return hasattr(profile, "cR")
 
 
@@ -144,12 +161,13 @@ def ensure_asphere_profile(opm: OpticalModel, entry: MutableTarget) -> None:
     elif asphere_kind == "RadialPolynomial":
         ifc.profile = RadialPolynomial(r=radius, cc=0.0, coefs=[])
     elif asphere_kind == "XToroid":
-        ifc.profile = XToroid(r=radius, cc=0.0, cR=radius, coefs=[])
+        # RayOptics' ``cR=0`` default makes Pyright infer ``int`` for the radius.
+        ifc.profile = XToroid(r=radius, cc=0.0, cR=radius, coefs=[])  # pyright: ignore[reportArgumentType]
     else:
-        ifc.profile = YToroid(r=radius, cc=0.0, cR=radius, coefs=[])
+        ifc.profile = YToroid(r=radius, cc=0.0, cR=radius, coefs=[])  # pyright: ignore[reportArgumentType]
 
 
-def ensure_decenter_data(opm: OpticalModel, entry: MutableTarget, *, materialize: bool = True):
+def ensure_decenter_data(opm: OpticalModel, entry: MutableTarget, *, materialize: bool = True) -> DecenterData | None:
     """Return compatible decenter data, optionally leaving an absent source untouched."""
     if entry["kind"] not in DECENTER_KINDS:
         return None
@@ -189,10 +207,11 @@ def read_target_value(opm: OpticalModel, entry: MutableTarget) -> float:
         attribute, index = DECENTER_KINDS[kind]
         return float(getattr(data, attribute)[index])
     ensure_asphere_profile(opm, entry)
-    profile = surface_profile(opm, surface_index)
+    # ensure_asphere_profile has installed one of the asphere profile classes.
+    profile = cast("AsphereProfile", surface_profile(opm, surface_index))
     if kind == "asphere_conic_constant":
         return float(profile.cc)
-    if kind == "asphere_polynomial_coefficient":
+    if entry["kind"] == "asphere_polynomial_coefficient":
         coefficients = list(getattr(profile, "coefs", []))
         coefficient_index = entry["coefficient_index"]
         return float(coefficients[coefficient_index] if coefficient_index < len(coefficients) else 0.0)
@@ -221,11 +240,12 @@ def write_target_value(opm: OpticalModel, entry: MutableTarget, value: float) ->
         getattr(data, attribute)[index] = float(value)
         return
     ensure_asphere_profile(opm, entry)
-    profile = surface_profile(opm, surface_index)
+    # ensure_asphere_profile has installed one of the asphere profile classes.
+    profile = cast("AsphereProfile", surface_profile(opm, surface_index))
     if kind == "asphere_conic_constant":
         profile.cc = float(value)
         return
-    if kind == "asphere_polynomial_coefficient":
+    if entry["kind"] == "asphere_polynomial_coefficient":
         coefficient_index = entry["coefficient_index"]
         coefficients = list(getattr(profile, "coefs", []))
         while len(coefficients) <= coefficient_index:

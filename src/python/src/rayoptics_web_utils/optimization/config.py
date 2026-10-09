@@ -23,10 +23,9 @@ from __future__ import annotations
 import math
 from collections import deque
 from copy import deepcopy
-from typing import cast
+from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import numpy as np
-from rayoptics.environment import OpticalModel
 
 from .operands import (
     POSITIVE_RANGE_OPERAND_KINDS,
@@ -50,6 +49,7 @@ from .targets import (
 from ._types import (
     MeritFunctionConfig,
     MeritFunctionConfigInput,
+    MutableTarget,
     NormalizedDifferentialEvolutionOptimizerConfig,
     NormalizedLeastSquaresOptimizerConfig,
     NormalizedOptimizationConfig,
@@ -64,6 +64,9 @@ from ._types import (
     VariableConfigInput,
     has_finite_variable_bounds,
 )
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 LEAST_SQUARES_OPTIMIZER_KEYS = {"kind", "method", "ftol", "xtol", "gtol", "max_nfev"}
@@ -82,7 +85,7 @@ DIFFERENTIAL_EVOLUTION_OPTIMIZER_KEYS = {
 }
 
 
-def reject_unknown_optimizer_options(optimizer: dict[str, object], kind: str, allowed_keys: set[str]) -> None:
+def reject_unknown_optimizer_options(optimizer: dict[str, object], kind: object, allowed_keys: set[str]) -> None:
     unknown_keys = set(optimizer) - allowed_keys
     if unknown_keys:
         key = sorted(unknown_keys)[0]
@@ -129,7 +132,8 @@ def normalize_variables(
         kind = entry.get("kind")
         if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius", *DECENTER_KINDS}:
             raise ValueError(f"Unknown variable kind: {kind}")
-        normalized_entry: VariableConfig = {
+        # Built from unvalidated input; ``variable`` is its typed view once validated.
+        normalized_entry: dict[str, Any] = {
             "kind": kind,
             "surface_index": entry.get("surface_index"),
         }
@@ -139,8 +143,9 @@ def normalize_variables(
             normalized_entry["decenter_type"] = entry.get("decenter_type")
         if kind == "asphere_polynomial_coefficient":
             normalized_entry["coefficient_index"] = entry.get("coefficient_index")
-        validate_target_for_kind(opm, normalized_entry)
-        key = target_key(normalized_entry)
+        variable = cast("VariableConfig", normalized_entry)
+        validate_target_for_kind(opm, variable)
+        key = target_key(variable)
         if key in seen_targets:
             raise ValueError(f"Duplicate variable target: {key}")
         has_min = "min" in entry
@@ -155,9 +160,9 @@ def normalize_variables(
         elif optimizer["kind"] == "least_squares" and optimizer["method"] == "lm" and has_min != has_max:
             raise ValueError("lm variables must omit both min and max bounds together")
         elif optimizer["kind"] == "differential_evolution":
-            if not has_finite_variable_bounds(normalized_entry):
+            if not has_finite_variable_bounds(variable):
                 raise ValueError("Differential evolution variables must provide finite min and max bounds")
-        normalized.append(normalized_entry)
+        normalized.append(variable)
         seen_targets.add(key)
     return normalized
 
@@ -173,7 +178,8 @@ def normalize_pickups(
         kind = entry.get("kind")
         if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius", *DECENTER_KINDS}:
             raise ValueError(f"Unknown pickup kind: {kind}")
-        normalized_entry: PickupConfig = {
+        # Built from unvalidated input; ``pickup`` is its typed view once validated.
+        normalized_entry: dict[str, Any] = {
             "kind": kind,
             "surface_index": entry.get("surface_index"),
             "source_surface_index": entry.get("source_surface_index"),
@@ -185,10 +191,11 @@ def normalize_pickups(
         if kind == "asphere_polynomial_coefficient":
             normalized_entry["coefficient_index"] = entry.get("coefficient_index")
             normalized_entry["source_coefficient_index"] = entry.get("source_coefficient_index")
-        validate_target_for_kind(opm, normalized_entry)
+        pickup = cast("PickupConfig", normalized_entry)
+        validate_target_for_kind(opm, pickup)
         validate_target_for_kind(
             opm,
-            {
+            cast("PickupConfig", {
                 **normalized_entry,
                 "surface_index": normalized_entry["source_surface_index"],
                 **(
@@ -196,17 +203,17 @@ def normalize_pickups(
                     if kind == "asphere_polynomial_coefficient"
                     else {}
                 ),
-            },
+            }),
             "source_surface_index",
         )
-        key = target_key(normalized_entry)
+        key = target_key(pickup)
         if key in variable_targets:
             raise ValueError(f"Target {key} cannot be both variable and pickup target")
         if key in seen_targets:
             raise ValueError(f"Duplicate pickup target: {key}")
         normalized_entry["scale"] = float(entry.get("scale", 1.0))
         normalized_entry["offset"] = float(entry.get("offset", 0.0))
-        normalized.append(normalized_entry)
+        normalized.append(pickup)
         seen_targets.add(key)
     validate_pickup_graph(normalized)
     return normalized
@@ -249,8 +256,9 @@ def validate_pickup_graph(pickups: list[PickupConfig]) -> None:
     indegree: dict[TargetKey, int] = {}
     for pickup in pickups:
         target = target_key(pickup)
+        # target_key reads only the identity fields of the pickup source.
         source = target_key(
-            {
+            cast("MutableTarget", {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
                 **(
@@ -258,7 +266,7 @@ def validate_pickup_graph(pickups: list[PickupConfig]) -> None:
                     if pickup["kind"] == "asphere_polynomial_coefficient"
                     else {}
                 ),
-            }
+            })
         )
         graph.setdefault(source, set()).add(target)
         graph.setdefault(target, set())
@@ -291,8 +299,9 @@ def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
     graph: dict[TargetKey, set[TargetKey]] = {}
     indegree: dict[TargetKey, int] = {}
     for target, pickup in by_target.items():
+        # target_key reads only the identity fields of the pickup source.
         source = target_key(
-            {
+            cast("MutableTarget", {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
                 **(
@@ -300,7 +309,7 @@ def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
                     if pickup["kind"] == "asphere_polynomial_coefficient"
                     else {}
                 ),
-            }
+            })
         )
         graph.setdefault(source, set()).add(target)
         graph.setdefault(target, set())
@@ -352,7 +361,7 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
     if kind in UNEXPANDED_OPERAND_KINDS:
         if base["weight"] == 0.0:
             return []
-        return [{**base, "field_index": None, "field_weight": 1.0, "wavelength_index": None, "wavelength_weight": 1.0}]
+        return [cast("OperandSample", {**base, "field_index": None, "field_weight": 1.0, "wavelength_index": None, "wavelength_weight": 1.0})]
 
     fields = operand.get("fields") or [{"index": idx, "weight": 1.0} for idx in range(len(opm["optical_spec"]["fov"].fields))]
     wavelengths = operand.get("wavelengths") or [
@@ -363,12 +372,14 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
     for field in fields:
         field_index = field.get("index")
         validate_surface_index(opm["optical_spec"]["fov"].fields, field_index, "field index")
+        field_index = cast(int, field_index)  # validated above
         normalized_fields.append((field_index, float(field.get("weight", 1.0))))
 
     normalized_wavelengths: list[tuple[int, float]] = []
     for wavelength in wavelengths:
         wavelength_index = wavelength.get("index")
         validate_surface_index(opm["optical_spec"]["wvls"].wavelengths, wavelength_index, "wavelength index")
+        wavelength_index = cast(int, wavelength_index)  # validated above
         normalized_wavelengths.append((wavelength_index, float(wavelength.get("weight", 1.0))))
 
     normalized: list[OperandSample] = []
@@ -377,13 +388,13 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
             if base["weight"] == 0.0 or field_weight == 0.0 or wavelength_weight == 0.0:
                 continue
             normalized.append(
-                {
+                cast("OperandSample", {
                     **base,
                     "field_index": field_index,
                     "field_weight": field_weight,
                     "wavelength_index": wavelength_index,
                     "wavelength_weight": wavelength_weight,
-                }
+                })
             )
     return normalized
 
@@ -420,7 +431,7 @@ def normalize_operand_goal_fields(kind: str, operand: OperandConfigInput) -> dic
 
     if not has_bounds:
         raise ValueError(f"Operand {kind} range requires at least one bound")
-    bounds = {key: operand[key] for key in ("min", "max") if key in operand}
+    bounds = {key: operand[key] for key in ("min", "max") if key in operand}  # pyright: ignore[reportTypedDictNotRequiredAccess, reportGeneralTypeIssues]  # guarded by "key in operand"
     if not all(_is_finite_number(value) for value in bounds.values()):
         raise ValueError(f"Operand {kind} range bounds must be finite")
     normalized = {key: float(value) for key, value in bounds.items()}
@@ -463,7 +474,7 @@ def normalize_operand_scope_fields(opm: OpticalModel, kind: str, operand: Operan
     return {"surface_index": surface_index}
 
 
-def _is_finite_number(value: object) -> bool:
+def _is_finite_number(value: object) -> TypeGuard[int | float]:
     """Return whether a config value is a finite real number (booleans excluded)."""
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 

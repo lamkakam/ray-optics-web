@@ -1,7 +1,10 @@
 """Extract single- and all-wavelength optical-path-difference fan data."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
 import rayoptics.optical.model_constants as mc
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr.waveabr import wave_abr_full_calc
 
 from rayoptics_web_utils._finite_opd import first_order_data_for_wavelength
@@ -9,6 +12,18 @@ from rayoptics_web_utils.analysis._fan import _trace_fan_series
 from rayoptics_web_utils.analysis._afocal import afocal_opd, exit_pupil_plane, is_afocal_image_space, reference_direction
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_list
+
+if TYPE_CHECKING:
+    from types import SimpleNamespace
+
+    import numpy as np
+    from numpy.typing import NDArray
+    from rayoptics.coord_geometry_types import Dir3d, Vec3d
+    from rayoptics.optical.opticalmodel import OpticalModel
+    from rayoptics.raytr import RayPkg
+    from rayoptics.raytr.opticalspec import Field
+
+    from rayoptics_web_utils.raygrid.raygrid import CentroidRayGrid
 
 
 def get_opd_fan_data_for_wavelength(
@@ -57,7 +72,7 @@ def get_opd_fan_data_for_wavelength(
 
 
 def _get_opd_fan_data_for_wavelength(
-    opm,
+    opm: OpticalModel,
     fi: int,
     wvl_idx: int,
     image_point: str,
@@ -66,7 +81,7 @@ def _get_opd_fan_data_for_wavelength(
 ) -> dict:
     """Trace one OPD fan using explicit monochromatic/reference geometry policy and sampling count (21 by default)."""
     afocal = is_afocal_image_space(opm)
-    references = {}
+    references: dict[str | float, tuple[Dir3d, RayPkg, Vec3d]] = {}
     finite_first_order_data = {}
     finite_reference_point = None
     if image_point == "centroid":
@@ -81,15 +96,18 @@ def _get_opd_fan_data_for_wavelength(
             image_point="centroid",
         )
         if afocal:
+            afocal_grid = cast("SimpleNamespace", fitted_grid)
             references["shared"] = (
-                fitted_grid.reference_direction,
-                fitted_grid.chief_ray_pkg,
-                fitted_grid.exit_pupil_point,
+                afocal_grid.reference_direction,
+                afocal_grid.chief_ray_pkg,
+                afocal_grid.exit_pupil_point,
             )
         else:
-            finite_reference_point = fitted_grid.image_point
+            finite_reference_point = cast("CentroidRayGrid", fitted_grid).image_point
 
-    def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
+    def _opd_abr(
+        p: NDArray[np.float64], xy: int, ray_pkg: RayPkg, fld: Field, wvl: float, foc: float
+    ) -> float | None:
         if ray_pkg[mc.ray] is not None:
             if afocal:
                 if "shared" in references:

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
-from rayoptics.environment import OpticalModel
 from rayoptics.raytr.analyses import calc_psf
 from rayoptics.raytr.trace import trace_boundary_rays_at_field
 
@@ -15,6 +18,9 @@ from rayoptics_web_utils.analysis._afocal import (
 )
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_list, _system_units
+
+if TYPE_CHECKING:
+    from rayoptics.optical.opticalmodel import OpticalModel
 
 
 def get_diffraction_mtf_data(

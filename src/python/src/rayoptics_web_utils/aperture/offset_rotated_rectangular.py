@@ -11,9 +11,17 @@
 
 """
 
+from collections.abc import Sequence
 from math import cos, radians, sin, sqrt
+from typing import TYPE_CHECKING
 
 from rayoptics.elem.surface import Rectangular
+
+# Inlined into exported scripts after other code, so this module avoids
+# ``from __future__ import annotations`` and quotes type-checking-only names.
+if TYPE_CHECKING:
+    import numpy as np
+    from numpy.typing import NDArray
 
 
 class OffsetRotatedRectangular(Rectangular):
@@ -29,7 +37,7 @@ class OffsetRotatedRectangular(Rectangular):
     - Equal-value `set_dimension` computes all four rotated corner vectors and solves for the scale where `max(||offset + scale * corner||)` reaches the target radius. If the target is at or inside the offset radius, the aperture clamps to zero size while leaving offsets and rotation unchanged.
     - `apply_scale_factor(scale_factor)` is inherited from `Rectangular`, which scales offsets and half widths while leaving rotation unchanged."""
 
-    def _to_local(self, x, y):
+    def _to_local(self, x: float, y: float) -> tuple[float, float]:
         # RayOptics passes points in the global surface coordinate frame, whose
         # origin is the surface origin. The rectangular aperture center is
         # (x_offset, y_offset) in that frame. The rectangle-local frame has its
@@ -47,7 +55,7 @@ class OffsetRotatedRectangular(Rectangular):
             -x * sin_angle + y * cos_angle,
         )
 
-    def _to_global(self, x, y):
+    def _to_global(self, x: float, y: float) -> list[float]:
         # The input point is in the rectangle-local frame: origin at the
         # aperture center, +x along x_half_width, and +y along y_half_width.
         # Rotate it into the global surface axes, then translate by the aperture
@@ -60,7 +68,7 @@ class OffsetRotatedRectangular(Rectangular):
             self.y_offset + x * sin_angle + y * cos_angle,
         ]
 
-    def _rotated_corner_vectors(self, x_half_width, y_half_width):
+    def _rotated_corner_vectors(self, x_half_width: float, y_half_width: float) -> list[tuple[float, float]]:
         # Start from the four rectangle-local corners:
         # (+/-x_half_width, +/-y_half_width). Rotate each around the local
         # origin, but do not add x_offset/y_offset; the result remains a vector
@@ -78,7 +86,7 @@ class OffsetRotatedRectangular(Rectangular):
             for rel_y in (-1, 1)
         ]
 
-    def set_dimension(self, x, y):
+    def set_dimension(self, x: float, y: float) -> None:
         if x != y:
             self.x_half_width = abs(x)
             self.y_half_width = abs(y)
@@ -120,7 +128,7 @@ class OffsetRotatedRectangular(Rectangular):
             and abs(local_y) <= self.y_half_width + fuzz
         )
 
-    def edge_pt_target(self, rel_dir):
+    def edge_pt_target(self, rel_dir: "Sequence[float] | NDArray[np.float64]") -> list[float]:
         return self._to_global(
             self.x_half_width * rel_dir[0],
             self.y_half_width * rel_dir[1],

@@ -30,6 +30,16 @@ and grant the same origin access to the Tools API. Run these commands only
 after a root-path `npm run build`; the GitHub Pages subpath build is deployed
 directly from `out` and must not be used as their input.
 
+## Python type checking
+
+`npm run type-check:python` runs the exactly pinned `pyright` dev dependency
+against the internal Python package using the `[tool.pyright]` settings in
+`src/python/pyproject.toml`. It requires the initialized Python virtual
+environment, because Pyright resolves `rayoptics`, `opticalglass`, NumPy, and
+SciPy from `src/python/.venv`. Unlike `npm run type-check`, it does not
+regenerate the Python export helpers. CI runs it on every validated pull
+request.
+
 ## Lint behavior
 
 `npm run lint` regenerates the Python export helpers and then runs Biome with

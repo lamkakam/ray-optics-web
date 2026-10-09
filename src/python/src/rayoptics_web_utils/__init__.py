@@ -6,6 +6,8 @@ optimization symbols remain lazy so ``init()`` can install Pyodide's
 unavailable-GUI stubs first.
 """
 
+from typing import Any
+
 from rayoptics_web_utils.env import init
 
 # Eager imports: opticalglass has no rayoptics dependency, safe to import immediately
@@ -50,7 +52,7 @@ _LAZY_IMPORTS = {
 }
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     """Lazy import: analysis/plotting modules import rayoptics at module level,
     so they can only be imported AFTER init() has stubbed Qt modules.
 
