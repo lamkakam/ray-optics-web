@@ -3106,9 +3106,10 @@ def test_f_number_operand_reads_paraxial_f_number_and_ignores_sample_arguments()
     from rayoptics_web_utils.optimization.operands import compute_f_number
 
     opm = {
+        "optical_spec": {"pupil": SimpleNamespace(key=("object", "epd"), value=10.0)},
         "analysis_results": {
             "parax_data": SimpleNamespace(fod=SimpleNamespace(fno=7.25)),
-        }
+        },
     }
 
     assert compute_f_number(

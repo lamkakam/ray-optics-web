@@ -276,3 +276,43 @@ def afocal_two_lens():
     sm.add_surface([-100.0, 1.0e10, "air"], sd=6.0)
     opm.update_model()
     return opm
+
+
+@pytest.fixture
+def make_constant_index_singlet():
+    """Return a factory for a finite-conjugate singlet in constant-index media.
+
+    The object gap is 20 mm of n=1.5, surface 1 is the stop, and the image gap
+    uses ``n_img``. The stop at surface 1 puts the entrance pupil there, so an
+    object EPD of ``2 * 20 * NA / 1.5`` is the paraxial equivalent of an
+    object-space NA spec.
+    """
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
+    from rayoptics.seq.medium import decode_medium
+
+    def build(pupil_key, value, n_obj=1.5, n_img=1.0):
+        opm = OpticalModel()
+        osp = opm["optical_spec"]
+        sm = opm["seq_model"]
+        opm.system_spec.dimensions = "mm"
+        osp["pupil"] = PupilSpec(osp, key=list(pupil_key), value=value)
+        osp["fov"] = FieldSpec(
+            osp,
+            key=["object", "height"],
+            value=0.1,
+            flds=[0.0, 1.0],
+            is_relative=True,
+        )
+        osp["wvls"] = WvlSpec([(587.562, 1.0)], ref_wl=0)
+        opm.radius_mode = True
+        sm.do_apertures = False
+        sm.gaps[0].thi = 20.0
+        sm.gaps[0].medium = decode_medium(n_obj)
+        sm.add_surface([15.0, 5.0, decode_medium(1.6)], sd=10.0)
+        sm.set_stop()
+        sm.add_surface([-30.0, 40.0, decode_medium(n_img)], sd=10.0)
+        opm.update_model()
+        return opm
+
+    return build

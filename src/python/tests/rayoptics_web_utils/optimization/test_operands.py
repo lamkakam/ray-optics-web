@@ -367,12 +367,30 @@ def test_focal_length_and_f_number_read_paraxial_values_and_have_shared_defaults
 
     from rayoptics_web_utils.optimization.operands import compute_f_number, compute_focal_length
 
-    model = {"analysis_results": {"parax_data": SimpleNamespace(fod=SimpleNamespace(efl=80.0, fno=4.0))}}
+    model = {
+        "optical_spec": {"pupil": SimpleNamespace(key=("object", "epd"), value=10.0)},
+        "analysis_results": {"parax_data": SimpleNamespace(fod=SimpleNamespace(efl=80.0, fno=4.0))},
+    }
 
     assert compute_focal_length(model, None, None, None) == pytest.approx(80.0)
     assert compute_f_number(model, None, None, None) == pytest.approx(4.0)
     assert inspect.signature(compute_focal_length).parameters["image_point"].default == "chief_ray"
     assert inspect.signature(compute_f_number).parameters["image_point"].default == "chief_ray"
+
+
+# WORKAROUND(rayoptics 0.9.10 NA bug): remove with
+# rayoptics_web_utils._paraxial_na_workaround once
+# tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py fails.
+def test_f_number_for_object_na_matches_equivalent_object_epd(make_constant_index_singlet):
+    """Object NA 0.9 in n=1.5 yields the same paraxial f/# as EPD 24."""
+    from rayoptics_web_utils.optimization.operands import compute_f_number
+
+    na_model = make_constant_index_singlet(("object", "NA"), 0.9)
+    epd_model = make_constant_index_singlet(("object", "epd"), 24.0)
+
+    assert compute_f_number(na_model, None, None, None) == pytest.approx(
+        compute_f_number(epd_model, None, None, None)
+    )
 
 
 def _spherical_sag(radius: float, height: float) -> float:

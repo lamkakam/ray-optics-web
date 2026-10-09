@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from rayoptics.optical.opticalmodel import OpticalModel
-    from rayoptics.parax.firstorder import FirstOrderData
+    from rayoptics.parax.firstorder import FirstOrderData, ParaxData
 
 
 def first_order_data_for_wavelength(opm: OpticalModel, wavelength_nm: float) -> FirstOrderData:
@@ -41,20 +41,18 @@ def first_order_data_for_wavelength(opm: OpticalModel, wavelength_nm: float) -> 
 
 
 class FirstOrderDataModelView:
-    """Delegate to a model while exposing replacement first-order data.
+    """Delegate to a model while exposing replacement paraxial data.
 
-    RayOptics' ``RayGrid`` obtains first-order data internally from the model.
-    This read-only view replaces only that lookup, allowing normal ray tracing
-    and reference-sphere setup to continue through the original model without
-    changing its cached analysis results.
+    RayOptics' ``RayGrid`` and ``compute_third_order`` obtain paraxial data
+    internally from the model. This read-only view replaces only the
+    ``analysis_results["parax_data"]`` lookup, allowing normal ray tracing,
+    reference-sphere setup and Seidel sums to continue through the original
+    model without changing its cached analysis results.
     """
 
-    def __init__(self, opm: OpticalModel, first_order_data: FirstOrderData):
-        """Create a delegating model view for one first-order-data copy."""
+    def __init__(self, opm: OpticalModel, parax_data: ParaxData):
+        """Create a delegating model view for one replacement ``ParaxData``."""
         self._opm = opm
-        parax_data = opm["analysis_results"]["parax_data"]._replace(
-            fod=first_order_data,
-        )
         self._analysis_results = dict(opm["analysis_results"])
         self._analysis_results["parax_data"] = parax_data
 
@@ -73,5 +71,7 @@ def model_view_for_wavelength_opd(opm: OpticalModel, wavelength_nm: float) -> Fi
     """Return a model view whose finite OPD uses traced-wavelength indices."""
     return FirstOrderDataModelView(
         opm,
-        first_order_data_for_wavelength(opm, wavelength_nm),
+        opm["analysis_results"]["parax_data"]._replace(
+            fod=first_order_data_for_wavelength(opm, wavelength_nm),
+        ),
     )

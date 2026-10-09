@@ -11,6 +11,8 @@ from rayoptics.parax.thirdorder import (
     seidel_to_wavefront,
 )
 
+from rayoptics_web_utils._paraxial_na_workaround import corrected_parax_model_view
+
 if TYPE_CHECKING:
     from rayoptics.optical.opticalmodel import OpticalModel
 
@@ -29,14 +31,22 @@ def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel
     wavelength is converted to system units for `seidel_to_wavefront`, and all
     returned dict/list values are JSON serialisable.
 
+    Coefficients and aggregates use `corrected_parax_model_view`, so an
+    NA-specified pupil uses the paraxial axial ray whose NA equals the spec
+    rather than RayOptics 0.9.10's index-doubled one.
+
     Args:
         opm: RayOptics optical model.
 
     Returns:
         Third-order Seidel data from a RayOptics `OpticalModel`.
     """
-    to_pkg = compute_third_order(opm)
-    fod = opm["analysis_results"]["parax_data"].fod
+    # WORKAROUND(rayoptics 0.9.10 NA bug): use `opm` and its cached `fod`
+    # directly again once
+    # tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py fails.
+    paraxial_model = corrected_parax_model_view(opm)
+    to_pkg = compute_third_order(paraxial_model)
+    fod = paraxial_model["analysis_results"]["parax_data"].fod
     wvls = opm["optical_spec"]["wvls"]
     seidel_sum = to_pkg.loc["sum"]
     surface_by_surface = {

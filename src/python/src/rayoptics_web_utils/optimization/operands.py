@@ -24,6 +24,7 @@ from rayoptics.raytr.traceerror import TraceError
 from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
 from rayoptics_web_utils.analysis import get_ray_fan_data
 from rayoptics_web_utils.raygrid import make_ray_grid
+from rayoptics_web_utils._paraxial_na_workaround import corrected_parax_data
 from rayoptics_web_utils._spot import _rms_radius, _spot_fn
 from rayoptics_web_utils.zernike.zernike import _opd_wfe, _scale_opd_grid_to_wavelength
 
@@ -436,6 +437,9 @@ def compute_f_number(
 ) -> float:
     """Return paraxial f-number.
 
+    NA-specified pupils use ``corrected_parax_data`` so the f-number matches
+    the specified NA rather than RayOptics 0.9.10's index-doubled axial ray.
+
     Args:
         opm: RayOptics optical model.
         field_index: Field index.
@@ -447,7 +451,9 @@ def compute_f_number(
         Paraxial f-number.
     """
     del field_index, wavelength_index, options, image_point
-    return float(opm["analysis_results"]["parax_data"].fod.fno)
+    # WORKAROUND(rayoptics 0.9.10 NA bug): read the cached `fod.fno` directly
+    # again once tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py fails.
+    return float(corrected_parax_data(opm).fod.fno)
 
 
 def _compute_ray_fan_for_axis(
