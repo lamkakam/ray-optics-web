@@ -1,45 +1,77 @@
 """Extract JSON-safe optical-glass catalog data.
 
-``opticalglass.glass_data`` exposes a multi-level series indexed by category and
-sub-key. Partial dispersions use ``nF−nC`` as their denominator and return zero
-when it cannot be computed. CDGM, Hoya, Sumita, and Hikari coefficients export as
-``Schott2x6``; Ohara and Schott export as ``Sellmeier3T``. Bundled special
-materials may additionally use ``Sellmeier4T``.
+Vendor catalogs come from opticalglass's spreadsheet-backed ``xls`` glass library,
+whose ``glass_data`` exposes a multi-level series indexed by category and sub-key.
+Partial dispersions use ``nF−nC`` as their denominator and return zero when it
+cannot be computed, including when a catalog omits a required index. CDGM glasses
+export as ``Sellmeier3T`` or ``Schott2x6`` following the formula their catalog row
+provides; Hoya, Sumita, and Hikari coefficients export as ``Schott2x6``; Ohara and
+Schott export as ``Sellmeier3T``. Glasses listed in ``legacy_glasses`` are appended
+from opticalglass's AGF data. Bundled special materials may additionally use
+``Sellmeier4T``.
 """
 
 
 from __future__ import annotations
+import math
+from collections.abc import Mapping
+
 import pandas as pd
 from rayoptics_web_utils.glass.helper import (_partial_dispersion)
 
 
-def _partial_dispersions(data: pd.Series) -> dict[str, float]:
-    """Return P_fe, P_Fd, and P_gF from indexed refractive indices.
-
-    An unavailable or zero F–C denominator yields zero-valued dispersions.
+def _available_index(indices: Mapping, line: str) -> float | None:
+    """Return one catalog refractive index, or ``None`` when it is unavailable.
 
     Args:
-        data: Source data to process.
+        indices: Refractive indices keyed by spectral line.
+        line: Spectral line name.
+
+    Returns:
+        The finite index as a float, or ``None`` when missing or non-finite.
+    """
+    value = indices.get(line)
+    if value is None or pd.isna(value):
+        return None
+    value = float(value)
+    return value if math.isfinite(value) else None
+
+
+def _partial_dispersions(data: Mapping) -> dict[str, float]:
+    """Return P_fe, P_Fd, and P_gF from indexed refractive indices.
+
+    A dispersion whose indices are unavailable, or whose F–C denominator is zero,
+    is zero.
+
+    Args:
+        data: Glass data whose ``"refractive indices"`` maps spectral lines to
+            indices.
 
     Returns:
         P_fe, P_Fd, and P_gF from indexed refractive indices.
     """
-    nF = data["refractive indices"]["F"]
-    ne = data["refractive indices"]["e"]
-    nd = data["refractive indices"]["d"]
-    nC = data["refractive indices"]["C"]
-    ng = data["refractive indices"]["g"]
+    indices = data["refractive indices"]
+    nF, ne, nd, nC, ng = (
+        _available_index(indices, line) for line in ("F", "e", "d", "C", "g")
+    )
+
+    def partial(n_short, n_long):
+        if None in (n_short, n_long, nF, nC):
+            return 0.0
+        return _partial_dispersion(n_short, n_long, nF, nC)
 
     return {
-        "P_fe": _partial_dispersion(nF, ne, nF, nC),
-        "P_Fd": _partial_dispersion(nF, nd, nF, nC),
-        "P_gF": _partial_dispersion(ng, nF, nF, nC),
+        "P_fe": partial(nF, ne),
+        "P_Fd": partial(nF, nd),
+        "P_gF": partial(ng, nF),
     }
 
 def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]:
     """Return normalized coefficient kind and values for one catalog glass.
 
-    CDGM, Hoya, and Sumita Schott data are padded to Hikari's eight-value layout;
+    CDGM rows carrying Sellmeier ``K``/``L`` coefficients export as six-value
+    ``Sellmeier3T`` ``[K1, K2, K3, L1, L2, L3]``; other CDGM rows, Hoya, and Sumita
+    export six Schott ``A0``–``A5`` values; Hikari exports its nine-term layout;
     Ohara and Schott retain six-value Sellmeier form. Unsupported catalogs raise
     ``ValueError``.
 
@@ -97,8 +129,25 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             "dispersion_coeffs": dispersion_coeffs,
         }
 
+    def cdgm() -> dict[str, str | list[float]]:
+        from opticalglass.cdgm import decode_dispersion_coefs
+
+        coefs, interp_formula = decode_dispersion_coefs(data)
+        if interp_formula == "sellmeier":
+            # Catalog order is K1, L1, K2, L2, K3, L3.
+            return {
+                "dispersion_coeffs_kind": "Sellmeier3T",
+                "dispersion_coeffs": [float(c) for c in [*coefs[0::2], *coefs[1::2]]],
+            }
+        return {
+            "dispersion_coeffs_kind": "Schott2x6",
+            "dispersion_coeffs": [float(c) for c in coefs],
+        }
+
     match catalog_name:
-        case "CDGM" | "Hoya" |"Sumita":
+        case "CDGM":
+            return cdgm()
+        case "Hoya" | "Sumita":
             return schott2x4()
         case "Hikari":
             return hikari()
@@ -142,10 +191,70 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
     }
 
 
-def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
-    """Return every valid glass entry in a named catalog.
+def _agf_dispersion_coefficients(glass_record: Mapping) -> dict[str, str | list[float]]:
+    """Return normalized coefficient kind and values for one Zemax AGF glass.
 
-    Catalog lookup is case-insensitive and the nested values are JSON serialisable.
+    AGF formula 1 (Schott) exports six ``Schott2x6`` values, formula 13 (Hikari)
+    exports the nine-term ``Schott2x6`` layout, and formula 2 (Sellmeier 1)
+    exports ``Sellmeier3T`` ``[K1, K2, K3, L1, L2, L3]``. Other formulas raise
+    ``ValueError``.
+
+    Args:
+        glass_record: ZemaxGlass record with ``dispform`` and ``cd`` entries.
+
+    Returns:
+        Normalized coefficient kind and values.
+    """
+    coefficients = [float(c) for c in glass_record["cd"]]
+    match glass_record["dispform"]:
+        case 1:
+            return {"dispersion_coeffs_kind": "Schott2x6", "dispersion_coeffs": coefficients[:6]}
+        case 13:
+            return {"dispersion_coeffs_kind": "Schott2x6", "dispersion_coeffs": coefficients[:9]}
+        case 2:
+            # AGF order is K1, L1, K2, L2, K3, L3.
+            return {
+                "dispersion_coeffs_kind": "Sellmeier3T",
+                "dispersion_coeffs": [*coefficients[0:6:2], *coefficients[1:6:2]],
+            }
+        case unsupported:
+            raise ValueError(f"Unsupported AGF dispersion formula: {unsupported}")
+
+
+def _build_agf_glass_entry(medium) -> dict[str, float | dict[str, float] | list[float]]:
+    """Return one frontend glass entry computed from an opticalglass AGF medium.
+
+    Indices are evaluated from the AGF dispersion formula. ``vd`` uses the d, F,
+    and C lines; ``ve`` uses the e, F', and C' lines.
+
+    Args:
+        medium: opticalglass ``AGFMedium`` exposing ``rindex`` and ``glass_rec``.
+
+    Returns:
+        One frontend glass entry with the same keys as spreadsheet entries.
+    """
+    lines = ("d", "e", "F", "C", "g", "F'", "C'")
+    indices = {line: float(medium.rindex(line)) for line in lines}
+    dispersion_coeff_data = _agf_dispersion_coefficients(medium.glass_rec)
+
+    return {
+        "refractiveIndexD": indices["d"],
+        "refractiveIndexE": indices["e"],
+        "abbeNumberD": (indices["d"] - 1.0) / (indices["F"] - indices["C"]),
+        "abbeNumberE": (indices["e"] - 1.0) / (indices["F'"] - indices["C'"]),
+        "partialDispersions": _partial_dispersions({"refractive indices": indices}),
+        "dispersionCoeffKind": dispersion_coeff_data["dispersion_coeffs_kind"],
+        "dispersionCoeffs": dispersion_coeff_data["dispersion_coeffs"],
+    }
+
+
+def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
+    """Return every valid glass entry in a named vendor catalog.
+
+    Reads the vendor spreadsheet catalog from opticalglass's central ``xls``
+    library, then appends the catalog's ``LEGACY_AGF_GLASSES`` resolved through
+    ``create_glass``. Spreadsheet catalog lookup is case-insensitive and the
+    nested values are JSON serialisable.
 
     Args:
         catalog_name: Name of the glass catalog.
@@ -153,15 +262,18 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
     Returns:
         Every valid glass entry in a named catalog.
     """
-    from opticalglass.glassfactory import fill_catalog_list
+    from opticalglass.glassfactory import create_glass, og_glass_libs
+    from rayoptics_web_utils.glass.legacy_glasses import LEGACY_AGF_GLASSES
 
-    catalogs = fill_catalog_list()
-    catalog = catalogs[catalog_name]
+    catalog = og_glass_libs["xls"][catalog_name]
     result: dict[str, dict] = {}
     for name in catalog.get_glass_names():
         data = catalog.glass_data(name)
         entry = _build_glass_entry(catalog_name, data)
         result[str(name)] = entry
+    for name in LEGACY_AGF_GLASSES.get(catalog_name, ()):
+        if name not in result:
+            result[name] = _build_agf_glass_entry(create_glass(name, catalog_name))
     return result
 
 

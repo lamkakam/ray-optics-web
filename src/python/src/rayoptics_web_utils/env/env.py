@@ -4,14 +4,20 @@ import sys
 import types
 from opticalglass.opticalmedium import OpticalMedium
 
+from rayoptics_web_utils.env.rii import use_empty_refractiveindex_database
+
 
 def init() -> dict[str, OpticalMedium]:
     """Initialize RayOptics for use in Pyodide and return shared materials.
 
-    Call this before importing analysis or plotting modules. It stubs unavailable
-    GUI and networking packages, selects matplotlib's headless `Agg` backend, and
-    loads the bundled CaF2, fused-silica, water, and D263TECO media plus one
-    stateful user-defined-material registry.
+    Call this before importing analysis or plotting modules. It first points
+    opticalglass at an empty RefractiveIndex.INFO database so importing
+    `opticalglass.glassfactory` never downloads one, then stubs unavailable GUI
+    and networking packages, selects matplotlib's headless `Agg` backend, routes
+    wide-angle chief-ray aiming through
+    `env.wide_angle.find_real_enp_with_fallback`, and loads the bundled CaF2,
+    fused-silica, water, and D263TECO media plus one stateful
+    user-defined-material registry.
 
     Repeated calls overwrite the stubs harmlessly. Calling it after dependent
     modules are cached cannot retroactively affect their imports. Bundled YAML is
@@ -23,6 +29,8 @@ def init() -> dict[str, OpticalMedium]:
     Returns:
         Shared bundled and user-defined optical materials.
     """
+    use_empty_refractiveindex_database()
+
     for m in [
         'PySide6', 'PySide6.QtWidgets', 'PySide6.QtCore',
         'PySide6.QtGui', 'psutil', 'zmq', 'pyzmq',
@@ -41,6 +49,12 @@ def init() -> dict[str, OpticalMedium]:
 
     import matplotlib
     matplotlib.use('Agg')
+
+    # Imported only after the GUI stubs above; it loads narrow tracing modules.
+    from rayoptics_web_utils.env.wide_angle import (
+        install_wide_angle_pupil_fallback,
+    )
+    install_wide_angle_pupil_fallback()
 
     from rayoptics_web_utils.glass.custom_materials import load_custom_material
 

@@ -1,0 +1,11 @@
+# RayOptics packages installed with `pip install --no-deps`, mirroring the
+# Pyodide worker's `micropip.install(..., deps=False)` calls.
+#
+# Their declared requirements (numpy>=2.5.1, scipy>=1.18.0, PySide6, ...) cannot
+# be satisfied by the Pyodide-matching pins in pyproject.toml, and the Qt/GUI
+# requirements must never be installed for the headless runtime. The runtime
+# dependencies they actually need are pinned in pyproject.toml instead.
+rayoptics==0.9.10
+opticalglass==2.0.2
+zemaxglass==2.0.1
+zmxtools==0.1.5

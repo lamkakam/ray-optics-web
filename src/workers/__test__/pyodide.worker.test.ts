@@ -972,8 +972,26 @@ describe("_init", () => {
       scripts.push(code);
     }, testWheelUrl);
     const allCode = scripts.join("\n");
-    expect(allCode).toContain('micropip.install("rayoptics==0.9.8"');
-    expect(allCode).toContain('micropip.install("opticalglass==1.1.1"');
+    expect(allCode).toContain(
+      'micropip.install("rayoptics==0.9.10", deps=False)',
+    );
+    expect(allCode).toContain(
+      'micropip.install("opticalglass==2.0.2", deps=False)',
+    );
+  });
+
+  it("installs the eagerly imported Zemax helper packages without dependencies", async () => {
+    const scripts: string[] = [];
+    await _init(async (code) => {
+      scripts.push(code);
+    }, testWheelUrl);
+    const allCode = scripts.join("\n");
+    expect(allCode).toContain(
+      'micropip.install("zemaxglass==2.0.1", deps=False)',
+    );
+    expect(allCode).toContain(
+      'micropip.install("zmxtools==0.1.5", deps=False)',
+    );
   });
 
   it("installs every supporting package in one micropip request", async () => {
@@ -988,7 +1006,7 @@ describe("_init", () => {
     'transforms3d==0.4.2',
     'json-tricks==3.17.3',
     'openpyxl==3.1.5',
-    'parsimonious==0.10.0',
+    'parsimonious==0.11.0',
 ])`);
   });
 

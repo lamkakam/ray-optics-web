@@ -1,6 +1,6 @@
 # ray-optics-web
 
-A web-based GUI for [RayOptics v0.9.8](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). Pyodide is served from [jsDelivr](https://www.jsdelivr.com/); RayOptics and its dependencies are served from [Python Hosted](https://pythonhosted.org/).
+A web-based GUI for [RayOptics v0.9.10](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). Pyodide is served from [jsDelivr](https://www.jsdelivr.com/); RayOptics and its dependencies are served from [Python Hosted](https://pythonhosted.org/).
 
 **Live demo with full functionalities:** [https://ray-optics-web.vestibulum.xyz](https://ray-optics-web.vestibulum.xyz)
 

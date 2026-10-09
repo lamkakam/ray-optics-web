@@ -760,7 +760,13 @@ class TestEvaluateOptimizationProblem:
         wavelength_index = 1
         opd_data = get_opd_fan_data(fresh_cooke_triplet, fi=field_index)
         fan_entry = opd_data[wavelength_index]
-        samples = [*fan_entry["Tangential"]["y"], *fan_entry["Sagittal"]["y"]]
+        # Blocked pupil-edge rays appear as None; the operand ignores
+        # non-finite samples.
+        samples = [
+            sample
+            for sample in [*fan_entry["Tangential"]["y"], *fan_entry["Sagittal"]["y"]]
+            if sample is not None and math.isfinite(sample)
+        ]
         sample_mean = sum(samples) / len(samples)
         expected_value = sum(abs(sample - sample_mean) for sample in samples) / len(samples)
 
