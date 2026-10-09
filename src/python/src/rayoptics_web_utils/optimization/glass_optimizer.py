@@ -69,9 +69,7 @@ def select_global_representatives(
         return list(candidates)
 
     points = np.array([(candidate.nd, candidate.vd) for candidate in candidates], dtype=float)
-    # SciPy 1.17 declares ``rng``; ``seed`` remains its legacy alias and keeps
-    # the RandomState stream that the deterministic selection relies on.
-    centroids, labels = kmeans2(points, keep, minit="points", seed=1234)  # pyright: ignore[reportCallIssue]
+    centroids, labels = kmeans2(points, keep, minit="points", rng=1234)
     selected: list[ResolvedGlassCandidate] = []
     for cluster_index in range(keep):
         indices = np.flatnonzero(np.asarray(labels) == cluster_index)

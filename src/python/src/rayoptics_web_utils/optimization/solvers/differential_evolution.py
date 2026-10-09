@@ -41,14 +41,14 @@ class DifferentialEvolutionSolver(SolverAdapter):
     - Calls `scipy.optimize.differential_evolution(...)`.
     - Uses `OptimizationProblem.scalar_objective(...)` as the solver objective.
     - Converts `OptimizationProblem.bounds()` into SciPy's per-dimension `(min, max)` sequence.
-    - Supports the SciPy 1.14.1-compatible DE options:
+    - Supports the SciPy 1.17-compatible DE options:
       - `strategy`
       - `max_nfev` as the public/internal function-evaluation budget, including the initial population; the adapter translates it into SciPy's generation-count `maxiter` using SciPy's actual population size (`config.differential_evolution_population_size(...)`, which applies SciPy's minimum of 5 members, excludes equal-bound variables, rounds `init="sobol"` populations up to a power of two, and honors an array `init`). Config validation guarantees the budget covers at least one population
       - `popsize`
       - `tol`
       - `mutation`
       - `recombination`
-      - `seed`
+      - `rng` (an int seed or `numpy.random.Generator`; SciPy draws from a `Generator`)
       - `polish` (defaults to `False` so the configured evaluation budget is not extended by an extra local-search phase; `polish=True` evaluations fall outside the budget)
       - `init`
       - `atol`
@@ -79,12 +79,12 @@ class DifferentialEvolutionSolver(SolverAdapter):
                 tol=self.problem.optimizer.get("tol", 0.01),
                 mutation=self.problem.optimizer.get("mutation", (0.5, 1)),
                 recombination=self.problem.optimizer.get("recombination", 0.7),
-                # SciPy 1.17 declares ``rng``; ``seed`` remains its legacy alias and
-                # keeps the RandomState stream seeded configurations reproduce.
-                seed=self.problem.optimizer.get("seed"),  # pyright: ignore[reportCallIssue]
+                rng=self.problem.optimizer.get("rng"),
                 polish=self.problem.optimizer.get("polish", False),
-                init=self.problem.optimizer.get("init", "latinhypercube"),
-                atol=self.problem.optimizer.get("atol", 0.0),
+                # SciPy leaves these unannotated, so Pyright infers ``str`` and ``int``
+                # from the defaults; SciPy documents array ``init`` and float ``atol``.
+                init=self.problem.optimizer.get("init", "latinhypercube"),  # pyright: ignore[reportArgumentType]
+                atol=self.problem.optimizer.get("atol", 0.0),  # pyright: ignore[reportArgumentType]
             )
             return {
                 "x": result.x,

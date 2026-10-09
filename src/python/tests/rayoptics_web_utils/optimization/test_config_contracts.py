@@ -50,7 +50,7 @@ def test_optimizer_normalization_preserves_every_supported_option_and_exact_erro
                 "tol": 1e-5,
                 "mutation": (0.3, 0.8),
                 "recombination": 0.4,
-                "seed": 4,
+                "rng": 4,
                 "polish": False,
                 "init": "latinhypercube",
                 "atol": 1e-8,
@@ -66,7 +66,7 @@ def test_optimizer_normalization_preserves_every_supported_option_and_exact_erro
         "tol": 1e-5,
         "mutation": (0.3, 0.8),
         "recombination": 0.4,
-        "seed": 4,
+        "rng": 4,
         "polish": False,
         "init": "latinhypercube",
         "atol": 1e-8,
@@ -75,6 +75,10 @@ def test_optimizer_normalization_preserves_every_supported_option_and_exact_erro
     with pytest.raises(ValueError) as exc_info:
         normalize_optimizer_config({"optimizer": {"kind": "least_squares", "unexpected": 1}})
     assert exc_info.value.args == ("Unsupported optimizer option for least_squares: unexpected",)
+
+    with pytest.raises(ValueError) as exc_info:
+        normalize_optimizer_config({"optimizer": {"kind": "differential_evolution", "seed": 4}})
+    assert exc_info.value.args == ("Unsupported optimizer option for differential_evolution: seed",)
 
 
 @pytest.mark.parametrize(

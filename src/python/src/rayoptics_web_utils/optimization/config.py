@@ -78,7 +78,7 @@ DIFFERENTIAL_EVOLUTION_OPTIMIZER_KEYS = {
     "tol",
     "mutation",
     "recombination",
-    "seed",
+    "rng",
     "polish",
     "init",
     "atol",

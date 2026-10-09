@@ -273,7 +273,7 @@ def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bo
         tol,
         mutation,
         recombination,
-        seed,
+        rng,
         polish,
         init,
         atol,
@@ -286,7 +286,7 @@ def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bo
         captured["tol"] = tol
         captured["mutation"] = mutation
         captured["recombination"] = recombination
-        captured["seed"] = seed
+        captured["rng"] = rng
         captured["polish"] = polish
         captured["init"] = init
         captured["atol"] = atol
@@ -368,7 +368,7 @@ def test_differential_evolution_adapter_forwards_supported_kwargs_with_defaults(
     assert captured["tol"] == pytest.approx(0.01)
     assert captured["mutation"] == (0.5, 1)
     assert captured["recombination"] == pytest.approx(0.7)
-    assert captured["seed"] is None
+    assert captured["rng"] is None
     assert captured["polish"] is False
     assert captured["init"] == "latinhypercube"
     assert captured["atol"] == pytest.approx(0.0)
@@ -770,7 +770,7 @@ def test_differential_evolution_adapter_falls_back_when_scipy_omits_status(
             "tol": 0.2,
             "mutation": 0.4,
             "recombination": 0.5,
-            "seed": 11,
+            "rng": 11,
             "polish": True,
             "init": "random",
             "atol": 0.01,
@@ -807,6 +807,8 @@ def test_differential_evolution_adapter_falls_back_when_scipy_omits_status(
     # popsize 2 x 2 variables is raised to SciPy's 5-member minimum: 20 // 5 - 1.
     assert captured["maxiter"] == 3
     assert captured["strategy"] == "rand1bin"
+    assert captured["rng"] == 11
+    assert "seed" not in captured
     assert captured["polish"] is True
     assert result["status"] == status
     assert problem._progress_reporter is None

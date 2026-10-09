@@ -101,7 +101,7 @@ class DifferentialEvolutionOptimizerOptions(TypedDict, total=False):
     tol: float
     mutation: float | tuple[float, float]
     recombination: float
-    seed: int | np.random.RandomState | np.random.Generator | None
+    rng: int | np.random.Generator | None
     polish: bool
     init: str | FloatArray
     atol: float
