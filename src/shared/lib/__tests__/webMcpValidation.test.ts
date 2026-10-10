@@ -1,4 +1,4 @@
-import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/prescriptionSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

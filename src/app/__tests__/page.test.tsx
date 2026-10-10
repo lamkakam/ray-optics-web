@@ -35,7 +35,7 @@ import {
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { _resetGlassCatalogLoaderForTest } from "@/features/glass-map/lib/glassCatalogLoader";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   DiffractionMtfData,
   DiffractionPsfData,

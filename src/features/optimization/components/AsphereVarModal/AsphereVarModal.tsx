@@ -5,7 +5,7 @@ import { MathJax } from "better-react-mathjax";
 import type {
   AsphericalType,
   OpticalModel,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   AsphereOptimizationState,
   AsphereMode,

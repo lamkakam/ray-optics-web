@@ -1,7 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
 import { _getZernikeCoefficients } from "../pyodide.worker";
 import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 
 const testModel: OpticalModel = {

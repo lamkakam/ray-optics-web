@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createStore } from "zustand";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   DiffractionMtfData,
   DiffractionPsfData,

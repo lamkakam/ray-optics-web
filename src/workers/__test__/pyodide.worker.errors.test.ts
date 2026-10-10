@@ -1,13 +1,13 @@
 /** Every public RPC protects diagnostics while preserving report and lifecycle contracts. */
 import * as worker from "../pyodide.worker";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { OptimizationConfig } from "@/features/optimization/types/optimizationWorkerTypes";
 import { CALCULATION_FAILED_MESSAGE } from "@/shared/lib/pyodideErrors";
 
 jest.mock("@/workers/loadPyodideModule", () => ({
   loadPyodideModule: jest.fn(),
 }));
-jest.mock("@/shared/lib/utils/pythonScript", () => ({
+jest.mock("@/shared/lib/python-export/pythonScript", () => ({
   buildScript: () => "calculation",
 }));
 

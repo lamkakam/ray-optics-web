@@ -9,7 +9,7 @@ import {
   mergePersistedGlassCandidateRows,
   sortGlassCandidates,
 } from "@/features/optimization/lib/glassCandidateSelection";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 /** Returns a compact catalog glass fixture with all candidate fields populated. */
 function glass(): CatalogGlassData {

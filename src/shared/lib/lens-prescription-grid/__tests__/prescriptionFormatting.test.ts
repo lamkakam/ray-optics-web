@@ -20,7 +20,10 @@ import {
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { OBJECT_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
+import type {
+  Surface,
+  Surfaces,
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 function surfaceRows(rows: GridRow[]): Extract<GridRow, { kind: "surface" }>[] {
   return rows.filter(

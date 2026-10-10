@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   RadiusMode,
   RadiusModeDraft,

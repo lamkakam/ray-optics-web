@@ -22,9 +22,9 @@
 
 - All type checking, linting and formatting (commands specified in the skill of "commands-for-development") must be passed
 
-- TypeScript, TSX, and Python specifications are embedded in their source files. Symbol-specific documentation belongs at the narrowest corresponding function, component, class, type, interface, or constant; reserve the file header or module docstring for genuinely module-wide documentation. Read the relevant embedded documentation before planning or implementation. JavaScript (including MJS) and shell specifications remain in `<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` sidecars. The generated `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts` also retains its sidecar because its source is generated.
+- TypeScript, TSX, and Python specifications are embedded in their source files. Symbol-specific documentation belongs at the narrowest corresponding function, component, class, type, interface, or constant; reserve the file header or module docstring for genuinely module-wide documentation. Read the relevant embedded documentation before planning or implementation. JavaScript (including MJS) and shell specifications remain in `<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` sidecars. The generated `src/shared/lib/python-export/generated/pythonExportApertureHelpers.ts` also retains its sidecar because its source is generated.
 
-- Always update the corresponding embedded declaration or module documentation after changing TypeScript, TSX, or Python source code. Continue to update sidecar specifications after changing JavaScript, MJS, or shell source code. Update `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts.md` when its generated contract changes; do not edit the generated source directly.
+- Always update the corresponding embedded declaration or module documentation after changing TypeScript, TSX, or Python source code. Continue to update sidecar specifications after changing JavaScript, MJS, or shell source code. Update `src/shared/lib/python-export/generated/pythonExportApertureHelpers.ts.md` when its generated contract changes; do not edit the generated source directly.
 
 - In TypeScript, use `undefined` instead of `null` whenever possible
 

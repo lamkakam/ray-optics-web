@@ -9,7 +9,10 @@
  * `WebMcpToolError` pointing at the invalid draft field.
  */
 import type { StoreApi } from "zustand";
-import type { OpticalSpecs, PupilSpec } from "@/shared/lib/types/opticalModel";
+import type {
+  OpticalSpecs,
+  PupilSpec,
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import {
   createPrescriptionAjv,
@@ -17,7 +20,7 @@ import {
   pupilSpecSchema,
   relativeFieldSpecSchema,
   wavelengthsSpecSchema,
-} from "@/shared/lib/schemas/prescriptionSchema";
+} from "@/shared/lib/optical-model/schema/prescriptionSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

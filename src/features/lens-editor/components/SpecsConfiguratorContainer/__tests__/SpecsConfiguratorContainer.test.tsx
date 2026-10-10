@@ -7,7 +7,7 @@ import {
   createSpecsConfiguratorSlice,
   type SpecsConfiguratorState,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import type { OpticalSpecs } from "@/shared/lib/optical-model/model/opticalModel";
 
 // Mock useTheme — default to light
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({

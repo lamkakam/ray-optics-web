@@ -10,7 +10,7 @@
 import type React from "react";
 import { act, render } from "@testing-library/react";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import AppShell from "@/app/AppShell";
 import { createStore } from "zustand/vanilla";
 import {

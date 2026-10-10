@@ -5,7 +5,7 @@ import {
   resolvePrescriptionMedium,
 } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 function makeLookupMaps(keys: readonly string[]): GlassLookupMaps {
   return {

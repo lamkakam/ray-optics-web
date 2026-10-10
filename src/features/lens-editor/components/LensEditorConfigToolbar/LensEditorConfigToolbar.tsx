@@ -3,8 +3,8 @@
 
 import type React from "react";
 import { useRef, useState } from "react";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
+import { validateImportedLensData } from "@/shared/lib/optical-model/schema/importSchema";
 import {
   formatMissingGlassMessage,
   formatUnknownMediumIssues,

@@ -2,7 +2,7 @@
 import {
   createPrescriptionAjv,
   finiteNumberSchema,
-} from "@/shared/lib/schemas/prescriptionSchema";
+} from "@/shared/lib/optical-model/schema/prescriptionSchema";
 import {
   OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
   OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS,

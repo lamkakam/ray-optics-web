@@ -3,7 +3,7 @@ import type {
   AsphericalType,
   DecenterConfig,
   OpticalModel,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 /** Scalar tilt/decenter targets supported by the optimizer. */
 export type DecenterTargetKind =

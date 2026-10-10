@@ -8,7 +8,7 @@ import type {
   EdgeAperture,
   Surface,
   Surfaces,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 /** Object distances at or above this value represent infinity and are preserved during scaling. */

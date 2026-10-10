@@ -7,8 +7,8 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 import type {
   OpticalModel,
   AsphericalType,
-} from "@/shared/lib/types/opticalModel";
-import { buildExportScriptSections } from "@/shared/lib/utils/pythonScript";
+} from "@/shared/lib/optical-model/model/opticalModel";
+import { buildExportScriptSections } from "@/shared/lib/python-export/pythonScript";
 import { Button } from "@/shared/components/primitives/Button";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { Switch } from "@/shared/components/primitives/Switch";
@@ -16,11 +16,14 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { Label } from "@/shared/components/primitives/Label";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { LensPrescriptionGrid } from "./LensPrescriptionGrid";
-import { MediumSelectorModal } from "./MediumSelectorModal";
-import { AsphericalModal } from "./AsphericalModal";
-import { DecenterModal, type DecenterType } from "./DecenterModal";
-import { DiffractionGratingModal } from "./DiffractionGratingModal";
-import { ApertureModal } from "./ApertureModal";
+import { MediumSelectorModal } from "@/shared/lib/optical-model/surface-properties/medium/MediumSelectorModal";
+import { AsphericalModal } from "@/shared/lib/optical-model/surface-properties/aspherical/AsphericalModal";
+import {
+  DecenterModal,
+  type DecenterType,
+} from "@/shared/lib/optical-model/surface-properties/decenter/DecenterModal";
+import { DiffractionGratingModal } from "@/shared/lib/optical-model/surface-properties/diffractive-element/DiffractionGratingModal";
+import { ApertureModal } from "@/shared/lib/optical-model/surface-properties/aperture/ApertureModal";
 import { FormattingModal } from "./FormattingModal";
 import { PythonScriptModal } from "./PythonScriptModal";
 import { AddReferenceSurfaceModal } from "./AddReferenceSurfaceModal";

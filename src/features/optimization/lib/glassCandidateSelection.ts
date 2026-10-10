@@ -15,7 +15,7 @@ import {
   type AllGlassCatalogsData,
   type CatalogName,
 } from "@/features/glass-map/types/glassMap";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   GlassCandidateConfig,
   GlassCatalogName,

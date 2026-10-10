@@ -36,7 +36,7 @@ import type {
 } from "@/features/import-custom-glass/types/customGlassImport";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
-import { validateImportedCustomGlassData } from "@/shared/lib/schemas/importSchema";
+import { validateImportedCustomGlassData } from "@/features/import-custom-glass/lib/customGlassValidation";
 
 export {
   EMPTY_CUSTOM_GLASSES,

@@ -4,7 +4,7 @@ import {
   surfacesToGridRows,
 } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { Surfaces } from "@/shared/lib/types/opticalModel";
+import type { Surfaces } from "@/shared/lib/optical-model/model/opticalModel";
 
 describe("gridTransform", () => {
   it("generates distinct sequential surface ids", () => {

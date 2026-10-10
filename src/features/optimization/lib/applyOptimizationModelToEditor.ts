@@ -3,7 +3,7 @@ import type { StoreApi } from "zustand";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
 import { assertWebMcpNotCancelled } from "@/shared/lib/webMcpValidation";

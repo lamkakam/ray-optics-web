@@ -11,7 +11,7 @@
  */
 import type { StateCreator } from "zustand";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 export interface AnalysisDataState {
   /** Complete third-order Seidel payload from the latest successful computation, or `undefined` before computation or after clearing. Controls visibility of the Seidel button. */

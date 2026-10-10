@@ -10,7 +10,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import * as echarts from "echarts/core";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type {
   GlassOptimizationConfig,

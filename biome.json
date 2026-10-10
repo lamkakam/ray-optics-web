@@ -14,7 +14,7 @@
       "!!coverage",
       "!!src/python",
       "!!scripts",
-      "!!src/shared/lib/utils/generated"
+      "!!src/shared/lib/python-export/generated"
     ]
   },
   "css": {
@@ -118,7 +118,7 @@
       "linter": { "rules": { "performance": { "noImgElement": "off" } } }
     },
     {
-      "includes": ["src/shared/lib/schemas/prescriptionSchema.ts"],
+      "includes": ["src/shared/lib/optical-model/schema/prescriptionSchema.ts"],
       "linter": { "rules": { "suspicious": { "noThenProperty": "off" } } }
     },
     {

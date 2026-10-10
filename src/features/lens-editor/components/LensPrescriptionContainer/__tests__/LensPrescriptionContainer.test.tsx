@@ -12,7 +12,10 @@ import {
   gridRowsToSurfaces,
 } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { Surfaces, OpticalModel } from "@/shared/lib/types/opticalModel";
+import type {
+  Surfaces,
+  OpticalModel,
+} from "@/shared/lib/optical-model/model/opticalModel";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import {
   GlassCatalogContext,

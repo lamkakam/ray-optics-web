@@ -20,7 +20,10 @@ import type {
   GlassLookupMaps,
   GlassMediumLookupValue,
 } from "@/features/glass-map/types/glassMap";
-import type { OpticalModel, Surfaces } from "@/shared/lib/types/opticalModel";
+import type {
+  OpticalModel,
+  Surfaces,
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 interface PrescriptionMedium {
   readonly medium: string;

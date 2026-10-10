@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { DecenterOptimizationState } from "@/features/optimization/stores/optimizationStore";
 import { TiltDecenterVarModal } from "../TiltDecenterVarModal";
 

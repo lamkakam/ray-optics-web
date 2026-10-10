@@ -3,7 +3,7 @@ import { act, fireEvent, renderHook, waitFor } from "@testing-library/react";
 import { createStore } from "zustand/vanilla";
 import { useAppShellNavigation } from "@/app/hooks/useAppShellNavigation";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import { createLensEditorSlice } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfiguratorSlice } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createOptimizationSlice } from "@/features/optimization/stores/optimizationStore";

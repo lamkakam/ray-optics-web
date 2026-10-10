@@ -9,7 +9,7 @@ import {
   type SpecsConfiguratorState,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { applyOptimizationModelToEditor } from "@/features/optimization/lib/applyOptimizationModelToEditor";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 const model: OpticalModel = {
   setAutoAperture: "autoAperture",

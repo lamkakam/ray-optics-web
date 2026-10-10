@@ -3,7 +3,7 @@ import type { StoreApi } from "zustand";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 /** Focusing chromaticity choices exposed by the Lens Editor. */
 export type FocusingChromaticity = "mono" | "poly";

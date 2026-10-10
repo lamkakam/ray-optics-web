@@ -169,7 +169,7 @@ The variable `Bf` (backfocus) may be used for the `thickness` of the last row in
 
 The parsed `OpticalSpecs` instance would be:
 ```typescript
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 const opticalModal: OpticalModel = {
   setAutoAperture: false,
@@ -250,7 +250,7 @@ Bf	169.23
 
 The parsed `OpticalSpecs` instance would be:
 ```typescript
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 const opticalModal: OpticalModel = {
   setAutoAperture: false,
@@ -303,7 +303,7 @@ const opticalModal: OpticalModel = {
 
 
 ## 3. Examples for spherical lens surfaces, air surfaces, aperture stops and cover glass
-The following examples don't have aspheric surfaces, i.e. the `surface_id` doesn't appear under `[aspherical data]`. Each data row is expected to be parsed into a `Surface` instance. Typescript type `Surface` is defined in `src/shared/lib/types/opticalModel.ts`.
+The following examples don't have aspheric surfaces, i.e. the `surface_id` doesn't appear under `[aspherical data]`. Each data row is expected to be parsed into a `Surface` instance. Typescript type `Surface` is defined in `src/shared/lib/optical-model/model/opticalModel.ts`.
 
 ### 3.1 Example instance of aperture_stop_line
 `11	AS	8.77		24.42			` means:

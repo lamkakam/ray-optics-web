@@ -1,12 +1,10 @@
 "use client";
 
-import {
-  AsphericalModal,
-  ApertureModal,
-  DecenterModal,
-  DiffractionGratingModal,
-  MediumSelectorModal,
-} from "@/features/lens-editor/components/LensPrescriptionContainer";
+import { ApertureModal } from "@/shared/lib/optical-model/surface-properties/aperture/ApertureModal";
+import { AsphericalModal } from "@/shared/lib/optical-model/surface-properties/aspherical/AsphericalModal";
+import { DecenterModal } from "@/shared/lib/optical-model/surface-properties/decenter/DecenterModal";
+import { DiffractionGratingModal } from "@/shared/lib/optical-model/surface-properties/diffractive-element/DiffractionGratingModal";
+import { MediumSelectorModal } from "@/shared/lib/optical-model/surface-properties/medium/MediumSelectorModal";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 interface OptimizationInspectionModalsProps {

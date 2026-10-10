@@ -5,7 +5,7 @@ import {
   getThicknessValue,
 } from "@/features/optimization/lib/optimizationViewModels";
 import type { OptimizationResidualEntry } from "@/features/optimization/types/optimizationWorkerTypes";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 const model: OpticalModel = {
   setAutoAperture: "manualAperture",

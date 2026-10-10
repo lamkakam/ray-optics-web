@@ -6,7 +6,10 @@ import type {
   AsphereMode,
 } from "@/features/optimization/stores/optimizationStore";
 import { AsphereVarModal } from "../AsphereVarModal";
-import type { OpticalModel, Surface } from "@/shared/lib/types/opticalModel";
+import type {
+  OpticalModel,
+  Surface,
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (

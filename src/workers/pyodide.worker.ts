@@ -40,7 +40,7 @@
 import { runPyodideOperation } from "@/shared/lib/pyodideErrors";
 import { expose, releaseProxy } from "comlink";
 import { loadPyodide, version } from "pyodide";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type {
   AstigmatismCurveData,
@@ -71,7 +71,7 @@ import type {
   ZernikePupilSpace,
 } from "@/features/lens-editor/types/zernikeData";
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
-import { buildScript } from "@/shared/lib/utils/pythonScript";
+import { buildScript } from "@/shared/lib/python-export/pythonScript";
 import type {
   AllGlassCatalogsData,
   CompleteGlassCatalogsData,

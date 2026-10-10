@@ -12,7 +12,7 @@ import type {
   ClearAperture,
   DecenterConfig,
   EdgeAperture,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 const baseDecenter = {
   alpha: 0,

@@ -3,7 +3,7 @@ import {
   createSpecsConfiguratorSlice,
   type SpecsConfiguratorState,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import type { OpticalSpecs } from "@/shared/lib/optical-model/model/opticalModel";
 
 function makeStore() {
   return createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);

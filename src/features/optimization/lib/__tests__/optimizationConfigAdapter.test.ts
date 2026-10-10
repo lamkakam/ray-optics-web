@@ -1,7 +1,7 @@
 /** Exercises config round-tripping, Python-compatible sample defaults, and sparse/zero weights. */
 import { createStore } from "zustand";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   GlassOptimizationConfig,
   OptimizationConfig,

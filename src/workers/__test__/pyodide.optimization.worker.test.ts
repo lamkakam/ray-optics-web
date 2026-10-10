@@ -1,4 +1,4 @@
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import { releaseProxy } from "comlink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type {

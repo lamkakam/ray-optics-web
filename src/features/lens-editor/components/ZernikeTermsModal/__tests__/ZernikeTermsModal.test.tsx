@@ -14,7 +14,7 @@ import {
   NUM_FRINGE_TERMS,
 } from "@/features/lens-editor/lib/zernikeData";
 import type { SelectOption } from "@/shared/components/primitives/Select";
-import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import type { OpticalSpecs } from "@/shared/lib/optical-model/model/opticalModel";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (

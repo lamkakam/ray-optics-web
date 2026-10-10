@@ -5,7 +5,7 @@ import {
   type AnalysisDataState,
 } from "@/features/analysis/stores/analysisDataStore";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 const model: OpticalModel = {
   setAutoAperture: "manualAperture",

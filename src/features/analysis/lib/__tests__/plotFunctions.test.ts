@@ -2,7 +2,7 @@
 import { DEFAULT_ANALYSIS_RAY_COUNTS } from "@/features/analysis/lib/analysisRayCounts";
 import { DEFAULT_ANALYSIS_WAVELENGTH_SAMPLE_COUNTS } from "@/features/analysis/lib/analysisWavelengthSamples";
 import { createStore } from "zustand";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   AstigmatismCurveData,
   ChromaticFocalShiftData,

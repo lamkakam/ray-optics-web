@@ -5,7 +5,7 @@
  * Rejected promises are removed so later requests retry.
  */
 import { LRUCache } from "lru-cache";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 /** Canonical identity key; `model` is compared by object identity. */

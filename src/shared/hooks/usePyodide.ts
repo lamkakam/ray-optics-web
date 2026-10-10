@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { proxy as comlinkProxy, wrap } from "comlink";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type {
   AstigmatismCurveData,

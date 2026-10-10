@@ -24,7 +24,7 @@ import type {
   OptimizationOperandConfig,
   OptimizationResidualEntry,
 } from "@/features/optimization/types/optimizationWorkerTypes";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 jest.mock("@/features/optimization/lib/operandMetadata", () => {
   const actual = jest.requireActual(

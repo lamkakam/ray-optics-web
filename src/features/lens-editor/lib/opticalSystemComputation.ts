@@ -29,7 +29,7 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 import type {
   OpticalModel,
   OpticalSpecs,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
