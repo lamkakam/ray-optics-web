@@ -34,18 +34,23 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
   W222: "Astigmatism",
   W220: "Field Curvature",
   W311: "Distortion",
+  W020: "Primary Axial Chromatic Aberr.",
+  W111: "Primary Lateral Chromatic Aberr.",
   TCV: "Tangential Field Curvature (TCV)",
   SCV: "Sagittal Field Curvature (SCV)",
   PCV: "Petzval Curvature (PCV)",
 };
 
 /**
- * Modal that displays third-order Seidel aberration data in a four-tab layout: Surface by Surface, Transverse, Wavefront, and Field Curvature. Uses MathJax for a disclaimer about the approximation's scope.
+ * Modal that displays third-order Seidel and primary chromatic aberration data in a four-tab layout: Surface by Surface, Transverse, Wavefront, and Field Curvature. Uses MathJax for a disclaimer about the approximation's scope.
  *
  * @remarks
  * ## Key Behaviors
  *
  * - Table data for all four tabs is derived with `useMemo` to avoid recomputing on unrelated renders.
+ * - Surface by Surface columns follow `surfaceBySurface.aberrTypes`, so the primary chromatic coefficients `C-I` and `C-II` appear after `S-I`..`S-V`.
+ * - Wavefront rows include the primary chromatic terms `W020` ("Primary Axial Chromatic Aberr.") and `W111` ("Primary Lateral Chromatic Aberr.") after the Seidel terms.
+ * - A note explains that the chromatic terms use the first and last wavelengths and need at least 3 wavelengths.
  * - Aberration type keys (e.g. `"TSA"`, `"W040"`) are mapped to human-readable labels via `ABERRATION_TYPE_TO_LABEL`.
  * - Field Curvature tab includes a Curvature Radius column (reciprocal of value; `"Infinite"` when value is 0).
  * - Uses `<MathJax inline>` for LaTeX rendering; `MathJaxContext` is provided by the ancestor (`page.tsx`).
@@ -174,6 +179,12 @@ export function SeidelAberrModal({
         polynomial terms such as{" "}
         <MathJax inline>{`\\(a_{6}, a_{8}\\)`}</MathJax> or higher is outside
         the scope of this approximation.
+      </Paragraph>
+      <Paragraph className="mb-4">
+        Primary chromatic aberrations (C-I, C-II, Primary Axial Chromatic Aberr.
+        and Primary Lateral Chromatic Aberr.) use the refractive index
+        difference between the first and last wavelengths in the list, and are
+        zero unless at least 3 wavelengths are defined.
       </Paragraph>
       <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
     </Modal>

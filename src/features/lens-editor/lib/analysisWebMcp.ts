@@ -467,7 +467,7 @@ export function createAnalysisTools({
     },
     get3rdOrderSeidelData: {
       name: "get_3rd_order_seidel_data",
-      description: `Read complete third-order Seidel surfaceBySurface, transverse, wavefront, and curvature data, including surface labels and totals. ${committedSystemDescription} ${storedResultDescription}`,
+      description: `Read complete third-order Seidel and primary chromatic surfaceBySurface (S-I to S-V, C-I axial color, C-II lateral color), transverse, wavefront (including W020 axial color and W111 lateral color), and curvature data, including surface labels and totals. C-I, C-II, W020, and W111 use the index difference between the first and last wavelengths and are zero with fewer than 3 wavelengths. ${committedSystemDescription} ${storedResultDescription}`,
       inputSchema: emptyInputSchema,
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       execute: (input, { signal }) => {

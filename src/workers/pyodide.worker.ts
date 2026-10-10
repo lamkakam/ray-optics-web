@@ -24,7 +24,7 @@
  * collected after execution; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.40.2` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.41.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -356,7 +356,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
         ]);
 
         const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-        const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.40.2-py3-none-any.whl`;
+        const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.41.0-py3-none-any.whl`;
 
         await _init(
           createInitializationExecutor(pyodide),
@@ -546,7 +546,7 @@ export async function _getLSAData(
   return JSON.parse(json) as LongitudinalSphericalAberrationData;
 }
 
-/** Loads and parses third-order Seidel data with injected execution. */
+/** Loads and parses third-order Seidel and primary chromatic data with injected execution. */
 export async function _get3rdOrderSeidelData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -1380,7 +1380,7 @@ export async function getDiffractionMTFData(
   });
 }
 
-/** Returns third-order Seidel aberration data for the model. */
+/** Returns third-order Seidel and primary chromatic aberration data for the model. */
 export async function get3rdOrderSeidelData(
   opticalModel: OpticalModel,
 ): Promise<SeidelData> {

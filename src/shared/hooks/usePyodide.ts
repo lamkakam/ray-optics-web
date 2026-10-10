@@ -155,7 +155,7 @@ export interface PyodideWorkerAPI {
     numRays?: number,
     maxDims?: number,
   ): Promise<DiffractionMtfData>;
-  /** Returns third-order Seidel aberration data. */
+  /** Returns third-order Seidel and primary chromatic aberration data. */
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
   /** Returns ordered coefficients and metrics in the selected pupil space (Entrance by default). */
   getZernikeCoefficients(

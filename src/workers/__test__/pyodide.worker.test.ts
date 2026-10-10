@@ -879,14 +879,16 @@ describe("_get3rdOrderSeidelData", () => {
   it("should build the model script, call json.dumps(get_3rd_order_seidel_data(opm)) and return parsed SeidelData", async () => {
     const mockData = {
       surfaceBySurface: {
-        index: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
-        columns: ["S1", "S2", "sum"],
+        aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V", "C-I", "C-II"],
+        surfaceLabels: ["S1", "S2", "sum"],
         data: [
           [0.1, 0.2, 0.3],
           [0.4, 0.5, 0.9],
           [0.6, 0.7, 1.3],
           [0.8, 0.9, 1.7],
           [1.0, 1.1, 2.1],
+          [0.011, 0.012, 0.023],
+          [0.031, -0.032, -0.001],
         ],
       },
       transverse: {
@@ -897,7 +899,15 @@ describe("_get3rdOrderSeidelData", () => {
         PTB: 0.5,
         DST: 0.6,
       },
-      wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
+      wavefront: {
+        W040: 0.1,
+        W131: 0.2,
+        W222: 0.3,
+        W220: 0.4,
+        W311: 0.5,
+        W020: 0.91,
+        W111: -0.58,
+      },
       curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
     };
     let capturedCode = "";
