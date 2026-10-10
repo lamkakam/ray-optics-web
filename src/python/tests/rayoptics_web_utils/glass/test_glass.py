@@ -387,6 +387,42 @@ class TestCatalogExportContract:
         assert result["P_gF"] == 0.0
         assert result["P_Fd"] == pytest.approx((1.83 - 1.81) / (1.83 - 1.80))
 
+    def test_partial_dispersions_evaluate_every_index_from_the_formula_when_one_is_missing(
+        self,
+    ) -> None:
+        from rayoptics_web_utils.glass.glass import _partial_dispersions
+
+        indices = pd.Series(
+            {"F": 1.83, "e": 1.82, "d": 1.81, "C": 1.80, "g": pd.NA}
+        )
+        formula = {"F": 1.831, "e": 1.821, "d": 1.811, "C": 1.801, "g": 1.851}
+        result = _partial_dispersions(
+            pd.Series({"refractive indices": indices}), formula.__getitem__
+        )
+
+        assert result["P_gF"] == pytest.approx((1.851 - 1.831) / (1.831 - 1.801))
+        assert result["P_Fd"] == pytest.approx((1.83 - 1.81) / (1.83 - 1.80))
+
+    def test_every_exported_glass_has_all_indices_abbe_numbers_and_partial_dispersions(
+        self,
+    ) -> None:
+        from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
+
+        # Zero is the unavailable-value sentinel, so every value must be a positive finite float.
+        for catalog_name, catalog in get_all_glass_catalogs_data().items():
+            for glass_name, entry in catalog.items():
+                values = {
+                    "refractiveIndexD": entry["refractiveIndexD"],
+                    "refractiveIndexE": entry["refractiveIndexE"],
+                    "abbeNumberD": entry["abbeNumberD"],
+                    "abbeNumberE": entry["abbeNumberE"],
+                    **entry["partialDispersions"],
+                }
+                for key, value in values.items():
+                    assert math.isfinite(value) and value > 0.0, (
+                        f"{catalog_name}/{glass_name}: {key}={value} unavailable"
+                    )
+
     def test_cdgm_entries_reproduce_catalog_nd_with_both_formulas(self) -> None:
         from rayoptics_web_utils.glass.glass import get_glass_catalog_data
 

@@ -2,8 +2,10 @@
 
 Vendor catalogs come from opticalglass's spreadsheet-backed ``xls`` glass library,
 whose ``glass_data`` exposes a multi-level series indexed by category and sub-key.
-Partial dispersions use ``nF−nC`` as their denominator and return zero when it
-cannot be computed, including when a catalog omits a required index. CDGM glasses
+Partial dispersions use ``nF−nC`` as their denominator. When a catalog omits an
+index a dispersion needs, every index of that dispersion is evaluated from the
+glass's dispersion formula instead; a dispersion that still cannot be computed is
+zero. CDGM glasses
 export as ``Sellmeier3T`` or ``Schott2x6`` following the formula their catalog row
 provides; Hoya, Sumita, and Hikari coefficients export as ``Schott2x6``; Ohara and
 Schott export as ``Sellmeier3T``. Glasses listed in ``legacy_glasses`` are appended
@@ -14,7 +16,7 @@ from opticalglass's AGF data. Bundled special materials may additionally use
 
 from __future__ import annotations
 import math
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, cast
 
 import pandas as pd
@@ -43,33 +45,41 @@ def _available_index(indices: Mapping[str, float] | pd.Series, line: str) -> flo
     return value if math.isfinite(value) else None
 
 
-def _partial_dispersions(data: Mapping[str, Mapping[str, float]] | pd.Series) -> dict[str, float]:
+def _partial_dispersions(
+    data: Mapping[str, Mapping[str, float]] | pd.Series,
+    rindex: Callable[[str], float] | None = None,
+) -> dict[str, float]:
     """Return P_fe, P_Fd, and P_gF from indexed refractive indices.
 
-    A dispersion whose indices are unavailable, or whose F–C denominator is zero,
-    is zero.
+    When an index a dispersion needs is unavailable and ``rindex`` is given, all
+    four indices of that dispersion come from ``rindex`` so rounded catalog values
+    are not mixed with formula values. A dispersion whose indices are still
+    unavailable, or whose F–C denominator is zero, is zero.
 
     Args:
         data: Glass data whose ``"refractive indices"`` maps spectral lines to
             indices.
+        rindex: Optional dispersion-formula evaluator keyed by spectral line.
 
     Returns:
         P_fe, P_Fd, and P_gF from indexed refractive indices.
     """
     indices = cast("Mapping[str, float] | pd.Series", data["refractive indices"])
-    nF, ne, nd, nC, ng = (
-        _available_index(indices, line) for line in ("F", "e", "d", "C", "g")
-    )
 
-    def partial(n_short: float | None, n_long: float | None) -> float:
+    def partial(short_line: str, long_line: str) -> float:
+        lines = (short_line, long_line, "F", "C")
+        values = [_available_index(indices, line) for line in lines]
+        if None in values and rindex is not None:
+            values = [float(rindex(line)) for line in lines]
+        n_short, n_long, nF, nC = values
         if n_short is None or n_long is None or nF is None or nC is None:
             return 0.0
         return _partial_dispersion(n_short, n_long, nF, nC)
 
     return {
-        "P_fe": partial(nF, ne),
-        "P_Fd": partial(nF, nd),
-        "P_gF": partial(ng, nF),
+        "P_fe": partial("F", "e"),
+        "P_Fd": partial("F", "d"),
+        "P_gF": partial("g", "F"),
     }
 
 def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> DispersionCoefficients:
@@ -164,7 +174,11 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> Dispersi
 
 
 
-def _build_glass_entry(catalog_name: str, data: pd.Series) -> GlassEntry:
+def _build_glass_entry(
+    catalog_name: str,
+    data: pd.Series,
+    rindex: Callable[[str], float] | None = None,
+) -> GlassEntry:
     """Return one frontend glass entry from an ``opticalglass`` data series.
 
     Includes d/e indices and Abbe numbers, partial dispersions, coefficient kind, and
@@ -173,6 +187,8 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> GlassEntry:
     Args:
         catalog_name: Name of the glass catalog.
         data: Source data to process.
+        rindex: Optional dispersion-formula evaluator used by partial dispersions
+            whose catalog indices are missing.
 
     Returns:
         One frontend glass entry from an ``opticalglass`` data series.
@@ -184,7 +200,7 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> GlassEntry:
     vd = cast("float", data["abbe number"]["vd"])
     ve = cast("float", data["abbe number"]["ve"])
 
-    partial_dispersions = _partial_dispersions(data)
+    partial_dispersions = _partial_dispersions(data, rindex)
     dispersion_coeff_data = _get_dispersion_coefficients(catalog_name, data)
 
     return {
@@ -260,8 +276,10 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, GlassEntry]:
 
     Reads the vendor spreadsheet catalog from opticalglass's central ``xls``
     library, then appends the catalog's ``LEGACY_AGF_GLASSES`` resolved through
-    ``create_glass``. Spreadsheet catalog lookup is case-insensitive and the
-    nested values are JSON serialisable.
+    ``create_glass``. Spreadsheet indices missing for a partial dispersion are
+    evaluated from the glass created by the catalog, only when needed.
+    Spreadsheet catalog lookup is case-insensitive and the nested values are JSON
+    serialisable.
 
     Args:
         catalog_name: Name of the glass catalog.
@@ -276,7 +294,11 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, GlassEntry]:
     result: dict[str, GlassEntry] = {}
     for name in catalog.get_glass_names():
         data = catalog.glass_data(name)
-        entry = _build_glass_entry(catalog_name, data)
+
+        def rindex(line: str, name: str = name) -> float:
+            return float(catalog.create_glass(name).rindex(line))
+
+        entry = _build_glass_entry(catalog_name, data, rindex)
         result[str(name)] = entry
     for name in LEGACY_AGF_GLASSES.get(catalog_name, ()):
         if name not in result:
