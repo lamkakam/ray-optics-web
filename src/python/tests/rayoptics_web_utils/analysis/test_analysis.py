@@ -319,9 +319,94 @@ class TestGetFirstOrderData:
         for v in result.values():
             assert isinstance(v, float)
 
+    # WORKAROUND(rayoptics 0.9.10 NA bug): the tests below cover
+    # rayoptics_web_utils._paraxial_na_workaround. If
+    # tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py starts
+    # failing, RayOptics fixed the bug; remove the workaround and revisit these.
+
+    @pytest.mark.parametrize(
+        "key",
+        ["obj_na", "img_na", "fno", "opt_inv", "enp_radius", "exp_radius", "efl", "img_ht"],
+    )
+    def test_object_na_matches_equivalent_object_epd(self, make_constant_index_singlet, key):
+        """Object NA 0.9 in n=1.5 reports the same paraxial data as EPD 24."""
+        from rayoptics_web_utils.analysis import get_first_order_data
+
+        na_result = get_first_order_data(make_constant_index_singlet(("object", "NA"), 0.9))
+        epd_result = get_first_order_data(make_constant_index_singlet(("object", "epd"), 24.0))
+
+        assert na_result[key] == pytest.approx(epd_result[key])
+
+    def test_object_na_reports_specified_na(self, make_constant_index_singlet):
+        from rayoptics_web_utils.analysis import get_first_order_data
+
+        result = get_first_order_data(make_constant_index_singlet(("object", "NA"), 0.9))
+
+        assert result["obj_na"] == pytest.approx(0.9)
+
+    def test_image_na_reports_specified_na(self, make_constant_index_singlet):
+        from rayoptics_web_utils.analysis import get_first_order_data
+
+        result = get_first_order_data(
+            make_constant_index_singlet(("image", "NA"), 0.3, n_img=1.5)
+        )
+
+        assert abs(result["img_na"]) == pytest.approx(0.3)
+
+    def test_image_na_keeps_f_number_consistent_with_image_na(self, make_constant_index_singlet):
+        from rayoptics_web_utils.analysis import get_first_order_data
+
+        result = get_first_order_data(
+            make_constant_index_singlet(("image", "NA"), 0.3, n_img=1.5)
+        )
+
+        assert abs(result["fno"]) == pytest.approx(1 / (2 * 0.3))
+
+    def test_non_na_pupil_returns_rayoptics_values(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_first_order_data
+
+        fod = cooke_triplet["analysis_results"]["parax_data"].fod
+        expected = {k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))}
+
+        assert get_first_order_data(cooke_triplet) == expected
+
+    def test_does_not_mutate_cached_paraxial_data(self, make_constant_index_singlet):
+        from rayoptics.optical import model_constants as mc
+
+        from rayoptics_web_utils.analysis import get_first_order_data
+
+        opm = make_constant_index_singlet(("object", "NA"), 0.9)
+        parax_data = opm["analysis_results"]["parax_data"]
+        obj_na = parax_data.fod.obj_na
+        seed_slope = parax_data.ax_ray[0][mc.slp]
+
+        get_first_order_data(opm)
+
+        assert opm["analysis_results"]["parax_data"] is parax_data
+        assert parax_data.fod.obj_na == obj_na
+        assert parax_data.ax_ray[0][mc.slp] == seed_slope
+
 
 class TestGet3rdOrderSeidelData:
     """Tests for get_3rd_order_seidel_data()."""
+
+    # WORKAROUND(rayoptics 0.9.10 NA bug): remove with
+    # rayoptics_web_utils._paraxial_na_workaround once
+    # tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py fails.
+    def test_object_na_matches_equivalent_object_epd(self, make_constant_index_singlet):
+        """Object NA 0.9 in n=1.5 yields the same Seidel data as EPD 24."""
+        from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
+
+        na_result = get_3rd_order_seidel_data(make_constant_index_singlet(("object", "NA"), 0.9))
+        epd_result = get_3rd_order_seidel_data(make_constant_index_singlet(("object", "epd"), 24.0))
+
+        na_sbs = na_result["surfaceBySurface"]
+        epd_sbs = epd_result["surfaceBySurface"]
+        assert na_sbs["aberrTypes"] == epd_sbs["aberrTypes"]
+        assert na_sbs["surfaceLabels"] == epd_sbs["surfaceLabels"]
+        np.testing.assert_allclose(na_sbs["data"], epd_sbs["data"], rtol=1e-9, atol=1e-12)
+        for key in ("transverse", "wavefront", "curvature"):
+            assert na_result[key] == pytest.approx(epd_result[key], rel=1e-9, abs=1e-12)
 
     def test_returns_dict_with_expected_keys(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
