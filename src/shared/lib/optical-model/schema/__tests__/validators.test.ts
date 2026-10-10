@@ -1,4 +1,4 @@
-import { validateImportedLensData } from "@/shared/lib/optical-model/schema/importSchema";
+import { validateImportedLensData } from "@/shared/lib/optical-model/schema/validators";
 import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 const baseModel: OpticalModel = {

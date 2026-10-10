@@ -14,13 +14,13 @@ import type {
   PupilSpec,
 } from "@/shared/lib/optical-model/model/opticalModel";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
 import {
-  createPrescriptionAjv,
   opticalSpecsSchema,
   pupilSpecSchema,
   relativeFieldSpecSchema,
   wavelengthsSpecSchema,
-} from "@/shared/lib/optical-model/schema/prescriptionSchema";
+} from "@/shared/lib/optical-model/specs/opticalSpecsSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

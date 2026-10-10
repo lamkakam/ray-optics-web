@@ -6,6 +6,10 @@
  * config's root so ordinary Jest runs skip copied tests and modules (including
  * manual mocks), while Jest inside a mutation sandbox can run its suite without
  * duplicate-module collisions.
+ *
+ * `typebox` 1.x ships ECMAScript modules only, so its `.mjs` build is
+ * transpiled by ts-jest like project sources; every other `node_modules`
+ * package keeps Jest's default no-transform behavior.
  */
 import type { Config } from "jest";
 
@@ -18,7 +22,14 @@ const config: Config = {
         tsconfig: "tsconfig.test.json",
       },
     ],
+    "^.+\\.mjs$": [
+      "ts-jest",
+      {
+        tsconfig: "tsconfig.test.json",
+      },
+    ],
   },
+  transformIgnorePatterns: ["/node_modules/(?!typebox/)"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^comlink$": "<rootDir>/src/__mocks__/comlink.ts",

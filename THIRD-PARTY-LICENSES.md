@@ -169,6 +169,7 @@
 - [tailwind-merge@3.5.0](https://github.com/dcastil/tailwind-merge) - MIT
 - [tslib@2.3.0](https://github.com/Microsoft/tslib) - 0BSD
 - [tslib@2.8.1](https://github.com/Microsoft/tslib) - 0BSD
+- [typebox@1.3.34](https://github.com/sinclairzx81/typebox) - MIT
 - [undici-types@7.24.6](https://github.com/nodejs/undici) - MIT
 - [wicked-good-xpath@1.3.0](https://github.com/google/wicked-good-xpath) - MIT
 - [ws@8.21.0](https://github.com/websockets/ws) - MIT

@@ -6,10 +6,8 @@
 import type Ajv from "ajv";
 import type { ValidateFunction } from "ajv";
 import type { UserDefinedGlassInput } from "@/features/glass-map/types/glassMap";
-import {
-  createPrescriptionAjv,
-  positiveFiniteNumberSchema,
-} from "@/shared/lib/optical-model/schema/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
+import { positiveFiniteNumberSchema } from "@/shared/lib/optical-model/schema/primitives";
 
 /** Minimum wavelength/index samples accepted by every frontend boundary. */
 export const MIN_CUSTOM_GLASS_PAIRS = 4;

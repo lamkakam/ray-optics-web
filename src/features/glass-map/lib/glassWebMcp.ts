@@ -4,7 +4,7 @@ import {
   CATALOG_NAMES,
   type CatalogName,
 } from "@/features/glass-map/types/glassMap";
-import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

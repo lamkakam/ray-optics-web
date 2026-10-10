@@ -22,16 +22,16 @@ import {
   resolvePrescriptionMedia,
   type PrescriptionMediaResolution,
 } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
+import { asphericalSchema } from "@/shared/lib/optical-model/surface-properties/aspherical/aspherical.schema";
 import {
-  asphericalSchema,
   clearApertureSchema,
-  createPrescriptionAjv,
-  decenterConfigSchema,
-  diffractiveElementSchema,
   edgeApertureSchema,
-  finiteNumberSchema,
-  lensPrescriptionSchema,
-} from "@/shared/lib/optical-model/schema/prescriptionSchema";
+} from "@/shared/lib/optical-model/surface-properties/aperture/aperture.schema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
+import { decenterConfigSchema } from "@/shared/lib/optical-model/surface-properties/decenter/decenter.schema";
+import { diffractiveElementSchema } from "@/shared/lib/optical-model/surface-properties/diffractive-element/diffractiveElement.schema";
+import { finiteNumberSchema } from "@/shared/lib/optical-model/schema/primitives";
+import { lensPrescriptionSchema } from "@/shared/lib/optical-model/model/opticalModelSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

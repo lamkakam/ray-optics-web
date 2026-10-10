@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import { parsePhotonsToPhotosText } from "@/features/lens-editor/lib/photonsToPhotosParser";
-import { validateImportedLensData } from "@/shared/lib/optical-model/schema/importSchema";
+import { validateImportedLensData } from "@/shared/lib/optical-model/schema/validators";
 import { buildOpticalModelScript } from "@/shared/lib/python-export/pythonScript";
 
 const dataDir = path.join(

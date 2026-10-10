@@ -15,7 +15,7 @@
  * checks use the shared WebMCP helper so shell and route-scoped tools expose
  * the same stable validation behavior.
  */
-import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
 import {
   getPageDefinition,
   PAGE_DEFINITIONS,

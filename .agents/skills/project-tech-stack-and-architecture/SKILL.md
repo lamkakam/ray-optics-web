@@ -14,6 +14,7 @@ description: Project tech stack, architecture, known issues and gotchas for ray-
 | Styling | Tailwind CSS |
 | Python runtime | Pyodide v314.0.0 |
 | Worker communication | Comlink |
+| Optical-model schemas and types | `typebox` 1.x builders in `src/shared/lib/optical-model/` (types via `Type.Static`), compiled by AJV; ESM-only, so Jest transpiles it |
 | Internal Python package | in `<project-root>/src/python/` |
 | Package manager | npm |
 

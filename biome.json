@@ -118,7 +118,7 @@
       "linter": { "rules": { "performance": { "noImgElement": "off" } } }
     },
     {
-      "includes": ["src/shared/lib/optical-model/schema/prescriptionSchema.ts"],
+      "includes": ["src/shared/lib/optical-model/model/opticalModelSchema.ts"],
       "linter": { "rules": { "suspicious": { "noThenProperty": "off" } } }
     },
     {

@@ -1,8 +1,6 @@
 /** Strict AJV schemas for the public worker-facing OptimizationRunConfig contract. */
-import {
-  createPrescriptionAjv,
-  finiteNumberSchema,
-} from "@/shared/lib/optical-model/schema/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
+import { finiteNumberSchema } from "@/shared/lib/optical-model/schema/primitives";
 import {
   OPTIMIZATION_ADJUSTABLE_TARGET_OPERAND_KINDS,
   OPTIMIZATION_FIXED_TARGET_OPERAND_KINDS,
