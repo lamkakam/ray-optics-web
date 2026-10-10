@@ -4,7 +4,7 @@ import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/se
 
 describe("buildSurfaceBySurface3rdOrderChartOption", () => {
   const surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData = {
-    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V", "C-I", "C-II"],
     surfaceLabels: ["S1", "S2", "sum"],
     data: [
       [0.1, 0.2, 0.3],
@@ -12,10 +12,12 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       [0.6, 0.7, 1.3],
       [0.8, 0.9, 1.7],
       [1.0, 1.1, 2.1],
+      [0.011, 0.012, 0.023],
+      [0.031, -0.032, -0.001],
     ],
   };
 
-  it("builds five bar series with the S-I through S-V labels", () => {
+  it("builds one bar series per Seidel and primary chromatic aberration type", () => {
     const option = buildSurfaceBySurface3rdOrderChartOption(
       surfaceBySurface3rdOrderData,
       960,
@@ -23,14 +25,16 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.legend.data).toEqual(["S-I", "S-II", "S-III", "S-IV", "S-V"]);
+    const aberrTypes = ["S-I", "S-II", "S-III", "S-IV", "S-V", "C-I", "C-II"];
+    expect(option.legend.data).toEqual(aberrTypes);
     expect(option.legend.textStyle).toEqual({
       color: globalTokens.echarts.text.light,
     });
-    expect(option.series).toHaveLength(5);
+    expect(option.series).toHaveLength(7);
     expect(
       option.series.map((series: { name: string }) => series.name),
-    ).toEqual(["S-I", "S-II", "S-III", "S-IV", "S-V"]);
+    ).toEqual(aberrTypes);
+    expect(option.series[6]?.data).toEqual([0.031, -0.032, -0.001]);
   });
 
   it("uses a shadow axis pointer tooltip", () => {

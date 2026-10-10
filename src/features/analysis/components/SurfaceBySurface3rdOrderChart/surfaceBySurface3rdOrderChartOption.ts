@@ -75,7 +75,7 @@ function formatTooltip(
 }
 
 /**
- * Builds the ECharts option object for the analysis panel’s grouped bar chart of surface-by-surface third-order Seidel aberration coefficients.
+ * Builds the ECharts option object for the analysis panel’s grouped bar chart of surface-by-surface third-order Seidel and primary chromatic aberration coefficients.
  *
  * @remarks
  * ## Key Behaviors
@@ -85,7 +85,7 @@ function formatTooltip(
  * - the legend data
  * - the series names
  * - Uses the incoming `surfaceLabels` array as the x-axis categories.
- * - Builds five bar series from `data[rowIdx]`, matching the row-wise `SeidelSurfaceBySurfaceData` contract.
+ * - Builds one bar series per aberration type (`S-I`..`S-V`, `C-I`, `C-II`) from `data[rowIdx]`, matching the row-wise `SeidelSurfaceBySurfaceData` contract.
  * - Configures the tooltip with:
  * - `trigger: "axis"`
  * - `axisPointer: { type: "shadow" }`

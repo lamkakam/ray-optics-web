@@ -428,6 +428,74 @@ class TestGet3rdOrderSeidelData:
         assert isinstance(sbs['surfaceLabels'], list)
         assert isinstance(sbs['data'], list)
 
+    def test_surface_by_surface_includes_primary_color(self, cooke_triplet):
+        """Rows follow S-I..S-V, C-I, C-II and match RayOptics' colour package."""
+        from rayoptics.parax.thirdorder import compute_third_order_and_color
+        from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
+
+        sbs = get_3rd_order_seidel_data(cooke_triplet)['surfaceBySurface']
+        to_pkg = compute_third_order_and_color(cooke_triplet)
+
+        assert sbs['aberrTypes'] == ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V', 'C-I', 'C-II']
+        assert sbs['surfaceLabels'] == ['1', '2', '3', '4', '5', '6', 'sum']
+        np.testing.assert_allclose(sbs['data'], to_pkg.T.values, rtol=1e-12, atol=1e-15)
+        assert sbs['data'][5][-1] == pytest.approx(0.0010709, rel=1e-4)
+        assert sbs['data'][6][-1] == pytest.approx(-0.00034360, rel=1e-4)
+
+    def test_wavefront_adds_primary_color_terms(self, cooke_triplet):
+        """W020 = C-I / 2 and W111 = C-II, in waves of the central wavelength."""
+        from rayoptics.parax.thirdorder import compute_third_order_and_color
+        from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
+
+        wavefront = get_3rd_order_seidel_data(cooke_triplet)['wavefront']
+        color_sum = compute_third_order_and_color(cooke_triplet).loc['sum']
+        central_wvl = cooke_triplet.nm_to_sys_units(cooke_triplet['optical_spec']['wvls'].central_wvl)
+
+        assert list(wavefront) == ['W040', 'W131', 'W222', 'W220', 'W311', 'W020', 'W111']
+        assert wavefront['W020'] == pytest.approx(0.5 * color_sum['C-I'] / central_wvl, rel=1e-12)
+        assert wavefront['W111'] == pytest.approx(color_sum['C-II'] / central_wvl, rel=1e-12)
+        assert wavefront['W020'] == pytest.approx(0.91133, rel=1e-4)
+        assert wavefront['W111'] == pytest.approx(-0.58479, rel=1e-4)
+
+    def test_seidel_aggregates_use_only_seidel_sums(self, cooke_triplet):
+        """Transverse, wavefront and curvature values keep their Seidel-only meaning."""
+        from rayoptics.parax.thirdorder import (
+            compute_third_order,
+            seidel_to_field_curv,
+            seidel_to_transverse_aberration,
+            seidel_to_wavefront,
+        )
+        from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
+
+        result = get_3rd_order_seidel_data(cooke_triplet)
+        seidel_sum = compute_third_order(cooke_triplet).loc['sum']
+        fod = cooke_triplet['analysis_results']['parax_data'].fod
+        central_wvl = cooke_triplet.nm_to_sys_units(cooke_triplet['optical_spec']['wvls'].central_wvl)
+
+        expected_wavefront = seidel_to_wavefront(seidel_sum, central_wvl).to_dict()
+        assert result['transverse'] == pytest.approx(
+            seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na).to_dict(), rel=1e-12
+        )
+        assert result['curvature'] == pytest.approx(
+            seidel_to_field_curv(seidel_sum, fod.n_img, fod.opt_inv).to_dict(), rel=1e-12
+        )
+        assert {key: result['wavefront'][key] for key in expected_wavefront} == pytest.approx(
+            expected_wavefront, rel=1e-12
+        )
+
+    def test_aspheric_surface_has_seidel_row_without_color(self, make_cooke_triplet):
+        """An aspheric surface no longer fails and adds no primary colour."""
+        from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
+
+        result = get_3rd_order_seidel_data(make_cooke_triplet(asphere=True))
+        sbs = result['surfaceBySurface']
+        asp_col = sbs['surfaceLabels'].index('1.asp')
+
+        assert sbs['data'][0][asp_col] != 0.0
+        assert sbs['data'][5][asp_col] == 0.0
+        assert sbs['data'][6][asp_col] == 0.0
+        json.dumps(result)
+
 
 class TestGetRayFanData:
     """Tests for get_ray_fan_data()."""

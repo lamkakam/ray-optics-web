@@ -316,3 +316,43 @@ def make_constant_index_singlet():
         return opm
 
     return build
+
+
+@pytest.fixture
+def make_cooke_triplet():
+    """Return a factory for the ``cooke_triplet`` prescription with variants.
+
+    ``wvls`` replaces the F/d/C wavelength list (the reference wavelength is
+    the middle entry, or the only entry). ``asphere=True`` turns surface 1 into
+    an ``EvenPolynomial`` with a conic and an ``a4`` term so the third-order
+    package gains a ``"1.asp"`` row.
+    """
+    from rayoptics.elem.profiles import EvenPolynomial
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
+
+    def build(wvls=((486.133, 1), (587.562, 2), (656.273, 1)), asphere=False):
+        opm = OpticalModel()
+        osp = opm["optical_spec"]
+        sm = opm["seq_model"]
+        opm.system_spec.dimensions = "mm"
+        osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=12.5)
+        osp["fov"] = FieldSpec(osp, key=["object", "angle"], value=20, flds=[0, 0.707, 1], is_relative=True)
+        osp["wvls"] = WvlSpec(list(wvls), ref_wl=len(wvls) // 2)
+        opm.radius_mode = True
+        sm.do_apertures = False
+        sm.gaps[0].thi = 10000000000
+        sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"], sd=10.009)
+        sm.add_surface([7331.288, 5.86, "air"], sd=8.9482)
+        sm.add_surface([-24.456, 0.975, "N-SF5", "Schott"], sd=4.7919)
+        sm.set_stop()
+        sm.add_surface([21.896, 4.822, "air"], sd=4.7761)
+        sm.add_surface([86.759, 3.127, "N-LAK9", "Schott"], sd=8.0217)
+        sm.add_surface([-20.4942, 41.2365, "air"], sd=8.3321)
+        sm.ifcs[-1].profile.r = 0
+        if asphere:
+            sm.ifcs[1].profile = EvenPolynomial(r=23.713, cc=-0.5, coefs=[0.0, 1.0e-6])
+        opm.update_model()
+        return opm
+
+    return build

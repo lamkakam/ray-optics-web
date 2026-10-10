@@ -19,7 +19,7 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 
 const mockData: SeidelData = {
   surfaceBySurface: {
-    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V", "C-I", "C-II"],
     surfaceLabels: ["S1", "S2", "sum"],
     data: [
       [0.1, 0.2, 0.3],
@@ -27,10 +27,20 @@ const mockData: SeidelData = {
       [0.6, 0.7, 1.3],
       [0.8, 0.9, 1.7],
       [1.0, 1.1, 2.1],
+      [0.011, 0.012, 0.023],
+      [0.031, -0.032, -0.001],
     ],
   },
   transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
-  wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
+  wavefront: {
+    W040: 0.1,
+    W131: 0.2,
+    W222: 0.3,
+    W220: 0.4,
+    W311: 0.5,
+    W020: 0.91,
+    W111: -0.58,
+  },
   curvature: { TCV: 0.1, SCV: 0.2, PCV: 0 },
 };
 
@@ -98,6 +108,19 @@ describe("SeidelAberrModal", () => {
     ).toBeInTheDocument();
   });
 
+  it("Surface by Surface tab shows primary chromatic coefficients C-I and C-II", () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    expect(
+      screen.getByRole("columnheader", { name: "C-I" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "C-II" }),
+    ).toBeInTheDocument();
+    const sumRow = screen.getByRole("cell", { name: "sum" }).closest("tr");
+    expect(sumRow).toHaveTextContent("0.023000");
+    expect(sumRow).toHaveTextContent("-0.001000");
+  });
+
   it("Surface by Surface tab shows surface labels S1, S2 and sum", () => {
     render(<SeidelAberrModal {...defaultProps} />);
     expect(screen.getByRole("cell", { name: "S1" })).toBeInTheDocument();
@@ -136,6 +159,23 @@ describe("SeidelAberrModal", () => {
       screen.getAllByText("Field Curvature").length,
     ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Distortion")).toBeInTheDocument();
+  });
+
+  it("clicking Wavefront tab shows primary chromatic wavefront rows", async () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    await userEvent.click(screen.getByRole("tab", { name: "Wavefront" }));
+    expect(screen.getByRole("row", { name: /Axial Color/ })).toHaveTextContent(
+      "0.910000",
+    );
+    expect(
+      screen.getByRole("row", { name: /Lateral Color/ }),
+    ).toHaveTextContent("-0.580000");
+  });
+
+  it("explains how the primary chromatic terms depend on the wavelengths", () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    expect(screen.getByText(/first and last wavelengths/)).toBeInTheDocument();
+    expect(screen.getByText(/at least 3 wavelengths/)).toBeInTheDocument();
   });
 
   it("clicking Field Curvature tab shows curvature aberration labels", async () => {

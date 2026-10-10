@@ -546,7 +546,7 @@ export async function _getLSAData(
   return JSON.parse(json) as LongitudinalSphericalAberrationData;
 }
 
-/** Loads and parses third-order Seidel data with injected execution. */
+/** Loads and parses third-order Seidel and primary chromatic data with injected execution. */
 export async function _get3rdOrderSeidelData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -1380,7 +1380,7 @@ export async function getDiffractionMTFData(
   });
 }
 
-/** Returns third-order Seidel aberration data for the model. */
+/** Returns third-order Seidel and primary chromatic aberration data for the model. */
 export async function get3rdOrderSeidelData(
   opticalModel: OpticalModel,
 ): Promise<SeidelData> {

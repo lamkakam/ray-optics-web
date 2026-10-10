@@ -8,7 +8,7 @@
  * - Select `Sasian Triplet`.
  * - Click `Apply`, confirm `Load`, and wait for navigation back to `/`.
  * - Open the Prescription tab after the automatic computation has finished and the route has returned to `/`.
- * - Open the `3rd Order Seidel Aberrations` modal and compare table values in each tab against reference data.
+ * - Open the `3rd Order Seidel Aberrations` modal and compare table values in each tab, including the primary chromatic `C-I`/`C-II` columns and Axial/Lateral Color wavefront rows, against reference data.
  */
 import { test, expect, type Locator } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
@@ -61,19 +61,30 @@ test("Sasian Triplet Seidel aberration modal — all tabs", async ({
     { timeout: 5_000 },
   );
 
-  // Reference data from rayoptics docs (columns 1–5, col 0 is the surface label)
-  const surfaceBySurface: Array<[number, number, number, number, number]> = [
-    [0.027654, 0.019379, 0.013581, 0.089174, 0.07201],
-    [0.022082, -0.059501, 0.160327, -0.000288, -0.431229],
-    [-0.105156, 0.137692, -0.180295, -0.085097, 0.347506],
-    [-0.045358, -0.076796, -0.130024, -0.095046, -0.381069],
-    [0.007942, 0.028382, 0.101431, 0.024373, 0.449596],
-    [0.10381, -0.050068, 0.024148, 0.10318, -0.061411],
-    [0.010973, -0.000912, -0.010832, 0.036297, -0.004597],
+  await expect(
+    modal.getByRole("columnheader", { name: "C-I", exact: true }),
+  ).toBeVisible();
+  await expect(
+    modal.getByRole("columnheader", { name: "C-II", exact: true }),
+  ).toBeVisible();
+
+  // Reference data: S-I..S-V from rayoptics docs, then C-I and C-II from
+  // compute_third_order_and_color (columns 1–7, col 0 is the surface label)
+  const surfaceBySurface: number[][] = [
+    [0.027654, 0.019379, 0.013581, 0.089174, 0.07201, 0.012304, 0.008623],
+    [0.022082, -0.059501, 0.160327, -0.000288, -0.431229, 0.007738, -0.02085],
+    [-0.105156, 0.137692, -0.180295, -0.085097, 0.347506, -0.021664, 0.028366],
+    [
+      -0.045358, -0.076796, -0.130024, -0.095046, -0.381069, -0.017384,
+      -0.029432,
+    ],
+    [0.007942, 0.028382, 0.101431, 0.024373, 0.449596, 0.00558, 0.019941],
+    [0.10381, -0.050068, 0.024148, 0.10318, -0.061411, 0.014496, -0.006992],
+    [0.010973, -0.000912, -0.010832, 0.036297, -0.004597, 0.001071, -0.000344],
   ];
 
   for (let row = 0; row < surfaceBySurface.length; row++) {
-    for (let col = 0; col < 5; col++) {
+    for (let col = 0; col < surfaceBySurface[row].length; col++) {
       const text = (await getCell(modal, row, col + 1).textContent()) ?? "";
       expectApprox(parseFloat(text), surfaceBySurface[row][col]);
     }
@@ -103,7 +114,10 @@ test("Sasian Triplet Seidel aberration modal — all tabs", async ({
     timeout: 5_000,
   });
 
-  const wavefront = [2.334457, -0.776108, -9.218154, 10.83477, -3.91165];
+  // Seidel terms, then primary chromatic W020 (Axial Color) and W111 (Lateral Color)
+  const wavefront = [
+    2.334457, -0.776108, -9.218154, 10.83477, -3.91165, 0.911325, -0.584787,
+  ];
 
   for (let row = 0; row < wavefront.length; row++) {
     const text = (await getCell(modal, row, 1).textContent()) ?? "";
