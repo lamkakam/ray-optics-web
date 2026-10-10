@@ -72,6 +72,7 @@ import type {
 } from "@/features/lens-editor/types/zernikeData";
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 import { buildScript } from "@/shared/lib/python-export/pythonScript";
+import { surfaceNeedsWavelengthOverlay } from "@/shared/lib/optical-model/operations/surfaceProperties";
 import type {
   AllGlassCatalogsData,
   CompleteGlassCatalogsData,
@@ -432,14 +433,14 @@ export async function _getSurfaceSemiDiameters(
   return JSON.parse(json) as number[];
 }
 
-/** Plots a lens layout with injected execution, enabling wavelength overlays when any surface has `diffractiveElement.diffractionGrating`. */
+/** Plots a lens layout with injected execution, enabling wavelength overlays when any surface property asks for them (a `diffractiveElement.diffractionGrating`). */
 export async function _plotLensLayout(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   isDark: boolean,
 ): Promise<string> {
   const showRayFanVsWvls = opticalModel.surfaces.some(
-    (surface) => surface.diffractiveElement?.diffractionGrating !== undefined,
+    surfaceNeedsWavelengthOverlay,
   );
   return (await runPython(
     buildScript(

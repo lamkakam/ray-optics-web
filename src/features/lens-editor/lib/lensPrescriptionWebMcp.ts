@@ -22,16 +22,13 @@ import {
   resolvePrescriptionMedia,
   type PrescriptionMediaResolution,
 } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
-import { asphericalSchema } from "@/shared/lib/optical-model/surface-properties/aspherical/aspherical.schema";
-import {
-  clearApertureSchema,
-  edgeApertureSchema,
-} from "@/shared/lib/optical-model/surface-properties/aperture/aperture.schema";
 import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
-import { decenterConfigSchema } from "@/shared/lib/optical-model/surface-properties/decenter/decenter.schema";
-import { diffractiveElementSchema } from "@/shared/lib/optical-model/surface-properties/diffractive-element/diffractiveElement.schema";
 import { finiteNumberSchema } from "@/shared/lib/optical-model/schema/primitives";
-import { lensPrescriptionSchema } from "@/shared/lib/optical-model/model/opticalModelSchema";
+import {
+  imagePrescriptionSchema,
+  lensPrescriptionSchema,
+  surfaceSchema,
+} from "@/shared/lib/optical-model/model/opticalModelSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,
@@ -77,34 +74,18 @@ export const insertLensSurfaceInputSchema = {
   },
 } as const;
 
+const requiredSurfaceFields = new Set<string>(surfaceSchema.required);
+/** Object distance plus every surface-schema property; image values are a subset. */
 const updateValuesSchema = {
   type: "object",
   minProperties: 1,
   additionalProperties: false,
-  properties: {
-    distance: finiteNumberSchema,
-    label: { type: "string", enum: ["Default", "Stop"] },
-    comment: { type: "string" },
-    curvatureRadius: finiteNumberSchema,
-    thickness: finiteNumberSchema,
-    medium: { type: "string" },
-    manufacturer: { type: "string" },
-    semiDiameter: finiteNumberSchema,
-    aspherical: asphericalSchema,
-    decenter: decenterConfigSchema,
-    diffractiveElement: diffractiveElementSchema,
-    clear_aperture: clearApertureSchema,
-    edge_aperture: edgeApertureSchema,
-  },
+  properties: { distance: finiteNumberSchema, ...surfaceSchema.properties },
 } as const;
-const clearableFields = [
-  "comment",
-  "aspherical",
-  "decenter",
-  "diffractiveElement",
-  "clear_aperture",
-  "edge_aperture",
-] as const;
+/** Optional surface and image properties that `clear` may remove, in surface-schema order. */
+const clearableFields = Object.keys(surfaceSchema.properties).filter(
+  (field) => !requiredSurfaceFields.has(field),
+);
 /** Partial row edit schema with explicit optional-field removal. */
 export const updateLensRowInputSchema = {
   type: "object",
@@ -210,23 +191,11 @@ function missingSelectorError(
   );
 }
 
+/** Fields each row kind accepts; image and surface fields come from their schemas. */
 const applicableFields = {
   object: new Set(["distance", "medium", "manufacturer"]),
-  image: new Set(["curvatureRadius", "decenter"]),
-  surface: new Set([
-    "label",
-    "comment",
-    "curvatureRadius",
-    "thickness",
-    "medium",
-    "manufacturer",
-    "semiDiameter",
-    "aspherical",
-    "decenter",
-    "diffractiveElement",
-    "clear_aperture",
-    "edge_aperture",
-  ]),
+  image: new Set(Object.keys(imagePrescriptionSchema.properties)),
+  surface: new Set(Object.keys(surfaceSchema.properties)),
 } as const;
 
 function buildPatch(

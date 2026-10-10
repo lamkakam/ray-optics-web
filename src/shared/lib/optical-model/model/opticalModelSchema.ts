@@ -23,6 +23,7 @@ import { diffractiveElementSchema } from "@/shared/lib/optical-model/surface-pro
 /**
  * Strict physical-surface schema. A Ronchi clear aperture additionally requires a
  * positive semi-diameter, because the ruling's outer radius comes from it.
+ * Property order is the order WebMCP lists updatable and clearable fields.
  */
 export const surfaceSchema = Type.Object(
   {
@@ -37,15 +38,15 @@ export const surfaceSchema = Type.Object(
     /** Empty when the medium is air or reflective. */
     manufacturer: Type.String(),
     semiDiameter: finiteNumberSchema,
-    /** Clear aperture; circular, annular, and Ronchi outer radii come from `semiDiameter`. */
-    clear_aperture: Type.Optional(clearApertureSchema),
-    /** Explicit edge aperture, or `undefined` to follow the clear aperture. */
-    edge_aperture: Type.Optional(edgeApertureSchema),
     /** Optional discriminated aspherical surface configuration. */
     aspherical: Type.Optional(asphericalSchema),
     decenter: Type.Optional(decenterConfigSchema),
     /** Optional diffractive-element wrapper; an empty wrapper is a valid no-op. */
     diffractiveElement: Type.Optional(diffractiveElementSchema),
+    /** Clear aperture; circular, annular, and Ronchi outer radii come from `semiDiameter`. */
+    clear_aperture: Type.Optional(clearApertureSchema),
+    /** Explicit edge aperture, or `undefined` to follow the clear aperture. */
+    edge_aperture: Type.Optional(edgeApertureSchema),
   },
   {
     additionalProperties: false,

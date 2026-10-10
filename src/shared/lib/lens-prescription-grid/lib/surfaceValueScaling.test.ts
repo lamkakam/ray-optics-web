@@ -1,16 +1,18 @@
-/** Focused tests for dimensional ownership, row dispatch, and scaling validation inputs. */
+/** Focused tests for per-property scaling, row dispatch, and scaling validation inputs. */
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import {
   collectSurfaceScalingNumericValues,
   OBJECT_DISTANCE_INFINITY_THRESHOLD,
-  scaleAspherical,
-  scaleClearAperture,
-  scaleEdgeAperture,
   scaleObjectDistance,
   scaleSurfaceValueRow,
 } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
+import {
+  clearApertureProperty,
+  edgeApertureProperty,
+} from "@/shared/lib/optical-model/surface-properties/aperture/aperture.property";
+import { asphericalProperty } from "@/shared/lib/optical-model/surface-properties/aspherical/aspherical.property";
 
-/** Creates a physical row with every policy-owned nested value populated. */
+/** Creates a physical row with every registered nested value populated. */
 function createSurfaceRow(): Extract<GridRow, { kind: "surface" }> {
   return {
     kind: "surface",
@@ -65,7 +67,7 @@ describe("surfaceValueScaling", () => {
     );
   });
 
-  it("scales Object, Image, and Surface rows through their own policy branches", () => {
+  it("scales Object, Image, and Surface rows through their own registered properties", () => {
     const object: Extract<GridRow, { kind: "object" }> = {
       kind: "object",
       id: "row-object",
@@ -113,16 +115,18 @@ describe("surfaceValueScaling", () => {
   });
 
   it("scales clear and edge apertures by shape while preserving non-dimensional fields", () => {
-    expect(scaleClearAperture(undefined, 2)).toBeUndefined();
     expect(
-      scaleClearAperture({ shape: "circular", offsetX: -1, offsetY: 2 }, 2),
+      clearApertureProperty.scale(
+        { shape: "circular", offsetX: -1, offsetY: 2 },
+        2,
+      ),
     ).toEqual({
       shape: "circular",
       offsetX: -2,
       offsetY: 4,
     });
     expect(
-      scaleClearAperture(
+      clearApertureProperty.scale(
         { shape: "annular", obstructionRadius: 3, offsetX: -1, offsetY: 2 },
         2,
       ),
@@ -133,7 +137,7 @@ describe("surfaceValueScaling", () => {
       offsetY: 4,
     });
     expect(
-      scaleClearAperture(
+      clearApertureProperty.scale(
         {
           shape: "rectangular",
           xHalfWidth: 4,
@@ -153,7 +157,7 @@ describe("surfaceValueScaling", () => {
       offsetY: 4,
     });
     expect(
-      scaleClearAperture(
+      clearApertureProperty.scale(
         { shape: "ronchi", lpmm: 12, rotation: 15, offsetX: -1, offsetY: 2 },
         2,
       ),
@@ -165,9 +169,8 @@ describe("surfaceValueScaling", () => {
       offsetY: 4,
     });
 
-    expect(scaleEdgeAperture(undefined, 2)).toBeUndefined();
     expect(
-      scaleEdgeAperture(
+      edgeApertureProperty.scale(
         { shape: "circular", radius: 4, offsetX: 0.5, offsetY: -0.75 },
         2,
       ),
@@ -178,7 +181,7 @@ describe("surfaceValueScaling", () => {
       offsetY: -1.5,
     });
     expect(
-      scaleEdgeAperture(
+      edgeApertureProperty.scale(
         {
           shape: "rectangular",
           xHalfWidth: 5,
@@ -200,12 +203,14 @@ describe("surfaceValueScaling", () => {
   });
 
   it("scales every supported asphere kind with its documented coefficient order", () => {
-    expect(scaleAspherical({ kind: "Conic", conicConstant: -1 }, 2)).toEqual({
+    expect(
+      asphericalProperty.scale({ kind: "Conic", conicConstant: -1 }, 2),
+    ).toEqual({
       kind: "Conic",
       conicConstant: -1,
     });
     expect(
-      scaleAspherical(
+      asphericalProperty.scale(
         {
           kind: "EvenAspherical",
           conicConstant: 0,
@@ -219,7 +224,7 @@ describe("surfaceValueScaling", () => {
       polynomialCoefficients: [4, 1.5],
     });
     expect(
-      scaleAspherical(
+      asphericalProperty.scale(
         {
           kind: "RadialPolynomial",
           conicConstant: 0,
@@ -233,7 +238,7 @@ describe("surfaceValueScaling", () => {
       polynomialCoefficients: [8, 6],
     });
     expect(
-      scaleAspherical(
+      asphericalProperty.scale(
         {
           kind: "XToroid",
           conicConstant: 0,
@@ -249,7 +254,7 @@ describe("surfaceValueScaling", () => {
       polynomialCoefficients: [4, 1.5],
     });
     expect(
-      scaleAspherical(
+      asphericalProperty.scale(
         {
           kind: "YToroid",
           conicConstant: 0,
@@ -266,11 +271,11 @@ describe("surfaceValueScaling", () => {
     });
   });
 
-  it("collects all policy-owned numbers, including preserved angular and density values", () => {
+  it("collects every registered number in registry order, including preserved angular and density values", () => {
     const values = collectSurfaceScalingNumericValues(createSurfaceRow());
 
     expect(values).toEqual([
-      10, 2, 5, -1, 2, 12, 15, 4, 0.5, -0.75, -1, 20, 8, 12, 1, 2, 3, 4, 5, 600,
+      10, 2, 5, 12, 15, -1, 2, 4, 0.5, -0.75, -1, 20, 8, 12, 1, 2, 3, 4, 5, 600,
       1,
     ]);
   });
@@ -295,14 +300,15 @@ describe("surfaceValueScaling", () => {
       thickness: 4,
       semiDiameter: 10,
     });
-    expect(scaleSurfaceValueRow(image, 2)).toMatchObject({
+    expect(scaleSurfaceValueRow(image, 2)).toStrictEqual({
+      kind: "image",
+      id: "row-image",
       curvatureRadius: 8,
-      decenter: undefined,
     });
     expect(collectSurfaceScalingNumericValues(surface)).toEqual([10, 2, 5]);
   });
 
-  it("collects only fields owned by the scaling policy", () => {
+  it("collects only registered surface-property fields", () => {
     const rowWithUnknownNumericField = {
       ...createSurfaceRow(),
       futureNumericField: 999,
@@ -313,7 +319,7 @@ describe("surfaceValueScaling", () => {
     ).not.toContain(999);
   });
 
-  it("collects Object distance through the object policy", () => {
+  it("collects the Object distance for Object rows", () => {
     expect(
       collectSurfaceScalingNumericValues({
         kind: "object",

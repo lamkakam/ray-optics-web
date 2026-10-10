@@ -4,6 +4,12 @@ import type {
   Surface,
 } from "@/shared/lib/optical-model/model/opticalModel";
 import {
+  completeImage,
+  completeSurface,
+  pickImageProperties,
+  pickSurfaceProperties,
+} from "@/shared/lib/optical-model/operations/surfaceProperties";
+import {
   OBJECT_ROW_ID,
   IMAGE_ROW_ID,
   type GridRow,
@@ -16,7 +22,7 @@ export function generateRowId(): string {
   return `row-surface-${nextId++}`;
 }
 
-/** Converts sequential surfaces to Object, generated physical-surface, and Image grid rows while retaining defined optional comments and complete diffractive-element wrappers. */
+/** Converts sequential surfaces to Object, generated physical-surface, and Image grid rows, copying every registered surface property that is present. */
 export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
   const objectRow: GridRow = {
     id: OBJECT_ROW_ID,
@@ -29,33 +35,13 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
   const surfaceRows: GridRow[] = surfaces.surfaces.map((s) => ({
     id: generateRowId(),
     kind: "surface" as const,
-    label: s.label,
-    ...(s.comment !== undefined ? { comment: s.comment } : {}),
-    curvatureRadius: s.curvatureRadius,
-    thickness: s.thickness,
-    medium: s.medium,
-    manufacturer: s.manufacturer,
-    semiDiameter: s.semiDiameter,
-    ...(s.clear_aperture !== undefined
-      ? { clear_aperture: s.clear_aperture }
-      : {}),
-    ...(s.edge_aperture !== undefined
-      ? { edge_aperture: s.edge_aperture }
-      : {}),
-    ...(s.aspherical !== undefined ? { aspherical: s.aspherical } : {}),
-    ...(s.decenter !== undefined ? { decenter: s.decenter } : {}),
-    ...(s.diffractiveElement !== undefined
-      ? { diffractiveElement: s.diffractiveElement }
-      : {}),
+    ...(pickSurfaceProperties(s) as Surface),
   }));
 
   const imageRow: GridRow = {
     id: IMAGE_ROW_ID,
     kind: "image",
-    curvatureRadius: surfaces.image.curvatureRadius,
-    ...(surfaces.image.decenter !== undefined
-      ? { decenter: surfaces.image.decenter }
-      : {}),
+    ...(pickImageProperties(surfaces.image) as Surfaces["image"]),
   };
 
   return [objectRow, ...surfaceRows, imageRow];
@@ -63,9 +49,9 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
 
 /**
  * Converts ordered grid rows to sequential surfaces without throwing for missing
- * Object or Image rows. Missing required values use the editor defaults: Default
- * label, zero radii/thickness, air, empty manufacturer, and semi-diameter one.
- * Defined comments and diffractive-element wrappers are retained; omitted values remain omitted.
+ * Object or Image rows. Missing required surface and image values use their
+ * registry defaults (Default label, zero radii/thickness, air, empty
+ * manufacturer, semi-diameter one); omitted optional values remain omitted.
  */
 export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
   const objectRow = rows.find(
@@ -78,48 +64,13 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
     (r): r is GridRow & { kind: "surface" } => r.kind === "surface",
   );
 
-  const surfaces: Surface[] = surfaceRows.map((r) => {
-    const surface: Surface = {
-      label: r.label ?? "Default",
-      curvatureRadius: r.curvatureRadius ?? 0,
-      thickness: r.thickness ?? 0,
-      medium: r.medium ?? "air",
-      manufacturer: r.manufacturer ?? "",
-      semiDiameter: r.semiDiameter ?? 1,
-    };
-    if (r.comment !== undefined) {
-      surface.comment = r.comment;
-    }
-    if (r.aspherical !== undefined) {
-      surface.aspherical = r.aspherical;
-    }
-    if (r.clear_aperture !== undefined) {
-      surface.clear_aperture = r.clear_aperture;
-    }
-    if (r.edge_aperture !== undefined) {
-      surface.edge_aperture = r.edge_aperture;
-    }
-    if (r.decenter !== undefined) {
-      surface.decenter = r.decenter;
-    }
-    if (r.diffractiveElement !== undefined) {
-      surface.diffractiveElement = r.diffractiveElement;
-    }
-    return surface;
-  });
-
   return {
     object: {
       distance: objectRow?.objectDistance ?? 0,
       medium: objectRow?.medium ?? "air",
       manufacturer: objectRow?.manufacturer ?? "",
     },
-    image: {
-      curvatureRadius: imageRow?.curvatureRadius ?? 0,
-      ...(imageRow?.decenter !== undefined
-        ? { decenter: imageRow.decenter }
-        : {}),
-    },
-    surfaces,
+    image: completeImage(imageRow ?? {}),
+    surfaces: surfaceRows.map((row) => completeSurface(row)),
   };
 }
