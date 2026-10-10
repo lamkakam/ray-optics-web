@@ -13,7 +13,7 @@ import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorSt
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 interface ApplyExampleSystemParams {

@@ -14,9 +14,9 @@ Generates the ignored TypeScript string constants used to inline Python aperture
 - The Ronchi source includes both the binary aperture and its envelope-only vignetting helper, so the generated standalone block keeps notebook model construction consistent with the worker package.
 - Joins those aperture sources with a single newline.
 - Reads `src/python/src/rayoptics_web_utils/optical_specs.py` as the exact-spec helper source.
-- Creates `src/shared/lib/utils/generated/` if needed.
-- Writes `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts`.
-- Writes `src/shared/lib/utils/generated/pythonExportExactSpecHelpers.ts`.
+- Creates `src/shared/lib/python-export/generated/` if needed.
+- Writes `src/shared/lib/python-export/generated/pythonExportApertureHelpers.ts`.
+- Writes `src/shared/lib/python-export/generated/pythonExportExactSpecHelpers.ts`.
 - Uses `JSON.stringify` for the generated string literal so Python source text is embedded safely in TypeScript.
 
 ## Usage

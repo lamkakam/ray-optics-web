@@ -3,7 +3,7 @@ import {
   formatOptimizerUiDefaultValue,
   OPTIMIZER_UI_CONFIG,
 } from "@/features/optimization/lib/optimizerUiConfig";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { OptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
 import {
   createOptimizationSlice,

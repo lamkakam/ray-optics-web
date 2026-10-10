@@ -14,7 +14,7 @@ import {
 } from "@/features/analysis/lib/analysisWavelengthSamples";
 import type { ConfigurableAnalysisPlot } from "@/features/analysis/lib/analysisRayCounts";
 import type { SpotDiagramData } from "@/features/analysis/types/plotData";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 const model: OpticalModel = {

@@ -3,7 +3,7 @@ import { renderHook } from "@testing-library/react";
 import { createStore } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import {
   createAnalysisDataSlice,
   type AnalysisDataState,

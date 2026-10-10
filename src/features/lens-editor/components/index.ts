@@ -1,8 +1,5 @@
-export * from "./AsphericalCell";
 export * from "./BottomDrawerContainer";
 export * from "./ConfirmOverwriteModal";
-export * from "./DecenterCell";
-export * from "./DiffractionGratingCell";
 export * from "./FieldConfigModal";
 export * from "./FirstOrderChips";
 export * from "./FocusingContainer";
@@ -11,7 +8,6 @@ export * from "./ImageReferencePanel";
 export * from "./LensLayoutPanel";
 export * from "./LensEditorConfigToolbar";
 export * from "./LensPrescriptionContainer";
-export * from "./MediumCell";
 export * from "./ParaxialDataModal";
 export * from "./SeidelAberrModal";
 export * from "./SpecsConfiguratorContainer";

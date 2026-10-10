@@ -19,13 +19,13 @@ const apertureHelperSource = apertureSourceFiles
 const generatedHelpers = [
   {
     outputFile:
-      "src/shared/lib/utils/generated/pythonExportApertureHelpers.ts",
+      "src/shared/lib/python-export/generated/pythonExportApertureHelpers.ts",
     exportName: "pythonExportApertureHelpers",
     source: apertureHelperSource,
   },
   {
     outputFile:
-      "src/shared/lib/utils/generated/pythonExportExactSpecHelpers.ts",
+      "src/shared/lib/python-export/generated/pythonExportExactSpecHelpers.ts",
     exportName: "pythonExportExactSpecHelpers",
     source: readFileSync(
       resolve(

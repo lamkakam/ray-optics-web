@@ -51,7 +51,7 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 import type {
   OpticalModel,
   OpticalSpecs,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   OptimizationConfig,
   OptimizationProgressEntry,

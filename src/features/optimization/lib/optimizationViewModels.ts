@@ -2,7 +2,7 @@
 /** Shared optimization row contracts and display-formatting helpers. */
 
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   OptimizationOperandKind,
   OptimizationResidualEntry,

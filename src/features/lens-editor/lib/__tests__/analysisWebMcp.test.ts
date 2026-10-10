@@ -13,7 +13,7 @@ import { applyOptimizationModelToEditor } from "@/features/optimization/lib/appl
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { _resetAnalysisCache } from "@/features/analysis/lib/analysisCache";
 import { loadZernikeData } from "@/features/analysis/lib/plotFunctions";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";

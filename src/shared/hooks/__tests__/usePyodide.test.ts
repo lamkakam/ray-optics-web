@@ -29,7 +29,7 @@ import {
   withAnalysisCacheInvalidation,
 } from "@/shared/hooks/usePyodide";
 import { getCachedAnalysis } from "@/features/analysis/lib/analysisCache";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
 import { wrap } from "comlink";
 import {

@@ -22,7 +22,7 @@ import {
   type SpecsConfiguratorState,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import {
   createOpticalSystemTools,
   type OpticalSystemWebMcpDependencies,

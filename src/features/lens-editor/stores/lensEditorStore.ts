@@ -22,7 +22,7 @@
  * - `create`, `StateCreator` from `zustand`.
  * - `GridRow`, `OBJECT_ROW_ID`, `IMAGE_ROW_ID` from `@/shared/lib/lens-prescription-grid/types/gridTypes`.
  * - `generateRowId` from `@/shared/lib/lens-prescription-grid/lib/gridTransform`.
- * - `OpticalModel` from `@/shared/lib/types/opticalModel`.
+ * - `OpticalModel` from `@/shared/lib/optical-model/model/opticalModel`.
  *
  * Used through `LensEditorStoreProvider` and `useLensEditorStore()` rather than as a standalone exported hook from this file.
  */
@@ -34,7 +34,7 @@ import {
 } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 
 interface ModalState {
   open: boolean;

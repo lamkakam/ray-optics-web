@@ -4,7 +4,7 @@ import type {
   OpticalModel,
   OpticalSpecs,
   Surface,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 /** Selectable focal-length column discovered in a zoom prescription. */
 export interface PhotonsToPhotosFocalLengthChoice {

@@ -15,7 +15,7 @@ import {
 } from "@/features/analysis/lib/analysisWavelengthSamples";
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   AstigmatismCurveData,
   ChromaticFocalShiftData,

@@ -1,5 +1,5 @@
 import { createStore } from "zustand";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import {
   createOptimizationSlice,
   type OptimizationState,

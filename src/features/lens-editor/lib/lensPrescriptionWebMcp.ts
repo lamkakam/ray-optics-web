@@ -17,7 +17,7 @@ import {
   surfacesToGridRows,
 } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { Surfaces } from "@/shared/lib/types/opticalModel";
+import type { Surfaces } from "@/shared/lib/optical-model/model/opticalModel";
 import {
   resolvePrescriptionMedia,
   type PrescriptionMediaResolution,
@@ -31,7 +31,7 @@ import {
   edgeApertureSchema,
   finiteNumberSchema,
   lensPrescriptionSchema,
-} from "@/shared/lib/schemas/prescriptionSchema";
+} from "@/shared/lib/optical-model/schema/prescriptionSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

@@ -17,7 +17,7 @@ import {
   type PlotPoint,
   type SelectedGlass,
 } from "@/features/glass-map/types/glassMap";
-import { builtInSpecialMaterial } from "@/shared/lib/utils/specialMaterials";
+import { builtInSpecialMaterial } from "@/shared/lib/optical-model/surface-properties/medium/specialMaterials";
 
 /** Stable display color assigned to each glass catalog. */
 export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {

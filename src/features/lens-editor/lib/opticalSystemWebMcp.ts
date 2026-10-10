@@ -28,7 +28,7 @@ import {
   type FocusingChromaticity,
   type FocusingMetric,
 } from "@/features/lens-editor/lib/focusing";
-import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/prescriptionSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

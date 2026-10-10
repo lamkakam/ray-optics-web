@@ -6,7 +6,7 @@ import type {
   DiffractionGrating,
   EdgeAperture,
   Surface,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 /** Display label for an unset optional prescription value. */
 export const EMPTY_LENS_PRESCRIPTION_CELL_LABEL = "None";

@@ -1,6 +1,6 @@
 /** Read-only WebMCP descriptor for the version bundled into the open application. */
 import { APP_VERSION } from "@/shared/lib/appVersion";
-import { createPrescriptionAjv } from "@/shared/lib/schemas/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/prescriptionSchema";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

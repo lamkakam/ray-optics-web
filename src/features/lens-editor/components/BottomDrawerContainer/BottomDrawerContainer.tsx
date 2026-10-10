@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useStore } from "zustand";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";

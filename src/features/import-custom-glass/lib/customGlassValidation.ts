@@ -1,7 +1,7 @@
 /**
  * Canonical frontend validation for tabulated custom glass. The exported strict
  * schemas and compiled validators are shared by JSON, CSV, modal, persistence,
- * worker-bound, and WebMCP boundaries.
+ * worker-bound, and WebMCP boundaries, plus the strict version-1.0 import envelope.
  */
 import type Ajv from "ajv";
 import type { ValidateFunction } from "ajv";
@@ -9,7 +9,7 @@ import type { UserDefinedGlassInput } from "@/features/glass-map/types/glassMap"
 import {
   createPrescriptionAjv,
   positiveFiniteNumberSchema,
-} from "@/shared/lib/schemas/prescriptionSchema";
+} from "@/shared/lib/optical-model/schema/prescriptionSchema";
 
 /** Minimum wavelength/index samples accepted by every frontend boundary. */
 export const MIN_CUSTOM_GLASS_PAIRS = 4;
@@ -108,4 +108,26 @@ export const validateCustomGlassInput: ValidateFunction<UserDefinedGlassInput> =
 /** Compiled validator for one strict persisted row. */
 export const validatePersistedCustomGlassRow = ajv.compile(
   persistedCustomGlassRowSchema,
+);
+
+/** Strict version-1.0 custom-glass import envelope. */
+const importedCustomGlassDataSchema = {
+  type: "object",
+  required: ["version", "Custom"],
+  additionalProperties: false,
+  properties: {
+    version: { type: "string", pattern: "^\\d+\\.\\d+$", const: "1.0" },
+    Custom: {
+      type: "object",
+      propertyNames: { pattern: ".*\\S.*" },
+      additionalProperties: customGlassMaterialSchema,
+    },
+  },
+};
+
+/**
+ * Validates strict version-1.0 custom-glass imports and exposes AJV errors on failure.
+ */
+export const validateImportedCustomGlassData = createCustomGlassAjv().compile(
+  importedCustomGlassDataSchema,
 );

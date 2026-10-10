@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "@jest/globals";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   GlassOptimizationConfig,
   OptimizationConfig,

@@ -1,5 +1,8 @@
 /** Lens-editor grid row ids and its Object/Surface/Image discriminated union. */
-import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
+import type {
+  Surface,
+  Surfaces,
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 /** Stable Object-plane grid row id. */
 export const OBJECT_ROW_ID = "row-object";

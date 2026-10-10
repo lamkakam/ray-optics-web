@@ -18,7 +18,7 @@ import type {
 import type {
   AsphericalType,
   OpticalModel,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   OptimizationOperandConfig,
   OptimizationPickupConfig,

@@ -13,7 +13,7 @@
  * ## Dependencies
  *
  * - `StateCreator` from `zustand` (type only).
- * - `OpticalSpecs` from `@/shared/lib/types/opticalModel` (type only).
+ * - `OpticalSpecs` from `@/shared/lib/optical-model/model/opticalModel` (type only).
  * - `lookupWavelength` from `@/shared/lib/data/fraunhoferLines` — used to seed the default e-line wavelength.
  *
  * Form components receive state slices and actions as props via DI to keep them testable.
@@ -23,7 +23,7 @@ import type {
   FieldSpec,
   OpticalSpecs,
   PupilSpec,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import { lookupWavelength } from "@/shared/lib/data/fraunhoferLines";
 
 /** Reusable type aliases derived from OpticalSpecs */

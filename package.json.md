@@ -50,7 +50,7 @@ directives. `npm run lint` still invokes only `biome lint`.
 
 Linting respects `.gitignore` and excludes dependency, build, and coverage
 output, `src/python`, `scripts`, and all generated TypeScript under
-`src/shared/lib/utils/generated`. Generated helpers are validated at their
+`src/shared/lib/python-export/generated`. Generated helpers are validated at their
 source and generation boundaries instead of linted after generation.
 
 ## Formatting behavior

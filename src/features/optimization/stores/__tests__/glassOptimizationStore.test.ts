@@ -3,7 +3,7 @@ import type {
   AllGlassCatalogsData,
   CatalogGlassData,
 } from "@/features/glass-map/types/glassMap";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { GlassOptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
 import {
   createOptimizationSlice,

@@ -30,7 +30,7 @@ import {
   CATALOG_NAMES,
   type AllGlassCatalogsData,
 } from "@/features/glass-map/types/glassMap";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { GlassCatalogName } from "@/features/optimization/types/optimizationWorkerTypes";
 import type {
   GlassMode,

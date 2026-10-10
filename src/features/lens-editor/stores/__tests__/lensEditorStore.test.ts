@@ -12,7 +12,7 @@ import {
 import type {
   OpticalModel,
   OpticalSpecs,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 const testSpecs: OpticalSpecs = {
   pupil: { space: "object", type: "epd", value: 25 },

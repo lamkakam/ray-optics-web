@@ -66,7 +66,7 @@ import type {
   AsphericalType,
   DecenterConfig,
   OpticalModel,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   GlassOptimizationConfig,
   OptimizationConfig,

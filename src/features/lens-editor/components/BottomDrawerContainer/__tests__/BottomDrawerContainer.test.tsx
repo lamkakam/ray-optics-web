@@ -13,7 +13,7 @@ import {
 import type {
   OpticalModel,
   OpticalSpecs,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 

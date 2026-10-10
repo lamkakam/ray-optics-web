@@ -32,7 +32,7 @@ import type {
   DiffractionGrating,
   EdgeAperture,
   Surface,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 
 interface ActionWrapperProps {
   readonly children: React.ReactNode;

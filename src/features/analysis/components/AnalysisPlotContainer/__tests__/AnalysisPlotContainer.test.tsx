@@ -22,7 +22,7 @@ import {
 import type {
   OpticalModel,
   OpticalSpecs,
-} from "@/shared/lib/types/opticalModel";
+} from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   AstigmatismCurveData,
   DiffractionMtfData,

@@ -1,5 +1,8 @@
 /** Bidirectional conversion between sequential surface data and flat editor grid rows. */
-import type { Surfaces, Surface } from "@/shared/lib/types/opticalModel";
+import type {
+  Surfaces,
+  Surface,
+} from "@/shared/lib/optical-model/model/opticalModel";
 import {
   OBJECT_ROW_ID,
   IMAGE_ROW_ID,
