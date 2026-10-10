@@ -387,6 +387,35 @@ class TestCatalogExportContract:
         assert result["P_gF"] == 0.0
         assert result["P_Fd"] == pytest.approx((1.83 - 1.81) / (1.83 - 1.80))
 
+    def test_partial_dispersions_evaluate_every_index_from_the_formula_when_one_is_missing(
+        self,
+    ) -> None:
+        from rayoptics_web_utils.glass.glass import _partial_dispersions
+
+        indices = pd.Series(
+            {"F": 1.83, "e": 1.82, "d": 1.81, "C": 1.80, "g": pd.NA}
+        )
+        formula = {"F": 1.831, "e": 1.821, "d": 1.811, "C": 1.801, "g": 1.851}
+        result = _partial_dispersions(
+            pd.Series({"refractive indices": indices}), formula.__getitem__
+        )
+
+        assert result["P_gF"] == pytest.approx((1.851 - 1.831) / (1.831 - 1.801))
+        assert result["P_Fd"] == pytest.approx((1.83 - 1.81) / (1.83 - 1.80))
+
+    def test_schott_sf6g05_missing_ng_uses_the_datasheet_partial_dispersion(
+        self,
+    ) -> None:
+        from rayoptics_web_utils.glass.glass import get_glass_catalog_data
+
+        # The Schott spreadsheet omits ng for SF6G05; its datasheet gives P_g,F = 0.6121.
+        assert pd.isna(
+            _vendor_catalogs()["Schott"].glass_data("SF6G05")["refractive indices"]["g"]
+        )
+        entry = get_glass_catalog_data("Schott")["SF6G05"]
+
+        assert entry["partialDispersions"]["P_gF"] == pytest.approx(0.6121, abs=5e-5)
+
     def test_cdgm_entries_reproduce_catalog_nd_with_both_formulas(self) -> None:
         from rayoptics_web_utils.glass.glass import get_glass_catalog_data
 
