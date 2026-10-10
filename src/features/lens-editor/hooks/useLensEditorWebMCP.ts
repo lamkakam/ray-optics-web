@@ -1,6 +1,6 @@
 "use client";
 
-/** Composition hook that registers all twenty-four imperative Lens Editor WebMCP tools and forwards focus/computation lifecycle callbacks to the editor. */
+/** Composition hook that registers all twenty-six imperative Lens Editor WebMCP tools and forwards focus/computation lifecycle callbacks to the editor. */
 import { useMemo } from "react";
 import type { StoreApi } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -40,7 +40,7 @@ export interface LensEditorWebMCPDependencies {
   readonly onError?: (error: unknown) => void;
 }
 
-/** Registers prescription, System Specs, recomputation, focus, and fourteen committed-analysis tools in order. Analysis descriptors use current worker/image-reference dependencies without re-registering, read sampling preferences at invocation, and share the editor's plot and Zernike caches without modifying chart state. Unsupported browsers are skipped; all registrations end on unmount. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
+/** Registers prescription, System Specs, recomputation, focus, and fifteen committed-analysis tools in order. Analysis descriptors use current worker/image-reference dependencies without re-registering, read sampling preferences at invocation, and share the editor's plot and Zernike caches without modifying chart state. Unsupported browsers are skipped; all registrations end on unmount. The focus descriptor uses the supplied lifecycle callbacks while it dispatches and recomputes, and forwards failures to the supplied error callback. */
 export function useLensEditorWebMCP({
   lensStore,
   specsStore,
@@ -164,6 +164,7 @@ export function useLensEditorWebMCP({
     lensStore,
     analysisPlotStore,
   ]);
+  useWebMCP(analysisTools.getYYbarData, [lensStore, analysisPlotStore]);
   useWebMCP(analysisTools.getWavefrontMapData, [lensStore, analysisPlotStore]);
   useWebMCP(analysisTools.getDiffractionPsfData, [
     lensStore,

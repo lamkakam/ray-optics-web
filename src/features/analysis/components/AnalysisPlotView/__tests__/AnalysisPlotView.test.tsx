@@ -126,6 +126,20 @@ const mockSurfaceBySurface3rdOrderChart = jest.fn(
   ),
 );
 
+const mockYYbarChart = jest.fn(
+  ({ autoHeight }: { readonly autoHeight?: boolean }) => (
+    <div
+      data-testid="y-ybar-chart"
+      data-auto-height={autoHeight ? "true" : "false"}
+    />
+  ),
+);
+
+jest.mock("@/features/analysis/components/YYbarChart", () => ({
+  YYbarChart: (props: { readonly autoHeight?: boolean }) =>
+    mockYYbarChart(props),
+}));
+
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) =>
     mockDiffractionPsfChart(props),
@@ -280,6 +294,7 @@ describe("AnalysisPlotView", () => {
       "Astigmatism Curve",
       "Longitudinal Spherical Aberration",
       "Chromatic Focal Shift",
+      "y-ȳ Diagram",
       "Surface by Surface 3rd Order Aberr.",
       "Strehl vs Wavelength",
       "Wavefront Map",
@@ -343,6 +358,36 @@ describe("AnalysisPlotView", () => {
     const select = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(select, "opdFan");
     expect(onPlotTypeChange).toHaveBeenCalledWith("opdFan");
+  });
+
+  it("renders a y-ȳ diagram without field or wavelength selectors when data is provided", () => {
+    const yYbarData = {
+      surfaceLabels: ["1", "Img"],
+      y: [6.25, 0.03],
+      yBar: [-4.19, 18.12],
+      unit: "mm",
+    };
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="yYbar"
+        yYbarData={yYbarData}
+      />,
+    );
+
+    expect(screen.getByTestId("y-ybar-chart")).toBeInTheDocument();
+    expect(mockYYbarChart).toHaveBeenCalledWith(
+      expect.objectContaining({ autoHeight: undefined, yYbarData }),
+    );
+    expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
+  });
+
+  it("shows the empty placeholder for a y-ȳ diagram without data", () => {
+    render(<AnalysisPlotView {...defaultProps} selectedPlotType="yYbar" />);
+
+    expect(screen.queryByTestId("y-ybar-chart")).not.toBeInTheDocument();
+    expect(screen.getByText("No plot available")).toBeInTheDocument();
   });
 
   it("renders a surface by surface 3rd order chart when data is provided", () => {

@@ -13,3 +13,4 @@ export * from "./SpotDiagramChart";
 export * from "./StrehlVsWavelengthChart";
 export * from "./SurfaceBySurface3rdOrderChart";
 export * from "./WavefrontMapChart";
+export * from "./YYbarChart";

@@ -1,4 +1,4 @@
-/** Covers editor workflows, all twenty-four tool registrations, pending imports across initial analysis results, and actual Zernike dialog/tool cache reuse in both directions. */
+/** Covers editor workflows, all twenty-six tool registrations, pending imports across initial analysis results, and actual Zernike dialog/tool cache reuse in both directions. */
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
@@ -502,6 +502,7 @@ describe("LensEditor", () => {
       "get_longitudinal_spherical_aberration_data",
       "get_strehl_vs_wavelength_data",
       "get_chromatic_focal_shift_data",
+      "get_y_ybar_data",
       "get_wavefront_map_data",
       "get_diffraction_psf_data",
       "get_diffraction_mtf_data",

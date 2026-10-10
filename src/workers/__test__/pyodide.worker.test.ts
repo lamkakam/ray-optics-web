@@ -32,6 +32,7 @@ import {
   _getFieldCurvatureData,
   _getAstigmatismCurveData,
   _getLSAData,
+  _getYYbarData,
   _getSurfaceSemiDiameters,
   getFirstOrderData,
   getSurfaceSemiDiameters,
@@ -42,6 +43,7 @@ import {
   getFieldCurvatureData,
   getAstigmatismCurveData,
   getLSAData,
+  getYYbarData,
   getWavefrontData,
   getStrehlVsWavelengthData,
   getChromaticFocalShiftData,
@@ -602,6 +604,26 @@ describe("_getLSAData", () => {
 
     expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_lsa_data(_build_opm()))");
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("_getYYbarData", () => {
+  it("should build the model script, call json.dumps(get_y_ybar_data(...)) and return parsed data", async () => {
+    const mockData = {
+      surfaceLabels: ["1", "2", "Img"],
+      y: [6.25, 5.9, 0.03],
+      yBar: [-4.19, -3.22, 18.12],
+      unit: "mm",
+    };
+    let pythonScript = "";
+    const result = await _getYYbarData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel);
+
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_y_ybar_data(_build_opm()))");
     expect(result).toEqual(mockData);
   });
 });
@@ -1318,6 +1340,7 @@ describe("public worker guards before initialization", () => {
         () => getAstigmatismCurveData(allSphericalOpticalModel, 0),
       ],
       ["getLSAData", () => getLSAData(allSphericalOpticalModel)],
+      ["getYYbarData", () => getYYbarData(allSphericalOpticalModel)],
       [
         "getWavefrontData",
         () => getWavefrontData(allSphericalOpticalModel, 0, 0),

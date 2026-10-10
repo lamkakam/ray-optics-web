@@ -139,6 +139,7 @@ class TestAnalysisConcreteModuleExports:
             ("field_curves", "get_field_curvature_data"),
             ("field_curves", "get_astigmatism_curve_data"),
             ("longitudinal_spherical_aberration", "get_lsa_data"),
+            ("y_ybar", "get_y_ybar_data"),
         ],
     )
     def test_plot_getter_module_export_matches_package_exports(self, module_name, getter_name):
@@ -303,6 +304,74 @@ class TestGetLongitudinalSphericalAberrationData:
         result = get_lsa_data(cooke_triplet, num_points=3)
 
         json.dumps(result)
+
+
+class TestGetYYbarData:
+    """Tests for get_y_ybar_data()."""
+
+    def test_accepts_only_opm(self):
+        from rayoptics_web_utils.analysis import get_y_ybar_data
+        import inspect
+
+        assert list(inspect.signature(get_y_ybar_data).parameters.keys()) == ["opm"]
+
+    def test_omits_object_node_at_infinite_object_distance(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_y_ybar_data
+
+        result = get_y_ybar_data(cooke_triplet)
+
+        assert result["surfaceLabels"] == ["1", "2", "3", "4", "5", "6", "Img"]
+        assert result["unit"] == "mm"
+        assert len(result["y"]) == len(result["yBar"]) == 7
+
+    def test_returns_paraxial_marginal_and_chief_ray_heights(self, cooke_triplet):
+        import rayoptics.optical.model_constants as mc
+        from rayoptics_web_utils.analysis import get_y_ybar_data
+
+        ax_ray, pr_ray, _fod = cooke_triplet["analysis_results"]["parax_data"]
+        result = get_y_ybar_data(cooke_triplet)
+
+        assert result["y"] == pytest.approx([ray[mc.ht] for ray in ax_ray[1:]])
+        assert result["yBar"] == pytest.approx([ray[mc.ht] for ray in pr_ray[1:]])
+        assert result["y"][0] == pytest.approx(6.25)
+        stop_index = result["surfaceLabels"].index(str(cooke_triplet["seq_model"].stop_surface))
+        assert result["yBar"][stop_index] == pytest.approx(0.0, abs=1e-6)
+
+    def test_keeps_object_node_at_finite_object_distance(self, make_constant_index_singlet):
+        from rayoptics_web_utils.analysis import get_y_ybar_data
+
+        opm = make_constant_index_singlet(("object", "epd"), 4.0)
+        result = get_y_ybar_data(opm)
+
+        assert result["surfaceLabels"] == ["Obj", "1", "2", "Img"]
+        assert result["y"][0] == pytest.approx(0.0)
+        assert result["yBar"][0] == pytest.approx(0.1)
+
+    def test_omits_image_node_at_infinite_image_distance(self, afocal_two_lens):
+        from rayoptics_web_utils.analysis import get_y_ybar_data
+
+        result = get_y_ybar_data(afocal_two_lens)
+
+        assert result["surfaceLabels"] == ["1", "2", "3", "4"]
+        assert all(abs(value) < 1e6 for value in result["y"] + result["yBar"])
+
+    def test_uses_na_corrected_marginal_ray(self, make_constant_index_singlet):
+        import rayoptics.optical.model_constants as mc
+        from rayoptics_web_utils._paraxial_na_workaround import corrected_parax_data
+        from rayoptics_web_utils.analysis import get_y_ybar_data
+
+        opm = make_constant_index_singlet(("object", "NA"), 0.1)
+        corrected = corrected_parax_data(opm)
+        result = get_y_ybar_data(opm)
+
+        assert result["y"] == pytest.approx([ray[mc.ht] for ray in corrected.ax_ray])
+        assert result["yBar"] == pytest.approx([ray[mc.ht] for ray in corrected.pr_ray])
+        assert result["y"][1] == pytest.approx(2 * 20 * 0.1 / 1.5 / 2, rel=1e-6)
+
+    def test_result_is_json_encodable(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_y_ybar_data
+
+        json.dumps(get_y_ybar_data(cooke_triplet))
 
 
 class TestGetFirstOrderData:

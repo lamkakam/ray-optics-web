@@ -45,6 +45,7 @@ it.each([
   ["getFieldCurvatureData", () => worker.getFieldCurvatureData(model, 0)],
   ["getAstigmatismCurveData", () => worker.getAstigmatismCurveData(model, 0)],
   ["getLSAData", () => worker.getLSAData(model)],
+  ["getYYbarData", () => worker.getYYbarData(model)],
   ["getWavefrontData", () => worker.getWavefrontData(model, 0, 0)],
   [
     "getStrehlVsWavelengthData",

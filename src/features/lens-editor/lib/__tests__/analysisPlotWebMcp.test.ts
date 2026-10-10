@@ -164,6 +164,18 @@ const cases = [
     },
   },
   {
+    name: "get_y_ybar_data",
+    plotType: "yYbar",
+    method: "getYYbarData",
+    selectors: [],
+    data: {
+      surfaceLabels: ["1", "2", "Img"],
+      y: [6.24999999280888, 5.89574006372689, null],
+      yBar: [-4.18776607513428, -3.21838181894375, 18.1249399548737],
+      unit: "mm",
+    },
+  },
+  {
     name: "get_wavefront_map_data",
     plotType: "wavefrontMap",
     method: "getWavefrontData",
@@ -272,6 +284,7 @@ function expectedArgs(
     case "astigmatismCurve":
       return [model, wavelengthIndex];
     case "longitudinalSphericalAberration":
+    case "yYbar":
       return [model];
     case "rayFan":
     case "opdFan":

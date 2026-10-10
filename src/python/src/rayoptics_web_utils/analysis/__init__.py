@@ -18,6 +18,7 @@ from rayoptics_web_utils.analysis.spot import get_spot_data
 from rayoptics_web_utils.analysis.strehl_vs_wavelength import get_strehl_vs_wavelength_data
 from rayoptics_web_utils.analysis.wavefront import get_wavefront_data
 from rayoptics_web_utils.analysis.surface_semi_diameters import get_surface_semi_diameters
+from rayoptics_web_utils.analysis.y_ybar import get_y_ybar_data
 
 __all__ = [
     "get_first_order_data",
@@ -35,5 +36,6 @@ __all__ = [
     "get_field_curvature_data",
     "get_astigmatism_curve_data",
     "get_lsa_data",
+    "get_y_ybar_data",
     "get_surface_semi_diameters",
 ]
