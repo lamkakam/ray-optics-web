@@ -4,7 +4,8 @@ REMOVE WHEN FIXED UPSTREAM. This module works around a RayOptics bug that is
 pinned by ``tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py``. When
 those tests fail after a RayOptics upgrade, delete this module, its
 ``WORKAROUND(rayoptics 0.9.10 NA bug)`` call sites in ``analysis/first_order.py``,
-``analysis/seidel.py`` and ``optimization/operands.py``, and the pinning tests.
+``analysis/seidel.py``, ``analysis/y_ybar.py`` and ``optimization/operands.py``,
+and the pinning tests.
 
 RayOptics 0.9.10's ``etendue.na2slp(na, n)`` returns the reduced slope
 ``n * tan(asin(NA / n))``, but ``firstorder.compute_first_order`` seeds the

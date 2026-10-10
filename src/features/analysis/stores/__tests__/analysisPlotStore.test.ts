@@ -83,6 +83,11 @@ describe("analysisPlotStore", () => {
       ).toBeUndefined();
     });
 
+    it("has yYbarData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().yYbarData).toBeUndefined();
+    });
+
     it("has opdFanData as undefined", () => {
       const store = makeStore();
       expect(store.getState().opdFanData).toBeUndefined();
@@ -885,6 +890,7 @@ describe("analysisPlotStore", () => {
         "fieldCurvature",
         "astigmatismCurve",
         "longitudinalSphericalAberration",
+        "yYbar",
         "surfaceBySurface3rdOrder",
         "strehlVsWavelength",
         "chromaticFocalShift",
@@ -938,6 +944,53 @@ describe("analysisPlotStore", () => {
       expect(store.getState().strehlVsWavelengthData).toBeUndefined();
       expect(store.getState().chromaticFocalShiftData).toBeUndefined();
     });
+  });
+});
+
+describe("setYYbarData", () => {
+  const yYbarData = {
+    surfaceLabels: ["1", "Img"],
+    y: [6.25, 0.03],
+    yBar: [-4.19, 18.12],
+    unit: "mm",
+  };
+
+  it("sets yYbarData and clears other chart payloads", () => {
+    const store = makeStore();
+    store
+      .getState()
+      .setLongitudinalSphericalAberrationData([
+        { wvlIdx: 0, LSA: { x: [0], y: [1] }, unitX: "mm", unitY: "" },
+      ]);
+
+    store.getState().setYYbarData(yYbarData);
+
+    expect(store.getState().yYbarData).toEqual(yYbarData);
+    expect(
+      store.getState().longitudinalSphericalAberrationData,
+    ).toBeUndefined();
+  });
+
+  it.each([
+    "setRayFanData",
+    "setOpdFanData",
+    "setSpotDiagramData",
+    "setFieldCurvatureData",
+    "setAstigmatismCurveData",
+    "setLongitudinalSphericalAberrationData",
+    "setGeoPsfData",
+    "setDiffractionPsfData",
+    "setDiffractionMtfData",
+    "setWavefrontMapData",
+    "setStrehlVsWavelengthData",
+    "setChromaticFocalShiftData",
+  ] as const)("%s clears yYbarData", (setter) => {
+    const store = makeStore();
+    store.getState().setYYbarData(yYbarData);
+
+    store.getState()[setter](undefined);
+
+    expect(store.getState().yYbarData).toBeUndefined();
   });
 });
 

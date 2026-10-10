@@ -12,6 +12,7 @@ import type {
   OpdFanData,
   RayFanData,
   StrehlVsWavelengthData,
+  YYbarData,
 } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -87,6 +88,13 @@ const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData =
       unitY: "",
     },
   ];
+
+const yYbarData: YYbarData = {
+  surfaceLabels: ["1", "2", "Img"],
+  y: [6.25, 5.9, 0.03],
+  yBar: [-4.19, -3.22, 18.12],
+  unit: "mm",
+};
 
 function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
   return {
@@ -171,6 +179,7 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     getLSAData: jest
       .fn()
       .mockResolvedValue(longitudinalSphericalAberrationData),
+    getYYbarData: jest.fn().mockResolvedValue(yYbarData),
     getWavefrontData: jest.fn(),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -564,6 +573,25 @@ describe("loadAnalysisPlot", () => {
     });
   });
 
+  it("loads and caches yYbar through getYYbarData without field or wavelength indices", async () => {
+    const proxy = makeMockProxy();
+    const load = (fieldIndex: number, wavelengthIndex: number) =>
+      loadAnalysisPlot({
+        plotType: "yYbar",
+        proxy,
+        model: mockModel,
+        fieldIndex,
+        wavelengthIndex,
+      });
+
+    const result = await load(99, 88);
+    await load(1, 2);
+
+    expect(proxy.getYYbarData).toHaveBeenCalledTimes(1);
+    expect(proxy.getYYbarData).toHaveBeenCalledWith(mockModel);
+    expect(result).toEqual({ kind: "yYbar", yYbarData });
+  });
+
   it("loads surfaceBySurface3rdOrder through get3rdOrderSeidelData instead of the PNG path", async () => {
     const proxy = makeMockProxy();
     const result = await loadAnalysisPlot({
@@ -637,6 +665,14 @@ describe("commitAnalysisPlotResult", () => {
     expect(store.getState().chromaticFocalShiftData).toEqual(
       chromaticFocalShiftData,
     );
+  });
+
+  it("commits yYbar data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult({ kind: "yYbar", yYbarData }, store);
+
+    expect(store.getState().yYbarData).toEqual(yYbarData);
   });
 
   it("commits fieldCurvature data into the analysis plot store", () => {

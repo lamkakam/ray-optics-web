@@ -30,6 +30,7 @@ import type {
   FieldCurveData,
   GeoPsfData,
   LongitudinalSphericalAberrationData,
+  YYbarData,
   OpdFanData,
   RayFanData,
   SpotDiagramData,
@@ -266,6 +267,13 @@ const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData =
       unitY: "",
     },
   ];
+
+const yYbarData: YYbarData = {
+  surfaceLabels: ["1", "2", "Img"],
+  y: [6.25, 5.9, 0.03],
+  yBar: [-4.19, -3.22, 18.12],
+  unit: "mm",
+};
 
 const opdFanData: OpdFanData = [
   {
@@ -650,6 +658,7 @@ describe("AnalysisPlotContainer", () => {
       "longitudinalSphericalAberration",
       "longitudinal-spherical-aberration-chart",
     ],
+    ["yYbar", "y-ybar-chart"],
     ["geoPSF", "geo-psf-chart"],
     ["wavefrontMap", "wavefront-map-chart"],
     ["strehlVsWavelength", "strehl-vs-wavelength-chart"],
@@ -684,6 +693,9 @@ describe("AnalysisPlotContainer", () => {
             .setLongitudinalSphericalAberrationData(
               longitudinalSphericalAberrationData,
             );
+          break;
+        case "yYbar":
+          store.getState().setYYbarData(yYbarData);
           break;
         case "geoPSF":
           store.getState().setGeoPsfData(geoPsfData);
@@ -1392,6 +1404,7 @@ describe.each([
     "longitudinal-spherical-aberration-chart",
     longitudinalSphericalAberrationData,
   ],
+  ["yYbar", "getYYbarData", "yYbarData", "y-ybar-chart", yYbarData],
 ] as const)(
   "interrupted %s recovery",
   (plotType, method, dataKey, chartId, data) => {

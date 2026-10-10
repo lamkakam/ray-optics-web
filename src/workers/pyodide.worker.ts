@@ -55,6 +55,7 @@ import type {
   SpotDiagramData,
   StrehlVsWavelengthData,
   WavefrontMapData,
+  YYbarData,
 } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type {
@@ -305,7 +306,7 @@ from rayoptics.seq.medium import decode_medium
 
 from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular, RonchiRuling, set_vig_with_ronchi_envelopes
 from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec, ExactOpticalModel, set_vig_respecting_exact_pupil
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_chromatic_focal_shift_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data, get_surface_semi_diameters
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_chromatic_focal_shift_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data, get_y_ybar_data, get_surface_semi_diameters
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
 )
@@ -544,6 +545,17 @@ export async function _getLSAData(
     buildScript(opticalModel, (opm) => `json.dumps(get_lsa_data(${opm}))`),
   )) as string;
   return JSON.parse(json) as LongitudinalSphericalAberrationData;
+}
+
+/** Loads and parses paraxial y-ȳ diagram data with injected execution. */
+export async function _getYYbarData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+): Promise<YYbarData> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(get_y_ybar_data(${opm}))`),
+  )) as string;
+  return JSON.parse(json) as YYbarData;
 }
 
 /** Loads and parses third-order Seidel and primary chromatic data with injected execution. */
@@ -1260,6 +1272,15 @@ export async function getLSAData(
   });
 }
 
+/** Returns paraxial marginal- and chief-ray heights for the y-ȳ diagram. */
+export async function getYYbarData(
+  opticalModel: OpticalModel,
+): Promise<YYbarData> {
+  return runPyodideOperation("getYYbarData", async () => {
+    return await _getYYbarData(requirePyodide(), opticalModel);
+  });
+}
+
 /** Returns a wavefront-map grid for one field, wavelength, and image reference. */
 export async function getWavefrontData(
   opticalModel: OpticalModel,
@@ -1599,6 +1620,7 @@ expose({
   getFieldCurvatureData,
   getAstigmatismCurveData,
   getLSAData,
+  getYYbarData,
   getWavefrontData,
   getStrehlVsWavelengthData,
   getChromaticFocalShiftData,

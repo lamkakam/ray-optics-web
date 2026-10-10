@@ -29,6 +29,7 @@ import type {
   SpotDiagramData,
   StrehlVsWavelengthData,
   WavefrontMapData,
+  YYbarData,
 } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -83,7 +84,8 @@ export type AnalysisPlotLoadResult =
   | {
       readonly kind: "diffractionMTF";
       readonly diffractionMtfData: DiffractionMtfData;
-    };
+    }
+  | { readonly kind: "yYbar"; readonly yYbarData: YYbarData };
 
 /** Plot selectors and optional app-wide sampling preferences, defaulting to historical resolutions. */
 interface LoadAnalysisPlotParams {
@@ -110,6 +112,7 @@ interface LoadAnalysisPlotParams {
  * - Calls `proxy.getFieldCurvatureData(model, wavelengthIndex)` for `fieldCurvature`.
  * - Calls `proxy.getAstigmatismCurveData(model, wavelengthIndex)` for `astigmatismCurve`.
  * - Calls `proxy.getLSAData(model)` for `longitudinalSphericalAberration`; the worker returns all wavelength series, so no field or wavelength selector index is used.
+ * - Calls `proxy.getYYbarData(model)` for `yYbar`; the paraxial heights need no field or wavelength selector index.
  * - Calls `proxy.getWavefrontData(...)` with `imagePoint` for `wavefrontMap`.
  * - Calls `proxy.getStrehlVsWavelengthData(model, fi, imagePoint, wavelengthSamples, numRays)` for `strehlVsWavelength`.
  * - Calls `proxy.getChromaticFocalShiftData(model, fi, wavelengthSamples, numRays)` for `chromaticFocalShift`; its chief-ray best focus is independent of `imagePoint`.
@@ -259,6 +262,13 @@ export async function loadAnalysisPlot({
     };
   }
 
+  if (plotType === "yYbar") {
+    return {
+      kind: "yYbar",
+      yYbarData: await cached("yYbar", () => proxy.getYYbarData(model)),
+    };
+  }
+
   if (plotType === "geoPSF") {
     return {
       kind: "geoPSF",
@@ -384,7 +394,7 @@ export function loadZernikeData({
  * - No-ops when `plotResult` is `undefined`.
  * - When a requested ray-count or wavelength-sample snapshot is supplied, discards results whose plot resolution or wavelength sampling changed while loading.
  * - No-ops for `"surfaceBySurface3rdOrder"` because Seidel surface-by-surface data is committed through `AnalysisDataState`.
- * - Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"longitudinalSphericalAberration"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"chromaticFocalShift"`, `"diffractionPSF"`, and `"diffractionMTF"`.
+ * - Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"longitudinalSphericalAberration"`, `"yYbar"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"chromaticFocalShift"`, `"diffractionPSF"`, and `"diffractionMTF"`.
  * - Uses an exhaustive `switch` so future `AnalysisPlotLoadResult` variants must be handled explicitly.
  */
 export function commitAnalysisPlotResult(
@@ -445,6 +455,9 @@ export function commitAnalysisPlotResult(
         .setLongitudinalSphericalAberrationData(
           plotResult.longitudinalSphericalAberrationData,
         );
+      return;
+    case "yYbar":
+      analysisPlotStore.getState().setYYbarData(plotResult.yYbarData);
       return;
     case "geoPSF":
       analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);
