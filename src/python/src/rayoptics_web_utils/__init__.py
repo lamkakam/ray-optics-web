@@ -39,6 +39,7 @@ _LAZY_IMPORTS = {
     'get_field_curvature_data': 'rayoptics_web_utils.analysis.field_curves',
     'get_astigmatism_curve_data': 'rayoptics_web_utils.analysis.field_curves',
     'get_lsa_data': 'rayoptics_web_utils.analysis.longitudinal_spherical_aberration',
+    'get_y_ybar_data': 'rayoptics_web_utils.analysis.y_ybar',
     'get_surface_semi_diameters': 'rayoptics_web_utils.analysis.surface_semi_diameters',
     'get_zernike_coefficients': 'rayoptics_web_utils.zernike.zernike',
     'plot_lens_layout': 'rayoptics_web_utils.plotting.plotting',

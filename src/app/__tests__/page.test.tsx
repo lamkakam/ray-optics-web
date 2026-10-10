@@ -392,6 +392,12 @@ const mockProxy = {
   getDiffractionPSFData: mockGetDiffractionPSFData,
   getDiffractionMTFData: mockGetDiffractionMTFData,
   getLSAData: jest.fn().mockResolvedValue([]),
+  getYYbarData: jest.fn().mockResolvedValue({
+    surfaceLabels: [],
+    y: [],
+    yBar: [],
+    unit: "mm",
+  }),
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
   getZernikeCoefficients: jest
     .fn<

@@ -34,6 +34,7 @@ describe("Pyodide worker Comlink exposure", () => {
       "getFieldCurvatureData",
       "getAstigmatismCurveData",
       "getLSAData",
+      "getYYbarData",
       "getWavefrontData",
       "getStrehlVsWavelengthData",
       "getChromaticFocalShiftData",

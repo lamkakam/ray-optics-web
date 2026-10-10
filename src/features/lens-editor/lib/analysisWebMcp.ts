@@ -176,7 +176,7 @@ export interface AnalysisWebMcpDependencies {
   readonly imagePoint?: ImagePoint;
 }
 
-/** Named handles for fourteen read-only, Lens Editor-scoped analysis tools. */
+/** Named handles for fifteen read-only, Lens Editor-scoped analysis tools. */
 export interface AnalysisTools {
   readonly getParaxialData: WebMCP.ModelContextTool;
   readonly get3rdOrderSeidelData: WebMCP.ModelContextTool;
@@ -189,6 +189,7 @@ export interface AnalysisTools {
   readonly getLongitudinalSphericalAberrationData: WebMCP.ModelContextTool;
   readonly getStrehlVsWavelengthData: WebMCP.ModelContextTool;
   readonly getChromaticFocalShiftData: WebMCP.ModelContextTool;
+  readonly getYYbarData: WebMCP.ModelContextTool;
   readonly getWavefrontMapData: WebMCP.ModelContextTool;
   readonly getDiffractionPsfData: WebMCP.ModelContextTool;
   readonly getDiffractionMtfData: WebMCP.ModelContextTool;
@@ -229,14 +230,15 @@ interface PlotToolDefinition<K extends ToolPlotKind> {
  * rounding. Cancellation is checked before loading and after awaiting; it does
  * not interrupt computation shared with the dialog or another tool caller.
  *
- * Eleven plot tools use loadAnalysisPlot and its unchanged model-identity/image-point
+ * Twelve plot tools use loadAnalysisPlot and its unchanged model-identity/image-point
  * LRU, selector/sampling/FFT keys, shared promises, and failure eviction. Each call
  * snapshots the committed model, app ray counts, and current image reference;
  * defaults are field 0 and the committed reference wavelength, never UI selection.
  * Only relevant selectors are accepted as nonnegative integers in committed bounds.
  * Results contain the complete unrounded worker `data`, applicable resolved
  * selectors, imagePoint, and numRays for configurable plots. Fans, spots, and LSA
- * retain every wavelength. Strehl and chromatic focal shift use the app's wavelength sample count and echo
+ * retain every wavelength. The y-ȳ tool accepts no selectors and returns paraxial
+ * heights for the committed system. Strehl and chromatic focal shift use the app's wavelength sample count and echo
  * it as wavelengthSamples; chromatic focal shift also accepts an optional integer
  * wavelengthSamples in [2, 1000] that overrides it and joins its cache key.
  * Spot results also include unrounded GEO/RMS `radii` from all positive committed
@@ -419,6 +421,14 @@ export function createAnalysisTools({
       plotType: "chromaticFocalShift",
       selectors: "fieldSamples",
       data: (result) => result.chromaticFocalShiftData,
+    }),
+    getYYbarData: createPlotTool({
+      name: "get_y_ybar_data",
+      description:
+        "Read complete paraxial y-ȳ (Delano) diagram data: marginal-ray height y and chief-ray height ȳ at each surface in sequential order, with surface labels and the system length unit. Object and image nodes at infinite conjugates are omitted; non-finite heights are null.",
+      plotType: "yYbar",
+      selectors: "none",
+      data: (result) => result.yYbarData,
     }),
     getWavefrontMapData: createPlotTool({
       name: "get_wavefront_map_data",

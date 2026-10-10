@@ -15,8 +15,9 @@ compensate. A failure here most likely means RayOptics fixed the bug upstream.
 Then do NOT "fix" these tests; instead delete the workaround:
 
 - ``src/rayoptics_web_utils/_paraxial_na_workaround.py``
-- its call sites in ``analysis/first_order.py``, ``analysis/seidel.py`` and
-  ``optimization/operands.py`` (marked ``WORKAROUND(rayoptics 0.9.10 NA bug)``)
+- its call sites in ``analysis/first_order.py``, ``analysis/seidel.py``,
+  ``analysis/y_ybar.py`` and ``optimization/operands.py`` (marked
+  ``WORKAROUND(rayoptics 0.9.10 NA bug)``)
 - this test module
 
 and re-check the workaround tests in ``analysis/test_analysis.py`` and

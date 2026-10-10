@@ -32,7 +32,7 @@ interface AnalysisPlotContainerProps {
 }
 
 /**
- * Container component that owns all analysis-plot logic: derives Half-Field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed field-curvature data, typed astigmatism-curve data, typed longitudinal-spherical-aberration data, typed geometric-PSF point data, typed wavefront-map grid data, typed Strehl-vs-wavelength line data, typed chromatic-focal-shift line data, typed diffraction-PSF grid data, or typed diffraction-MTF line data depending on the selected plot type.
+ * Container component that owns all analysis-plot logic: derives Half-Field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed field-curvature data, typed astigmatism-curve data, typed longitudinal-spherical-aberration data, typed geometric-PSF point data, typed wavefront-map grid data, typed Strehl-vs-wavelength line data, typed chromatic-focal-shift line data, typed y-ȳ diagram height data, typed diffraction-PSF grid data, or typed diffraction-MTF line data depending on the selected plot type.
  *
  * @remarks
  * - Used in `LensEditor.tsx`. The container pulls the relevant stores from their providers and only receives `proxy`, `onError`, and `autoHeight` as props.
@@ -78,6 +78,7 @@ export function AnalysisPlotContainer({
     store,
     (s) => s.chromaticFocalShiftData,
   );
+  const yYbarData = useStore(store, (s) => s.yYbarData);
   const plotLoading = useStore(store, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(
@@ -269,6 +270,7 @@ export function AnalysisPlotContainer({
       wavefrontMapData={wavefrontMapData}
       strehlVsWavelengthData={strehlVsWavelengthData}
       chromaticFocalShiftData={chromaticFocalShiftData}
+      yYbarData={yYbarData}
       loading={plotLoading}
       onFieldChange={handleFieldChange}
       onWavelengthChange={handleWavelengthChange}

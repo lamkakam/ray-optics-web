@@ -12,6 +12,7 @@ import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChar
 import { StrehlVsWavelengthChart } from "@/features/analysis/components/StrehlVsWavelengthChart";
 import { SurfaceBySurface3rdOrderChart } from "@/features/analysis/components/SurfaceBySurface3rdOrderChart";
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
+import { YYbarChart } from "@/features/analysis/components/YYbarChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import {
@@ -31,6 +32,7 @@ import type {
   SpotDiagramData,
   StrehlVsWavelengthData,
   WavefrontMapData,
+  YYbarData,
 } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
@@ -43,6 +45,7 @@ export type PlotType =
   | "astigmatismCurve"
   | "longitudinalSphericalAberration"
   | "chromaticFocalShift"
+  | "yYbar"
   | "surfaceBySurface3rdOrder"
   | "strehlVsWavelength"
   | "wavefrontMap"
@@ -91,6 +94,8 @@ interface AnalysisPlotViewProps {
   readonly strehlVsWavelengthData?: StrehlVsWavelengthData;
   /** Best-focus shift vs wavelength line data used only when `selectedPlotType === "chromaticFocalShift"` */
   readonly chromaticFocalShiftData?: ChromaticFocalShiftData;
+  /** Paraxial marginal/chief-ray heights used only when `selectedPlotType === "yYbar"` */
+  readonly yYbarData?: YYbarData;
   /** Shows "Loading plot..." placeholder when `true` */
   readonly loading?: boolean;
   /** Called with the new field index */
@@ -126,6 +131,7 @@ export interface PlotTypeConfig {
  * | `astigmatismCurve` | "Astigmatism Curve" | false | true |
  * | `longitudinalSphericalAberration` | "Longitudinal Spherical Aberration" | false | false |
  * | `chromaticFocalShift` | "Chromatic Focal Shift" | true | false |
+ * | `yYbar` | "y-ȳ Diagram" | false | false |
  * | `surfaceBySurface3rdOrder` | "Surface by Surface 3rd Order Aberr." | false | false |
  * | `strehlVsWavelength` | "Strehl vs Wavelength" | true | false |
  * | `wavefrontMap` | "Wavefront Map" | true | true |
@@ -167,6 +173,11 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
   chromaticFocalShift: {
     label: "Chromatic Focal Shift",
     fieldDependent: true,
+    wavelengthDependent: false,
+  },
+  yYbar: {
+    label: "y-ȳ Diagram",
+    fieldDependent: false,
     wavelengthDependent: false,
   },
   surfaceBySurface3rdOrder: {
@@ -308,6 +319,13 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
       />
     ),
   ),
+  yYbar: createPlotRenderer(
+    (props) => props.yYbarData !== undefined,
+    (props) => props.yYbarData,
+    (props, yYbarData) => (
+      <YYbarChart yYbarData={yYbarData} autoHeight={props.autoHeight} />
+    ),
+  ),
   surfaceBySurface3rdOrder: createPlotRenderer(
     (props) => props.surfaceBySurface3rdOrderData !== undefined,
     (props) => props.surfaceBySurface3rdOrderData,
@@ -399,6 +417,7 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
  * - `longitudinalSphericalAberration` renders `LongitudinalSphericalAberrationChart` only when `longitudinalSphericalAberrationData` is present, passes wavelength labels to name each series, and hides both field and wavelength selectors because the worker always traces field 0 for all wavelengths.
  * - `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
  * - `chromaticFocalShift` renders `ChromaticFocalShiftChart` only when `chromaticFocalShiftData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
+ * - `yYbar` renders `YYbarChart` only when `yYbarData` is present and hides both field and wavelength selectors because paraxial ray heights are system-level. It is listed directly before `surfaceBySurface3rdOrder` in the Plot type dropdown.
  * - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
  * - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
  * - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.

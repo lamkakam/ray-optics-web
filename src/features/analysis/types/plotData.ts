@@ -134,6 +134,22 @@ export interface LongitudinalSphericalAberrationSeriesData {
 export type LongitudinalSphericalAberrationData =
   LongitudinalSphericalAberrationSeriesData[];
 
+/**
+ * Paraxial marginal- and chief-ray heights for the y-ȳ (Delano) diagram.
+ *
+ * Arrays are index-aligned in sequential surface order. `y` holds paraxial
+ * marginal (axial) ray heights and `yBar` paraxial chief ray heights, both in
+ * `unit` (the system length unit); a non-finite height is `undefined`.
+ * `surfaceLabels` are `"Obj"`, surface indices `"1"` to `"N"`, and `"Img"`;
+ * the object or image node is omitted when it lies at infinity.
+ */
+export interface YYbarData {
+  surfaceLabels: string[];
+  y: (number | undefined)[];
+  yBar: (number | undefined)[];
+  unit: string;
+}
+
 /** Transverse ray-fan axis samples. */
 export type RayFanAxisData = FanLineAxisData;
 

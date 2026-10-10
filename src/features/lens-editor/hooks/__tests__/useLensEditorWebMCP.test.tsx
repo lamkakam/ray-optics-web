@@ -1,4 +1,4 @@
-/** Covers all twenty-four editor tools, registration lifetime, and live worker, reference, and sampling dependencies. */
+/** Covers all twenty-six editor tools, registration lifetime, and live worker, reference, and sampling dependencies. */
 import { renderHook } from "@testing-library/react";
 import { createStore } from "zustand";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
@@ -74,7 +74,7 @@ describe("useLensEditorWebMCP", () => {
       renderHook(() => useLensEditorWebMCP(makeDependencies())),
     ).not.toThrow();
   });
-  it("registers all twenty-four tools after the five prescription tools", () => {
+  it("registers all twenty-six tools after the five prescription tools", () => {
     const registrations: WebMCP.ModelContextTool[] = [];
     const registerTool = jest.fn(
       (
@@ -115,6 +115,7 @@ describe("useLensEditorWebMCP", () => {
       "get_longitudinal_spherical_aberration_data",
       "get_strehl_vs_wavelength_data",
       "get_chromatic_focal_shift_data",
+      "get_y_ybar_data",
       "get_wavefront_map_data",
       "get_diffraction_psf_data",
       "get_diffraction_mtf_data",
@@ -169,7 +170,7 @@ describe("useLensEditorWebMCP", () => {
       },
     });
 
-    expect(registerTool).toHaveBeenCalledTimes(25);
+    expect(registerTool).toHaveBeenCalledTimes(26);
     const zernikeTool = registerTool.mock.calls.find(
       ([tool]) => tool.name === "get_zernike_terms",
     )![0];
@@ -200,7 +201,7 @@ describe("useLensEditorWebMCP", () => {
       ),
     ).toEqual({ data: [], fieldIndex: 0, imagePoint: "centroid", numRays: 64 });
     expect(getRayFanData).toHaveBeenCalledWith(model, 0, "centroid", 64);
-    expect(registerTool).toHaveBeenCalledTimes(25);
+    expect(registerTool).toHaveBeenCalledTimes(26);
     unmount();
     Object.defineProperty(document, "modelContext", {
       configurable: true,

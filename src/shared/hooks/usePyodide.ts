@@ -21,6 +21,7 @@ import type {
   SpotDiagramData,
   StrehlVsWavelengthData,
   WavefrontMapData,
+  YYbarData,
 } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type {
@@ -107,6 +108,8 @@ export interface PyodideWorkerAPI {
   getLSAData(
     opticalModel: OpticalModel,
   ): Promise<LongitudinalSphericalAberrationData>;
+  /** Returns paraxial marginal- and chief-ray heights for the y-ȳ diagram. */
+  getYYbarData(opticalModel: OpticalModel): Promise<YYbarData>;
   /** Returns a sampled wavefront map. */
   getWavefrontData(
     opticalModel: OpticalModel,
