@@ -2,7 +2,7 @@
  * Builds Python source code that reconstructs the definition of an optical system for RayOptics inside the Pyodide worker. It is also used by UI components to let users copy the Python snippet to the clipboard so that users may use the code string for their own RayOptics instance on Jupyter notebook.
  *
  * @remarks
- * Special-material recognition and Python-variable mappings are imported from `optical-model/surface-properties/medium/specialMaterials.ts` so other UI behavior uses the same definitions. `field.isWideAngle === true` selects `ExactOpticalModel`; opted-in Image Height and Object Height additionally select `ExactImageHeightFieldSpec` and `ExactObjectHeightFieldSpec`, respectively. False or omitted flags use RayOptics' `OpticalModel` and `FieldSpec`. Standalone exports inline the exact-spec implementation from `rayoptics_web_utils/optical_specs.py` only for models that opt in, while worker scripts import the definitions from the local wheel. Final vignetting setup calls `set_vig_with_ronchi_envelopes(...)`, which sizes against every Ronchi ruling's circular envelope and restores its binary bands before analysis. Exact models inject `set_vig_respecting_exact_pupil`, so a passing Object-NA unit boundary receives zero vignetting without RayOptics probing outside the requested angular pupil; other exact pupil modes delegate to native vignetting.
+ * Special-material recognition and Python-variable mappings come from the medium descriptor (`optical-model/surface-properties/medium/medium.property.ts`, backed by `specialMaterials.ts`) so other UI behavior uses the same definitions. `field.isWideAngle === true` selects `ExactOpticalModel`; opted-in Image Height and Object Height additionally select `ExactImageHeightFieldSpec` and `ExactObjectHeightFieldSpec`, respectively. False or omitted flags use RayOptics' `OpticalModel` and `FieldSpec`. Standalone exports inline the exact-spec implementation from `rayoptics_web_utils/optical_specs.py` only for models that opt in, while worker scripts import the definitions from the local wheel. Final vignetting setup calls `set_vig_with_ronchi_envelopes(...)`, which sizes against every Ronchi ruling's circular envelope and restores its binary bands before analysis. Exact models inject `set_vig_respecting_exact_pupil`, so a passing Object-NA unit boundary receives zero vignetting without RayOptics probing outside the requested angular pupil; other exact pupil modes delegate to native vignetting.
  *
  * ## Edge Cases / Error Handling
  *
@@ -20,25 +20,20 @@
  * - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
  */
 
-import type {
-  OpticalModel,
-  AsphericalPolynomialCoeffs,
-  ClearAperture,
-  EdgeAperture,
-} from "@/shared/lib/optical-model/model/opticalModel";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
+import {
+  imagePythonLines,
+  surfacePythonLines,
+} from "@/shared/lib/optical-model/operations/surfaceProperties";
+import { formattedMedium } from "@/shared/lib/optical-model/surface-properties/medium/medium.property";
 import { pythonExportApertureHelpers } from "./generated/pythonExportApertureHelpers";
 import { pythonExportExactSpecHelpers } from "./generated/pythonExportExactSpecHelpers";
-import {
-  builtInSpecialMaterial,
-  nonBuiltInSpecialMaterial,
-} from "@/shared/lib/optical-model/surface-properties/medium/specialMaterials";
 
 type PythonLine = string;
-type SurfaceMutationLine = PythonLine;
 
 type SurfaceBuildStep = {
   addSurfaceLine: PythonLine;
-  mutationLines: SurfaceMutationLine[];
+  mutationLines: PythonLine[];
 };
 type Surface = OpticalModel["surfaces"][number];
 
@@ -53,43 +48,6 @@ export interface PythonExportScriptSections {
 /** Returns whether a field explicitly selects the exact real-ray stack. */
 function usesExactRealRayStack(opticalModel: OpticalModel): boolean {
   return opticalModel.specs.field.isWideAngle === true;
-}
-
-function formattedMedium(
-  medium: string,
-  glassManufacturer: string,
-): { medium: string | number; glassManufacturer: string | number } {
-  const refractiveIdxForModalGlass = parseFloat(medium);
-  if (!Number.isNaN(refractiveIdxForModalGlass)) {
-    // model glass
-    const abbeNumber = parseFloat(glassManufacturer);
-
-    return {
-      medium: refractiveIdxForModalGlass,
-      glassManufacturer: !Number.isNaN(abbeNumber) ? `, ${abbeNumber}` : "",
-    };
-  }
-
-  if (glassManufacturer === "Custom") {
-    return {
-      medium: `user_defined_materials[${JSON.stringify(medium)}]`,
-      glassManufacturer: "",
-    };
-  }
-
-  // real medium or glass
-  return {
-    medium: nonBuiltInSpecialMaterial.get(medium) ?? JSON.stringify(medium),
-    glassManufacturer:
-      builtInSpecialMaterial.has(medium) ||
-      nonBuiltInSpecialMaterial.has(medium)
-        ? ""
-        : `, ${JSON.stringify(glassManufacturer)}`,
-  };
-}
-
-function formattedPolynomialCoeffs(coeffs: AsphericalPolynomialCoeffs) {
-  return JSON.stringify(coeffs);
 }
 
 function formatWavelengthSpec(opticalModel: OpticalModel): PythonLine {
@@ -141,197 +99,16 @@ function formatPupilSpec(opticalModel: OpticalModel): PythonLine {
   return `osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})`;
 }
 
-function formatDecenterAssignment(
-  targetExpr: string,
-  decenter: NonNullable<OpticalModel["image"]["decenter"]>,
-): PythonLine {
-  const {
-    coordinateSystemStrategy: posAndOrientation,
-    alpha,
-    beta,
-    gamma,
-    offsetX,
-    offsetY,
-  } = decenter;
-  return `${targetExpr}.decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
-}
-
-function formatAsphereAssignment(
-  targetExpr: string,
-  curvatureRadius: number,
-  aspherical: NonNullable<OpticalModel["surfaces"][number]["aspherical"]>,
-): PythonLine {
-  const { kind } = aspherical;
-
-  if (kind === "Conic") {
-    const { conicConstant } = aspherical;
-    return `${targetExpr}.profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
-  }
-
-  if (kind === "EvenAspherical") {
-    const { conicConstant, polynomialCoefficients } = aspherical;
-    const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-    return `${targetExpr}.profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
-  }
-
-  if (kind === "RadialPolynomial") {
-    const { conicConstant, polynomialCoefficients } = aspherical;
-    const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-    return `${targetExpr}.profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
-  }
-
-  if (kind === "XToroid") {
-    const {
-      toricSweepRadiusOfCurvature,
-      conicConstant,
-      polynomialCoefficients,
-    } = aspherical;
-    const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-    return `${targetExpr}.profile = XToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${toricSweepRadiusOfCurvature}, coefs=${coefsString})`;
-  }
-
-  const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } =
-    aspherical;
-  const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-  return `${targetExpr}.profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${toricSweepRadiusOfCurvature}, coefs=${coefsString})`;
-}
-
-function formatDiffractionGrating(
-  targetExpr: string,
-  grating: NonNullable<
-    NonNullable<
-      OpticalModel["surfaces"][number]["diffractiveElement"]
-    >["diffractionGrating"]
-  >,
-) {
-  const { lpmm, order } = grating;
-  return `${targetExpr}.phase_element = DiffractionGrating(grating_lpmm=${lpmm}, order=${order})`;
-}
-
-function formatCircularApertureAssignment(
-  targetExpr: string,
-  apertureKind: "clear_apertures" | "edge_apertures",
-  radius: number,
-  offsetX: number,
-  offsetY: number,
-): PythonLine {
-  const apertureClass =
-    offsetX === 0 && offsetY === 0 ? "Circular" : "OffsetCircular";
-  return `${targetExpr}.${apertureKind} = [${apertureClass}(radius=${radius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
-}
-
-function formatClearApertureAssignment(
-  targetExpr: string,
-  semiDiameter: number,
-  clearAperture: ClearAperture | undefined,
-): PythonLine | undefined {
-  const offsetX = clearAperture === undefined ? 0 : clearAperture.offsetX;
-  const offsetY = clearAperture === undefined ? 0 : clearAperture.offsetY;
-
-  if (clearAperture?.shape === "rectangular") {
-    return `${targetExpr}.clear_apertures = [OffsetRotatedRectangular(x_half_width=${clearAperture.xHalfWidth}, y_half_width=${clearAperture.yHalfWidth}, x_offset=${offsetX}, y_offset=${offsetY}, rotation=${clearAperture.rotation})]`;
-  }
-
-  if (semiDiameter <= 0) {
-    return undefined;
-  }
-
-  if (clearAperture?.shape === "annular") {
-    return `${targetExpr}.clear_apertures = [Annular(radius=${semiDiameter}, obstruction_radius=${clearAperture.obstructionRadius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
-  }
-
-  if (clearAperture?.shape === "ronchi") {
-    return `${targetExpr}.clear_apertures = [RonchiRuling(radius=${semiDiameter}, lpmm=${clearAperture.lpmm}, rotation=${clearAperture.rotation}, x_offset=${offsetX}, y_offset=${offsetY})]`;
-  }
-
-  return formatCircularApertureAssignment(
-    targetExpr,
-    "clear_apertures",
-    semiDiameter,
-    offsetX,
-    offsetY,
-  );
-}
-
-function formatEdgeApertureAssignment(
-  targetExpr: string,
-  edgeAperture: EdgeAperture,
-): PythonLine {
-  if (edgeAperture.shape === "rectangular") {
-    return `${targetExpr}.edge_apertures = [OffsetRotatedRectangular(x_half_width=${edgeAperture.xHalfWidth}, y_half_width=${edgeAperture.yHalfWidth}, x_offset=${edgeAperture.offsetX}, y_offset=${edgeAperture.offsetY}, rotation=${edgeAperture.rotation})]`;
-  }
-
-  return formatCircularApertureAssignment(
-    targetExpr,
-    "edge_apertures",
-    edgeAperture.radius,
-    edgeAperture.offsetX,
-    edgeAperture.offsetY,
-  );
-}
-
 function buildSurfaceStep(surface: Surface): SurfaceBuildStep {
-  const {
-    label,
-    curvatureRadius,
-    thickness,
-    medium,
-    manufacturer,
-    semiDiameter,
-    clear_aperture,
-    edge_aperture,
-    aspherical,
-    decenter,
-    diffractiveElement,
-  } = surface;
+  const { curvatureRadius, thickness, medium, manufacturer } = surface;
   const { medium: mediumOption, glassManufacturer } = formattedMedium(
     medium,
     manufacturer,
   );
-  const mutationLines: SurfaceMutationLine[] = [];
-  const currentSurfaceExpr = "sm.ifcs[sm.cur_surface]";
-
-  const clearApertureAssignment = formatClearApertureAssignment(
-    currentSurfaceExpr,
-    semiDiameter,
-    clear_aperture,
-  );
-  if (clearApertureAssignment !== undefined) {
-    mutationLines.push(clearApertureAssignment);
-  }
-
-  if (edge_aperture !== undefined) {
-    mutationLines.push(
-      formatEdgeApertureAssignment(currentSurfaceExpr, edge_aperture),
-    );
-  }
-
-  if (aspherical !== undefined) {
-    mutationLines.push(
-      formatAsphereAssignment(currentSurfaceExpr, curvatureRadius, aspherical),
-    );
-  }
-
-  if (decenter !== undefined) {
-    mutationLines.push(formatDecenterAssignment(currentSurfaceExpr, decenter));
-  }
-
-  if (diffractiveElement?.diffractionGrating !== undefined) {
-    mutationLines.push(
-      formatDiffractionGrating(
-        currentSurfaceExpr,
-        diffractiveElement.diffractionGrating,
-      ),
-    );
-  }
-
-  if (label === "Stop") {
-    mutationLines.push("sm.set_stop()");
-  }
 
   return {
     addSurfaceLine: `sm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}])`,
-    mutationLines,
+    mutationLines: surfacePythonLines(surface, "sm.ifcs[sm.cur_surface]"),
   };
 }
 
@@ -352,16 +129,7 @@ function buildObjectSetupLines(opticalModel: OpticalModel): PythonLine[] {
 }
 
 function buildImageSetupLines(opticalModel: OpticalModel): PythonLine[] {
-  const {
-    image: { curvatureRadius: imageCurvatureRadius, decenter: imageDecenter },
-  } = opticalModel;
-  const lines = [`sm.ifcs[-1].profile.r = ${imageCurvatureRadius}`];
-
-  if (imageDecenter !== undefined) {
-    lines.push(formatDecenterAssignment("sm.ifcs[-1]", imageDecenter));
-  }
-
-  return lines;
+  return imagePythonLines(opticalModel.image, "sm.ifcs[-1]");
 }
 
 function buildOpticalModelLines(opticalModel: OpticalModel): PythonLine[] {
@@ -477,7 +245,7 @@ d263teco = create_glass(d263teco_url, "rindexinfo")`;
  * - Emits `RonchiRuling(radius=<semiDiameter>, lpmm=<lpmm>, rotation=<rotation>, x_offset=<offsetX>, y_offset=<offsetY>)` for Ronchi clear apertures. Density and rotation remain independent of the surface semi-diameter.
  * - Emits `OffsetRotatedRectangular(x_half_width=<xHalfWidth>, y_half_width=<yHalfWidth>, x_offset=<offsetX>, y_offset=<offsetY>, rotation=<rotation>)` for rectangular clear apertures, independent of `semiDiameter`.
  * - Emits `sm.ifcs[sm.cur_surface].edge_apertures = [Circular(...)]` only when `edge_aperture` is explicitly set and centered; emits `OffsetCircular(...)` when the edge aperture has a nonzero offset; emits `OffsetRotatedRectangular(...)` for rectangular edge apertures.
- * - Surface-specific follow-up mutations are emitted after `sm.add_surface(...)`, in order, so multiple mutations may coexist on the same surface.
+ * - Surface-specific follow-up mutations are emitted after `sm.add_surface(...)` by each surface-property descriptor's `python.surface` hook, in `SURFACE_PROPERTIES` registry order (clear aperture, edge aperture, asphere, decenter, diffractive element, then the stop label), so multiple mutations may coexist on the same surface. The image plane is configured by the descriptors' `python.image` hooks (radius, then decenter).
  * - If `aspherical.kind === "Conic"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...)`.
  * - If `aspherical.kind === "EvenAspherical"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=..., coefs=[...])`.
  * - If `aspherical.kind === "RadialPolynomial"`, emits `sm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=..., cc=..., coefs=[...])`.
@@ -490,8 +258,8 @@ d263teco = create_glass(d263teco_url, "rindexinfo")`;
  * 8. If the image surface has `decenter`, emits `sm.ifcs[-1].decenter = DecenterData(...)`.
  * 9. Calls the selected model's final `opm.update_model()` before vignetting, so opted-in exact launches or native RayOptics launches are current before analysis. Native models call `set_vig_with_ronchi_envelopes(opm)`. Exact models inject `set_vig_respecting_exact_pupil`; Object NA checks the four radius-one rays and bisects inward only when an aperture blocks a boundary, while every other pupil mode delegates to RayOptics. The outer wrapper temporarily replaces each Ronchi mask with its offset circular envelope while the selected vignetting function finds pupil boundaries, then restores the original mask before returning; internal opaque bands therefore cannot collapse a field's sampled pupil.
  * - The object-side setup is isolated in its own builder phase so future object-gap mutations such as `sm.gaps[0].medium = ...` can be added without changing surface-step logic.
- * - The surface-step structure is intentionally extensible so future interface mutations such as `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)` can be appended alongside asphere and decenter lines for the same surface.
- * - Clear and edge aperture assignments are formatted through dedicated helpers. The clear-aperture helper accepts an optional aperture and defaults omitted offsets to `0`, while the edge-aperture helper requires a present edge aperture before reading its radius and offsets.
+ * - The surface step is registry-driven: a new surface property adds its statements through its own descriptor without changing this module.
+ * - Clear and edge aperture statements are formatted by the aperture descriptors. The clear-aperture statement is emitted even when `clear_aperture` is omitted (defaulting offsets to `0`) because a positive `semiDiameter` implies a centered circle; the edge-aperture statement is emitted only for a present edge aperture.
  */
 export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   return renderPythonBlock(buildOpticalModelLines(opticalModel));

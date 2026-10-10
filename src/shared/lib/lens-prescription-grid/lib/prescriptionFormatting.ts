@@ -13,6 +13,10 @@ import {
   scaleSurfaceValueRow,
 } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 
+import { reverseSurface } from "@/shared/lib/optical-model/operations/surfaceProperties";
+import { isNeutralDecenter } from "@/shared/lib/optical-model/surface-properties/decenter/decenter.property";
+import { OPTIONAL_SURFACE_PROPERTY_KEYS } from "@/shared/lib/optical-model/surface-properties/registry";
+
 export { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 
 /** One Object, physical-surface, or Image range-selector option. */
@@ -71,17 +75,10 @@ export function firstSurfaceNeedsReferenceSurface(
     (row): row is Extract<GridRow, { kind: "surface" }> =>
       row.kind === "surface",
   );
-  if (firstSurface?.decenter === undefined) {
-    return false;
-  }
-
-  return [
-    firstSurface.decenter.alpha,
-    firstSurface.decenter.beta,
-    firstSurface.decenter.gamma,
-    firstSurface.decenter.offsetX,
-    firstSurface.decenter.offsetY,
-  ].some((value) => value !== 0);
+  return (
+    firstSurface?.decenter !== undefined &&
+    !isNeutralDecenter(firstSurface.decenter)
+  );
 }
 
 /** Returns new rows with a flat air reference surface after Object, preserving the first surface semi-diameter. */
@@ -156,11 +153,6 @@ function selectorIndexForRow(rows: readonly GridRow[], row: GridRow): number {
     .filter((item) => item.kind === "surface").length;
 }
 
-function negateNumber(value: number): number {
-  const negated = -value;
-  return Object.is(negated, -0) ? 0 : negated;
-}
-
 function isMirrorMedium(medium: string): boolean {
   return medium.toUpperCase() === "REFL";
 }
@@ -193,6 +185,7 @@ function buildPropagationGapSurface(
   };
 }
 
+/** Recognizes a flat propagation-gap surface previously inserted after a mirror; any optional surface property (comment, aperture, asphere, decenter, diffractive element) marks it as user data that must be kept. */
 function isInsertedPropagationGapSurface(
   row: Extract<GridRow, { kind: "surface" }>,
   previousSurface: Extract<GridRow, { kind: "surface" }> | undefined,
@@ -206,10 +199,7 @@ function isInsertedPropagationGapSurface(
     !isMirrorMedium(row.medium) &&
     row.thickness > 0 &&
     row.semiDiameter === previousSurface.semiDiameter &&
-    row.comment === undefined &&
-    row.aspherical === undefined &&
-    row.decenter === undefined &&
-    row.diffractiveElement === undefined
+    OPTIONAL_SURFACE_PROPERTY_KEYS.every((key) => row[key] === undefined)
   );
 }
 
@@ -353,7 +343,7 @@ function setGap(
   });
 }
 
-/** Reverses an inclusive Object/physical-surface span while preserving surface-owned data, including comments, and moving gap-owned data with each propagation gap. */
+/** Reverses an inclusive Object/physical-surface span. Each moved surface is reversed through its registered properties (negated radius and asphere sag terms; other surface-owned data, including comments, preserved) while gap-owned data moves with each propagation gap. */
 export function reverseRows(
   rows: readonly GridRow[],
   { first, last }: ReverseRowsOptions,
@@ -372,10 +362,7 @@ export function reverseRows(
       Math.max(normalized.first, 1) - 1 + selectedSurfaceCount,
     )
     .reverse()
-    .map((row) => ({
-      ...row,
-      curvatureRadius: negateNumber(row.curvatureRadius),
-    }));
+    .map((row) => reverseSurface(row));
 
   let replacementIndex = 0;
   let currentSurfaceIndex = 0;

@@ -10,12 +10,8 @@ import {
 } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 import {
   collectSurfaceScalingNumericValues,
-  IMAGE_VALUE_SCALERS,
-  OBJECT_VALUE_SCALERS,
   OBJECT_DISTANCE_INFINITY_THRESHOLD as SURFACE_VALUE_SCALING_INFINITY_THRESHOLD,
   scaleSurfaceValueRow,
-  SURFACE_VALUE_SCALERS,
-  SURFACE_VALUE_SCALING_POLICY,
 } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { OBJECT_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
@@ -208,63 +204,7 @@ describe("prescriptionFormatting", () => {
     );
   });
 
-  it("keeps scaleable surface values and validation values in one central policy", () => {
-    expect(SURFACE_VALUE_SCALING_POLICY.object).toEqual({
-      distance: expect.any(Function),
-    });
-    expect(SURFACE_VALUE_SCALING_POLICY.image).toMatchObject({
-      curvatureRadius: expect.any(Function),
-      decenter: {
-        alpha: undefined,
-        beta: undefined,
-        gamma: undefined,
-        offsetX: expect.any(Function),
-        offsetY: expect.any(Function),
-      },
-    });
-    expect(SURFACE_VALUE_SCALING_POLICY.surface).toMatchObject({
-      curvatureRadius: expect.any(Function),
-      thickness: expect.any(Function),
-      semiDiameter: expect.any(Function),
-      clear_aperture: {
-        lpmm: undefined,
-        rotation: undefined,
-        offsetX: expect.any(Function),
-        offsetY: expect.any(Function),
-      },
-      diffractiveElement: {
-        diffractionGrating: {
-          lpmm: undefined,
-          order: undefined,
-        },
-      },
-    });
-  });
-
-  it("uses optical model keyed scaler maps for executable scale behavior", () => {
-    expect(Object.keys(OBJECT_VALUE_SCALERS)).toEqual(["distance"]);
-    expect(Object.keys(IMAGE_VALUE_SCALERS)).toEqual([
-      "curvatureRadius",
-      "decenter",
-    ]);
-    expect(Object.keys(SURFACE_VALUE_SCALERS)).toEqual([
-      "curvatureRadius",
-      "thickness",
-      "semiDiameter",
-      "clear_aperture",
-      "edge_aperture",
-      "aspherical",
-      "decenter",
-      "diffractiveElement",
-    ]);
-
-    expect(OBJECT_VALUE_SCALERS.distance(500, 2)).toBe(1000);
-    expect(SURFACE_VALUE_SCALERS.diffractiveElement).toEqual({
-      diffractionGrating: { lpmm: undefined, order: undefined },
-    });
-  });
-
-  it("scales a surface row from the centralized policy while preserving grating values", () => {
+  it("scales a surface row through the registry while preserving grating values", () => {
     const rows = surfacesToGridRows({
       ...baseSurfaces,
       surfaces: [
@@ -286,7 +226,7 @@ describe("prescriptionFormatting", () => {
     });
   });
 
-  it("collects validation numeric values from the centralized policy", () => {
+  it("collects validation numeric values from every registered property", () => {
     const rows = surfacesToGridRows({
       ...baseSurfaces,
       surfaces: [
@@ -1803,6 +1743,111 @@ describe("prescriptionFormatting", () => {
       medium: "F2",
       manufacturer: "Schott",
     });
+  });
+
+  it("keeps a propagation-gap-shaped surface that carries an aperture instead of merging it away", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: -20,
+          thickness: 0,
+          medium: "REFL",
+          manufacturer: "",
+          semiDiameter: 8,
+        },
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 7,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 8,
+          clear_aperture: { shape: "circular", offsetX: 1, offsetY: 0 },
+        },
+        {
+          label: "Stop",
+          curvatureRadius: 30,
+          thickness: 2,
+          medium: "F2",
+          manufacturer: "Schott",
+          semiDiameter: 9,
+        },
+      ],
+    });
+
+    const surfaces = surfaceRows(reverseRows(rows, { first: 0, last: 3 }));
+
+    expect(surfaces).toHaveLength(3);
+    expect(surfaces.map((row) => row.clear_aperture)).toContainEqual({
+      shape: "circular",
+      offsetX: 1,
+      offsetY: 0,
+    });
+  });
+
+  it("negates asphere sag terms when reversing surfaces while preserving conic constants", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 10,
+          thickness: 2,
+          medium: "N-BK7",
+          manufacturer: "Schott",
+          semiDiameter: 5,
+          aspherical: {
+            kind: "EvenAspherical",
+            conicConstant: -1,
+            polynomialCoefficients: [1e-4, 0, -2e-6],
+          },
+        },
+        {
+          label: "Default",
+          curvatureRadius: -12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: {
+            kind: "YToroid",
+            conicConstant: 0.5,
+            toricSweepRadiusOfCurvature: 40,
+            polynomialCoefficients: [3e-5],
+          },
+        },
+        {
+          label: "Default",
+          curvatureRadius: 15,
+          thickness: 4,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: { kind: "Conic", conicConstant: -0.5 },
+        },
+      ],
+    });
+
+    const surfaces = surfaceRows(reverseRows(rows, { first: 1, last: 3 }));
+
+    expect(surfaces.map((row) => row.aspherical)).toEqual([
+      { kind: "Conic", conicConstant: -0.5 },
+      {
+        kind: "YToroid",
+        conicConstant: 0.5,
+        toricSweepRadiusOfCurvature: -40,
+        polynomialCoefficients: [-3e-5],
+      },
+      {
+        kind: "EvenAspherical",
+        conicConstant: -1,
+        polynomialCoefficients: [-1e-4, 0, 2e-6],
+      },
+    ]);
   });
 
   it("uses the nearest non-mirror surface to restore the Object medium after a full mirror reversal", () => {
