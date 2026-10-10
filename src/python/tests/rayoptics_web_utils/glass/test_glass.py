@@ -403,18 +403,25 @@ class TestCatalogExportContract:
         assert result["P_gF"] == pytest.approx((1.851 - 1.831) / (1.831 - 1.801))
         assert result["P_Fd"] == pytest.approx((1.83 - 1.81) / (1.83 - 1.80))
 
-    def test_schott_sf6g05_missing_ng_uses_the_datasheet_partial_dispersion(
+    def test_every_exported_glass_has_all_indices_abbe_numbers_and_partial_dispersions(
         self,
     ) -> None:
-        from rayoptics_web_utils.glass.glass import get_glass_catalog_data
+        from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
 
-        # The Schott spreadsheet omits ng for SF6G05; its datasheet gives P_g,F = 0.6121.
-        assert pd.isna(
-            _vendor_catalogs()["Schott"].glass_data("SF6G05")["refractive indices"]["g"]
-        )
-        entry = get_glass_catalog_data("Schott")["SF6G05"]
-
-        assert entry["partialDispersions"]["P_gF"] == pytest.approx(0.6121, abs=5e-5)
+        # Zero is the unavailable-value sentinel, so every value must be a positive finite float.
+        for catalog_name, catalog in get_all_glass_catalogs_data().items():
+            for glass_name, entry in catalog.items():
+                values = {
+                    "refractiveIndexD": entry["refractiveIndexD"],
+                    "refractiveIndexE": entry["refractiveIndexE"],
+                    "abbeNumberD": entry["abbeNumberD"],
+                    "abbeNumberE": entry["abbeNumberE"],
+                    **entry["partialDispersions"],
+                }
+                for key, value in values.items():
+                    assert math.isfinite(value) and value > 0.0, (
+                        f"{catalog_name}/{glass_name}: {key}={value} unavailable"
+                    )
 
     def test_cdgm_entries_reproduce_catalog_nd_with_both_formulas(self) -> None:
         from rayoptics_web_utils.glass.glass import get_glass_catalog_data
