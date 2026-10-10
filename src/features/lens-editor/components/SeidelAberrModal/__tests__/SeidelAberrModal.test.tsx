@@ -164,11 +164,11 @@ describe("SeidelAberrModal", () => {
   it("clicking Wavefront tab shows primary chromatic wavefront rows", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Wavefront" }));
-    expect(screen.getByRole("row", { name: /Axial Color/ })).toHaveTextContent(
-      "0.910000",
-    );
     expect(
-      screen.getByRole("row", { name: /Lateral Color/ }),
+      screen.getByRole("row", { name: /Primary Axial Chromatic Aberr\./ }),
+    ).toHaveTextContent("0.910000");
+    expect(
+      screen.getByRole("row", { name: /Primary Lateral Chromatic Aberr\./ }),
     ).toHaveTextContent("-0.580000");
   });
 

@@ -8,7 +8,7 @@
  * - Select `Sasian Triplet`.
  * - Click `Apply`, confirm `Load`, and wait for navigation back to `/`.
  * - Open the Prescription tab after the automatic computation has finished and the route has returned to `/`.
- * - Open the `3rd Order Seidel Aberrations` modal and compare table values in each tab, including the primary chromatic `C-I`/`C-II` columns and Axial/Lateral Color wavefront rows, against reference data.
+ * - Open the `3rd Order Seidel Aberrations` modal and compare table values in each tab, including the primary chromatic `C-I`/`C-II` columns and Primary Axial/Lateral Chromatic Aberr. wavefront rows, against reference data.
  */
 import { test, expect, type Locator } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
@@ -114,7 +114,7 @@ test("Sasian Triplet Seidel aberration modal — all tabs", async ({
     timeout: 5_000,
   });
 
-  // Seidel terms, then primary chromatic W020 (Axial Color) and W111 (Lateral Color)
+  // Seidel terms, then primary chromatic W020 (Primary Axial Chromatic Aberr.) and W111 (Primary Lateral Chromatic Aberr.)
   const wavefront = [
     2.334457, -0.776108, -9.218154, 10.83477, -3.91165, 0.911325, -0.584787,
   ];

@@ -34,8 +34,8 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
   W222: "Astigmatism",
   W220: "Field Curvature",
   W311: "Distortion",
-  W020: "Axial Color",
-  W111: "Lateral Color",
+  W020: "Primary Axial Chromatic Aberr.",
+  W111: "Primary Lateral Chromatic Aberr.",
   TCV: "Tangential Field Curvature (TCV)",
   SCV: "Sagittal Field Curvature (SCV)",
   PCV: "Petzval Curvature (PCV)",
@@ -49,7 +49,7 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
  *
  * - Table data for all four tabs is derived with `useMemo` to avoid recomputing on unrelated renders.
  * - Surface by Surface columns follow `surfaceBySurface.aberrTypes`, so the primary chromatic coefficients `C-I` and `C-II` appear after `S-I`..`S-V`.
- * - Wavefront rows include the primary chromatic terms `W020` ("Axial Color") and `W111` ("Lateral Color") after the Seidel terms.
+ * - Wavefront rows include the primary chromatic terms `W020` ("Primary Axial Chromatic Aberr.") and `W111` ("Primary Lateral Chromatic Aberr.") after the Seidel terms.
  * - A note explains that the chromatic terms use the first and last wavelengths and need at least 3 wavelengths.
  * - Aberration type keys (e.g. `"TSA"`, `"W040"`) are mapped to human-readable labels via `ABERRATION_TYPE_TO_LABEL`.
  * - Field Curvature tab includes a Curvature Radius column (reciprocal of value; `"Infinite"` when value is 0).
@@ -181,10 +181,10 @@ export function SeidelAberrModal({
         the scope of this approximation.
       </Paragraph>
       <Paragraph className="mb-4">
-        Primary chromatic aberrations (C-I, C-II, Axial Color and Lateral Color)
-        use the refractive index difference between the first and last
-        wavelengths in the list, and are zero unless at least 3 wavelengths are
-        defined.
+        Primary chromatic aberrations (C-I, C-II, Primary Axial Chromatic Aberr.
+        and Primary Lateral Chromatic Aberr.) use the refractive index
+        difference between the first and last wavelengths in the list, and are
+        zero unless at least 3 wavelengths are defined.
       </Paragraph>
       <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
     </Modal>
