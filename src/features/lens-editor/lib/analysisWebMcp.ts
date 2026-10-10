@@ -22,7 +22,7 @@ import {
   NUM_NOLL_TERMS,
   zernikeTermsForOrdering,
 } from "@/features/lens-editor/lib/zernikeData";
-import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
 import {
   assertWebMcpInput,
   assertWebMcpNotCancelled,

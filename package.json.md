@@ -4,6 +4,13 @@
 
 The application directly depends on `lru-cache` for its bounded, app-lifetime in-memory analysis-result cache.
 
+The application also depends on the exactly pinned `typebox` 1.x package (not
+`@sinclair/typebox` 0.x). Its builders define the optical-model JSON Schemas
+once; TypeScript types are inferred from them with `Type.Static`, and the same
+schemas are compiled by AJV at the import and WebMCP boundaries. `typebox` 1.x
+ships ECMAScript modules only, so `jest.config.ts` transpiles its `.mjs` build
+with ts-jest.
+
 ## Build behavior
 
 `npm run build` runs the static Next.js export and then executes `postbuild`. Post-build processing runs in this order:

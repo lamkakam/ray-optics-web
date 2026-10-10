@@ -1,206 +1,45 @@
 /**
- * Core sequential optical-model contracts. Across the model, curvature radius zero
- * means a flat surface and medium `REFL` denotes reflection.
+ * Core sequential optical-model contracts, inferred from the TypeBox schemas so
+ * the types and the import-boundary validators cannot drift. Across the model,
+ * curvature radius zero means a flat surface and medium `REFL` denotes reflection.
+ * This module only re-exports types, so importing it adds no runtime code.
  */
-import type { SetAutoApertureFlag } from "@/shared/lib/optical-model/model/apertureFlag";
-export type { SetAutoApertureFlag };
+import type Type from "typebox";
+import type {
+  lensPrescriptionSchema,
+  opticalModelSchema,
+  surfaceSchema,
+} from "@/shared/lib/optical-model/model/opticalModelSchema";
 
-/** Supported physical pupil definitions; cross-space combinations are invalid. */
-export type PupilSpec =
-  | { space: "object"; type: "epd" | "NA"; value: number }
-  | { space: "image"; type: "f/#"; value: number };
+export type { SetAutoApertureFlag } from "@/shared/lib/optical-model/model/apertureFlag";
+export type {
+  FieldSpec,
+  OpticalSpecs,
+  PupilSpec,
+} from "@/shared/lib/optical-model/specs/opticalSpecsSchema";
+export type {
+  AnnularAperture,
+  ClearAperture,
+  EdgeAperture,
+  RectangularAperture,
+  RonchiRulingAperture,
+} from "@/shared/lib/optical-model/surface-properties/aperture/aperture.schema";
+export type {
+  AsphericalConfig,
+  AsphericalPolynomialCoeffs,
+  AsphericalType,
+} from "@/shared/lib/optical-model/surface-properties/aspherical/aspherical.schema";
+export type { DecenterConfig } from "@/shared/lib/optical-model/surface-properties/decenter/decenter.schema";
+export type {
+  DiffractionGrating,
+  DiffractiveElement,
+} from "@/shared/lib/optical-model/surface-properties/diffractive-element/diffractiveElement.schema";
 
-/** Supported object- or image-space field coordinates; image-space angle is invalid. */
-type FieldCoordinates =
-  | {
-      space: "object";
-      type: "angle" | "height";
-    }
-  | {
-      space: "image";
-      type: "height";
-    };
-
-/** Relative samples require a physical maximum; absolute samples are already physical and forbid one. */
-type FieldSampling =
-  | {
-      isRelative: true;
-      maxField: number;
-    }
-  | {
-      isRelative: false;
-      maxField?: never;
-    };
-
-/** Supported physical field definition with strictly discriminated relative or absolute samples and optional exact wide-angle handling. */
-export type FieldSpec = FieldCoordinates &
-  FieldSampling & {
-    fields: number[];
-    isWideAngle?: boolean;
-  };
-
-/** Optical system specifications using only physically resolved combinations. */
-export interface OpticalSpecs {
-  /** Object EPD, exact Object NA, or geometric Image F/#. */
-  pupil: PupilSpec;
-  /** Object height/angle or exact real Image Height samples. */
-  field: FieldSpec;
-  /** Wavelength/weight pairs and their zero-based reference index. */
-  wavelengths: {
-    weights: [number, number][]; // [wavelength in nm, weight][]
-    referenceIndex: number;
-  };
-}
-
-/** Surface orientation and signed positional offset. */
-export type DecenterConfig = {
-  coordinateSystemStrategy: "bend" | "dec and return" | "decenter" | "reverse";
-  alpha: number;
-  beta: number;
-  gamma: number;
-  offsetX: number;
-  offsetY: number;
-};
-
-/** Surface grating density and diffraction order. */
-export type DiffractionGrating = {
-  lpmm: number;
-  order: number;
-};
-
-type BaseAperture = {
-  offsetX: number;
-  offsetY: number;
-};
-
-/** Annular aperture whose outer radius comes from the surface semi-diameter. */
-export type AnnularAperture = {
-  shape: "annular";
-  obstructionRadius: number;
-};
-
-/** Rotated rectangular aperture dimensions. */
-export type RectangularAperture = {
-  shape: "rectangular";
-  xHalfWidth: number;
-  yHalfWidth: number;
-  rotation: number;
-};
-
-/** Binary Ronchi ruling whose circular outer radius comes from the surface semi-diameter. */
-export type RonchiRulingAperture = {
-  shape: "ronchi";
-  /** Line-pair density in cycles per millimetre. */
-  lpmm: number;
-  /** In-plane rotation in degrees; zero produces vertical lines. */
-  rotation: number;
-};
-
-/** Circular, annular, rectangular, or Ronchi clear aperture with signed offsets. */
-export type ClearAperture = (
-  | {
-      shape: "circular";
-    }
-  | AnnularAperture
-  | RectangularAperture
-  | RonchiRulingAperture
-) &
-  BaseAperture;
-
-/** Explicit circular or rectangular edge aperture; omission means follow the clear aperture. */
-export type EdgeAperture = (
-  | {
-      shape: "circular";
-      radius: number;
-    }
-  | RectangularAperture
-) &
-  BaseAperture;
-
-/** At most ten polynomial coefficients for coefficient-bearing aspheres. */
-export type AsphericalPolynomialCoeffs = number[];
-
-type AsphericalConfigMap = {
-  Conic: { conicConstant: number };
-  // length <= 10
-  EvenAspherical: {
-    conicConstant: number;
-    polynomialCoefficients: AsphericalPolynomialCoeffs;
-  };
-  RadialPolynomial: {
-    conicConstant: number;
-    polynomialCoefficients: AsphericalPolynomialCoeffs;
-  };
-  XToroid: {
-    toricSweepRadiusOfCurvature: number;
-    conicConstant: number;
-    polynomialCoefficients: AsphericalPolynomialCoeffs;
-  };
-  YToroid: {
-    toricSweepRadiusOfCurvature: number;
-    conicConstant: number;
-    polynomialCoefficients: AsphericalPolynomialCoeffs;
-  };
-};
-
-type AsphericalConfigConstructor<T extends keyof AsphericalConfigMap> = {
-  [K in keyof AsphericalConfigMap]: { kind: K } & AsphericalConfigMap[K];
-}[T];
-
-/** Discriminated conic, polynomial, or toroidal asphere configuration. */
-type AsphericalConfig =
-  | AsphericalConfigConstructor<"Conic">
-  | AsphericalConfigConstructor<"EvenAspherical">
-  | AsphericalConfigConstructor<"RadialPolynomial">
-  | AsphericalConfigConstructor<"XToroid">
-  | AsphericalConfigConstructor<"YToroid">;
-
-/** Supported aspherical configuration discriminators. */
-export type AsphericalType = AsphericalConfig["kind"];
-
-/** Represents a single optical surface in the sequential model, including an optional user-authored comment retained only by the web application. */
-export interface Surface {
-  label: "Default" | "Stop";
-  /** Optional single-line, untrimmed annotation; omitted comments remain `undefined`. */
-  comment?: string;
-  curvatureRadius: number; // 0 means flat (infinite radius).
-  thickness: number;
-  medium: string; // can be "air" or "REFL"
-  /** Empty when the medium is air or reflective. */
-  manufacturer: string;
-  semiDiameter: number;
-  /** Clear aperture; circular, annular, and Ronchi outer radii come from `semiDiameter`. */
-  clear_aperture?: ClearAperture;
-  /** Explicit edge aperture, or `undefined` to follow the clear aperture. */
-  edge_aperture?: EdgeAperture;
-  /** Optional discriminated aspherical surface configuration. */
-  aspherical?: AsphericalConfig;
-  decenter?: DecenterConfig;
-  /** Optional diffractive-element wrapper; an empty wrapper is a valid no-op. */
-  diffractiveElement?: {
-    /** Optional ruled diffraction grating applied as the surface phase element. */
-    diffractionGrating?: DiffractionGrating;
-  };
-}
+/** A single optical surface in the sequential model, including an optional user-authored comment retained only by the web application. */
+export type Surface = Type.Static<typeof surfaceSchema>;
 
 /** Object plane, ordered physical surfaces, and image plane. */
-export interface Surfaces {
-  /** Object-space gap and non-reflective medium. */
-  object: {
-    distance: number;
-    medium: Exclude<string, "REFL" | "refl">;
-    manufacturer: string;
-  };
-  image: {
-    curvatureRadius: number; // 0 means flat (infinite radius)
-    decenter?: DecenterConfig;
-  };
-  surfaces: Surface[];
-}
+export type Surfaces = Type.Static<typeof lensPrescriptionSchema>;
 
-/** Complete sequential optical model validated at upload boundaries by `importSchema.ts`. */
-export interface OpticalModel extends Surfaces {
-  /** Whether RayOptics recomputes semi-diameters or preserves manual values. */
-  setAutoAperture: SetAutoApertureFlag;
-  specs: OpticalSpecs;
-}
+/** Complete sequential optical model validated at upload boundaries by `schema/validators.ts`. */
+export type OpticalModel = Type.Static<typeof opticalModelSchema>;

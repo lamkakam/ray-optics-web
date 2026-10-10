@@ -1,4 +1,4 @@
-import { validateLensPrescription } from "@/shared/lib/optical-model/schema/prescriptionSchema";
+import { validateLensPrescription } from "@/shared/lib/optical-model/schema/validators";
 
 const prescription = {
   object: { distance: 1e10, medium: "air", manufacturer: "" },

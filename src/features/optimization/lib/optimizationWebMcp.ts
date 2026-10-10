@@ -6,7 +6,7 @@ import {
   assertWebMcpNotCancelled,
 } from "@/shared/lib/webMcpValidation";
 import { WebMcpToolError } from "@/shared/lib/webMcpErrors";
-import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/prescriptionSchema";
+import { createPrescriptionAjv } from "@/shared/lib/optical-model/schema/ajv";
 import type { OptimizationState } from "@/features/optimization/stores/optimizationStore";
 import type {
   OptimizationProgressEntry,

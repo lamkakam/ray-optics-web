@@ -4,7 +4,7 @@
 import type React from "react";
 import { useRef, useState } from "react";
 import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
-import { validateImportedLensData } from "@/shared/lib/optical-model/schema/importSchema";
+import { validateImportedLensData } from "@/shared/lib/optical-model/schema/validators";
 import {
   formatMissingGlassMessage,
   formatUnknownMediumIssues,
