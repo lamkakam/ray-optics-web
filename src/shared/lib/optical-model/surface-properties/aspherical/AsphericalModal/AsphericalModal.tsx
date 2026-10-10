@@ -9,7 +9,7 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
-import { ASPHERICAL_TYPE_OPTIONS } from "@/shared/lib/lens-prescription-grid/displayLabels";
+import { ASPHERICAL_TYPE_OPTIONS } from "@/shared/lib/optical-model/surface-properties/aspherical/aspherical.labels";
 import type { AsphericalType } from "@/shared/lib/optical-model/model/opticalModel";
 
 const COEFFICIENT_NUM = 10;
@@ -249,7 +249,7 @@ const contentMap: {
  * @remarks
  * ## Key Behaviors
  *
- * - Uses `ASPHERICAL_TYPE_OPTIONS` from `shared/lib/lens-prescription-grid/displayLabels.ts` for UI-facing labels; the container maps confirmed values to the domain `Surface["aspherical"]` union.
+ * - Uses `ASPHERICAL_TYPE_OPTIONS` from `aspherical.labels.ts` (derived from the asphere variant registry) for UI-facing labels; `aspherical.ui.tsx` maps confirmed values to the domain `Surface["aspherical"]` union.
  * - Coefficient inputs are shown for every non-conic type: `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
  * - The toroid sweep radius input is shown only for `"XToroid"` and `"YToroid"`.
  * - On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conic type produces an empty coefficients array.

@@ -258,7 +258,7 @@ describe("LensPrescriptionContainer", () => {
     }
 
     act(() => {
-      store.getState().openApertureModal(surfaceRow.id);
+      store.getState().openPropertyModal("aperture", surfaceRow.id);
     });
 
     await userEvent.selectOptions(
@@ -310,7 +310,7 @@ describe("LensPrescriptionContainer", () => {
 
     renderLPC(store);
     act(() => {
-      store.getState().openApertureModal(surfaceRow.id);
+      store.getState().openPropertyModal("aperture", surfaceRow.id);
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
@@ -351,7 +351,7 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openApertureModal(surfaceRow.id);
+      store.getState().openPropertyModal("aperture", surfaceRow.id);
     });
 
     expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue(
@@ -381,7 +381,7 @@ describe("LensPrescriptionContainer", () => {
 
     act(() => {
       const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
-      store.getState().openDecenterModal(rowId);
+      store.getState().openPropertyModal("decenter", rowId);
     });
 
     const dialog = screen.getByRole("dialog");
@@ -394,11 +394,11 @@ describe("LensPrescriptionContainer", () => {
 
     act(() => {
       const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
-      store.getState().openDecenterModal(rowId);
+      store.getState().openPropertyModal("decenter", rowId);
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(store.getState().decenterModal.open).toBe(false);
+    expect(store.getState().propertyModal.open).toBe(false);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -407,11 +407,11 @@ describe("LensPrescriptionContainer", () => {
     const surfaceRow = store.getState().rows.find((r) => r.kind === "surface")!;
 
     act(() => {
-      store.getState().openDecenterModal(surfaceRow.id);
+      store.getState().openPropertyModal("decenter", surfaceRow.id);
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
-    expect(store.getState().decenterModal.open).toBe(false);
+    expect(store.getState().propertyModal.open).toBe(false);
     const updatedRow = store
       .getState()
       .rows.find((r) => r.id === surfaceRow.id);
@@ -436,13 +436,13 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openDecenterModal(rowId);
+      store.getState().openPropertyModal("decenter", rowId);
     });
 
     await userEvent.click(
       screen.getByRole("button", { name: "Remove Decenter" }),
     );
-    expect(store.getState().decenterModal.open).toBe(false);
+    expect(store.getState().propertyModal.open).toBe(false);
     const updatedRow = store.getState().rows.find((r) => r.id === rowId);
     expect(
       updatedRow?.kind === "surface" && updatedRow.decenter,
@@ -454,7 +454,7 @@ describe("LensPrescriptionContainer", () => {
     const { store } = renderLPC();
 
     act(() => {
-      store.getState().openDecenterModal(IMAGE_ROW_ID);
+      store.getState().openPropertyModal("decenter", IMAGE_ROW_ID);
     });
 
     const dialog = screen.getByRole("dialog");
@@ -477,7 +477,7 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openDecenterModal(IMAGE_ROW_ID);
+      store.getState().openPropertyModal("decenter", IMAGE_ROW_ID);
     });
 
     // alpha field should be pre-filled with 1.5
@@ -490,11 +490,11 @@ describe("LensPrescriptionContainer", () => {
     const { store } = renderLPC();
 
     act(() => {
-      store.getState().openDecenterModal(IMAGE_ROW_ID);
+      store.getState().openPropertyModal("decenter", IMAGE_ROW_ID);
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
-    expect(store.getState().decenterModal.open).toBe(false);
+    expect(store.getState().propertyModal.open).toBe(false);
     const imageRow = store.getState().rows.find((r) => r.kind === "image");
     expect(imageRow?.kind === "image" && imageRow.decenter).toBeDefined();
   });
@@ -648,13 +648,13 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openDecenterModal(IMAGE_ROW_ID);
+      store.getState().openPropertyModal("decenter", IMAGE_ROW_ID);
     });
 
     await userEvent.click(
       screen.getByRole("button", { name: "Remove Decenter" }),
     );
-    expect(store.getState().decenterModal.open).toBe(false);
+    expect(store.getState().propertyModal.open).toBe(false);
     const imageRow = store.getState().rows.find((r) => r.kind === "image");
     expect(imageRow?.kind === "image" && imageRow.decenter).toBeUndefined();
   });
@@ -675,7 +675,7 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openAsphericalModal(rowId);
+      store.getState().openPropertyModal("aspherical", rowId);
     });
 
     expect(screen.getByLabelText("Type")).toHaveValue("RadialPolynomial");
@@ -701,7 +701,7 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openAsphericalModal(rowId);
+      store.getState().openPropertyModal("aspherical", rowId);
     });
 
     expect(screen.getByLabelText("Type")).toHaveValue("XToroid");
@@ -717,7 +717,7 @@ describe("LensPrescriptionContainer", () => {
       .rows.find((row) => row.kind === "surface")!.id;
 
     act(() => {
-      store.getState().openAsphericalModal(rowId);
+      store.getState().openPropertyModal("aspherical", rowId);
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Type"), "XToroid");
@@ -754,7 +754,7 @@ describe("LensPrescriptionContainer", () => {
       .rows.find((row) => row.kind === "surface")!.id;
 
     act(() => {
-      store.getState().openAsphericalModal(rowId);
+      store.getState().openPropertyModal("aspherical", rowId);
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Type"), "YToroid");
@@ -811,7 +811,7 @@ describe("LensPrescriptionContainer", () => {
         .getState()
         .rows.find((row) => row.kind === "surface")!.id;
 
-      act(() => store.getState().openAsphericalModal(rowId));
+      act(() => store.getState().openPropertyModal("aspherical", rowId));
       await userEvent.selectOptions(screen.getByLabelText("Type"), type);
       await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
@@ -827,7 +827,7 @@ describe("LensPrescriptionContainer", () => {
 
     act(() => {
       const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
-      store.getState().openDiffractionGratingModal(rowId);
+      store.getState().openPropertyModal("diffractiveElement", rowId);
     });
 
     const dialog = screen.getByRole("dialog");
@@ -850,7 +850,7 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openDiffractionGratingModal(surfaceRow.id);
+      store.getState().openPropertyModal("diffractiveElement", surfaceRow.id);
     });
 
     expect(screen.getByRole("textbox", { name: "lp/mm" })).toHaveValue("1200");
@@ -862,12 +862,12 @@ describe("LensPrescriptionContainer", () => {
     const surfaceRow = store.getState().rows.find((r) => r.kind === "surface")!;
 
     act(() => {
-      store.getState().openDiffractionGratingModal(surfaceRow.id);
+      store.getState().openPropertyModal("diffractiveElement", surfaceRow.id);
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(store.getState().diffractionGratingModal.open).toBe(false);
+    expect(store.getState().propertyModal.open).toBe(false);
     const updatedRow = store
       .getState()
       .rows.find((r) => r.id === surfaceRow.id);
@@ -891,12 +891,12 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     act(() => {
-      store.getState().openDiffractionGratingModal(rowId);
+      store.getState().openPropertyModal("diffractiveElement", rowId);
     });
 
     await userEvent.click(screen.getByRole("button", { name: "Remove" }));
 
-    expect(store.getState().diffractionGratingModal.open).toBe(false);
+    expect(store.getState().propertyModal.open).toBe(false);
     const updatedRow = store.getState().rows.find((r) => r.id === rowId);
     expect(
       updatedRow?.kind === "surface" && updatedRow.diffractiveElement,
@@ -1361,7 +1361,7 @@ describe("LensPrescriptionContainer", () => {
 
     await userEvent.click(toggle);
     act(() => {
-      store.getState().openApertureModal(surfaceRow.id);
+      store.getState().openPropertyModal("aperture", surfaceRow.id);
     });
     await userEvent.selectOptions(
       screen.getByLabelText("Clear Aperture Shape"),

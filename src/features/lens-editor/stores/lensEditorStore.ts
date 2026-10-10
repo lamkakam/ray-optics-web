@@ -11,7 +11,7 @@
  * - Optimization Apply and Focusing may pass `optimizationSyncPolicy: "preserveOptimizationModes"` because those prescription updates originate from Optimization-compatible workflows and should not clear Optimization prescription modes.
  * - The default object row is `{ objectDistance: OBJECT_DISTANCE_INFINITY_THRESHOLD, medium: "air", manufacturer: "" }`, currently `1e10`.
  * - New rows inserted by `addRowAfter` are seeded with `generateRowId()` and default surface values: flat (`curvatureRadius: 0`), zero thickness, `"air"` medium, `semiDiameter: 1`.
- * - Modal `rowId` is reset to `""` on close.
+ * - Modal `rowId` is reset to `""` on close. Aperture, asphere, decenter, and diffraction-grating modals share one `propertyModal`, so at most one of them is open; the medium picker keeps its own `mediumModal` because its draft survives route changes.
  * - `pendingMediumSelection` persists unconfirmed catalog-glass choices across route changes while the root store provider remains mounted.
  * - `activeBottomDrawerTabId` and `bottomDrawerHeight` are feature-owned UI state. They persist as long as the root store provider remains mounted.
  * - `bottomDrawerHeight` is persistence-only state for route restoration; `BottomDrawer` still owns live drag state locally to avoid store-driven re-renders on every pointer move.
@@ -28,6 +28,7 @@
  */
 import type { StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
 import {
   OBJECT_ROW_ID,
   IMAGE_ROW_ID,
@@ -40,6 +41,20 @@ interface ModalState {
   open: boolean;
   rowId: string;
 }
+
+/** Modal-backed surface properties whose modals are tracked by `propertyModal`; the medium picker keeps its own draft-aware state. */
+export type PropertyModalKey = Exclude<SurfacePropertyUiKey, "medium">;
+
+/** Open property modal with its row and key, or the closed state. */
+type PropertyModalState =
+  | { open: true; rowId: string; key: PropertyModalKey }
+  | { open: false; rowId: ""; key: undefined };
+
+const CLOSED_PROPERTY_MODAL: PropertyModalState = {
+  open: false,
+  rowId: "",
+  key: undefined,
+};
 
 interface PendingMediumSelection {
   rowId: string;
@@ -76,14 +91,8 @@ export interface LensEditorState {
   mediumModal: ModalState;
   /** Unconfirmed medium selection, or `undefined` when no draft exists. */
   pendingMediumSelection: PendingMediumSelection | undefined;
-  /** Aspherical-coefficients modal state. Defaults to closed with an empty row ID. */
-  asphericalModal: ModalState;
-  /** Surface-decenter modal state. Defaults to closed with an empty row ID. */
-  decenterModal: ModalState;
-  /** Diffraction-grating modal state. Defaults to closed with an empty row ID. */
-  diffractionGratingModal: ModalState;
-  /** Surface-aperture modal state. Defaults to closed with an empty row ID. */
-  apertureModal: ModalState;
+  /** The open aperture, asphere, decenter, or diffraction-grating modal and its row. Defaults to closed with an empty row ID and no key; at most one is open. */
+  propertyModal: PropertyModalState;
   /** Last successfully submitted optical-model snapshot, initially `undefined`. */
   committedOpticalModel: OpticalModel | undefined;
 
@@ -123,22 +132,10 @@ export interface LensEditorState {
   ) => void;
   /** Closes the medium picker, resets its row ID, and discards the pending draft. */
   closeMediumModal: () => void;
-  /** Opens the aspherical-coefficients modal for a row. */
-  openAsphericalModal: (rowId: string) => void;
-  /** Closes the aspherical-coefficients modal and resets its row ID. */
-  closeAsphericalModal: () => void;
-  /** Opens the surface-decenter modal for a row. */
-  openDecenterModal: (rowId: string) => void;
-  /** Closes the surface-decenter modal and resets its row ID. */
-  closeDecenterModal: () => void;
-  /** Opens the diffraction-grating modal for a row. */
-  openDiffractionGratingModal: (rowId: string) => void;
-  /** Closes the diffraction-grating modal and resets its row ID. */
-  closeDiffractionGratingModal: () => void;
-  /** Opens the surface-aperture modal for a row. */
-  openApertureModal: (rowId: string) => void;
-  /** Closes the surface-aperture modal and resets its row ID. */
-  closeApertureModal: () => void;
+  /** Opens one modal-backed surface property's modal for `rowId`, replacing any other open property modal. */
+  openPropertyModal: (key: PropertyModalKey, rowId: string) => void;
+  /** Closes the open surface-property modal and resets its row ID and key. */
+  closePropertyModal: () => void;
   /** Stores the last successfully submitted optical-model snapshot for analysis consumers. */
   setCommittedOpticalModel: (model: OpticalModel) => void;
 }
@@ -184,10 +181,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (
   bottomDrawerHeight: undefined,
   mediumModal: { open: false, rowId: "" },
   pendingMediumSelection: undefined,
-  asphericalModal: { open: false, rowId: "" },
-  decenterModal: { open: false, rowId: "" },
-  diffractionGratingModal: { open: false, rowId: "" },
-  apertureModal: { open: false, rowId: "" },
+  propertyModal: CLOSED_PROPERTY_MODAL,
   committedOpticalModel: undefined,
 
   setRows: (rows, options) =>
@@ -340,25 +334,10 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (
       pendingMediumSelection: undefined,
     }),
 
-  openAsphericalModal: (rowId) =>
-    set({ asphericalModal: { open: true, rowId } }),
+  openPropertyModal: (key, rowId) =>
+    set({ propertyModal: { open: true, rowId, key } }),
 
-  closeAsphericalModal: () =>
-    set({ asphericalModal: { open: false, rowId: "" } }),
-
-  openDecenterModal: (rowId) => set({ decenterModal: { open: true, rowId } }),
-
-  closeDecenterModal: () => set({ decenterModal: { open: false, rowId: "" } }),
-
-  openDiffractionGratingModal: (rowId) =>
-    set({ diffractionGratingModal: { open: true, rowId } }),
-
-  closeDiffractionGratingModal: () =>
-    set({ diffractionGratingModal: { open: false, rowId: "" } }),
-
-  openApertureModal: (rowId) => set({ apertureModal: { open: true, rowId } }),
-
-  closeApertureModal: () => set({ apertureModal: { open: false, rowId: "" } }),
+  closePropertyModal: () => set({ propertyModal: CLOSED_PROPERTY_MODAL }),
 
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
 });

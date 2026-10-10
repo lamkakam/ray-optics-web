@@ -1,18 +1,18 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  ApertureCell,
-  AsphericalCell,
-  DecenterCell,
-  DiffractionGratingCell,
-  MediumCell,
-  formatApertureLabel,
-} from "@/shared/lib/lens-prescription-grid";
+import { SurfacePropertyCell } from "@/shared/lib/lens-prescription-grid";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type {
   ClearAperture,
   DecenterConfig,
   EdgeAperture,
+  Surface,
 } from "@/shared/lib/optical-model/model/opticalModel";
+import { formatApertureLabel } from "@/shared/lib/optical-model/surface-properties/aperture/aperture.ui";
+import {
+  SURFACE_PROPERTY_UIS,
+  type SurfacePropertyUiKey,
+} from "@/shared/lib/optical-model/surface-properties/registry.ui";
 
 const baseDecenter = {
   alpha: 0,
@@ -21,6 +21,37 @@ const baseDecenter = {
   offsetX: 0,
   offsetY: 0,
 } satisfies Omit<DecenterConfig, "coordinateSystemStrategy">;
+
+function surfaceRow(values: Partial<Surface> = {}): GridRow {
+  return {
+    id: "row-surface-test",
+    kind: "surface",
+    label: "Default",
+    curvatureRadius: 0,
+    thickness: 0,
+    medium: "air",
+    manufacturer: "",
+    semiDiameter: 1,
+    ...values,
+  };
+}
+
+/** Renders the shared cell exactly as the property's grid column does. */
+function propertyCell(
+  key: SurfacePropertyUiKey,
+  row: GridRow,
+  onOpenModal: () => void = () => undefined,
+) {
+  const ui = SURFACE_PROPERTY_UIS[key];
+  return (
+    <SurfacePropertyCell
+      label={ui.formatLabel(row)}
+      ariaLabel={ui.ariaLabel}
+      tooltipText={ui.editTooltip}
+      onOpenModal={onOpenModal}
+    />
+  );
+}
 
 describe("LensPrescriptionGridCells", () => {
   it("formats aperture labels", () => {
@@ -146,14 +177,20 @@ describe("LensPrescriptionGridCells", () => {
     ).toBe("Ronchi 12.5 lp/mm, rot 22°, offset (-1, 2)");
   });
 
+  it("renders medium labels and opens the modal", async () => {
+    const onOpenModal = jest.fn();
+    render(propertyCell("medium", surfaceRow({ medium: "SK16" }), onOpenModal));
+
+    const button = screen.getByRole("button", { name: "Edit medium" });
+    expect(button).toHaveTextContent("SK16");
+    await userEvent.click(button);
+    expect(onOpenModal).toHaveBeenCalledTimes(1);
+  });
+
   it("renders aperture labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
     const { rerender } = render(
-      <ApertureCell
-        clearAperture={undefined}
-        edgeAperture={undefined}
-        onOpenModal={onOpenModal}
-      />,
+      propertyCell("aperture", surfaceRow(), onOpenModal),
     );
 
     expect(
@@ -161,11 +198,19 @@ describe("LensPrescriptionGridCells", () => {
     ).toHaveTextContent("Default");
 
     rerender(
-      <ApertureCell
-        clearAperture={{ shape: "circular", offsetX: -1, offsetY: 2 }}
-        edgeAperture={{ shape: "circular", radius: 4, offsetX: 0, offsetY: 0 }}
-        onOpenModal={onOpenModal}
-      />,
+      propertyCell(
+        "aperture",
+        surfaceRow({
+          clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
+          edge_aperture: {
+            shape: "circular",
+            radius: 4,
+            offsetX: 0,
+            offsetY: 0,
+          },
+        }),
+        onOpenModal,
+      ),
     );
     expect(
       screen.getByRole("button", { name: "Edit aperture" }),
@@ -180,7 +225,7 @@ describe("LensPrescriptionGridCells", () => {
   it("renders aspherical labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
     const { rerender } = render(
-      <AsphericalCell aspherical={undefined} onOpenModal={onOpenModal} />,
+      propertyCell("aspherical", surfaceRow(), onOpenModal),
     );
 
     expect(
@@ -188,24 +233,28 @@ describe("LensPrescriptionGridCells", () => {
     ).toHaveTextContent("None");
 
     rerender(
-      <AsphericalCell
-        aspherical={{ kind: "Conic", conicConstant: -1 }}
-        onOpenModal={onOpenModal}
-      />,
+      propertyCell(
+        "aspherical",
+        surfaceRow({ aspherical: { kind: "Conic", conicConstant: -1 } }),
+        onOpenModal,
+      ),
     );
     expect(
       screen.getByRole("button", { name: "Edit aspherical parameters" }),
     ).toHaveTextContent("Conic");
 
     rerender(
-      <AsphericalCell
-        aspherical={{
-          kind: "EvenAspherical",
-          conicConstant: -1,
-          polynomialCoefficients: [0.1],
-        }}
-        onOpenModal={onOpenModal}
-      />,
+      propertyCell(
+        "aspherical",
+        surfaceRow({
+          aspherical: {
+            kind: "EvenAspherical",
+            conicConstant: -1,
+            polynomialCoefficients: [0.1],
+          },
+        }),
+        onOpenModal,
+      ),
     );
     expect(
       screen.getByRole("button", { name: "Edit aspherical parameters" }),
@@ -220,7 +269,7 @@ describe("LensPrescriptionGridCells", () => {
   it("renders decenter strategy labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
     const { rerender } = render(
-      <DecenterCell decenter={undefined} onOpenModal={onOpenModal} />,
+      propertyCell("decenter", surfaceRow(), onOpenModal),
     );
 
     expect(
@@ -234,10 +283,13 @@ describe("LensPrescriptionGridCells", () => {
       "reverse",
     ] as const) {
       rerender(
-        <DecenterCell
-          decenter={{ ...baseDecenter, coordinateSystemStrategy: strategy }}
-          onOpenModal={onOpenModal}
-        />,
+        propertyCell(
+          "decenter",
+          surfaceRow({
+            decenter: { ...baseDecenter, coordinateSystemStrategy: strategy },
+          }),
+          onOpenModal,
+        ),
       );
       expect(
         screen.getByRole("button", { name: "Edit decenter and tilt" }),
@@ -253,10 +305,7 @@ describe("LensPrescriptionGridCells", () => {
   it("renders diffraction grating labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
     const { rerender } = render(
-      <DiffractionGratingCell
-        diffractionGrating={undefined}
-        onOpenModal={onOpenModal}
-      />,
+      propertyCell("diffractiveElement", surfaceRow(), onOpenModal),
     );
 
     expect(
@@ -264,10 +313,13 @@ describe("LensPrescriptionGridCells", () => {
     ).toHaveTextContent("None");
 
     rerender(
-      <DiffractionGratingCell
-        diffractionGrating={{ lpmm: 600, order: 1 }}
-        onOpenModal={onOpenModal}
-      />,
+      propertyCell(
+        "diffractiveElement",
+        surfaceRow({
+          diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
+        }),
+        onOpenModal,
+      ),
     );
     expect(
       screen.getByRole("button", { name: "Edit diffraction grating" }),
@@ -280,115 +332,36 @@ describe("LensPrescriptionGridCells", () => {
   });
 
   it("keeps tooltip-backed action cells touch-scroll safe", () => {
-    const { rerender } = render(
-      <MediumCell medium="AIR" onOpenModal={() => {}} />,
-    );
+    render(propertyCell("medium", surfaceRow({ medium: "AIR" })));
     expect(
       screen.getByRole("button", { name: "Edit medium" }).parentElement?.style
         .touchAction,
     ).not.toBe("none");
-
-    rerender(<AsphericalCell aspherical={undefined} onOpenModal={() => {}} />);
-    expect(
-      screen.getByRole("button", { name: "Edit aspherical parameters" })
-        .parentElement?.style.touchAction,
-    ).not.toBe("none");
-
-    rerender(<DecenterCell decenter={undefined} onOpenModal={() => {}} />);
-    expect(
-      screen.getByRole("button", { name: "Edit decenter and tilt" })
-        .parentElement?.style.touchAction,
-    ).not.toBe("none");
-
-    rerender(
-      <DiffractionGratingCell
-        diffractionGrating={undefined}
-        onOpenModal={() => {}}
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: "Edit diffraction grating" })
-        .parentElement?.style.touchAction,
-    ).not.toBe("none");
   });
 
   it("uses single-line ellipsis for overflowing action cell text", () => {
-    const expectedClasses = [
-      "overflow-hidden",
-      "text-ellipsis",
-      "whitespace-nowrap",
-    ];
-    const { rerender } = render(
-      <MediumCell
-        medium="N-SF11 with a very long catalog display name"
-        onOpenModal={() => {}}
-      />,
+    render(
+      propertyCell(
+        "medium",
+        surfaceRow({ medium: "N-SF11 with a very long catalog display name" }),
+      ),
     );
 
     expect(screen.getByRole("button", { name: "Edit medium" })).toHaveClass(
-      ...expectedClasses,
+      "overflow-hidden",
+      "text-ellipsis",
+      "whitespace-nowrap",
     );
-
-    rerender(
-      <ApertureCell
-        clearAperture={{ shape: "circular", offsetX: -12.345, offsetY: 67.89 }}
-        edgeAperture={{
-          shape: "circular",
-          radius: 123.456,
-          offsetX: 0.12,
-          offsetY: -0.34,
-        }}
-        onOpenModal={() => {}}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveClass(
-      ...expectedClasses,
-    );
-
-    rerender(
-      <AsphericalCell
-        aspherical={{
-          kind: "EvenAspherical",
-          conicConstant: -1,
-          polynomialCoefficients: [0.1],
-        }}
-        onOpenModal={() => {}}
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: "Edit aspherical parameters" }),
-    ).toHaveClass(...expectedClasses);
-
-    rerender(
-      <DecenterCell
-        decenter={{
-          ...baseDecenter,
-          coordinateSystemStrategy: "dec and return",
-        }}
-        onOpenModal={() => {}}
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: "Edit decenter and tilt" }),
-    ).toHaveClass(...expectedClasses);
-
-    rerender(
-      <DiffractionGratingCell
-        diffractionGrating={{ lpmm: 1200, order: 1 }}
-        onOpenModal={() => {}}
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: "Edit diffraction grating" }),
-    ).toHaveClass(...expectedClasses);
   });
 
   it("keeps portal tooltips mouse-hover only for the full trigger", () => {
     render(
-      <DiffractionGratingCell
-        diffractionGrating={{ lpmm: 600, order: 1 }}
-        onOpenModal={() => {}}
-      />,
+      propertyCell(
+        "diffractiveElement",
+        surfaceRow({
+          diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
+        }),
+      ),
     );
     const tooltipTrigger = screen.getByRole("button", {
       name: "Edit diffraction grating",
@@ -403,60 +376,50 @@ describe("LensPrescriptionGridCells", () => {
     expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
   });
 
-  it("uses the editor-specific default tooltip text for every action cell", () => {
-    const cases = [
-      {
-        element: <MediumCell medium="AIR" onOpenModal={() => undefined} />,
-        buttonName: "Edit medium",
-        tooltip: "Click to set medium or glass",
-      },
-      {
-        element: (
-          <AsphericalCell
-            aspherical={undefined}
-            onOpenModal={() => undefined}
-          />
-        ),
-        buttonName: "Edit aspherical parameters",
-        tooltip: "Click to set aspherical parameters",
-      },
-      {
-        element: (
-          <ApertureCell
-            clearAperture={undefined}
-            edgeAperture={undefined}
-            onOpenModal={() => undefined}
-          />
-        ),
-        buttonName: "Edit aperture",
-        tooltip: "Click to set aperture",
-      },
-      {
-        element: (
-          <DecenterCell decenter={undefined} onOpenModal={() => undefined} />
-        ),
-        buttonName: "Edit decenter and tilt",
-        tooltip: "Click to open settings for Tilt and Decenter",
-      },
-      {
-        element: (
-          <DiffractionGratingCell
-            diffractionGrating={undefined}
-            onOpenModal={() => undefined}
-          />
-        ),
-        buttonName: "Edit diffraction grating",
-        tooltip: "Click to set diffraction grating",
-      },
-    ];
+  it.each([
+    [
+      "medium",
+      "Edit medium",
+      "Click to set medium or glass",
+      "Click to view medium or glass",
+    ],
+    [
+      "aspherical",
+      "Edit aspherical parameters",
+      "Click to set aspherical parameters",
+      "Click to view aspherical parameters",
+    ],
+    [
+      "aperture",
+      "Edit aperture",
+      "Click to set aperture",
+      "Click to view aperture",
+    ],
+    [
+      "decenter",
+      "Edit decenter and tilt",
+      "Click to open settings for Tilt and Decenter",
+      "Click to view tilt and decenter",
+    ],
+    [
+      "diffractiveElement",
+      "Edit diffraction grating",
+      "Click to set diffraction grating",
+      "Click to view diffraction grating",
+    ],
+  ] as const)(
+    "gives the %s cell its editing and inspection tooltips",
+    (key, buttonName, editTooltip, viewTooltip) => {
+      const ui = SURFACE_PROPERTY_UIS[key];
+      expect(ui.ariaLabel).toBe(buttonName);
+      expect(ui.editTooltip).toBe(editTooltip);
+      expect(ui.viewTooltip).toBe(viewTooltip);
 
-    for (const { element, buttonName, tooltip } of cases) {
-      const { unmount } = render(element);
+      render(propertyCell(key, surfaceRow()));
       fireEvent.mouseEnter(
         screen.getByRole("button", { name: buttonName }).parentElement!,
       );
-      expect(screen.getByRole("tooltip")).toHaveTextContent(tooltip);
-      unmount();
-    }
-  });
+      expect(screen.getByRole("tooltip")).toHaveTextContent(editTooltip);
+    },
+  );
 });
