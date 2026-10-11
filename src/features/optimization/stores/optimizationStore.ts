@@ -53,7 +53,8 @@
  * - `buildOptimizationConfig()` narrows each row by kind group: adjustable-target kinds emit a parsed `target`; fixed-target operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal` omit their implicit zero target; range kinds emit the non-blank `min` / `max` bounds and reject rows with no bound or `min > max`; surface-range kinds such as `edge_thickness` additionally emit their validated `surface_index` and, because they do not expand by field or wavelength, no `fields` / `wavelengths`. The exhaustive fallback fails compilation if a new target mode is added without a builder branch.
  * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count after combinations with an exactly zero operand, field, or wavelength weight are excluded. `ray_fan` contributes `num_rays * 2` residuals per retained field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
  * - `setOptimizationConfig()` atomically adapts a strict worker config into the string-backed form state, normalizes shared field/wavelength vectors, preserves operand options, and leaves the page-local model, sync baseline, prior report, and unapplied-result marker untouched.
- * - `applyOptimizationResult()` can create or update `surface.aspherical` and surface/Image `decenter`, preserving untouched tilt/decenter components, and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
+ * - `applyOptimizationResult()` writes every final value and then every pickup value through `applyParameterValue` (the owning constructional-parameter shape), which can create or update `surface.aspherical` and surface/Image `decenter` while preserving untouched tilt/decenter components; it then applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
+ * - Coefficient modes on a `Conic` asphere state are ignored when building variables and pickups, because a Conic asphere carries no polynomial coefficients.
  * - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
  * - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
  * - `discardOptimizationResult(editorModel)` replaces the page-local model and sync baseline with the supplied Editor model, clears the unapplied marker and last report, and reconciles prescription modes by index like a preserved sync. Algorithm settings, weights, and operands are unchanged, and the Editor itself is never mutated.
@@ -78,9 +79,9 @@ import type {
   OptimizationPickupConfig,
   OptimizationRunConfig,
   OptimizationRunReport,
-  OptimizationValueEntry,
-  DecenterTargetKind,
 } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { DecenterParameterKind } from "@/features/optimization/types/parameterTypes";
+import { applyParameterValue } from "@/shared/lib/optical-model/surface-properties/parameters";
 import type { OptimizationOperandOptions } from "@/features/optimization/types/optimizationOperandTypes";
 import { adaptOptimizationRunConfigToGuiState } from "@/features/optimization/lib/optimizationConfigAdapter";
 import {
@@ -928,7 +929,8 @@ function buildAsphereVariables(
     }
 
     asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
-      if (coefficientMode.mode !== "variable") {
+      // Conic aspheres carry no polynomial coefficients.
+      if (coefficientMode.mode !== "variable" || type === "Conic") {
         return;
       }
 
@@ -994,7 +996,8 @@ function buildAspherePickups(
     }
 
     asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
-      if (coefficientMode.mode !== "pickup") {
+      // Conic aspheres carry no polynomial coefficients.
+      if (coefficientMode.mode !== "pickup" || type === "Conic") {
         return;
       }
 
@@ -1059,7 +1062,7 @@ const DECENTER_COMPONENTS = [
       DecenterOptimizationState,
       "alpha" | "beta" | "gamma" | "x" | "y"
     >,
-    DecenterTargetKind,
+    DecenterParameterKind,
   ]
 >;
 
@@ -1365,26 +1368,6 @@ function createDefaultAsphereMode(): AsphereMode {
   return { mode: "constant" };
 }
 
-function padCoefficients(coefficients: number[]): number[] {
-  const next = [...coefficients];
-  while (next.length < 10) {
-    next.push(0);
-  }
-  return next.slice(0, 10);
-}
-
-function trimTrailingZeroCoefficients(coefficients: number[]): number[] {
-  let lastNonZero = -1;
-  for (let index = coefficients.length - 1; index >= 0; index -= 1) {
-    if (coefficients[index] !== 0) {
-      lastNonZero = index;
-      break;
-    }
-  }
-
-  return lastNonZero === -1 ? [] : coefficients.slice(0, lastNonZero + 1);
-}
-
 function createAsphereStates(model: OpticalModel): AsphereOptimizationState[] {
   return model.surfaces.map((surface, index) => ({
     surfaceIndex: index + 1,
@@ -1585,191 +1568,6 @@ function createDefaultOptimizerState(
     ftol: numericValues.ftol,
     xtol: numericValues.xtol,
     gtol: numericValues.gtol,
-  };
-}
-
-function ensureSurfaceAsphere(
-  surface: OpticalModel["surfaces"][number],
-  state: AsphereOptimizationState,
-): NonNullable<OpticalModel["surfaces"][number]["aspherical"]> | undefined {
-  const existing = surface.aspherical;
-  const type = state.type ?? existing?.kind;
-  if (type === undefined) {
-    return existing;
-  }
-
-  if (type === "Conic") {
-    return {
-      kind: "Conic",
-      conicConstant: existing?.conicConstant ?? 0,
-    };
-  }
-
-  const coefficients = padCoefficients(
-    existing !== undefined && "polynomialCoefficients" in existing
-      ? existing.polynomialCoefficients
-      : [],
-  );
-
-  if (type === "XToroid" || type === "YToroid") {
-    return {
-      kind: type,
-      conicConstant: existing?.conicConstant ?? 0,
-      toricSweepRadiusOfCurvature:
-        existing !== undefined && "toricSweepRadiusOfCurvature" in existing
-          ? existing.toricSweepRadiusOfCurvature
-          : surface.curvatureRadius,
-      polynomialCoefficients: coefficients,
-    };
-  }
-
-  return {
-    kind: type,
-    conicConstant: existing?.conicConstant ?? 0,
-    polynomialCoefficients: coefficients,
-  };
-}
-
-function updateAsphereValue(
-  surface: OpticalModel["surfaces"][number],
-  state: AsphereOptimizationState | undefined,
-  entry: OptimizationValueEntry | OptimizationPickupConfig,
-  value: number,
-): OpticalModel["surfaces"][number] {
-  if (!entry.kind.startsWith("asphere_")) {
-    return surface;
-  }
-
-  const effectiveState: AsphereOptimizationState = state ?? {
-    surfaceIndex: 0,
-    type: "EvenAspherical",
-    lockedType: false,
-    conic: createDefaultAsphereMode(),
-    toricSweep: createDefaultAsphereMode(),
-    coefficients: Array.from({ length: 10 }, createDefaultAsphereMode),
-  };
-  const baseAsphere = ensureSurfaceAsphere(surface, {
-    ...effectiveState,
-    type: "asphere_kind" in entry ? entry.asphere_kind : effectiveState.type,
-  });
-
-  if (baseAsphere === undefined) {
-    return surface;
-  }
-
-  if (entry.kind === "asphere_conic_constant") {
-    return { ...surface, aspherical: { ...baseAsphere, conicConstant: value } };
-  }
-
-  if (
-    entry.kind === "asphere_toric_sweep_radius" &&
-    "toricSweepRadiusOfCurvature" in baseAsphere
-  ) {
-    return {
-      ...surface,
-      aspherical: { ...baseAsphere, toricSweepRadiusOfCurvature: value },
-    };
-  }
-
-  if (
-    entry.kind === "asphere_polynomial_coefficient" &&
-    "polynomialCoefficients" in baseAsphere
-  ) {
-    const coefficients = padCoefficients(baseAsphere.polynomialCoefficients);
-    coefficients[entry.coefficient_index] = value;
-    return {
-      ...surface,
-      aspherical: {
-        ...baseAsphere,
-        polynomialCoefficients: trimTrailingZeroCoefficients(coefficients),
-      },
-    };
-  }
-
-  return { ...surface, aspherical: baseAsphere };
-}
-
-function applyRadiusToModel(
-  model: OpticalModel,
-  surfaceIndex: number,
-  value: number,
-): OpticalModel {
-  if (surfaceIndex === model.surfaces.length + 1) {
-    return {
-      ...model,
-      image: {
-        ...model.image,
-        curvatureRadius: value,
-      },
-    };
-  }
-
-  const zeroBased = surfaceIndex - 1;
-  return {
-    ...model,
-    surfaces: model.surfaces.map((surface, index) =>
-      index === zeroBased ? { ...surface, curvatureRadius: value } : surface,
-    ),
-  };
-}
-
-function applyThicknessToModel(
-  model: OpticalModel,
-  surfaceIndex: number,
-  value: number,
-): OpticalModel {
-  const zeroBased = surfaceIndex - 1;
-  return {
-    ...model,
-    surfaces: model.surfaces.map((surface, index) =>
-      index === zeroBased ? { ...surface, thickness: value } : surface,
-    ),
-  };
-}
-
-function applyDecenterToModel(
-  model: OpticalModel,
-  entry: Extract<
-    OptimizationValueEntry | OptimizationPickupConfig,
-    { readonly kind: DecenterTargetKind }
-  >,
-  value: number,
-): OpticalModel {
-  const component = entry.kind.replace("decenter_", "") as
-    | "alpha"
-    | "beta"
-    | "gamma"
-    | "x"
-    | "y";
-  const update = <T extends { readonly decenter?: DecenterConfig }>(
-    target: T,
-  ): T => {
-    const base = target.decenter ?? {
-      coordinateSystemStrategy: entry.decenter_type,
-      alpha: 0,
-      beta: 0,
-      gamma: 0,
-      offsetX: 0,
-      offsetY: 0,
-    };
-    const key =
-      component === "x" ? "offsetX" : component === "y" ? "offsetY" : component;
-    return {
-      ...target,
-      decenter: {
-        ...base,
-        coordinateSystemStrategy: entry.decenter_type,
-        [key]: value,
-      },
-    };
-  };
-  if (entry.surface_index === model.surfaces.length + 1)
-    return { ...model, image: update(model.image) };
-  return {
-    ...model,
-    surfaces: model.surfaces.map((surface, index) =>
-      index === entry.surface_index - 1 ? update(surface) : surface,
-    ),
   };
 }
 
@@ -2277,89 +2075,8 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (
       }
 
       let nextModel = state.optimizationModel;
-      for (const entry of report.final_values) {
-        if (entry.kind === "radius") {
-          nextModel = applyRadiusToModel(
-            nextModel,
-            entry.surface_index,
-            entry.value,
-          );
-        } else if (entry.kind === "thickness") {
-          nextModel = applyThicknessToModel(
-            nextModel,
-            entry.surface_index,
-            entry.value,
-          );
-        } else if (entry.kind.startsWith("decenter_")) {
-          nextModel = applyDecenterToModel(
-            nextModel,
-            entry as Extract<
-              OptimizationValueEntry | OptimizationPickupConfig,
-              { readonly kind: DecenterTargetKind }
-            >,
-            entry.value,
-          );
-        } else {
-          const zeroBased = entry.surface_index - 1;
-          nextModel = {
-            ...nextModel,
-            surfaces: nextModel.surfaces.map((surface, index) =>
-              index === zeroBased
-                ? updateAsphereValue(
-                    surface,
-                    state.asphereStates.find(
-                      (asphereState) =>
-                        asphereState.surfaceIndex === entry.surface_index,
-                    ),
-                    entry,
-                    entry.value,
-                  )
-                : surface,
-            ),
-          };
-        }
-      }
-      for (const entry of report.pickups) {
-        if (entry.kind === "radius") {
-          nextModel = applyRadiusToModel(
-            nextModel,
-            entry.surface_index,
-            entry.value,
-          );
-        } else if (entry.kind === "thickness") {
-          nextModel = applyThicknessToModel(
-            nextModel,
-            entry.surface_index,
-            entry.value,
-          );
-        } else if (entry.kind.startsWith("decenter_")) {
-          nextModel = applyDecenterToModel(
-            nextModel,
-            entry as Extract<
-              OptimizationValueEntry | OptimizationPickupConfig,
-              { readonly kind: DecenterTargetKind }
-            >,
-            entry.value,
-          );
-        } else {
-          const zeroBased = entry.surface_index - 1;
-          nextModel = {
-            ...nextModel,
-            surfaces: nextModel.surfaces.map((surface, index) =>
-              index === zeroBased
-                ? updateAsphereValue(
-                    surface,
-                    state.asphereStates.find(
-                      (asphereState) =>
-                        asphereState.surfaceIndex === entry.surface_index,
-                    ),
-                    entry,
-                    entry.value,
-                  )
-                : surface,
-            ),
-          };
-        }
+      for (const entry of [...report.final_values, ...report.pickups]) {
+        nextModel = applyParameterValue(nextModel, entry, entry.value);
       }
       if (hasGlassResults(report)) {
         for (const entry of report.final_glasses) {

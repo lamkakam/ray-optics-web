@@ -1,19 +1,18 @@
-/** Optimization-specific contracts shared by the UI and Pyodide worker boundary. */
+/** Optimization-specific contracts shared by the UI and Pyodide worker boundary. Constructional-parameter variable, pickup, and report-entry types are derived in `parameterTypes.ts` and re-exported here. */
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
-  AsphericalType,
-  DecenterConfig,
-  OpticalModel,
-} from "@/shared/lib/optical-model/model/opticalModel";
+  OptimizationPickupConfig,
+  OptimizationPickupEntry,
+  OptimizationValueEntry,
+  OptimizationVariableConfig,
+} from "@/features/optimization/types/parameterTypes";
 
-/** Scalar tilt/decenter targets supported by the optimizer. */
-export type DecenterTargetKind =
-  | "decenter_alpha"
-  | "decenter_beta"
-  | "decenter_gamma"
-  | "decenter_x"
-  | "decenter_y";
-/** RayOptics coordinate-system strategy carried with every tilt/decenter target. */
-export type DecenterType = DecenterConfig["coordinateSystemStrategy"];
+export type {
+  OptimizationPickupConfig,
+  OptimizationPickupEntry,
+  OptimizationValueEntry,
+  OptimizationVariableConfig,
+} from "@/features/optimization/types/parameterTypes";
 
 /** Worker-supported continuous optimizer families. */
 export type ContinuousOptimizerKind =
@@ -222,9 +221,9 @@ export type OptimizationAlgorithmConfig =
 export interface OptimizationConfig {
   /** Solver-specific continuous configuration discriminated by optimizer kind. */
   readonly optimizer: ContinuousOptimizerConfig;
-  /** Independently optimized radius, thickness, or asphere terms. */
+  /** Independently optimized constructional parameters. */
   readonly variables: ReadonlyArray<OptimizationVariableConfig>;
-  /** Radius, thickness, or asphere terms derived from another term. */
+  /** Constructional parameters derived from another parameter. */
   readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
   readonly merit_function: {
     readonly operands: ReadonlyArray<OptimizationOperandConfig>;
@@ -263,148 +262,6 @@ export interface GlassOptimizationConfig {
 export type OptimizationRunConfig =
   | OptimizationConfig
   | GlassOptimizationConfig;
-
-/** Variable configuration discriminated by radius, thickness, or asphere term kind. */
-export type OptimizationVariableConfig =
-  | {
-      readonly kind: "radius" | "thickness";
-      readonly surface_index: number;
-      readonly min?: number;
-      readonly max?: number;
-    }
-  | {
-      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly min?: number;
-      readonly max?: number;
-    }
-  | {
-      readonly kind: "asphere_polynomial_coefficient";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly coefficient_index: number;
-      readonly min?: number;
-      readonly max?: number;
-    }
-  | {
-      readonly kind: DecenterTargetKind;
-      readonly surface_index: number;
-      readonly decenter_type: DecenterType;
-      readonly min?: number;
-      readonly max?: number;
-    };
-
-/** Pickup configuration, including coefficient-to-coefficient source indices where required. */
-export type OptimizationPickupConfig =
-  | {
-      readonly kind: "radius" | "thickness";
-      readonly surface_index: number;
-      readonly source_surface_index: number;
-      readonly scale: number;
-      readonly offset: number;
-    }
-  | {
-      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly source_surface_index: number;
-      readonly scale: number;
-      readonly offset: number;
-    }
-  | {
-      readonly kind: "asphere_polynomial_coefficient";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly coefficient_index: number;
-      readonly source_surface_index: number;
-      readonly source_coefficient_index: number;
-      readonly scale: number;
-      readonly offset: number;
-    }
-  | {
-      readonly kind: DecenterTargetKind;
-      readonly surface_index: number;
-      readonly decenter_type: DecenterType;
-      readonly source_surface_index: number;
-      readonly scale: number;
-      readonly offset: number;
-    };
-
-/** Initial or final optimized value returned by Python. */
-export type OptimizationValueEntry =
-  | {
-      readonly kind: "radius" | "thickness";
-      readonly surface_index: number;
-      readonly value: number;
-      readonly min?: number;
-      readonly max?: number;
-    }
-  | {
-      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly value: number;
-      readonly min?: number;
-      readonly max?: number;
-    }
-  | {
-      readonly kind: "asphere_polynomial_coefficient";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly coefficient_index: number;
-      readonly value: number;
-      readonly min?: number;
-      readonly max?: number;
-    }
-  | {
-      readonly kind: DecenterTargetKind;
-      readonly surface_index: number;
-      readonly decenter_type: DecenterType;
-      readonly value: number;
-      readonly min?: number;
-      readonly max?: number;
-    };
-
-/** Evaluated pickup value returned by Python. */
-export type OptimizationPickupEntry =
-  | {
-      readonly kind: "radius" | "thickness";
-      readonly surface_index: number;
-      readonly source_surface_index: number;
-      readonly scale: number;
-      readonly offset: number;
-      readonly value: number;
-    }
-  | {
-      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly source_surface_index: number;
-      readonly scale: number;
-      readonly offset: number;
-      readonly value: number;
-    }
-  | {
-      readonly kind: "asphere_polynomial_coefficient";
-      readonly surface_index: number;
-      readonly asphere_kind: AsphericalType;
-      readonly coefficient_index: number;
-      readonly source_surface_index: number;
-      readonly source_coefficient_index: number;
-      readonly scale: number;
-      readonly offset: number;
-      readonly value: number;
-    }
-  | {
-      readonly kind: DecenterTargetKind;
-      readonly surface_index: number;
-      readonly decenter_type: DecenterType;
-      readonly source_surface_index: number;
-      readonly scale: number;
-      readonly offset: number;
-      readonly value: number;
-    };
 
 /** Evaluated value, sampling context, and weighting shared by every residual. */
 interface OptimizationResidualEntryBase {

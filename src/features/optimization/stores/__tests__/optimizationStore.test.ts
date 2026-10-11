@@ -5,6 +5,7 @@ import {
 } from "@/features/optimization/lib/optimizerUiConfig";
 import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { OptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { OptimizationValueEntry } from "@/features/optimization/types/parameterTypes";
 import {
   createOptimizationSlice,
   hasNonZeroOptimizationContribution,
@@ -2666,13 +2667,14 @@ describe("optimizationStore", () => {
 
     store.getState().applyOptimizationResult(
       continuousReport([
+        // Python never reports coefficients for a Conic; this guards malformed reports.
         {
           kind: "asphere_polynomial_coefficient",
           surface_index: 1,
           asphere_kind: "Conic",
           coefficient_index: 0,
           value: 0.25,
-        },
+        } as unknown as OptimizationValueEntry,
       ]),
     );
 
