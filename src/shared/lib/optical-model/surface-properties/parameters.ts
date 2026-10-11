@@ -35,7 +35,8 @@ export const OPTIMIZATION_OPT_OUTS = {
   edge_aperture: "an aperture, not a constructional parameter",
   medium: "categorical; optimized by Glass Expert candidate substitution",
   manufacturer: "categorical; optimized by Glass Expert candidate substitution",
-  diffractiveElement: "not yet supported by the optimizer",
+  diffractiveElement:
+    "grating line density (lines/mm) and diffraction order are fixed design inputs, not optimized",
 } as const satisfies Partial<Record<SurfacePropertyKey, string>>;
 
 type RegisteredShape = (typeof CONSTRUCTIONAL_PARAMETER_SHAPES)[number];
