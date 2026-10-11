@@ -1,4 +1,4 @@
-import type { RadiusMode } from "@/features/optimization/stores/optimizationStore";
+import type { ParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
 import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
   MODAL_MODE_OPTIONS,
@@ -10,8 +10,8 @@ import {
   getThicknessPickupSourceSurfaceOptions,
   curvatureRadiusNoZeroStraddleRule,
   minLessThanMaxRule,
-  serializeRadiusMode,
-  toRadiusModeDraft,
+  serializeParameterMode,
+  toParameterModeDraft,
   validateVariableBounds,
 } from "@/features/optimization/lib/modalHelpers";
 
@@ -155,28 +155,26 @@ describe("optimization modal helpers", () => {
     ]);
   });
 
-  it("converts a radius mode into a draft", () => {
-    const variableMode: RadiusMode = {
-      surfaceIndex: 3,
+  it("converts a committed mode into a draft", () => {
+    const variableMode: ParameterMode = {
       mode: "variable",
       min: "10",
       max: "20",
     };
 
-    expect(toRadiusModeDraft(variableMode)).toEqual({
+    expect(toParameterModeDraft(variableMode)).toEqual({
       mode: "variable",
       min: "10",
       max: "20",
     });
   });
 
-  it("converts each committed radius mode into its matching draft shape", () => {
-    expect(toRadiusModeDraft({ surfaceIndex: 1, mode: "constant" })).toEqual({
+  it("converts each committed mode into its matching draft shape", () => {
+    expect(toParameterModeDraft({ mode: "constant" })).toEqual({
       mode: "constant",
     });
     expect(
-      toRadiusModeDraft({
-        surfaceIndex: 1,
+      toParameterModeDraft({
         mode: "pickup",
         sourceSurfaceIndex: "2",
         scale: "-1",
@@ -190,25 +188,21 @@ describe("optimization modal helpers", () => {
     });
   });
 
-  it("serializes radius modes for keyed remounts", () => {
-    const variableMode: RadiusMode = {
-      surfaceIndex: 2,
+  it("serializes committed modes for keyed remounts", () => {
+    const variableMode: ParameterMode = {
       mode: "variable",
       min: "-5",
       max: "-1",
     };
-    const pickupMode: RadiusMode = {
-      surfaceIndex: 3,
+    const pickupMode: ParameterMode = {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "2",
       offset: "0.5",
     };
 
-    expect(serializeRadiusMode(variableMode)).toBe("variable:-5:-1");
-    expect(serializeRadiusMode(pickupMode)).toBe("pickup:1:2:0.5");
-    expect(serializeRadiusMode({ surfaceIndex: 1, mode: "constant" })).toBe(
-      "constant",
-    );
+    expect(serializeParameterMode(variableMode)).toBe("variable:-5:-1");
+    expect(serializeParameterMode(pickupMode)).toBe("pickup:1:2:0.5");
+    expect(serializeParameterMode({ mode: "constant" })).toBe("constant");
   });
 });

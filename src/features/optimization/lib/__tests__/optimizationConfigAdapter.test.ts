@@ -12,6 +12,10 @@ import {
   type OptimizationState,
 } from "@/features/optimization/stores/optimizationStore";
 import { createOptimizationRunConfigValidator } from "@/features/optimization/lib/optimizationConfigSchema";
+import {
+  asphereViews,
+  decenterView,
+} from "@/features/optimization/testing/parameterStateViews";
 
 const model: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -447,12 +451,16 @@ describe("optimization config adapter", () => {
         "decenter_y",
       ]),
     );
-    expect(store.getState().asphereStates[0]).toMatchObject({
+    expect(
+      asphereViews(store.getState().parameterStates.aspherical)[0],
+    ).toMatchObject({
       type: "XToroid",
       conic: { mode: "variable" },
       toricSweep: { mode: "pickup" },
     });
-    expect(store.getState().decenterStates[2]).toMatchObject({
+    expect(
+      store.getState().parameterStates.decenter.map(decenterView)[2],
+    ).toMatchObject({
       type: "reverse",
       alpha: { mode: "pickup" },
       y: { mode: "pickup" },
@@ -480,7 +488,7 @@ describe("optimization config adapter", () => {
       optimizer: before.optimizer,
       fieldWeights: before.fieldWeights,
       wavelengthWeights: before.wavelengthWeights,
-      radiusModes: before.radiusModes,
+      parameterStates: before.parameterStates,
       operands: before.operands,
     });
   });
@@ -546,7 +554,7 @@ describe("optimization config adapter", () => {
       optimizer: before.optimizer,
       fieldWeights: before.fieldWeights,
       wavelengthWeights: before.wavelengthWeights,
-      radiusModes: before.radiusModes,
+      parameterStates: before.parameterStates,
       operands: before.operands,
       hasUnappliedOptimizationResult: before.hasUnappliedOptimizationResult,
     });

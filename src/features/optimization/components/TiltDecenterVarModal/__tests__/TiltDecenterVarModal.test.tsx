@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
-import type { DecenterOptimizationState } from "@/features/optimization/stores/optimizationStore";
+import {
+  decenterStateFrom,
+  decenterView,
+} from "@/features/optimization/testing/parameterStateViews";
 import { TiltDecenterVarModal } from "../TiltDecenterVarModal";
 
 const constant = { mode: "constant" } as const;
@@ -11,7 +14,7 @@ const model = {
   object: {},
   specs: {},
 } as OpticalModel;
-const state: DecenterOptimizationState = {
+const stateView = {
   surfaceIndex: 1,
   type: "bend",
   lockedType: false,
@@ -20,7 +23,8 @@ const state: DecenterOptimizationState = {
   gamma: constant,
   x: constant,
   y: constant,
-};
+} as const;
+const state = decenterStateFrom(stateView);
 
 describe("TiltDecenterVarModal", () => {
   it("edits independent modes, includes Image pickup sources, and commits only on Confirm", async () => {
@@ -47,8 +51,8 @@ describe("TiltDecenterVarModal", () => {
     await user.clear(screen.getByLabelText("Beta Max."));
     await user.type(screen.getByLabelText("Beta Max."), "2");
     await user.click(screen.getByRole("button", { name: "Confirm" }));
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(decenterView(onSave.mock.calls.at(-1)?.[1])).toEqual(
       expect.objectContaining({
         alpha: expect.objectContaining({ mode: "pickup" }),
         beta: { mode: "variable", min: "0", max: "2" },
@@ -58,7 +62,7 @@ describe("TiltDecenterVarModal", () => {
 
   it("locks editor-defined type, omits LM bounds, and resets modes when an editable type changes", async () => {
     const user = userEvent.setup();
-    const locked = { ...state, lockedType: true };
+    const locked = decenterStateFrom({ ...stateView, lockedType: true });
     const { rerender } = render(
       <TiltDecenterVarModal
         isOpen
@@ -79,10 +83,10 @@ describe("TiltDecenterVarModal", () => {
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
-        decenterState={{
-          ...state,
+        decenterState={decenterStateFrom({
+          ...stateView,
           alpha: { mode: "variable", min: "-1", max: "1" },
-        }}
+        })}
         onSave={jest.fn()}
         onClose={jest.fn()}
       />,

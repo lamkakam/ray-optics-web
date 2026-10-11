@@ -50,6 +50,8 @@ import {
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpenSurfacePropertyModal } from "@/shared/lib/lens-prescription-grid/SurfacePropertyModalHost";
 import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
+import type { ParameterGroupKey } from "@/features/optimization/lib/parameters/parameterGroups";
+import { getParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
 import type {
   OpticalModel,
   OpticalSpecs,
@@ -287,7 +289,16 @@ export function OptimizationPage({
     optimizationStore,
     (state) => state.wavelengthWeights,
   );
-  const radiusModes = useStore(optimizationStore, (state) => state.radiusModes);
+  const parameterStates = useStore(
+    optimizationStore,
+    (state) => state.parameterStates,
+  );
+  const {
+    radius: radiusModes,
+    thickness: thicknessModes,
+    aspherical: asphereStates,
+    decenter: decenterStates,
+  } = parameterStates;
   const glassModes = useStore(optimizationStore, (state) => state.glassModes);
   const operands = useStore(optimizationStore, (state) => state.operands);
   const canBuildOptimizationConfig = useStore(optimizationStore, (state) => {
@@ -333,32 +344,20 @@ export function OptimizationPage({
     optimizationStore,
     (state) => state.hasUnappliedOptimizationResult,
   );
-  const radiusModal = useStore(optimizationStore, (state) => state.radiusModal);
-  const thicknessModal = useStore(
+  const parameterModal = useStore(
     optimizationStore,
-    (state) => state.thicknessModal,
+    (state) => state.parameterModal,
   );
-  const thicknessModes = useStore(
-    optimizationStore,
-    (state) => state.thicknessModes,
-  );
-  const asphereStates = useStore(
-    optimizationStore,
-    (state) => state.asphereStates,
-  );
-  const decenterStates = useStore(
-    optimizationStore,
-    (state) => state.decenterStates,
-  );
-  const asphereModal = useStore(
-    optimizationStore,
-    (state) => state.asphereModal,
-  );
+  const modalFor = (group: ParameterGroupKey) => ({
+    open: parameterModal.open && parameterModal.group === group,
+    surfaceIndex:
+      parameterModal.group === group ? parameterModal.surfaceIndex : undefined,
+  });
+  const radiusModal = modalFor("radius");
+  const thicknessModal = modalFor("thickness");
+  const asphereModal = modalFor("aspherical");
+  const decenterVarModal = modalFor("decenter");
   const glassModal = useStore(optimizationStore, (state) => state.glassModal);
-  const decenterVarModal = useStore(
-    optimizationStore,
-    (state) => state.decenterVarModal,
-  );
   /** Surface property whose read-only inspection modal is open, with its row. */
   const [inspectedProperty, setInspectedProperty] = useState<
     OpenSurfacePropertyModal | undefined
@@ -548,19 +547,21 @@ export function OptimizationPage({
     }));
   }, [optimizationModel]);
 
+  const selectedRadiusState = radiusModes.find(
+    (state) => state.surfaceIndex === radiusModal.surfaceIndex,
+  );
   const selectedRadiusMode =
-    radiusModal.surfaceIndex === undefined
+    selectedRadiusState === undefined
       ? undefined
-      : radiusModes.find(
-          (mode) => mode.surfaceIndex === radiusModal.surfaceIndex,
-        );
+      : getParameterMode(selectedRadiusState, "value");
 
+  const selectedThicknessState = thicknessModes.find(
+    (state) => state.surfaceIndex === thicknessModal.surfaceIndex,
+  );
   const selectedThicknessMode =
-    thicknessModal.surfaceIndex === undefined
+    selectedThicknessState === undefined
       ? undefined
-      : thicknessModes.find(
-          (mode) => mode.surfaceIndex === thicknessModal.surfaceIndex,
-        );
+      : getParameterMode(selectedThicknessState, "value");
 
   const selectedAsphereState =
     asphereModal.surfaceIndex === undefined
@@ -1376,9 +1377,11 @@ export function OptimizationPage({
         selectedMode={selectedRadiusMode}
         canUseBounds={canUseBounds}
         onSetMode={(surfaceIndex, mode) =>
-          optimizationStore.getState().setRadiusMode(surfaceIndex, mode)
+          optimizationStore
+            .getState()
+            .setParameterMode("radius", surfaceIndex, "value", mode)
         }
-        onClose={() => optimizationStore.getState().closeRadiusModal()}
+        onClose={() => optimizationStore.getState().closeParameterModal()}
       />
 
       <ThicknessModeModal
@@ -1388,9 +1391,11 @@ export function OptimizationPage({
         selectedMode={selectedThicknessMode}
         canUseBounds={canUseBounds}
         onSetMode={(surfaceIndex, mode) =>
-          optimizationStore.getState().setThicknessMode(surfaceIndex, mode)
+          optimizationStore
+            .getState()
+            .setParameterMode("thickness", surfaceIndex, "value", mode)
         }
-        onClose={() => optimizationStore.getState().closeThicknessModal()}
+        onClose={() => optimizationStore.getState().closeParameterModal()}
       />
 
       <AsphereVarModal
@@ -1400,9 +1405,11 @@ export function OptimizationPage({
         asphereState={selectedAsphereState}
         canUseBounds={canUseBounds}
         onSave={(surfaceIndex, state) =>
-          optimizationStore.getState().replaceAsphereState(surfaceIndex, state)
+          optimizationStore
+            .getState()
+            .replaceParameterState("aspherical", surfaceIndex, state)
         }
-        onClose={() => optimizationStore.getState().closeAsphereModal()}
+        onClose={() => optimizationStore.getState().closeParameterModal()}
       />
 
       <GlassVariableModal
@@ -1424,9 +1431,11 @@ export function OptimizationPage({
         decenterState={selectedDecenterState}
         canUseBounds={canUseBounds}
         onSave={(surfaceIndex, state) =>
-          optimizationStore.getState().replaceDecenterState(surfaceIndex, state)
+          optimizationStore
+            .getState()
+            .replaceParameterState("decenter", surfaceIndex, state)
         }
-        onClose={() => optimizationStore.getState().closeDecenterVarModal()}
+        onClose={() => optimizationStore.getState().closeParameterModal()}
       />
 
       <OptimizationApplyConfirmModal

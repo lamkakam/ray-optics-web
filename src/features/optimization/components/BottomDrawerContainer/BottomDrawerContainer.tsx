@@ -108,20 +108,17 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   const optimizationStore = useOptimizationStore();
   const activeTabId = useStore(optimizationStore, (state) => state.activeTabId);
   const optimizer = useStore(optimizationStore, (state) => state.optimizer);
-  const radiusModes = useStore(optimizationStore, (state) => state.radiusModes);
-  const thicknessModes = useStore(
+  const parameterStates = useStore(
     optimizationStore,
-    (state) => state.thicknessModes,
+    (state) => state.parameterStates,
   );
+  const {
+    radius: radiusModes,
+    thickness: thicknessModes,
+    aspherical: asphereStates,
+    decenter: decenterStates,
+  } = parameterStates;
   const glassModes = useStore(optimizationStore, (state) => state.glassModes);
-  const asphereStates = useStore(
-    optimizationStore,
-    (state) => state.asphereStates,
-  );
-  const decenterStates = useStore(
-    optimizationStore,
-    (state) => state.decenterStates,
-  );
   const operands = useStore(optimizationStore, (state) => state.operands);
   const surfaceCount = useStore(
     optimizationStore,
@@ -173,21 +170,25 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
 
   const handleOpenRadiusModal = useCallback(
     (surfaceIndex: number) => {
-      optimizationStore.getState().openRadiusModal(surfaceIndex);
+      optimizationStore.getState().openParameterModal("radius", surfaceIndex);
     },
     [optimizationStore],
   );
 
   const handleOpenThicknessModal = useCallback(
     (surfaceIndex: number) => {
-      optimizationStore.getState().openThicknessModal(surfaceIndex);
+      optimizationStore
+        .getState()
+        .openParameterModal("thickness", surfaceIndex);
     },
     [optimizationStore],
   );
 
   const handleOpenAsphereModal = useCallback(
     (surfaceIndex: number) => {
-      optimizationStore.getState().openAsphereModal(surfaceIndex);
+      optimizationStore
+        .getState()
+        .openParameterModal("aspherical", surfaceIndex);
     },
     [optimizationStore],
   );
@@ -200,7 +201,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   );
   const handleOpenDecenterVarModal = useCallback(
     (surfaceIndex: number) =>
-      optimizationStore.getState().openDecenterVarModal(surfaceIndex),
+      optimizationStore.getState().openParameterModal("decenter", surfaceIndex),
     [optimizationStore],
   );
 

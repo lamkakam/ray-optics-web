@@ -2,10 +2,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
-import type {
-  RadiusMode,
-  RadiusModeDraft,
-} from "@/features/optimization/stores/optimizationStore";
+import type { ParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
 import { RadiusModeModal } from "../RadiusModeModal";
 import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal/ThicknessModeModal";
 
@@ -75,7 +72,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "40",
           max: "60",
@@ -110,7 +106,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "1",
           max: "10",
@@ -136,7 +131,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={multiSurfaceModel}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "pickup",
           sourceSurfaceIndex: "2",
           scale: "1",
@@ -162,7 +156,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={multiSurfaceModel}
         surfaceIndex={2}
         selectedMode={{
-          surfaceIndex: 2,
           mode: "pickup",
           sourceSurfaceIndex: "1",
           scale: "1",
@@ -206,7 +199,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={multiSurfaceModel}
         surfaceIndex={2}
         selectedMode={{
-          surfaceIndex: 2,
           mode: "pickup",
           sourceSurfaceIndex: "1",
           scale: "1",
@@ -243,7 +235,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={multiSurfaceModel}
         surfaceIndex={2}
         selectedMode={{
-          surfaceIndex: 2,
           mode: "pickup",
           sourceSurfaceIndex: "1",
           scale: "1",
@@ -281,19 +272,15 @@ describe("OptimizationVariableModals", () => {
     const onClose = jest.fn();
 
     function RadiusModalHarness() {
-      const [mode, setMode] = React.useState<RadiusMode>({
-        surfaceIndex: 2,
+      const [mode, setMode] = React.useState<ParameterMode>({
         mode: "variable",
         min: "40",
         max: "60",
       });
 
-      const handleSetMode = (
-        surfaceIndex: number,
-        nextMode: RadiusModeDraft,
-      ) => {
+      const handleSetMode = (surfaceIndex: number, nextMode: ParameterMode) => {
         onSetMode(surfaceIndex, nextMode);
-        setMode({ surfaceIndex, ...nextMode } as RadiusMode);
+        setMode(nextMode);
       };
 
       return (
@@ -352,20 +339,16 @@ describe("OptimizationVariableModals", () => {
     const onClose = jest.fn();
 
     function ThicknessModalHarness() {
-      const [mode, setMode] = React.useState<RadiusMode>({
-        surfaceIndex: 1,
+      const [mode, setMode] = React.useState<ParameterMode>({
         mode: "pickup",
         sourceSurfaceIndex: "1",
         scale: "1",
         offset: "0",
       });
 
-      const handleSetMode = (
-        surfaceIndex: number,
-        nextMode: RadiusModeDraft,
-      ) => {
+      const handleSetMode = (surfaceIndex: number, nextMode: ParameterMode) => {
         onSetMode(surfaceIndex, nextMode);
-        setMode({ surfaceIndex, ...nextMode } as RadiusMode);
+        setMode(nextMode);
       };
 
       return (
@@ -416,7 +399,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "40",
           max: "60",
@@ -450,7 +432,6 @@ describe("OptimizationVariableModals", () => {
           optimizationModel={model}
           surfaceIndex={1}
           selectedMode={{
-            surfaceIndex: 1,
             mode: "variable",
             min: "40",
             max: "60",
@@ -483,7 +464,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "pickup",
           sourceSurfaceIndex: "1",
           scale: "1",
@@ -513,7 +493,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "40",
           max: "60",
@@ -544,7 +523,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "-10000",
           max: "10000",
@@ -575,7 +553,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "60",
           max: "40",
@@ -607,7 +584,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "-10000",
           max: "10000",
@@ -645,7 +621,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "10",
           max: "5",
@@ -675,7 +650,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "40",
           max: "60",
@@ -695,7 +669,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "40",
           max: "60",
@@ -721,7 +694,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "1",
           max: "10",
@@ -745,7 +717,6 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{
-          surfaceIndex: 1,
           mode: "variable",
           min: "1",
           max: "10",

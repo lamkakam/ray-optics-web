@@ -5,10 +5,14 @@ import type {
   DecenterConfig,
   OpticalModel,
 } from "@/shared/lib/optical-model/model/opticalModel";
-import type {
-  AsphereMode,
-  DecenterOptimizationState,
-} from "@/features/optimization/stores/optimizationStore";
+import {
+  getParameterMode,
+  withParameterMode,
+  type ParameterGroupState,
+  type ParameterMode,
+} from "@/features/optimization/lib/parameters/parameterStates";
+
+type DecenterOptimizationState = ParameterGroupState<"decenter">;
 import { ModeSelectField } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields";
 import {
@@ -95,12 +99,12 @@ function Editor({
     model.surfaces.length,
     state.surfaceIndex,
   );
-  const setMode = (component: ComponentKey, mode: AsphereMode) =>
-    setDraft((current) => ({ ...current, [component]: mode }));
+  const setMode = (component: ComponentKey, mode: ParameterMode) =>
+    setDraft((current) => withParameterMode(current, component, mode));
   const invalid =
     canUseBounds &&
     COMPONENTS.some(([component, label]) => {
-      const mode = draft[component];
+      const mode = getParameterMode(draft, component);
       return (
         mode.mode === "variable" &&
         minLessThanMaxRule(label, mode.min, mode.max) !== undefined
@@ -135,27 +139,18 @@ function Editor({
           <Select
             id="decenter-type"
             aria-label="Tilt and decenter type"
-            value={draft.type}
-            disabled={draft.lockedType}
+            value={draft.qualifier}
+            disabled={draft.lockedQualifier}
             options={TYPE_OPTIONS}
             onChange={(event) => {
               const type = event.target
                 .value as DecenterConfig["coordinateSystemStrategy"];
-              const constant = { mode: "constant" } as const;
-              setDraft({
-                ...draft,
-                type,
-                alpha: constant,
-                beta: constant,
-                gamma: constant,
-                x: constant,
-                y: constant,
-              });
+              setDraft({ ...draft, qualifier: type, modes: {} });
             }}
           />
         </div>
         {COMPONENTS.map(([component, label]) => {
-          const mode = draft[component];
+          const mode = getParameterMode(draft, component);
           return (
             <div key={component} className="space-y-2">
               <div className="flex items-center gap-3">

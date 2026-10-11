@@ -7,23 +7,16 @@ import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 import type {
-  AsphereMode,
-  AsphereOptimizationState,
-  DecenterOptimizationState,
   GlassMode,
   OptimizationOperandRow,
   OptimizationState,
-  RadiusMode,
+  ParameterStates,
 } from "@/features/optimization/stores/optimizationStore";
-import type {
-  AsphericalType,
-  OpticalModel,
-} from "@/shared/lib/optical-model/model/opticalModel";
+import { parameterStatesFromConfig } from "@/features/optimization/lib/parameters/parameterStatesFromConfig";
+import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type {
   OptimizationOperandConfig,
-  OptimizationPickupConfig,
   OptimizationRunConfig,
-  OptimizationVariableConfig,
   GlassCandidateConfig,
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import {
@@ -40,23 +33,10 @@ export interface OptimizationGuiConfigState {
   readonly optimizer: OptimizationState["optimizer"];
   readonly fieldWeights: number[];
   readonly wavelengthWeights: number[];
-  readonly radiusModes: RadiusMode[];
-  readonly thicknessModes: RadiusMode[];
+  readonly parameterStates: ParameterStates;
   readonly glassModes: GlassMode[];
-  readonly asphereStates: AsphereOptimizationState[];
-  readonly decenterStates: DecenterOptimizationState[];
   readonly operands: OptimizationOperandRow[];
 }
-
-type ConfigTarget = OptimizationVariableConfig | OptimizationPickupConfig;
-
-const DECENTER_COMPONENT_BY_KIND = {
-  decenter_alpha: "alpha",
-  decenter_beta: "beta",
-  decenter_gamma: "gamma",
-  decenter_x: "x",
-  decenter_y: "y",
-} as const;
 
 const validateOptimizationRunConfig = createOptimizationRunConfigValidator();
 const ELIGIBLE_SPECIAL_GLASS_NAME_SET = new Set<string>(
@@ -89,17 +69,6 @@ function assertIntegerInRange(
     value > maximum
   ) {
     throw new Error(`${label} is out of range.`);
-  }
-}
-
-function assertDifferentSurface(
-  targetIndex: number,
-  sourceIndex: number,
-): void {
-  if (targetIndex === sourceIndex) {
-    throw new Error(
-      "Pickup source surface index must not equal the target surface index.",
-    );
   }
 }
 
@@ -156,27 +125,6 @@ function getOptimizerState(
   };
 }
 
-function createAsphereMode(): AsphereMode {
-  return { mode: "constant" };
-}
-
-function createRadiusModes(model: OpticalModel): RadiusMode[] {
-  return [
-    ...model.surfaces.map((_, index) => ({
-      surfaceIndex: index + 1,
-      mode: "constant" as const,
-    })),
-    { surfaceIndex: model.surfaces.length + 1, mode: "constant" as const },
-  ];
-}
-
-function createThicknessModes(model: OpticalModel): RadiusMode[] {
-  return model.surfaces.map((_, index) => ({
-    surfaceIndex: index + 1,
-    mode: "constant" as const,
-  }));
-}
-
 function createGlassModes(model: OpticalModel): GlassMode[] {
   return Array.from(
     { length: model.surfaces.length + 1 },
@@ -185,189 +133,6 @@ function createGlassModes(model: OpticalModel): GlassMode[] {
       mode: "constant" as const,
     }),
   );
-}
-
-function createAsphereStates(model: OpticalModel): AsphereOptimizationState[] {
-  return model.surfaces.map((surface, index) => ({
-    surfaceIndex: index + 1,
-    type: surface.aspherical?.kind,
-    lockedType: surface.aspherical !== undefined,
-    conic: createAsphereMode(),
-    toricSweep: createAsphereMode(),
-    coefficients: Array.from({ length: 10 }, createAsphereMode),
-  }));
-}
-
-function createDecenterStates(
-  model: OpticalModel,
-): DecenterOptimizationState[] {
-  return [...model.surfaces, model.image].map((target, index) => ({
-    surfaceIndex: index + 1,
-    type: target.decenter?.coordinateSystemStrategy ?? "bend",
-    lockedType: target.decenter !== undefined,
-    alpha: createAsphereMode(),
-    beta: createAsphereMode(),
-    gamma: createAsphereMode(),
-    x: createAsphereMode(),
-    y: createAsphereMode(),
-  }));
-}
-
-function getBounds(
-  target: ConfigTarget,
-  canUseBounds: boolean,
-  label: string,
-  rejectZeroStraddle: boolean,
-): { readonly min: string; readonly max: string } {
-  const hasMin = "min" in target;
-  const hasMax = "max" in target;
-  if (!canUseBounds) {
-    if (hasMin || hasMax) {
-      throw new Error(
-        `${label} bounds are not representable by this optimizer.`,
-      );
-    }
-    return { min: "0", max: "0" };
-  }
-
-  if (!hasMin || !hasMax) {
-    throw new Error(`${label} variable bounds are required.`);
-  }
-  assertFiniteNumber(target.min, `${label} minimum`);
-  assertFiniteNumber(target.max, `${label} maximum`);
-  if (target.min >= target.max) {
-    throw new Error(`${label} variable bounds must have Min. less than Max.`);
-  }
-  if (rejectZeroStraddle && target.min < 0 && target.max > 0) {
-    throw new Error(`${label} variable bounds must stay on one side of 0.`);
-  }
-  return { min: String(target.min), max: String(target.max) };
-}
-
-function getVariableMode(
-  target: OptimizationVariableConfig,
-  canUseBounds: boolean,
-): Extract<AsphereMode, { mode: "variable" }> {
-  const bounds = getBounds(
-    target,
-    canUseBounds,
-    target.kind === "radius" ? "Radius" : target.kind,
-    target.kind === "radius" || target.kind === "asphere_toric_sweep_radius",
-  );
-  return { mode: "variable", ...bounds };
-}
-
-function getPickupSourceIndex(
-  target: OptimizationPickupConfig,
-  maximum: number,
-): string {
-  assertIntegerInRange(
-    target.source_surface_index,
-    1,
-    maximum,
-    "Pickup source surface index",
-  );
-  assertDifferentSurface(target.surface_index, target.source_surface_index);
-  return String(target.source_surface_index);
-}
-
-function getPickupMode(
-  target: OptimizationPickupConfig,
-  maximumSourceIndex: number,
-): Extract<AsphereMode, { mode: "pickup" }> {
-  assertFiniteNumber(target.scale, "Pickup scale");
-  assertFiniteNumber(target.offset, "Pickup offset");
-  return {
-    mode: "pickup",
-    sourceSurfaceIndex: getPickupSourceIndex(target, maximumSourceIndex),
-    scale: String(target.scale),
-    offset: String(target.offset),
-    ...(target.kind === "asphere_polynomial_coefficient"
-      ? {
-          sourceTermKey:
-            `coefficient:${target.source_coefficient_index}` as const,
-        }
-      : {}),
-  };
-}
-
-function assertTargetIsUnique(
-  targets: Set<string>,
-  target: ConfigTarget,
-): void {
-  const coefficient =
-    "coefficient_index" in target ? `:${target.coefficient_index}` : "";
-  const key = `${target.kind}:${target.surface_index}${coefficient}`;
-  if (targets.has(key)) {
-    throw new Error(`Duplicate optimization target: ${key}.`);
-  }
-  targets.add(key);
-}
-
-function assertAsphereKindCompatible(
-  kind: ConfigTarget["kind"],
-  asphereKind: AsphericalType,
-): void {
-  if (
-    kind === "asphere_toric_sweep_radius" &&
-    asphereKind !== "XToroid" &&
-    asphereKind !== "YToroid"
-  ) {
-    throw new Error(`${kind} requires an XToroid or YToroid asphere.`);
-  }
-  if (kind === "asphere_polynomial_coefficient" && asphereKind === "Conic") {
-    throw new Error(
-      "Polynomial coefficients are not supported by Conic aspheres.",
-    );
-  }
-}
-
-function updateAsphereType(
-  states: AsphereOptimizationState[],
-  kinds: Map<number, AsphericalType>,
-  surfaceIndex: number,
-  type: AsphericalType,
-): AsphereOptimizationState {
-  const state = states[surfaceIndex - 1];
-  if (state === undefined) {
-    throw new Error(`Asphere surface ${surfaceIndex} is out of range.`);
-  }
-  const previousType = kinds.get(surfaceIndex);
-  if (previousType !== undefined && previousType !== type) {
-    throw new Error(`Incompatible asphere types on surface ${surfaceIndex}.`);
-  }
-  if (state.lockedType && state.type !== type) {
-    throw new Error(`Asphere type on surface ${surfaceIndex} is locked.`);
-  }
-  kinds.set(surfaceIndex, type);
-  const next = { ...state, type };
-  states[surfaceIndex - 1] = next;
-  return next;
-}
-
-function updateDecenterType(
-  states: DecenterOptimizationState[],
-  kinds: Map<number, DecenterOptimizationState["type"]>,
-  surfaceIndex: number,
-  type: DecenterOptimizationState["type"],
-): DecenterOptimizationState {
-  const state = states[surfaceIndex - 1];
-  if (state === undefined) {
-    throw new Error(`Tilt/decenter surface ${surfaceIndex} is out of range.`);
-  }
-  const previousType = kinds.get(surfaceIndex);
-  if (previousType !== undefined && previousType !== type) {
-    throw new Error(
-      `Incompatible tilt/decenter types on surface ${surfaceIndex}.`,
-    );
-  }
-  if (state.lockedType && state.type !== type) {
-    throw new Error(`Tilt/decenter type on surface ${surfaceIndex} is locked.`);
-  }
-  kinds.set(surfaceIndex, type);
-  const next = { ...state, type };
-  states[surfaceIndex - 1] = next;
-  return next;
 }
 
 /**
@@ -653,134 +418,13 @@ export function adaptOptimizationRunConfigToGuiState(
   }
 
   const canUseBounds = getOptimizerBoundsCapability(config);
-  const radiusModes = createRadiusModes(model);
-  const thicknessModes = createThicknessModes(model);
   const glassModes = createGlassModes(model);
-  const asphereStates = createAsphereStates(model);
-  const decenterStates = createDecenterStates(model);
-  const targets = new Set<string>();
-  const asphereKinds = new Map<number, AsphericalType>();
-  const decenterKinds = new Map<number, DecenterOptimizationState["type"]>();
-
-  for (const target of [...config.variables, ...config.pickups]) {
-    assertTargetIsUnique(targets, target);
-    if (target.kind === "radius" || target.kind === "thickness") {
-      const maximum =
-        target.kind === "radius"
-          ? model.surfaces.length + 1
-          : model.surfaces.length;
-      assertIntegerInRange(target.surface_index, 1, maximum, "Surface index");
-      const mode = !("source_surface_index" in target)
-        ? getVariableMode(target as OptimizationVariableConfig, canUseBounds)
-        : getPickupMode(target as OptimizationPickupConfig, maximum);
-      if (target.kind === "radius") {
-        radiusModes[target.surface_index - 1] = {
-          surfaceIndex: target.surface_index,
-          ...mode,
-        } as RadiusMode;
-      } else {
-        thicknessModes[target.surface_index - 1] = {
-          surfaceIndex: target.surface_index,
-          ...mode,
-        } as RadiusMode;
-      }
-      continue;
-    }
-
-    if (target.kind.startsWith("asphere_")) {
-      const asphereTarget = target as Extract<
-        ConfigTarget,
-        { readonly asphere_kind: AsphericalType }
-      >;
-      assertIntegerInRange(
-        asphereTarget.surface_index,
-        1,
-        model.surfaces.length,
-        "Asphere surface index",
-      );
-      const asphereKind = asphereTarget.asphere_kind;
-      assertAsphereKindCompatible(asphereTarget.kind, asphereKind);
-      let state = updateAsphereType(
-        asphereStates,
-        asphereKinds,
-        asphereTarget.surface_index,
-        asphereKind,
-      );
-      let mode: AsphereMode;
-      if (!("source_surface_index" in asphereTarget)) {
-        mode = getVariableMode(
-          asphereTarget as OptimizationVariableConfig,
-          canUseBounds,
-        );
-      } else {
-        mode = getPickupMode(
-          asphereTarget as OptimizationPickupConfig,
-          model.surfaces.length,
-        );
-      }
-      if (asphereTarget.kind === "asphere_conic_constant") {
-        state = { ...state, conic: mode };
-      } else if (asphereTarget.kind === "asphere_toric_sweep_radius") {
-        state = { ...state, toricSweep: mode };
-      } else {
-        const polynomialTarget = asphereTarget as Extract<
-          ConfigTarget,
-          { readonly kind: "asphere_polynomial_coefficient" }
-        >;
-        assertIntegerInRange(
-          polynomialTarget.coefficient_index,
-          0,
-          9,
-          "Asphere coefficient index",
-        );
-        if ("source_coefficient_index" in polynomialTarget) {
-          assertIntegerInRange(
-            polynomialTarget.source_coefficient_index,
-            0,
-            9,
-            "Source coefficient index",
-          );
-        }
-        state = {
-          ...state,
-          coefficients: state.coefficients.map((current, index) =>
-            index === polynomialTarget.coefficient_index ? mode : current,
-          ),
-        };
-      }
-      asphereStates[asphereTarget.surface_index - 1] = state;
-      continue;
-    }
-
-    const decenterTarget = target as Extract<
-      ConfigTarget,
-      { readonly decenter_type: DecenterOptimizationState["type"] }
-    >;
-    assertIntegerInRange(
-      decenterTarget.surface_index,
-      1,
-      model.surfaces.length + 1,
-      "Tilt/decenter surface index",
-    );
-    let state = updateDecenterType(
-      decenterStates,
-      decenterKinds,
-      decenterTarget.surface_index,
-      decenterTarget.decenter_type,
-    );
-    const component = DECENTER_COMPONENT_BY_KIND[decenterTarget.kind];
-    const mode = !("source_surface_index" in decenterTarget)
-      ? getVariableMode(
-          decenterTarget as OptimizationVariableConfig,
-          canUseBounds,
-        )
-      : getPickupMode(
-          decenterTarget as OptimizationPickupConfig,
-          model.surfaces.length + 1,
-        );
-    state = { ...state, [component]: mode };
-    decenterStates[decenterTarget.surface_index - 1] = state;
-  }
+  const parameterStates = parameterStatesFromConfig(
+    config.variables,
+    config.pickups,
+    model,
+    canUseBounds,
+  );
 
   if ("glass_variables" in config) {
     validateGlassCandidates(model, config, catalogs);
@@ -819,11 +463,8 @@ export function adaptOptimizationRunConfigToGuiState(
     optimizer: getOptimizerState(config),
     fieldWeights: operandState.fieldWeights,
     wavelengthWeights: operandState.wavelengthWeights,
-    radiusModes,
-    thicknessModes,
+    parameterStates,
     glassModes,
-    asphereStates,
-    decenterStates,
     operands: operandState.operands,
   };
 }

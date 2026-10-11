@@ -2,10 +2,7 @@
 
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
-import type {
-  RadiusMode,
-  RadiusModeDraft,
-} from "@/features/optimization/stores/optimizationStore";
+import type { ParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
 import {
   getRadiusLabel,
   getRadiusValue,
@@ -19,8 +16,8 @@ import {
   createVariableDraft,
   getRadiusPickupSourceSurfaceOptions,
   minLessThanMaxRule,
-  serializeRadiusMode,
-  toRadiusModeDraft,
+  serializeParameterMode,
+  toParameterModeDraft,
   validateVariableBounds,
 } from "@/features/optimization/lib/modalHelpers";
 import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
@@ -32,9 +29,9 @@ interface RadiusModeModalProps {
   readonly isOpen: boolean;
   readonly optimizationModel: OpticalModel | undefined;
   readonly surfaceIndex: number | undefined;
-  readonly selectedMode: RadiusMode | undefined;
+  readonly selectedMode: ParameterMode | undefined;
   readonly canUseBounds?: boolean;
-  readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  readonly onSetMode: (surfaceIndex: number, mode: ParameterMode) => void;
   readonly onClose: () => void;
 }
 
@@ -84,7 +81,7 @@ export function RadiusModeModal({
 
   return (
     <RadiusModeModalEditor
-      key={`${surfaceIndex}:${serializeRadiusMode(selectedMode)}`}
+      key={`${surfaceIndex}:${serializeParameterMode(selectedMode)}`}
       optimizationModel={optimizationModel}
       surfaceIndex={surfaceIndex}
       selectedMode={selectedMode}
@@ -98,9 +95,9 @@ export function RadiusModeModal({
 interface RadiusModeModalEditorProps {
   readonly optimizationModel: OpticalModel;
   readonly surfaceIndex: number;
-  readonly selectedMode: RadiusMode;
+  readonly selectedMode: ParameterMode;
   readonly canUseBounds: boolean;
-  readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  readonly onSetMode: (surfaceIndex: number, mode: ParameterMode) => void;
   readonly onClose: () => void;
 }
 
@@ -112,8 +109,8 @@ function RadiusModeModalEditor({
   onSetMode,
   onClose,
 }: RadiusModeModalEditorProps) {
-  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() =>
-    toRadiusModeDraft(selectedMode),
+  const [draftMode, setDraftMode] = React.useState<ParameterMode>(() =>
+    toParameterModeDraft(selectedMode),
   );
   const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 

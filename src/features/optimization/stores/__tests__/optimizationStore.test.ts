@@ -9,9 +9,14 @@ import type { OptimizationValueEntry } from "@/features/optimization/types/param
 import {
   createOptimizationSlice,
   hasNonZeroOptimizationContribution,
-  type AsphereTermKey,
   type OptimizationState,
 } from "@/features/optimization/stores/optimizationStore";
+import {
+  asphereViews,
+  decenterStateFrom,
+  decenterView,
+  singleModes,
+} from "@/features/optimization/testing/parameterStateViews";
 
 const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -110,8 +115,12 @@ describe("optimizationStore", () => {
   it("initializes surface and Image decenter modes, builds component configs, and applies returned values", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
-    expect(store.getState().decenterStates).toHaveLength(3);
-    expect(store.getState().decenterStates[2]).toMatchObject({
+    expect(
+      store.getState().parameterStates.decenter.map(decenterView),
+    ).toHaveLength(3);
+    expect(
+      store.getState().parameterStates.decenter.map(decenterView)[2],
+    ).toMatchObject({
       surfaceIndex: 3,
       type: "bend",
       lockedType: false,
@@ -128,12 +137,16 @@ describe("optimizationStore", () => {
           ? { ...state.optimizer, method: "lm" }
           : state.optimizer,
     }));
-    store.getState().replaceDecenterState(3, {
-      ...store.getState().decenterStates[2],
-      type: "reverse",
-      alpha: { mode: "variable", min: "-1", max: "1" },
-      x: { mode: "pickup", sourceSurfaceIndex: "1", scale: "2", offset: "3" },
-    });
+    store.getState().replaceParameterState(
+      "decenter",
+      3,
+      decenterStateFrom({
+        ...store.getState().parameterStates.decenter.map(decenterView)[2],
+        type: "reverse",
+        alpha: { mode: "variable", min: "-1", max: "1" },
+        x: { mode: "pickup", sourceSurfaceIndex: "1", scale: "2", offset: "3" },
+      }),
+    );
     expect(store.getState().buildOptimizationConfig()).toMatchObject({
       variables: [
         { kind: "decenter_alpha", surface_index: 3, decenter_type: "reverse" },
@@ -319,12 +332,12 @@ describe("optimizationStore", () => {
     );
     expect(state.fieldWeights).toEqual([1, 0, 0]);
     expect(state.wavelengthWeights).toEqual([1, 2, 1]);
-    expect(state.radiusModes).toEqual([
+    expect(singleModes(state.parameterStates.radius)).toEqual([
       { surfaceIndex: 1, mode: "constant" },
       { surfaceIndex: 2, mode: "constant" },
       { surfaceIndex: 3, mode: "constant" },
     ]);
-    expect(state.thicknessModes).toEqual([
+    expect(singleModes(state.parameterStates.thickness)).toEqual([
       { surfaceIndex: 1, mode: "constant" },
       { surfaceIndex: 2, mode: "constant" },
     ]);
@@ -332,13 +345,9 @@ describe("optimizationStore", () => {
     expect(state.hasUnappliedOptimizationResult).toBe(false);
     expect(state.isOptimizing).toBe(false);
     expect(state.applyConfirmOpen).toBe(false);
-    expect(state.radiusModal).toEqual({ open: false, surfaceIndex: undefined });
-    expect(state.thicknessModal).toEqual({
+    expect(state.parameterModal).toEqual({
       open: false,
-      surfaceIndex: undefined,
-    });
-    expect(state.asphereModal).toEqual({
-      open: false,
+      group: undefined,
       surfaceIndex: undefined,
     });
     expect(state.glassModal).toEqual({ open: false, surfaceIndex: undefined });
@@ -351,9 +360,14 @@ describe("optimizationStore", () => {
     store.getState().setActiveTabId("operands");
     store.getState().setIsOptimizing(true);
     store.getState().openApplyConfirm();
-    store.getState().openRadiusModal(1);
-    store.getState().openThicknessModal(2);
-    store.getState().openAsphereModal(1);
+    store.getState().openParameterModal("radius", 1);
+    expect(store.getState().parameterModal).toEqual({
+      open: true,
+      group: "radius",
+      surfaceIndex: 1,
+    });
+    store.getState().openParameterModal("thickness", 2);
+    store.getState().openParameterModal("aspherical", 1);
     store.getState().openGlassModal(0);
 
     expect(store.getState()).toEqual(
@@ -361,17 +375,13 @@ describe("optimizationStore", () => {
         activeTabId: "operands",
         isOptimizing: true,
         applyConfirmOpen: true,
-        radiusModal: { open: true, surfaceIndex: 1 },
-        thicknessModal: { open: true, surfaceIndex: 2 },
-        asphereModal: { open: true, surfaceIndex: 1 },
+        parameterModal: { open: true, group: "aspherical", surfaceIndex: 1 },
         glassModal: { open: true, surfaceIndex: 0 },
       }),
     );
 
     store.getState().closeApplyConfirm();
-    store.getState().closeRadiusModal();
-    store.getState().closeThicknessModal();
-    store.getState().closeAsphereModal();
+    store.getState().closeParameterModal();
     store.getState().closeGlassModal();
     store.getState().setIsOptimizing(false);
 
@@ -379,9 +389,11 @@ describe("optimizationStore", () => {
       expect.objectContaining({
         isOptimizing: false,
         applyConfirmOpen: false,
-        radiusModal: { open: false, surfaceIndex: undefined },
-        thicknessModal: { open: false, surfaceIndex: undefined },
-        asphereModal: { open: false, surfaceIndex: undefined },
+        parameterModal: {
+          open: false,
+          group: undefined,
+          surfaceIndex: undefined,
+        },
         glassModal: { open: false, surfaceIndex: undefined },
       }),
     );
@@ -523,12 +535,12 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -566,7 +578,7 @@ describe("optimizationStore", () => {
         atol: "0",
       },
     });
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
@@ -612,12 +624,12 @@ describe("optimizationStore", () => {
         atol: "0",
       },
     });
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -648,7 +660,7 @@ describe("optimizationStore", () => {
     store.setState((state) => ({
       optimizer: { ...state.optimizer, method: "lm", max_nfev: "1" },
     }));
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -689,12 +701,12 @@ describe("optimizationStore", () => {
         atol: "0",
       },
     });
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -792,18 +804,18 @@ describe("optimizationStore", () => {
 
     store.getState().setFieldWeight(1, "0.5");
     store.getState().setWavelengthWeight(2, "0.25");
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setRadiusMode(2, {
+    store.getState().setParameterMode("radius", 2, "value", {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "-1",
       offset: "0.5",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -865,18 +877,18 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
     });
-    store.getState().setAsphereType(1, "RadialPolynomial");
-    store.getState().setAsphereTermMode(1, "conic", {
+    store.getState().setParameterQualifier("aspherical", 1, "RadialPolynomial");
+    store.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "variable",
       min: "-2",
       max: "0",
@@ -898,18 +910,18 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
     });
-    store.getState().setAsphereType(1, "RadialPolynomial");
-    store.getState().setAsphereTermMode(1, "conic", {
+    store.getState().setParameterQualifier("aspherical", 1, "RadialPolynomial");
+    store.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "variable",
       min: "-2",
       max: "0",
@@ -935,7 +947,7 @@ describe("optimizationStore", () => {
     }));
     Array.from({ length: 12 }, (_, index) => index + 1).forEach(
       (surfaceIndex) => {
-        store.getState().setRadiusMode(surfaceIndex, {
+        store.getState().setParameterMode("radius", surfaceIndex, "value", {
           mode: "variable",
           min: "40",
           max: "60",
@@ -944,7 +956,7 @@ describe("optimizationStore", () => {
     );
     Array.from({ length: 11 }, (_, index) => index + 1).forEach(
       (surfaceIndex) => {
-        store.getState().setThicknessMode(surfaceIndex, {
+        store.getState().setParameterMode("thickness", surfaceIndex, "value", {
           mode: "variable",
           min: "4",
           max: "8",
@@ -982,12 +994,12 @@ describe("optimizationStore", () => {
         method: "lm",
       },
     }));
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -1024,12 +1036,12 @@ describe("optimizationStore", () => {
         method: "lm",
       },
     }));
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -1060,12 +1072,12 @@ describe("optimizationStore", () => {
       fieldWeights: [1, 0, 0],
       wavelengthWeights: [1, 0, 0],
     }));
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
     });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "variable",
       min: "10",
       max: "30",
@@ -1090,25 +1102,23 @@ describe("optimizationStore", () => {
 
     expect(store.getState()).toEqual(
       expect.objectContaining({
-        setAsphereType: expect.any(Function),
-        setAsphereTermMode: expect.any(Function),
+        setParameterQualifier: expect.any(Function),
+        setParameterMode: expect.any(Function),
       }),
     );
 
-    store.getState().setAsphereTermMode(1, "conic", {
+    store.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "variable",
       min: "-2",
       max: "-0.5",
     });
-    store.getState().setAsphereTermMode(1, "coefficient", {
+    store.getState().setParameterMode("aspherical", 1, "coefficient:1", {
       mode: "variable",
-      coefficientIndex: 1,
       min: "-0.01",
       max: "0.01",
     });
-    store.getState().setAsphereTermMode(1, "coefficient", {
+    store.getState().setParameterMode("aspherical", 1, "coefficient:2", {
       mode: "pickup",
-      coefficientIndex: 2,
       sourceSurfaceIndex: "1",
       sourceTermKey: "coefficient:1",
       scale: "2",
@@ -1164,8 +1174,8 @@ describe("optimizationStore", () => {
   it("ignores toric-sweep modes when the selected asphere type is not toroidal", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
-    store.getState().setAsphereType(1, "RadialPolynomial");
-    store.getState().setAsphereTermMode(1, "toricSweep", {
+    store.getState().setParameterQualifier("aspherical", 1, "RadialPolynomial");
+    store.getState().setParameterMode("aspherical", 1, "toricSweep", {
       mode: "variable",
       min: "-10",
       max: "-1",
@@ -1182,7 +1192,7 @@ describe("optimizationStore", () => {
       ]),
     );
 
-    store.getState().setAsphereTermMode(1, "toricSweep", {
+    store.getState().setParameterMode("aspherical", 1, "toricSweep", {
       mode: "pickup",
       sourceSurfaceIndex: "2",
       scale: "1",
@@ -1199,9 +1209,8 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);
 
-    store.getState().setAsphereTermMode(1, "coefficient", {
+    store.getState().setParameterMode("aspherical", 1, "coefficient:1", {
       mode: "pickup",
-      coefficientIndex: 1,
       sourceSurfaceIndex: "2",
       sourceTermKey: "coefficient:0",
       scale: "1.5",
@@ -1236,12 +1245,10 @@ describe("optimizationStore", () => {
     for (const sourceCoefficientIndex of ["-1", "1.5"]) {
       const store = createStore<OptimizationState>(createOptimizationSlice);
       store.getState().initializeFromOpticalModel(asphericModel);
-      store.getState().setAsphereTermMode(1, "coefficient", {
+      store.getState().setParameterMode("aspherical", 1, "coefficient:1", {
         mode: "pickup",
-        coefficientIndex: 1,
         sourceSurfaceIndex: "1",
-        sourceTermKey:
-          `coefficient:${sourceCoefficientIndex}` as AsphereTermKey,
+        sourceTermKey: `coefficient:${sourceCoefficientIndex}`,
         scale: "1",
         offset: "0",
       });
@@ -1260,7 +1267,7 @@ describe("optimizationStore", () => {
   it("builds conic and toric-sweep asphere pickups", () => {
     const conicStore = createStore<OptimizationState>(createOptimizationSlice);
     conicStore.getState().initializeFromOpticalModel(asphericModel);
-    conicStore.getState().setAsphereTermMode(1, "conic", {
+    conicStore.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "pickup",
       sourceSurfaceIndex: "2",
       scale: "-1",
@@ -1286,8 +1293,8 @@ describe("optimizationStore", () => {
 
     const toricStore = createStore<OptimizationState>(createOptimizationSlice);
     toricStore.getState().initializeFromOpticalModel(baseModel);
-    toricStore.getState().setAsphereType(1, "YToroid");
-    toricStore.getState().setAsphereTermMode(1, "toricSweep", {
+    toricStore.getState().setParameterQualifier("aspherical", 1, "YToroid");
+    toricStore.getState().setParameterMode("aspherical", 1, "toricSweep", {
       mode: "pickup",
       sourceSurfaceIndex: "2",
       scale: "2",
@@ -1316,13 +1323,13 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
-    store.getState().setAsphereType(2, "XToroid");
-    store.getState().setAsphereTermMode(2, "conic", {
+    store.getState().setParameterQualifier("aspherical", 2, "XToroid");
+    store.getState().setParameterMode("aspherical", 2, "conic", {
       mode: "variable",
       min: "-1",
       max: "0",
     });
-    store.getState().setAsphereTermMode(2, "toricSweep", {
+    store.getState().setParameterMode("aspherical", 2, "toricSweep", {
       mode: "variable",
       min: "-60",
       max: "-20",
@@ -1602,7 +1609,7 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
     store.getState().setFieldWeight(1, "0.5");
-    store.getState().setRadiusMode(1, {
+    store.getState().setParameterMode("radius", 1, "value", {
       mode: "variable",
       min: "40",
       max: "60",
@@ -1624,7 +1631,7 @@ describe("optimizationStore", () => {
     const state = store.getState();
     expect(state.optimizationModel?.surfaces[0].curvatureRadius).toBe(75);
     expect(state.fieldWeights).toEqual([1, 0.5, 0]);
-    expect(state.radiusModes[0]).toEqual({
+    expect(singleModes(state.parameterStates.radius)[0]).toEqual({
       surfaceIndex: 1,
       mode: "constant",
     });
@@ -1636,9 +1643,11 @@ describe("optimizationStore", () => {
     store.getState().setFieldWeight(0, 0.25);
     store.getState().setFieldWeight(1, 0.5);
     store.getState().setWavelengthWeight(0, 0.75);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
 
     store.getState().syncFromOpticalModel({
       ...baseModel,
@@ -1650,7 +1659,9 @@ describe("optimizationStore", () => {
 
     expect(store.getState().fieldWeights).toEqual([1, 0, 0]);
     expect(store.getState().wavelengthWeights).toEqual([0.75, 2, 1]);
-    expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
+    expect(
+      singleModes(store.getState().parameterStates.radius)[0],
+    ).toMatchObject({ mode: "variable" });
   });
 
   it("does not reset optimization settings when only editor wide-angle mode changes", () => {
@@ -1659,9 +1670,11 @@ describe("optimizationStore", () => {
     store.getState().setFieldWeight(0, 0.25);
     store.getState().setFieldWeight(1, 0.5);
     store.getState().setWavelengthWeight(0, 0.75);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
     store.getState().addOperand();
     store.getState().setOptimizerKind("differential_evolution");
 
@@ -1678,7 +1691,9 @@ describe("optimizationStore", () => {
     );
     expect(store.getState().fieldWeights).toEqual([0.25, 0.5, 0]);
     expect(store.getState().wavelengthWeights).toEqual([0.75, 2, 1]);
-    expect(store.getState().radiusModes[0]).toMatchObject({
+    expect(
+      singleModes(store.getState().parameterStates.radius)[0],
+    ).toMatchObject({
       mode: "variable",
       min: "40",
       max: "60",
@@ -1692,9 +1707,11 @@ describe("optimizationStore", () => {
     store.getState().initializeFromOpticalModel(baseModel);
     store.getState().setFieldWeight(1, 0.5);
     store.getState().setWavelengthWeight(0, 0.75);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
 
     store.getState().syncFromOpticalModel({
       ...baseModel,
@@ -1712,7 +1729,9 @@ describe("optimizationStore", () => {
 
     expect(store.getState().fieldWeights).toEqual([1, 0.5, 0]);
     expect(store.getState().wavelengthWeights).toEqual([3, 4]);
-    expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
+    expect(
+      singleModes(store.getState().parameterStates.radius)[0],
+    ).toMatchObject({ mode: "variable" });
   });
 
   it("does not reset optimization settings when only editor reference wavelength changes", () => {
@@ -1720,9 +1739,11 @@ describe("optimizationStore", () => {
     store.getState().initializeFromOpticalModel(baseModel);
     store.getState().setFieldWeight(1, 0.5);
     store.getState().setWavelengthWeight(0, 0.75);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
     store.getState().addOperand();
     store.getState().setOptimizerKind("differential_evolution");
 
@@ -1739,7 +1760,9 @@ describe("optimizationStore", () => {
     ).toBe(2);
     expect(store.getState().fieldWeights).toEqual([1, 0.5, 0]);
     expect(store.getState().wavelengthWeights).toEqual([0.75, 2, 1]);
-    expect(store.getState().radiusModes[0]).toMatchObject({
+    expect(
+      singleModes(store.getState().parameterStates.radius)[0],
+    ).toMatchObject({
       mode: "variable",
       min: "40",
       max: "60",
@@ -1751,16 +1774,18 @@ describe("optimizationStore", () => {
   it("resets radius thickness and asphere modes on normal prescription sync", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "1",
       offset: "0",
     });
-    store.getState().setAsphereTermMode(1, "conic", {
+    store.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "variable",
       min: "-2",
       max: "0",
@@ -1777,12 +1802,18 @@ describe("optimizationStore", () => {
     });
 
     expect(
-      store.getState().radiusModes.every((mode) => mode.mode === "constant"),
+      singleModes(store.getState().parameterStates.radius).every(
+        (mode) => mode.mode === "constant",
+      ),
     ).toBe(true);
     expect(
-      store.getState().thicknessModes.every((mode) => mode.mode === "constant"),
+      singleModes(store.getState().parameterStates.thickness).every(
+        (mode) => mode.mode === "constant",
+      ),
     ).toBe(true);
-    expect(store.getState().asphereStates[0].conic).toEqual({
+    expect(
+      asphereViews(store.getState().parameterStates.aspherical)[0].conic,
+    ).toEqual({
       mode: "constant",
     });
     expect(store.getState().operands).toHaveLength(1);
@@ -1792,16 +1823,18 @@ describe("optimizationStore", () => {
   it("preserves optimization modes and unapplied results on comment-only editor synchronization", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "1",
       offset: "0",
     });
-    store.getState().setAsphereTermMode(1, "conic", {
+    store.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "variable",
       min: "-2",
       max: "0",
@@ -1842,16 +1875,22 @@ describe("optimizationStore", () => {
     expect(
       store.getState().optimizationModel?.surfaces[0].curvatureRadius,
     ).toBe(42);
-    expect(store.getState().radiusModes[0]).toMatchObject({
+    expect(
+      singleModes(store.getState().parameterStates.radius)[0],
+    ).toMatchObject({
       mode: "variable",
       min: "40",
       max: "60",
     });
-    expect(store.getState().thicknessModes[1]).toMatchObject({
+    expect(
+      singleModes(store.getState().parameterStates.thickness)[1],
+    ).toMatchObject({
       mode: "pickup",
       sourceSurfaceIndex: "1",
     });
-    expect(store.getState().asphereStates[0].conic).toMatchObject({
+    expect(
+      asphereViews(store.getState().parameterStates.aspherical)[0].conic,
+    ).toMatchObject({
       mode: "variable",
       min: "-2",
       max: "0",
@@ -1863,16 +1902,18 @@ describe("optimizationStore", () => {
   it("preserves prescription modes on exempt prescription sync", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store.getState().setThicknessMode(2, {
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setParameterMode("thickness", 2, "value", {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "1",
       offset: "0",
     });
-    store.getState().setAsphereTermMode(1, "conic", {
+    store.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "variable",
       min: "-2",
       max: "0",
@@ -1894,16 +1935,22 @@ describe("optimizationStore", () => {
     expect(
       store.getState().optimizationModel?.surfaces[0].curvatureRadius,
     ).toBe(75);
-    expect(store.getState().radiusModes[0]).toMatchObject({
+    expect(
+      singleModes(store.getState().parameterStates.radius)[0],
+    ).toMatchObject({
       mode: "variable",
       min: "40",
       max: "60",
     });
-    expect(store.getState().thicknessModes[1]).toMatchObject({
+    expect(
+      singleModes(store.getState().parameterStates.thickness)[1],
+    ).toMatchObject({
       mode: "pickup",
       sourceSurfaceIndex: "1",
     });
-    expect(store.getState().asphereStates[0].conic).toMatchObject({
+    expect(
+      asphereViews(store.getState().parameterStates.aspherical)[0].conic,
+    ).toMatchObject({
       mode: "variable",
       min: "-2",
       max: "0",
@@ -2052,9 +2099,11 @@ describe("optimizationStore", () => {
     store.setState((state) => ({
       optimizer: { ...state.optimizer, method: "lm" },
     }));
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
     store
       .getState()
       .replaceOperands([
@@ -2069,7 +2118,7 @@ describe("optimizationStore", () => {
       createOptimizationSlice,
     );
     radiusSourceStore.getState().initializeFromOpticalModel(baseModel);
-    radiusSourceStore.getState().setRadiusMode(1, {
+    radiusSourceStore.getState().setParameterMode("radius", 1, "value", {
       mode: "pickup",
       sourceSurfaceIndex: "3",
       scale: "1",
@@ -2096,7 +2145,7 @@ describe("optimizationStore", () => {
       createOptimizationSlice,
     );
     thicknessRangeStore.getState().initializeFromOpticalModel(baseModel);
-    thicknessRangeStore.getState().setThicknessMode(1, {
+    thicknessRangeStore.getState().setParameterMode("thickness", 1, "value", {
       mode: "pickup",
       sourceSurfaceIndex: "3",
       scale: "1",
@@ -2117,7 +2166,7 @@ describe("optimizationStore", () => {
       createOptimizationSlice,
     );
     sameSurfaceStore.getState().initializeFromOpticalModel(baseModel);
-    sameSurfaceStore.getState().setRadiusMode(3, {
+    sameSurfaceStore.getState().setParameterMode("radius", 3, "value", {
       mode: "pickup",
       sourceSurfaceIndex: "3",
       scale: "1",
@@ -2160,7 +2209,9 @@ describe("optimizationStore", () => {
     for (const [min, max, message] of cases) {
       const store = createStore<OptimizationState>(createOptimizationSlice);
       store.getState().initializeFromOpticalModel(baseModel);
-      store.getState().setRadiusMode(1, { mode: "variable", min, max });
+      store
+        .getState()
+        .setParameterMode("radius", 1, "value", { mode: "variable", min, max });
       store
         .getState()
         .replaceOperands([
@@ -2235,9 +2286,11 @@ describe("optimizationStore", () => {
   it("does not allow an optimization-only asphere type to replace a locked editor type", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);
-    store.getState().setAsphereType(1, "Conic");
+    store.getState().setParameterQualifier("aspherical", 1, "Conic");
 
-    expect(store.getState().asphereStates[0]).toMatchObject({
+    expect(
+      asphereViews(store.getState().parameterStates.aspherical)[0],
+    ).toMatchObject({
       type: "RadialPolynomial",
       lockedType: true,
     });
@@ -2246,7 +2299,7 @@ describe("optimizationStore", () => {
   it("omits asphere terms until a type is selected and supports Y toroid variables", () => {
     const noTypeStore = createStore<OptimizationState>(createOptimizationSlice);
     noTypeStore.getState().initializeFromOpticalModel(baseModel);
-    noTypeStore.getState().setAsphereTermMode(1, "conic", {
+    noTypeStore.getState().setParameterMode("aspherical", 1, "conic", {
       mode: "variable",
       min: "-1",
       max: "0",
@@ -2262,8 +2315,8 @@ describe("optimizationStore", () => {
 
     const toroidStore = createStore<OptimizationState>(createOptimizationSlice);
     toroidStore.getState().initializeFromOpticalModel(baseModel);
-    toroidStore.getState().setAsphereType(1, "YToroid");
-    toroidStore.getState().setAsphereTermMode(1, "toricSweep", {
+    toroidStore.getState().setParameterQualifier("aspherical", 1, "YToroid");
+    toroidStore.getState().setParameterMode("aspherical", 1, "toricSweep", {
       mode: "variable",
       min: "-10",
       max: "-1",
@@ -2289,9 +2342,8 @@ describe("optimizationStore", () => {
   it("requires a source coefficient term for asphere coefficient pickups", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);
-    store.getState().setAsphereTermMode(1, "coefficient", {
+    store.getState().setParameterMode("aspherical", 1, "coefficient:0", {
       mode: "pickup",
-      coefficientIndex: 0,
       sourceSurfaceIndex: "1",
       scale: "1",
       offset: "0",
@@ -2310,10 +2362,12 @@ describe("optimizationStore", () => {
   it("initializes and reconciles optimization state when syncing model shape", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().syncFromOpticalModel(baseModel);
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store.getState().setAsphereType(1, "Conic");
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setParameterQualifier("aspherical", 1, "Conic");
 
     const threeSurfaceModel: OpticalModel = {
       ...baseModel,
@@ -2322,13 +2376,19 @@ describe("optimizationStore", () => {
     store.getState().syncFromOpticalModel(threeSurfaceModel, {
       prescriptionSyncPolicy: "preserveOptimizationModes",
     });
-    expect(store.getState().radiusModes).toHaveLength(4);
-    expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
-    expect(store.getState().radiusModes[3]).toEqual({
+    expect(singleModes(store.getState().parameterStates.radius)).toHaveLength(
+      4,
+    );
+    expect(
+      singleModes(store.getState().parameterStates.radius)[0],
+    ).toMatchObject({ mode: "variable" });
+    expect(singleModes(store.getState().parameterStates.radius)[3]).toEqual({
       surfaceIndex: 4,
       mode: "constant",
     });
-    expect(store.getState().asphereStates[2]).toMatchObject({
+    expect(
+      asphereViews(store.getState().parameterStates.aspherical)[2],
+    ).toMatchObject({
       surfaceIndex: 3,
       type: undefined,
       lockedType: false,
@@ -2340,8 +2400,12 @@ describe("optimizationStore", () => {
         { ...baseModel, surfaces: [baseModel.surfaces[0]] },
         { prescriptionSyncPolicy: "preserveOptimizationModes" },
       );
-    expect(store.getState().thicknessModes).toHaveLength(1);
-    expect(store.getState().radiusModes).toHaveLength(2);
+    expect(
+      singleModes(store.getState().parameterStates.thickness),
+    ).toHaveLength(1);
+    expect(singleModes(store.getState().parameterStates.radius)).toHaveLength(
+      2,
+    );
   });
 
   it("initializes every optimization dimension on the first sync", () => {
@@ -2358,29 +2422,29 @@ describe("optimizationStore", () => {
           { surfaceIndex: 1, mode: "constant" },
           { surfaceIndex: 2, mode: "constant" },
         ],
-        asphereStates: [
-          expect.objectContaining({
-            surfaceIndex: 1,
-            type: undefined,
-            lockedType: false,
-          }),
-          expect.objectContaining({
-            surfaceIndex: 2,
-            type: undefined,
-            lockedType: false,
-          }),
-        ],
         operands: [],
         lastOptimizationReport: undefined,
         hasUnappliedOptimizationResult: false,
       }),
     );
+    expect(asphereViews(store.getState().parameterStates.aspherical)).toEqual([
+      expect.objectContaining({
+        surfaceIndex: 1,
+        type: undefined,
+        lockedType: false,
+      }),
+      expect.objectContaining({
+        surfaceIndex: 2,
+        type: undefined,
+        lockedType: false,
+      }),
+    ]);
   });
 
   it("locks a previously free asphere type when the editor supplies one", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
-    store.getState().setAsphereType(1, "Conic");
+    store.getState().setParameterQualifier("aspherical", 1, "Conic");
 
     store.getState().syncFromOpticalModel(
       {
@@ -2400,7 +2464,9 @@ describe("optimizationStore", () => {
       { prescriptionSyncPolicy: "preserveOptimizationModes" },
     );
 
-    expect(store.getState().asphereStates[0]).toMatchObject({
+    expect(
+      asphereViews(store.getState().parameterStates.aspherical)[0],
+    ).toMatchObject({
       type: "RadialPolynomial",
       lockedType: true,
     });
@@ -2688,7 +2754,7 @@ describe("optimizationStore", () => {
     function createOptimizedStore() {
       const store = createStore<OptimizationState>(createOptimizationSlice);
       store.getState().initializeFromOpticalModel(baseModel);
-      store.getState().setRadiusMode(1, {
+      store.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
@@ -2738,7 +2804,9 @@ describe("optimizationStore", () => {
       store.getState().discardOptimizationResult(baseModel);
       store.getState().syncFromOpticalModel(baseModel);
 
-      expect(store.getState().radiusModes[0]).toMatchObject({
+      expect(
+        singleModes(store.getState().parameterStates.radius)[0],
+      ).toMatchObject({
         mode: "variable",
       });
     });
