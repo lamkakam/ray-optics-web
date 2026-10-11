@@ -5,7 +5,7 @@
  * ## Key Conventions
  *
  * - The renderer component returns `React.JSX.Element`.
- * - Runtime renderer selection stays in `features/optimization/lib/variableModeFields.tsx`.
+ * - Runtime renderer selection stays in `features/optimization/components/ParameterModeModal/fields/variableModeFields.tsx`.
  */
 import type React from "react";
 

@@ -25,11 +25,8 @@ import {
   OptimizationEvaluationPanel,
   OptimizationInspectionModals,
   OptimizationProgressModal,
-  AsphereVarModal,
   GlassVariableModal,
-  RadiusModeModal,
-  ThicknessModeModal,
-  TiltDecenterVarModal,
+  ParameterModeModal,
 } from "./components";
 import { getOptimizationAlgorithmCapabilities } from "./lib/methodCapabilities";
 import { applyOptimizationModelToEditor } from "./lib/applyOptimizationModelToEditor";
@@ -50,8 +47,7 @@ import {
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpenSurfacePropertyModal } from "@/shared/lib/lens-prescription-grid/SurfacePropertyModalHost";
 import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
-import type { ParameterGroupKey } from "@/features/optimization/lib/parameters/parameterGroups";
-import { getParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
+import type { ParameterGroupState } from "@/features/optimization/lib/parameters/parameterStates";
 import type {
   OpticalModel,
   OpticalSpecs,
@@ -164,7 +160,7 @@ function buildCurrentEditorModel(
  * - read-only `Medium`, `Semi-diam.`, `Asph.` columns
  * - read-only `Aperture` column after `Semi-diam.` that opens the aperture inspection modal
  * - a conditional fourth `Var.` column immediately after `Medium` for Object and physical-surface glass pools when Glass Expert is selected
- * - a third always-present `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
+ * - a third always-present `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only)
  * - read-only `Tilt & Decenter`, followed by an always-visible fourth `Var.` column for five independent tilt/decenter targets on numbered surfaces and Image, and `Diffraction Grating`
  * - Passes the auto/manual mode from the synchronized optimization model through `BottomDrawerContainer` to `OptimizationLensPrescriptionGrid`, keeping the prescription display aligned with the model used by evaluation and optimization.
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, `Weight`, and `Surface Index`, including combined and axis-specific OPD Difference and Ray Fan operand options and the surface-scoped Edge Thickness range operand, whose `Target` cell holds lower/upper bound inputs.
@@ -173,8 +169,8 @@ function buildCurrentEditorModel(
  * - Registers `set_optimization_config`, `get_optimization_config`, `evaluate_optimization_operands`, `execute_optimization`, `apply_optimization_to_editor`, `discard_optimization_result`, `dismiss_optimization_progress`, `stop_optimization`, and `get_optimization_progress` only while this route is mounted. The descriptors retain the latest worker, catalog, store, and callback snapshots without re-registering on ordinary page renders.
  * - The WebMCP setter uses the store's atomic inverse adapter, while WebMCP evaluation, execution, stopping, application, discard, and progress dismissal call the same page operations as the automatic evaluation effect, `Optimize` button, progress-modal Stop control, confirmed Apply action, confirmed Discard action, and progress-modal `OK`/backdrop close. Both `stop_optimization` and an aborted `execute_optimization` stop through that Stop path. Tool callers receive JSON worker reports and transport errors while the page keeps its existing safe warning behavior.
  * - A resolved failed evaluation report clears stale rows and displays the shared approved failure message. Initial-guess bounds validation retains its rollback report; a later successful evaluation clears warnings. Worker diagnostics are logged once at the boundary.
- * - Radius, thickness, asphere, and tilt/decenter variable/pickup dialogs keep edits in modal-local draft state. Committed asphere and tilt/decenter state are evaluation dependencies.
- * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
+ * - Every `Var.` column (generated per parameter group from `PARAMETER_MODE_UI`) opens one shared `ParameterModeModal` through the store's `parameterModal`; it edits radius, thickness, asphere, or tilt/decenter modes in modal-local draft state and commits the full group state with `replaceParameterState`. Committed parameter states are evaluation dependencies.
+ * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes it to `ParameterModeModal` so its `variable` mode rendering stays decoupled from algorithm details.
  * - When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` reports the thrown error message through the page-local warning callback instead of filtering to one hardcoded `lm` warning.
  * - When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
  * - Variable-bound affordances use optimizer-kind-aware capabilities, so bounded least-squares (`trf`), Differential Evolution, and Glass Expert use the min/max variable UI while `lm` remains unbounded.
@@ -202,9 +198,8 @@ function buildCurrentEditorModel(
  * - `Discard` opens `OptimizationDiscardConfirmModal`; confirming runs the discard operation shared with `discard_optimization_result`. It rejects while a run is active, otherwise rebuilds the current Editor model through `buildCurrentEditorModel(...)`, calls the store's `discardOptimizationResult(...)` so the page-local prescription is restored while compatible variable/pickup modes, weights, operands, and algorithm settings are kept, closes the modal, and reports whether a result was pending. The Lens Editor and Specs stores are never mutated, and failures use the existing error UI.
  * - An aborted WebMCP execution sends the active run through the same interrupt-buffer and worker run-id Stop path as the modal, waits for the worker report to settle, mirrors any stopped partial result, and then rejects with `AbortError`.
  * - Modal rendering is delegated to extracted wrappers:
- * - `RadiusModeModal`
- * - `ThicknessModeModal`
- * - `AsphereVarModal`
+ * - `ParameterModeModal`
+ * - `GlassVariableModal`
  * - `OptimizationProgressModal`
  * - `OptimizationApplyConfirmModal`
  * - `OptimizationDiscardConfirmModal`
@@ -348,15 +343,6 @@ export function OptimizationPage({
     optimizationStore,
     (state) => state.parameterModal,
   );
-  const modalFor = (group: ParameterGroupKey) => ({
-    open: parameterModal.open && parameterModal.group === group,
-    surfaceIndex:
-      parameterModal.group === group ? parameterModal.surfaceIndex : undefined,
-  });
-  const radiusModal = modalFor("radius");
-  const thicknessModal = modalFor("thickness");
-  const asphereModal = modalFor("aspherical");
-  const decenterVarModal = modalFor("decenter");
   const glassModal = useStore(optimizationStore, (state) => state.glassModal);
   /** Surface property whose read-only inspection modal is open, with its row. */
   const [inspectedProperty, setInspectedProperty] = useState<
@@ -547,28 +533,14 @@ export function OptimizationPage({
     }));
   }, [optimizationModel]);
 
-  const selectedRadiusState = radiusModes.find(
-    (state) => state.surfaceIndex === radiusModal.surfaceIndex,
-  );
-  const selectedRadiusMode =
-    selectedRadiusState === undefined
+  const selectedParameterState =
+    parameterModal.group === undefined
       ? undefined
-      : getParameterMode(selectedRadiusState, "value");
-
-  const selectedThicknessState = thicknessModes.find(
-    (state) => state.surfaceIndex === thicknessModal.surfaceIndex,
-  );
-  const selectedThicknessMode =
-    selectedThicknessState === undefined
-      ? undefined
-      : getParameterMode(selectedThicknessState, "value");
-
-  const selectedAsphereState =
-    asphereModal.surfaceIndex === undefined
-      ? undefined
-      : asphereStates.find(
-          (state) => state.surfaceIndex === asphereModal.surfaceIndex,
-        );
+      : (
+          parameterStates[
+            parameterModal.group
+          ] as readonly ParameterGroupState[]
+        ).find((state) => state.surfaceIndex === parameterModal.surfaceIndex);
 
   const selectedGlassMode =
     glassModal.surfaceIndex === undefined
@@ -576,13 +548,6 @@ export function OptimizationPage({
       : glassModes.find(
           (mode) => mode.surfaceIndex === glassModal.surfaceIndex,
         );
-  const selectedDecenterState =
-    decenterVarModal.surfaceIndex === undefined
-      ? undefined
-      : decenterStates.find(
-          (state) => state.surfaceIndex === decenterVarModal.surfaceIndex,
-        );
-
   const evaluationRows = useMemo(
     () =>
       evaluationReport?.residuals.flatMap((residual, index) => {
@@ -1370,44 +1335,17 @@ export function OptimizationPage({
         />
       </div>
 
-      <RadiusModeModal
-        isOpen={radiusModal.open}
+      <ParameterModeModal
+        isOpen={parameterModal.open}
+        group={parameterModal.group}
         optimizationModel={optimizationModel}
-        surfaceIndex={radiusModal.surfaceIndex}
-        selectedMode={selectedRadiusMode}
+        surfaceIndex={parameterModal.surfaceIndex}
+        state={selectedParameterState}
         canUseBounds={canUseBounds}
-        onSetMode={(surfaceIndex, mode) =>
+        onSave={(group, surfaceIndex, state) =>
           optimizationStore
             .getState()
-            .setParameterMode("radius", surfaceIndex, "value", mode)
-        }
-        onClose={() => optimizationStore.getState().closeParameterModal()}
-      />
-
-      <ThicknessModeModal
-        isOpen={thicknessModal.open}
-        optimizationModel={optimizationModel}
-        surfaceIndex={thicknessModal.surfaceIndex}
-        selectedMode={selectedThicknessMode}
-        canUseBounds={canUseBounds}
-        onSetMode={(surfaceIndex, mode) =>
-          optimizationStore
-            .getState()
-            .setParameterMode("thickness", surfaceIndex, "value", mode)
-        }
-        onClose={() => optimizationStore.getState().closeParameterModal()}
-      />
-
-      <AsphereVarModal
-        isOpen={asphereModal.open}
-        optimizationModel={optimizationModel}
-        surfaceIndex={asphereModal.surfaceIndex}
-        asphereState={selectedAsphereState}
-        canUseBounds={canUseBounds}
-        onSave={(surfaceIndex, state) =>
-          optimizationStore
-            .getState()
-            .replaceParameterState("aspherical", surfaceIndex, state)
+            .replaceParameterState(group, surfaceIndex, state as never)
         }
         onClose={() => optimizationStore.getState().closeParameterModal()}
       />
@@ -1422,20 +1360,6 @@ export function OptimizationPage({
           optimizationStore.getState().setGlassMode(surfaceIndex, mode)
         }
         onClose={() => optimizationStore.getState().closeGlassModal()}
-      />
-
-      <TiltDecenterVarModal
-        isOpen={decenterVarModal.open}
-        optimizationModel={optimizationModel}
-        surfaceIndex={decenterVarModal.surfaceIndex}
-        decenterState={selectedDecenterState}
-        canUseBounds={canUseBounds}
-        onSave={(surfaceIndex, state) =>
-          optimizationStore
-            .getState()
-            .replaceParameterState("decenter", surfaceIndex, state)
-        }
-        onClose={() => optimizationStore.getState().closeParameterModal()}
       />
 
       <OptimizationApplyConfirmModal

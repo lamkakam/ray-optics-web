@@ -16,6 +16,7 @@ import {
   BottomDrawer,
   type TabItem,
 } from "@/shared/components/layout/BottomDrawer";
+import type { ParameterGroupKey } from "@/features/optimization/lib/parameters/parameterGroups";
 import { useOptimizationStore } from "@/features/optimization/providers/OptimizationStoreProvider";
 import { OptimizationAlgorithmTab } from "@/features/optimization/components/OptimizationAlgorithmTab";
 import { OptimizationWeightsGrid } from "@/features/optimization/components/OptimizationWeightsGrid";
@@ -36,17 +37,11 @@ type GridEditLifecycleProps = Pick<
 >;
 type PrescriptionProps = Omit<
   OptimizationLensPrescriptionGridProps,
-  | "radiusModes"
-  | "thicknessModes"
+  | "parameterStates"
   | "glassModes"
-  | "asphereStates"
-  | "decenterStates"
   | "canOptimizeGlass"
-  | "onOpenRadiusModal"
-  | "onOpenThicknessModal"
+  | "onOpenParameterModal"
   | "onOpenGlassModal"
-  | "onOpenAsphereVarModal"
-  | "onOpenTiltDecenterVarModal"
   | "onCellEditingStarted"
   | "onCellEditingStopped"
 >;
@@ -112,12 +107,6 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     optimizationStore,
     (state) => state.parameterStates,
   );
-  const {
-    radius: radiusModes,
-    thickness: thicknessModes,
-    aspherical: asphereStates,
-    decenter: decenterStates,
-  } = parameterStates;
   const glassModes = useStore(optimizationStore, (state) => state.glassModes);
   const operands = useStore(optimizationStore, (state) => state.operands);
   const surfaceCount = useStore(
@@ -168,27 +157,9 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     [onWarning, optimizationStore],
   );
 
-  const handleOpenRadiusModal = useCallback(
-    (surfaceIndex: number) => {
-      optimizationStore.getState().openParameterModal("radius", surfaceIndex);
-    },
-    [optimizationStore],
-  );
-
-  const handleOpenThicknessModal = useCallback(
-    (surfaceIndex: number) => {
-      optimizationStore
-        .getState()
-        .openParameterModal("thickness", surfaceIndex);
-    },
-    [optimizationStore],
-  );
-
-  const handleOpenAsphereModal = useCallback(
-    (surfaceIndex: number) => {
-      optimizationStore
-        .getState()
-        .openParameterModal("aspherical", surfaceIndex);
+  const handleOpenParameterModal = useCallback(
+    (group: ParameterGroupKey, surfaceIndex: number) => {
+      optimizationStore.getState().openParameterModal(group, surfaceIndex);
     },
     [optimizationStore],
   );
@@ -199,12 +170,6 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     },
     [optimizationStore],
   );
-  const handleOpenDecenterVarModal = useCallback(
-    (surfaceIndex: number) =>
-      optimizationStore.getState().openParameterModal("decenter", surfaceIndex),
-    [optimizationStore],
-  );
-
   const handleUpdateFieldWeight = useCallback(
     (index: number, value: number) => {
       optimizationStore.getState().setFieldWeight(index, value);
@@ -254,38 +219,26 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     () => ({
       autoAperture: prescription.autoAperture,
       rows: prescription.rows,
-      radiusModes,
-      thicknessModes,
+      parameterStates,
       glassModes,
       canOptimizeGlass,
-      asphereStates,
-      decenterStates,
-      onOpenRadiusModal: handleOpenRadiusModal,
-      onOpenThicknessModal: handleOpenThicknessModal,
+      onOpenParameterModal: handleOpenParameterModal,
       onOpenGlassModal: handleOpenGlassModal,
       onOpenPropertyModal: prescription.onOpenPropertyModal,
-      onOpenAsphereVarModal: handleOpenAsphereModal,
-      onOpenTiltDecenterVarModal: handleOpenDecenterVarModal,
       onCellEditingStarted: gridEditLifecycle?.onCellEditingStarted,
       onCellEditingStopped: gridEditLifecycle?.onCellEditingStopped,
     }),
     [
-      asphereStates,
-      decenterStates,
       canOptimizeGlass,
       glassModes,
       gridEditLifecycle?.onCellEditingStarted,
       gridEditLifecycle?.onCellEditingStopped,
-      handleOpenAsphereModal,
-      handleOpenDecenterVarModal,
       handleOpenGlassModal,
-      handleOpenRadiusModal,
-      handleOpenThicknessModal,
+      handleOpenParameterModal,
+      parameterStates,
       prescription.onOpenPropertyModal,
       prescription.autoAperture,
       prescription.rows,
-      radiusModes,
-      thicknessModes,
     ],
   );
 

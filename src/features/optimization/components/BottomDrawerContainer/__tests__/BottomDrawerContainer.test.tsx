@@ -87,21 +87,25 @@ jest.mock(
   () => ({
     OptimizationLensPrescriptionGrid: ({
       autoAperture,
-      onOpenRadiusModal,
-      onOpenThicknessModal,
+      onOpenParameterModal,
     }: {
       readonly autoAperture: boolean;
-      readonly onOpenRadiusModal: (surfaceIndex: number) => void;
-      readonly onOpenThicknessModal: (surfaceIndex: number) => void;
+      readonly onOpenParameterModal: (
+        group: "radius" | "thickness",
+        surfaceIndex: number,
+      ) => void;
     }) => (
       <div
         data-testid="mock-optimization-prescription"
         data-auto-aperture={String(autoAperture)}
       >
-        <button type="button" onClick={() => onOpenRadiusModal(1)}>
+        <button type="button" onClick={() => onOpenParameterModal("radius", 1)}>
           Open Radius
         </button>
-        <button type="button" onClick={() => onOpenThicknessModal(2)}>
+        <button
+          type="button"
+          onClick={() => onOpenParameterModal("thickness", 2)}
+        >
           Open Thickness
         </button>
       </div>

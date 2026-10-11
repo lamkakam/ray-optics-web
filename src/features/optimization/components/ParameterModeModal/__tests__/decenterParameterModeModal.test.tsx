@@ -5,7 +5,37 @@ import {
   decenterStateFrom,
   decenterView,
 } from "@/features/optimization/testing/parameterStateViews";
-import { TiltDecenterVarModal } from "../TiltDecenterVarModal";
+import { ParameterModeModal } from "../ParameterModeModal";
+import type { ParameterGroupState } from "@/features/optimization/lib/parameters/parameterStates";
+
+/** Renders the tilt/decenter group's modal with the props the decenter tests use. */
+function TiltDecenterVarModal({
+  decenterState,
+  onSave,
+  ...props
+}: {
+  readonly isOpen: boolean;
+  readonly optimizationModel: OpticalModel | undefined;
+  readonly surfaceIndex: number | undefined;
+  readonly decenterState: ParameterGroupState<"decenter"> | undefined;
+  readonly canUseBounds?: boolean;
+  readonly onSave: (
+    surfaceIndex: number,
+    state: ParameterGroupState<"decenter">,
+  ) => void;
+  readonly onClose: () => void;
+}) {
+  return (
+    <ParameterModeModal
+      {...props}
+      group="decenter"
+      state={decenterState}
+      onSave={(_group, surfaceIndex, state) =>
+        onSave(surfaceIndex, state as ParameterGroupState<"decenter">)
+      }
+    />
+  );
+}
 
 const constant = { mode: "constant" } as const;
 const model = {

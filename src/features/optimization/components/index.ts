@@ -1,4 +1,3 @@
-export * from "./AsphereVarModal";
 export * from "./BottomDrawerContainer";
 export * from "./GlassVariableModal";
 export * from "./OptimizationLensPrescriptionGrid";
@@ -11,6 +10,4 @@ export * from "./OptimizationInspectionModals";
 export * from "./OptimizationOperandsTab";
 export * from "./OptimizationProgressModal";
 export * from "./OptimizationWeightsGrid";
-export * from "./RadiusModeModal";
-export * from "./ThicknessModeModal";
-export * from "./TiltDecenterVarModal";
+export * from "./ParameterModeModal";

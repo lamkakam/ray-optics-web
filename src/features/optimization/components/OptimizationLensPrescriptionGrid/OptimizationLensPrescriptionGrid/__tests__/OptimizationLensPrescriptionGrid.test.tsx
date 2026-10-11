@@ -10,7 +10,61 @@ import {
   asphereStateFrom,
   singleStatesFrom,
 } from "@/features/optimization/testing/parameterStateViews";
-import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid";
+import {
+  OptimizationLensPrescriptionGrid as GridUnderTest,
+  type OptimizationLensPrescriptionGridProps,
+} from "@/features/optimization/components/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid";
+import type { ParameterGroupState } from "@/features/optimization/lib/parameters/parameterStates";
+
+/** Per-group states and open callbacks, as the grid tests describe them. */
+type GroupProps = {
+  readonly radiusModes: ReadonlyArray<ParameterGroupState<"radius">>;
+  readonly thicknessModes: ReadonlyArray<ParameterGroupState<"thickness">>;
+  readonly asphereStates: ReadonlyArray<ParameterGroupState<"aspherical">>;
+  readonly decenterStates?: ReadonlyArray<ParameterGroupState<"decenter">>;
+  readonly onOpenRadiusModal: (surfaceIndex: number) => void;
+  readonly onOpenThicknessModal: (surfaceIndex: number) => void;
+  readonly onOpenAsphereVarModal: (surfaceIndex: number) => void;
+  readonly onOpenTiltDecenterVarModal?: (surfaceIndex: number) => void;
+};
+
+/** Renders the grid from per-group props, routing generic parameter-modal opens back to them. */
+function OptimizationLensPrescriptionGrid({
+  radiusModes,
+  thicknessModes,
+  asphereStates,
+  decenterStates = [],
+  onOpenRadiusModal,
+  onOpenThicknessModal,
+  onOpenAsphereVarModal,
+  onOpenTiltDecenterVarModal = () => undefined,
+  ...props
+}: GroupProps &
+  Omit<
+    OptimizationLensPrescriptionGridProps,
+    "parameterStates" | "onOpenParameterModal"
+  >) {
+  const openers = {
+    radius: onOpenRadiusModal,
+    thickness: onOpenThicknessModal,
+    aspherical: onOpenAsphereVarModal,
+    decenter: onOpenTiltDecenterVarModal,
+  };
+  return (
+    <GridUnderTest
+      {...props}
+      parameterStates={{
+        radius: [...radiusModes],
+        thickness: [...thicknessModes],
+        aspherical: [...asphereStates],
+        decenter: [...decenterStates],
+      }}
+      onOpenParameterModal={(group, surfaceIndex) =>
+        openers[group](surfaceIndex)
+      }
+    />
+  );
+}
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
