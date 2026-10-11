@@ -31,7 +31,7 @@ from ._types import (
     PickupConfig,
     VariableConfig,
 )
-from .targets import target_key, validate_surface_index
+from .parameters import parameter_key, validate_surface_index
 
 if TYPE_CHECKING:
     from opticalglass.opticalmedium import OpticalMedium
@@ -456,7 +456,7 @@ def normalize_glass_optimization_config(
         {"kind": "least_squares", "method": "lm"},
     )
     variables = normalize_variables(opm, cast(list, raw_variables), internal_optimizer)
-    variable_targets = {target_key(variable) for variable in variables}
+    variable_targets = {parameter_key(variable) for variable in variables}
     pickups = normalize_pickups(
         opm,
         cast(list, deepcopy(config.get("pickups") or [])),

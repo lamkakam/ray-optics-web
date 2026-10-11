@@ -1,14 +1,19 @@
-"""Behavioral tests for optimization target state and asphere materialization.
+"""Behavioral tests for constructional-parameter accessors and asphere materialization.
 
-These tests exercise the public target contract directly: radius/curvature
-conversion, target-key round trips, profile creation, scalar and aspheric
+These tests exercise the public parameter contract directly: radius/curvature
+conversion, parameter-key round trips, profile creation, scalar and aspheric
 read/write branches, snapshots, and restoration. Small deterministic fakes
-keep target semantics independent of solver or ray-trace results.
+keep parameter semantics independent of solver or ray-trace results. The
+parity tests check the accessor registry and reference/pickup TypedDicts
+against the manifest generated from the TypeScript parameter shapes.
 """
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
+from typing import get_args, get_type_hints
 
 import pytest
 
@@ -37,7 +42,7 @@ class _FakeModel:
 
 
 def test_radius_and_curvature_conversions_preserve_zero_and_sign():
-    from rayoptics_web_utils.optimization.targets import (
+    from rayoptics_web_utils.optimization.parameters import (
         curvature_to_radius,
         radius_to_curvature,
     )
@@ -69,19 +74,19 @@ def test_radius_and_curvature_conversions_preserve_zero_and_sign():
         ),
     ],
 )
-def test_target_keys_round_trip_to_their_target_entries(key, entry):
-    from rayoptics_web_utils.optimization.targets import (
-        entry_from_target_key,
-        target_key,
+def test_parameter_keys_round_trip_to_their_parameter_entries(key, entry):
+    from rayoptics_web_utils.optimization.parameters import (
+        entry_from_parameter_key,
+        parameter_key,
     )
 
-    assert target_key(entry) == key
-    assert entry_from_target_key(key) == entry
+    assert parameter_key(entry) == key
+    assert entry_from_parameter_key(key) == entry
 
 
 def test_asphere_kind_registry_has_all_supported_profile_types():
     from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, XToroid, YToroid
-    from rayoptics_web_utils.optimization.targets import asphere_kinds
+    from rayoptics_web_utils.optimization.parameters import asphere_kinds
 
     assert asphere_kinds() == {
         "Conic": EvenPolynomial,
@@ -106,7 +111,7 @@ def test_ensure_asphere_profile_materializes_each_supported_kind(
     asphere_kind,
     profile_name,
 ):
-    from rayoptics_web_utils.optimization.targets import ensure_asphere_profile
+    from rayoptics_web_utils.optimization.parameters import ensure_asphere_profile
 
     opm = _FakeModel()
     entry = {
@@ -127,7 +132,7 @@ def test_ensure_asphere_profile_materializes_each_supported_kind(
 
 
 def test_ensure_asphere_profile_is_idempotent_and_rejects_type_conflicts():
-    from rayoptics_web_utils.optimization.targets import ensure_asphere_profile
+    from rayoptics_web_utils.optimization.parameters import ensure_asphere_profile
 
     opm = _FakeModel()
     matching = {
@@ -152,7 +157,7 @@ def test_ensure_asphere_profile_is_idempotent_and_rejects_type_conflicts():
 
 
 def test_ensure_asphere_profile_ignores_non_asphere_targets_and_rejects_unknown_kind():
-    from rayoptics_web_utils.optimization.targets import ensure_asphere_profile
+    from rayoptics_web_utils.optimization.parameters import ensure_asphere_profile
 
     opm = _FakeModel()
     original_profile = opm.seq_model.ifcs[1].profile
@@ -173,17 +178,17 @@ def test_ensure_asphere_profile_ignores_non_asphere_targets_and_rejects_unknown_
         )
 
 
-def test_target_read_and_write_cover_scalar_asphere_and_toroid_branches():
-    from rayoptics_web_utils.optimization.targets import (
-        read_target_value,
-        write_target_value,
+def test_parameter_read_and_write_cover_scalar_asphere_and_toroid_branches():
+    from rayoptics_web_utils.optimization.parameters import (
+        read_parameter_value,
+        write_parameter_value,
     )
 
     opm = _FakeModel()
-    write_target_value(opm, {"kind": "radius", "surface_index": 1}, -25.0)
-    write_target_value(opm, {"kind": "thickness", "surface_index": 1}, 7.5)
-    assert read_target_value(opm, {"kind": "radius", "surface_index": 1}) == pytest.approx(-25.0)
-    assert read_target_value(opm, {"kind": "thickness", "surface_index": 1}) == pytest.approx(7.5)
+    write_parameter_value(opm, {"kind": "radius", "surface_index": 1}, -25.0)
+    write_parameter_value(opm, {"kind": "thickness", "surface_index": 1}, 7.5)
+    assert read_parameter_value(opm, {"kind": "radius", "surface_index": 1}) == pytest.approx(-25.0)
+    assert read_parameter_value(opm, {"kind": "thickness", "surface_index": 1}) == pytest.approx(7.5)
 
     conic = {
         "kind": "asphere_conic_constant",
@@ -196,12 +201,12 @@ def test_target_read_and_write_cover_scalar_asphere_and_toroid_branches():
         "asphere_kind": "EvenAspherical",
         "coefficient_index": 3,
     }
-    write_target_value(opm, conic, -0.8)
-    write_target_value(opm, coefficient, 2.5)
-    assert read_target_value(opm, conic) == pytest.approx(-0.8)
-    assert read_target_value(opm, coefficient) == pytest.approx(2.5)
+    write_parameter_value(opm, conic, -0.8)
+    write_parameter_value(opm, coefficient, 2.5)
+    assert read_parameter_value(opm, conic) == pytest.approx(-0.8)
+    assert read_parameter_value(opm, coefficient) == pytest.approx(2.5)
     assert opm.seq_model.ifcs[1].profile.coefs == [0.0, 0.0, 0.0, 2.5]
-    assert read_target_value(
+    assert read_parameter_value(
         opm,
         {
             "kind": "asphere_polynomial_coefficient",
@@ -217,16 +222,16 @@ def test_target_read_and_write_cover_scalar_asphere_and_toroid_branches():
         "asphere_kind": "XToroid",
     }
     toric_opm = _FakeModel()
-    write_target_value(toric_opm, toric, 31.0)
-    assert read_target_value(toric_opm, toric) == pytest.approx(31.0)
+    write_parameter_value(toric_opm, toric, 31.0)
+    assert read_parameter_value(toric_opm, toric) == pytest.approx(31.0)
     assert toric_opm.seq_model.ifcs[1].profile.rR == pytest.approx(31.0)
     assert toric_opm.seq_model.ifcs[1].profile.cR == pytest.approx(1 / 31.0)
 
 
 @pytest.mark.parametrize("profile_name", ["XToroid", "YToroid"])
-def test_toric_sweep_radius_target_reads_the_sweep_radius_not_its_curvature(profile_name):
+def test_toric_sweep_radius_parameter_reads_the_sweep_radius_not_its_curvature(profile_name):
     from rayoptics.elem import profiles
-    from rayoptics_web_utils.optimization.targets import read_target_value
+    from rayoptics_web_utils.optimization.parameters import read_parameter_value
 
     opm = _FakeModel()
     opm.seq_model.ifcs[1].profile = getattr(profiles, profile_name)(r=20.0, cc=0.0, rR=40.0, coefs=[])
@@ -236,7 +241,7 @@ def test_toric_sweep_radius_target_reads_the_sweep_radius_not_its_curvature(prof
         "surface_index": 1,
         "asphere_kind": profile_name,
     }
-    assert read_target_value(opm, toric) == pytest.approx(40.0)
+    assert read_parameter_value(opm, toric) == pytest.approx(40.0)
 
 
 @pytest.mark.parametrize(
@@ -250,44 +255,44 @@ def test_toric_sweep_radius_target_reads_the_sweep_radius_not_its_curvature(prof
     ],
 )
 def test_decenter_targets_materialize_and_read_write_all_components(kind, attribute, slot):
-    from rayoptics_web_utils.optimization.targets import read_target_value, write_target_value
+    from rayoptics_web_utils.optimization.parameters import read_parameter_value, write_parameter_value
 
     opm = _FakeModel()
     entry = {"kind": kind, "surface_index": 1, "decenter_type": "bend"}
-    write_target_value(opm, entry, 4.25)
+    write_parameter_value(opm, entry, 4.25)
 
-    assert read_target_value(opm, entry) == pytest.approx(4.25)
+    assert read_parameter_value(opm, entry) == pytest.approx(4.25)
     assert getattr(opm.seq_model.ifcs[1].decenter, attribute)[slot] == pytest.approx(4.25)
     assert opm.seq_model.ifcs[1].decenter.dtype == "bend"
 
 
 def test_decenter_target_rejects_conflicting_existing_strategy_and_unconfigured_source_reads_zero():
-    from rayoptics_web_utils.optimization.targets import read_target_value
+    from rayoptics_web_utils.optimization.parameters import read_parameter_value
 
     opm = _FakeModel()
     opm.seq_model.ifcs[1].decenter = SimpleNamespace(dtype="reverse", euler=[1, 2, 3], dec=[4, 5, 0])
     with pytest.raises(ValueError, match="already has decenter type reverse"):
-        read_target_value(opm, {"kind": "decenter_alpha", "surface_index": 1, "decenter_type": "bend"})
+        read_parameter_value(opm, {"kind": "decenter_alpha", "surface_index": 1, "decenter_type": "bend"})
 
     del opm.seq_model.ifcs[1].decenter
-    assert read_target_value(
+    assert read_parameter_value(
         opm,
         {"kind": "decenter_x", "surface_index": 1, "decenter_type": "bend", "materialize": False},
     ) == 0.0
 
 
-def test_target_read_and_write_report_unknown_and_non_toroid_kinds_exactly():
-    from rayoptics_web_utils.optimization.targets import (
-        read_target_value,
-        write_target_value,
+def test_parameter_read_and_write_report_unknown_and_non_toroid_kinds_exactly():
+    from rayoptics_web_utils.optimization.parameters import (
+        read_parameter_value,
+        write_parameter_value,
     )
 
     opm = _FakeModel()
     unknown = {"kind": "unknown", "surface_index": 1}
     with pytest.raises(ValueError, match="^Unknown variable kind: unknown$"):
-        read_target_value(opm, unknown)
+        read_parameter_value(opm, unknown)
     with pytest.raises(ValueError, match="^Unknown variable kind: unknown$"):
-        write_target_value(opm, unknown, 1.0)
+        write_parameter_value(opm, unknown, 1.0)
 
     toric = {
         "kind": "asphere_toric_sweep_radius",
@@ -295,9 +300,9 @@ def test_target_read_and_write_report_unknown_and_non_toroid_kinds_exactly():
         "asphere_kind": "EvenAspherical",
     }
     with pytest.raises(ValueError, match="Toroid sweep radius target requires"):
-        read_target_value(opm, toric)
+        read_parameter_value(opm, toric)
     with pytest.raises(ValueError, match="Toroid sweep radius target requires"):
-        write_target_value(opm, toric, 1.0)
+        write_parameter_value(opm, toric, 1.0)
 
 
 @pytest.mark.parametrize(
@@ -311,13 +316,13 @@ def test_target_read_and_write_report_unknown_and_non_toroid_kinds_exactly():
 )
 def test_supports_polynomials_reports_coefficient_attribute_presence(profile, expected):
     """Polynomial support follows whether a profile exposes a coefficient store."""
-    from rayoptics_web_utils.optimization.targets import supports_polynomials
+    from rayoptics_web_utils.optimization.parameters import supports_polynomials
 
     assert supports_polynomials(profile) is expected
 
 
-def test_target_snapshots_deduplicate_keys_and_restore_values_before_update():
-    from rayoptics_web_utils.optimization.targets import restore_state, snapshot_state
+def test_parameter_snapshots_deduplicate_keys_and_restore_values_before_update():
+    from rayoptics_web_utils.optimization.parameters import restore_state, snapshot_state
 
     opm = _FakeModel()
     radius = {"kind": "radius", "surface_index": 1}
@@ -333,3 +338,45 @@ def test_target_snapshots_deduplicate_keys_and_restore_values_before_update():
     assert opm.seq_model.ifcs[1].profile.r == pytest.approx(20.0)
     assert opm.seq_model.gaps[1].thi == pytest.approx(5.0)
     assert opm.update_count == 1
+
+
+MANIFEST_PATH = Path(__file__).resolve().parents[2] / "fixtures" / "constructional_parameters.json"
+PICKUP_TRANSFORM_FIELDS = {"source_surface_index", "scale", "offset"}
+
+
+def _manifest_by_kind() -> dict[str, dict[str, list[str]]]:
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    return {entry["kind"]: entry for entry in manifest["parameters"]}
+
+
+def _fields_by_kind(typed_dicts: tuple[type, ...]) -> dict[str, set[str]]:
+    fields: dict[str, set[str]] = {}
+    for typed_dict in typed_dicts:
+        for kind in get_args(get_type_hints(typed_dict)["kind"]):
+            fields[kind] = set(typed_dict.__required_keys__)
+    return fields
+
+
+def test_parameter_accessors_cover_every_constructional_parameter_kind():
+    from rayoptics_web_utils.optimization._types import ConstructionalParameterKind
+    from rayoptics_web_utils.optimization.parameters import PARAMETER_ACCESSORS
+
+    kinds = set(get_args(ConstructionalParameterKind.__value__))
+    assert set(PARAMETER_ACCESSORS) == kinds
+    assert kinds == set(_manifest_by_kind())
+
+
+def test_parameter_reference_and_pickup_fields_match_the_typescript_manifest():
+    from rayoptics_web_utils.optimization._types import ParameterRef, PickupConfig
+
+    manifest = _manifest_by_kind()
+    ref_fields = _fields_by_kind(get_args(ParameterRef.__value__))
+    pickup_fields = _fields_by_kind(get_args(PickupConfig.__value__))
+
+    assert set(ref_fields) == set(manifest)
+    for kind, entry in manifest.items():
+        assert sorted(ref_fields[kind]) == entry["refFields"], kind
+        assert (
+            sorted(pickup_fields[kind] - ref_fields[kind] - PICKUP_TRANSFORM_FIELDS)
+            == entry["pickupSourceFields"]
+        ), kind

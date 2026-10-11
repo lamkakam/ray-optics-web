@@ -1,0 +1,95 @@
+{
+  "parameters": [
+    {
+      "kind": "asphere_conic_constant",
+      "refFields": [
+        "asphere_kind",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "asphere_polynomial_coefficient",
+      "refFields": [
+        "asphere_kind",
+        "coefficient_index",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": [
+        "source_coefficient_index"
+      ]
+    },
+    {
+      "kind": "asphere_toric_sweep_radius",
+      "refFields": [
+        "asphere_kind",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "decenter_alpha",
+      "refFields": [
+        "decenter_type",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "decenter_beta",
+      "refFields": [
+        "decenter_type",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "decenter_gamma",
+      "refFields": [
+        "decenter_type",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "decenter_x",
+      "refFields": [
+        "decenter_type",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "decenter_y",
+      "refFields": [
+        "decenter_type",
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "radius",
+      "refFields": [
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    },
+    {
+      "kind": "thickness",
+      "refFields": [
+        "kind",
+        "surface_index"
+      ],
+      "pickupSourceFields": []
+    }
+  ]
+}

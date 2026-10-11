@@ -30,7 +30,7 @@ from .failure_reports import build_glass_optimization_failure_report
 from .optimization import _sync_legacy_hooks
 from .problem import OptimizationProblem
 from .solvers.lbfgsb import GLASS_OBJECTIVE_PENALTY, LBFGSBSolver
-from .targets import snapshot_state, write_target_value
+from .parameters import snapshot_state, write_parameter_value
 from ._types import (
     GlassOptimizationConfig,
     GlassOptimizationReport,
@@ -41,7 +41,7 @@ from ._types import (
     ProgressReporter,
     SnapshotEntry,
     SolverResult,
-    TargetKey,
+    ParameterKey,
     VariableStateEntry,
 )
 
@@ -54,7 +54,7 @@ class _MixedState:
     """Material references and numeric target values for one coherent design."""
 
     materials: dict[int, object]
-    numeric: dict[TargetKey, SnapshotEntry]
+    numeric: dict[ParameterKey, SnapshotEntry]
 
 
 def select_global_representatives(
@@ -150,7 +150,7 @@ class GlassExpertOptimizer:
         for surface_index, medium in state.materials.items():
             gaps[surface_index].medium = medium
         for snapshot_entry in state.numeric.values():
-            write_target_value(
+            write_parameter_value(
                 self.opm,
                 snapshot_entry["entry"],
                 snapshot_entry["value"],
