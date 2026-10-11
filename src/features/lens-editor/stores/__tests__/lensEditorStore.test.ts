@@ -317,87 +317,45 @@ describe("lensEditorStore", () => {
       });
     });
 
-    it("opens and closes aspherical modal", () => {
+    it("initializes the surface-property modal as closed", () => {
       const store = makeStore();
-      store.getState().openAsphericalModal("s2");
-      expect(store.getState().asphericalModal).toEqual({
+      expect(store.getState().propertyModal).toEqual({
+        open: false,
+        rowId: "",
+        key: undefined,
+      });
+    });
+
+    it.each([
+      "aperture",
+      "aspherical",
+      "decenter",
+      "diffractiveElement",
+    ] as const)("opens and closes the %s property modal", (key) => {
+      const store = makeStore();
+      store.getState().openPropertyModal(key, "s1");
+      expect(store.getState().propertyModal).toEqual({
+        open: true,
+        rowId: "s1",
+        key,
+      });
+
+      store.getState().closePropertyModal();
+      expect(store.getState().propertyModal).toEqual({
+        open: false,
+        rowId: "",
+        key: undefined,
+      });
+    });
+
+    it("keeps at most one surface-property modal open", () => {
+      const store = makeStore();
+      store.getState().openPropertyModal("aspherical", "s1");
+      store.getState().openPropertyModal("decenter", "s2");
+      expect(store.getState().propertyModal).toEqual({
         open: true,
         rowId: "s2",
-      });
-
-      store.getState().closeAsphericalModal();
-      expect(store.getState().asphericalModal).toEqual({
-        open: false,
-        rowId: "",
-      });
-    });
-
-    it("opens and closes decenter modal", () => {
-      const store = makeStore();
-      store.getState().openDecenterModal("s1");
-      expect(store.getState().decenterModal).toEqual({
-        open: true,
-        rowId: "s1",
-      });
-
-      store.getState().closeDecenterModal();
-      expect(store.getState().decenterModal).toEqual({
-        open: false,
-        rowId: "",
-      });
-    });
-
-    it("initializes decenterModal as closed", () => {
-      const store = makeStore();
-      expect(store.getState().decenterModal).toEqual({
-        open: false,
-        rowId: "",
-      });
-    });
-
-    it("opens and closes diffraction grating modal", () => {
-      const store = makeStore();
-      store.getState().openDiffractionGratingModal("s1");
-      expect(store.getState().diffractionGratingModal).toEqual({
-        open: true,
-        rowId: "s1",
-      });
-
-      store.getState().closeDiffractionGratingModal();
-      expect(store.getState().diffractionGratingModal).toEqual({
-        open: false,
-        rowId: "",
-      });
-    });
-
-    it("initializes diffraction grating modal as closed", () => {
-      const store = makeStore();
-      expect(store.getState().diffractionGratingModal).toEqual({
-        open: false,
-        rowId: "",
-      });
-    });
-
-    it("opens and closes aperture modal", () => {
-      const store = makeStore();
-      store.getState().openApertureModal("s1");
-      expect(store.getState().apertureModal).toEqual({
-        open: true,
-        rowId: "s1",
-      });
-
-      store.getState().closeApertureModal();
-      expect(store.getState().apertureModal).toEqual({
-        open: false,
-        rowId: "",
-      });
-    });
-
-    it("initializes aperture modal as closed", () => {
-      const store = makeStore();
-      expect(store.getState().apertureModal).toEqual({
-        open: false,
-        rowId: "",
+        key: "decenter",
       });
     });
   });

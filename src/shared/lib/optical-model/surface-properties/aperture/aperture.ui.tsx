@@ -1,59 +1,15 @@
-/** Shared display labels for modal-backed lens prescription grid text action cells. */
+"use client";
+/** Prescription-grid column and modal adapter for clear and edge apertures of physical surfaces. */
+import { LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS } from "@/shared/lib/lens-prescription-grid/columnWidths";
 import type {
-  AsphericalType,
   ClearAperture,
-  DecenterConfig,
-  DiffractionGrating,
   EdgeAperture,
-  Surface,
 } from "@/shared/lib/optical-model/model/opticalModel";
-
-/** Display label for an unset optional prescription value. */
-export const EMPTY_LENS_PRESCRIPTION_CELL_LABEL = "None";
-
-/** User-facing labels keyed by aspherical kind. */
-export const ASPHERICAL_TYPE_LABELS = {
-  Conic: "Conic",
-  EvenAspherical: "Even Aspherical",
-  RadialPolynomial: "Radial Polynomial",
-  XToroid: "X Toroid",
-  YToroid: "Y Toroid",
-} satisfies Record<AsphericalType, string>;
-
-/** Select options derived from the canonical asphere labels. */
-export const ASPHERICAL_TYPE_OPTIONS = Object.entries(
-  ASPHERICAL_TYPE_LABELS,
-).map(([value, label]) => ({
-  value: value as AsphericalType,
-  label,
-}));
-
-/** Formats an optional asphere for a grid cell. */
-export function formatAsphericalLabel(
-  aspherical: Surface["aspherical"] | undefined,
-): string {
-  return aspherical === undefined
-    ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
-    : ASPHERICAL_TYPE_LABELS[aspherical.kind];
-}
-
-/** Formats an optional decenter strategy for a grid cell. */
-export function formatDecenterLabel(
-  decenter: DecenterConfig | undefined,
-): string {
-  return decenter === undefined
-    ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
-    : decenter.coordinateSystemStrategy;
-}
-
-/** Formats optional grating density for a grid cell. */
-export function formatDiffractionGratingLabel(
-  diffractionGrating: DiffractionGrating | undefined,
-): string {
-  return diffractionGrating === undefined
-    ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
-    : `${diffractionGrating.lpmm} lp/mm`;
-}
+import { ApertureModal } from "@/shared/lib/optical-model/surface-properties/aperture/ApertureModal";
+import type {
+  SurfacePropertyModalProps,
+  SurfacePropertyUi,
+} from "@/shared/lib/optical-model/surface-properties/uiDescriptor";
 
 function hasOffset(
   aperture: Pick<ClearAperture, "offsetX" | "offsetY">,
@@ -126,3 +82,59 @@ export function formatApertureLabel(
     ? clearLabel
     : `${clearLabel}; ${formatEdgeApertureLabel(edgeAperture)}`;
 }
+
+/**
+ * Seeds `ApertureModal` with the row's semi-diameter and apertures. Confirm
+ * writes both apertures; a rectangular clear aperture also stores
+ * `semiDiameter: 0`, because the rectangle owns the aperture size.
+ */
+function AperturePropertyModal({
+  row,
+  readOnly = false,
+  autoAperture,
+  onApply,
+  onClose,
+}: SurfacePropertyModalProps) {
+  const surface = row?.kind === "surface" ? row : undefined;
+  return (
+    <ApertureModal
+      key={row?.id ?? "aperture-closed"}
+      isOpen={surface !== undefined}
+      readOnly={readOnly}
+      autoAperture={autoAperture}
+      semiDiameter={surface?.semiDiameter ?? 1}
+      initialClearAperture={surface?.clear_aperture}
+      initialEdgeAperture={surface?.edge_aperture}
+      onConfirm={({ clear_aperture, edge_aperture }) =>
+        onApply({
+          clear_aperture,
+          edge_aperture,
+          ...(clear_aperture.shape === "rectangular"
+            ? { semiDiameter: 0 }
+            : {}),
+        })
+      }
+      onClose={onClose}
+    />
+  );
+}
+
+/** Aperture column: shows a compact clear/edge aperture summary for physical surfaces. */
+export const apertureUi = {
+  properties: ["clear_aperture", "edge_aperture"],
+  headerName: "Aperture",
+  width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aperture,
+  ariaLabel: "Edit aperture",
+  editTooltip: "Click to set aperture",
+  viewTooltip: "Click to view aperture",
+  appliesTo: (row) => row.kind === "surface",
+  cellValue: (row) =>
+    row.kind === "surface"
+      ? formatApertureLabel(row.clear_aperture, row.edge_aperture)
+      : undefined,
+  formatLabel: (row) =>
+    row.kind === "surface"
+      ? formatApertureLabel(row.clear_aperture, row.edge_aperture)
+      : "",
+  Modal: AperturePropertyModal,
+} as const satisfies SurfacePropertyUi;

@@ -1,32 +1,19 @@
 /** Barrel exports for the shared lens prescription grid module. */
 export {
-  ApertureCell,
-  AsphericalCell,
-  DecenterCell,
-  DiffractionGratingCell,
   LensPrescriptionActionWrapper,
-  MediumCell,
+  SurfacePropertyCell,
 } from "@/shared/lib/lens-prescription-grid/LensPrescriptionGridCells";
 export {
-  ASPHERICAL_TYPE_LABELS,
-  ASPHERICAL_TYPE_OPTIONS,
-  EMPTY_LENS_PRESCRIPTION_CELL_LABEL,
-  formatAsphericalLabel,
-  formatApertureLabel,
-  formatDecenterLabel,
-  formatDiffractionGratingLabel,
-} from "@/shared/lib/lens-prescription-grid/displayLabels";
+  SurfacePropertyModalHost,
+  type OpenSurfacePropertyModal,
+} from "@/shared/lib/lens-prescription-grid/SurfacePropertyModalHost";
 export {
-  createApertureColumn,
-  createAsphericalColumn,
   createCommentColumn,
-  createDecenterColumn,
-  createDiffractionGratingColumn,
   createLensPrescriptionCommonColumns,
-  createMediumColumn,
   createRadiusOfCurvatureColumn,
   createSemiDiameterColumn,
   createSurfaceColumn,
+  createSurfacePropertyColumn,
   createThicknessColumn,
   LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS,
   lensPrescriptionGridDefaultColDef,

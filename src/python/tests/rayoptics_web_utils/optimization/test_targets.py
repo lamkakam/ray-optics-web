@@ -122,7 +122,8 @@ def test_ensure_asphere_profile_materializes_each_supported_kind(
     assert profile.r == pytest.approx(20.0)
     assert profile.cc == pytest.approx(0.0)
     if asphere_kind in {"XToroid", "YToroid"}:
-        assert profile.cR == pytest.approx(20.0)
+        assert profile.rR == pytest.approx(20.0)
+        assert profile.cR == pytest.approx(1 / 20.0)
 
 
 def test_ensure_asphere_profile_is_idempotent_and_rejects_type_conflicts():
@@ -218,6 +219,24 @@ def test_target_read_and_write_cover_scalar_asphere_and_toroid_branches():
     toric_opm = _FakeModel()
     write_target_value(toric_opm, toric, 31.0)
     assert read_target_value(toric_opm, toric) == pytest.approx(31.0)
+    assert toric_opm.seq_model.ifcs[1].profile.rR == pytest.approx(31.0)
+    assert toric_opm.seq_model.ifcs[1].profile.cR == pytest.approx(1 / 31.0)
+
+
+@pytest.mark.parametrize("profile_name", ["XToroid", "YToroid"])
+def test_toric_sweep_radius_target_reads_the_sweep_radius_not_its_curvature(profile_name):
+    from rayoptics.elem import profiles
+    from rayoptics_web_utils.optimization.targets import read_target_value
+
+    opm = _FakeModel()
+    opm.seq_model.ifcs[1].profile = getattr(profiles, profile_name)(r=20.0, cc=0.0, rR=40.0, coefs=[])
+
+    toric = {
+        "kind": "asphere_toric_sweep_radius",
+        "surface_index": 1,
+        "asphere_kind": profile_name,
+    }
+    assert read_target_value(opm, toric) == pytest.approx(40.0)
 
 
 @pytest.mark.parametrize(

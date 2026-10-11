@@ -79,12 +79,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
       asphereStates: [] as AsphereOptimizationState[],
       onOpenRadiusModal: jest.fn(),
       onOpenThicknessModal: jest.fn(),
-      onOpenMediumModal: jest.fn(),
-      onOpenAsphericalModal: jest.fn(),
+      onOpenPropertyModal: jest.fn(),
       onOpenAsphereVarModal: jest.fn(),
-      onOpenDecenterModal: jest.fn(),
-      onOpenDiffractionGratingModal: jest.fn(),
-      onOpenApertureModal: jest.fn(),
     };
     const { rerender } = render(
       <OptimizationLensPrescriptionGrid
@@ -152,12 +148,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[]}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -183,13 +175,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const user = userEvent.setup();
     const onOpenRadiusModal = jest.fn();
     const onOpenThicknessModal = jest.fn();
-    const onOpenMediumModal = jest.fn();
-    const onOpenAsphericalModal = jest.fn();
+    const onOpenPropertyModal = jest.fn();
     const onOpenAsphereVarModalMock = jest.fn();
-    const onOpenDecenterModal = jest.fn();
     const onOpenTiltDecenterVarModal = jest.fn();
-    const onOpenDiffractionGratingModal = jest.fn();
-    const onOpenApertureModal = jest.fn();
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
     const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
 
@@ -208,13 +196,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={asphereStates}
         onOpenRadiusModal={onOpenRadiusModal}
         onOpenThicknessModal={onOpenThicknessModal}
-        onOpenMediumModal={onOpenMediumModal}
-        onOpenAsphericalModal={onOpenAsphericalModal}
+        onOpenPropertyModal={onOpenPropertyModal}
         onOpenAsphereVarModal={onOpenAsphereVarModalMock}
-        onOpenDecenterModal={onOpenDecenterModal}
         onOpenTiltDecenterVarModal={onOpenTiltDecenterVarModal}
-        onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
-        onOpenApertureModal={onOpenApertureModal}
         onCellEditingStarted={jest.fn()}
         onCellEditingStopped={jest.fn()}
       />,
@@ -279,15 +263,15 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(onOpenThicknessModal).toHaveBeenCalledWith(1);
 
     await user.click(screen.getByRole("button", { name: "Edit medium" }));
-    expect(onOpenMediumModal).toHaveBeenCalledWith(surfaceRow);
+    expect(onOpenPropertyModal).toHaveBeenCalledWith("medium", surfaceRow);
 
     await user.click(
       screen.getByRole("button", { name: "Edit aspherical parameters" }),
     );
-    expect(onOpenAsphericalModal).toHaveBeenCalledWith(surfaceRow);
+    expect(onOpenPropertyModal).toHaveBeenCalledWith("aspherical", surfaceRow);
 
     await user.click(screen.getByRole("button", { name: "Edit aperture" }));
-    expect(onOpenApertureModal).toHaveBeenCalledWith(surfaceRow);
+    expect(onOpenPropertyModal).toHaveBeenCalledWith("aperture", surfaceRow);
 
     await user.click(
       screen.getByRole("button", { name: "Asphere mode for surface 1" }),
@@ -297,7 +281,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     await user.click(
       screen.getByRole("button", { name: "Edit decenter and tilt" }),
     );
-    expect(onOpenDecenterModal).toHaveBeenCalledWith(surfaceRow);
+    expect(onOpenPropertyModal).toHaveBeenCalledWith("decenter", surfaceRow);
 
     await user.click(
       screen.getByRole("button", {
@@ -309,7 +293,10 @@ describe("OptimizationLensPrescriptionGrid", () => {
     await user.click(
       screen.getByRole("button", { name: "Edit diffraction grating" }),
     );
-    expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith(surfaceRow);
+    expect(onOpenPropertyModal).toHaveBeenCalledWith(
+      "diffractiveElement",
+      surfaceRow,
+    );
   });
 
   it("shows surface indices only for real surface rows", () => {
@@ -349,12 +336,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={asphereStates}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -455,12 +438,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[makeAsphereState()]}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -514,12 +493,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={asphereStates}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -552,12 +527,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[makeAsphereState()]}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -585,12 +556,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[makeAsphereState()]}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -620,12 +587,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[]}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -652,12 +615,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[makeAsphereState()]}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -688,12 +647,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[makeAsphereState()]}
         onOpenRadiusModal={onOpenRadiusModal}
         onOpenThicknessModal={onOpenThicknessModal}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={onOpenAsphereVarModal}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
       />,
     );
 
@@ -732,12 +687,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={asphereStates}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
       />,
     );
 
@@ -790,12 +741,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         asphereStates={[makeAsphereState()]}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
       />,
     );
 
@@ -870,12 +817,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
         onOpenGlassModal={onOpenGlassModal}
-        onOpenMediumModal={jest.fn()}
-        onOpenAsphericalModal={jest.fn()}
+        onOpenPropertyModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
-        onOpenDecenterModal={jest.fn()}
-        onOpenDiffractionGratingModal={jest.fn()}
-        onOpenApertureModal={jest.fn()}
       />,
     );
 

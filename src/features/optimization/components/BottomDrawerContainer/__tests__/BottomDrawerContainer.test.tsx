@@ -146,11 +146,7 @@ function renderBottomDrawerContainer(
         prescription={{
           autoAperture: true,
           rows: [],
-          onOpenMediumModal: jest.fn(),
-          onOpenAsphericalModal: jest.fn(),
-          onOpenApertureModal: jest.fn(),
-          onOpenDecenterModal: jest.fn(),
-          onOpenDiffractionGratingModal: jest.fn(),
+          onOpenPropertyModal: jest.fn(),
         }}
       />
     </OptimizationStoreContext.Provider>,

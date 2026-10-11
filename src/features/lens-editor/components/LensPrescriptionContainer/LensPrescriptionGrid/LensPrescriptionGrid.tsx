@@ -8,6 +8,7 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 import { GridRowButtons } from "../GridRowButtons";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
+import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
 import {
   createLensPrescriptionCommonColumns,
   lensPrescriptionGridDefaultColDef,
@@ -19,16 +20,11 @@ interface LensPrescriptionGridProps {
   readonly rows: GridRow[];
   /** Partial update for a row field */
   readonly onRowChange: (id: string, patch: Partial<GridRow>) => void;
-  /** Opens `MediumSelectorModal` for the given row */
-  readonly onOpenMediumModal: (rowId: string) => void;
-  /** Opens `AsphericalModal` for the given row */
-  readonly onOpenAsphericalModal: (rowId: string) => void;
-  /** Opens `DecenterModal` for the given row */
-  readonly onOpenDecenterModal: (rowId: string) => void;
-  /** Opens `DiffractionGratingModal` for the given surface row */
-  readonly onOpenDiffractionGratingModal: (rowId: string) => void;
-  /** Opens `ApertureModal` for the given surface row */
-  readonly onOpenApertureModal: (rowId: string) => void;
+  /** Opens the modal of a modal-backed surface property (medium, aperture, asphere, decenter, diffraction grating) for the given row */
+  readonly onOpenPropertyModal: (
+    key: SurfacePropertyUiKey,
+    rowId: string,
+  ) => void;
   /** Inserts a new surface row after the given row */
   readonly onAddRowAfter: (rowId: string) => void;
   /** Deletes the given surface row */
@@ -50,8 +46,7 @@ interface LensPrescriptionGridProps {
  * - The `Index` column is display-only. It derives continuous one-based numbering from the current `rows` order, counting only `surface` rows; Object and Image rows render blank index cells.
  * - Common prescription columns are composed from `shared/lib/lens-prescription-grid` so Lens Editor and Optimization use the same value getters, numeric parsing, cell renderers, and AG Grid defaults.
  * - The `Index`, `Surface`, `Comment`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`; the leading row action column remains editor-specific at `100px`. Comment uses AG Grid's text editor only for physical surfaces; Object and Image stay blank.
- * - Shared `MediumCell`, `ApertureCell`, `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` render inside `LensPrescriptionActionWrapper`, which opens the modal when the non-interactive cell body is clicked.
- * - `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` display text labels (`None`, asphere type labels, decenter strategy values, and `${lpmm} lp/mm`) instead of set/unset status text.
+ * - Modal-backed surface properties (medium, aperture, asphere, tilt/decenter, diffraction grating) render the shared `SurfacePropertyCell` inside `LensPrescriptionActionWrapper`, which opens the modal through `onOpenPropertyModal(key, rowId)` when the non-interactive cell body is clicked. Labels come from each property's UI descriptor (`None`, asphere type labels, decenter strategy values, and `${lpmm} lp/mm`).
  * - The Medium column renders for the Object row and all surface rows; the Image row remains blank in that column.
  * - Only surface-kind rows get a delete button; object/image rows only get an add button or neither.
  * - The diffraction grating column renders only for `surface` rows.
@@ -65,11 +60,7 @@ interface LensPrescriptionGridProps {
 export function LensPrescriptionGrid({
   rows,
   onRowChange,
-  onOpenMediumModal,
-  onOpenAsphericalModal,
-  onOpenDecenterModal,
-  onOpenDiffractionGratingModal,
-  onOpenApertureModal,
+  onOpenPropertyModal,
   onAddRowAfter,
   onDeleteRow,
   semiDiameterReadonly = false,
@@ -130,16 +121,11 @@ export function LensPrescriptionGrid({
             onRowChange(row.id, { thickness });
           }
         },
-        onOpenMediumModal: (row) => onOpenMediumModal(row.id),
         onSemiDiameterChange: (row, semiDiameter) =>
           onRowChange(row.id, { semiDiameter }),
         semiDiameterReadonly,
         computedSemiDiameters,
-        onOpenApertureModal: (row) => onOpenApertureModal(row.id),
-        onOpenAsphericalModal: (row) => onOpenAsphericalModal(row.id),
-        onOpenDecenterModal: (row) => onOpenDecenterModal(row.id),
-        onOpenDiffractionGratingModal: (row) =>
-          onOpenDiffractionGratingModal(row.id),
+        onOpenPropertyModal: (key, row) => onOpenPropertyModal(key, row.id),
       }),
     ],
     [
@@ -147,11 +133,7 @@ export function LensPrescriptionGrid({
       semiDiameterReadonly,
       computedSemiDiameters,
       onRowChange,
-      onOpenMediumModal,
-      onOpenAsphericalModal,
-      onOpenApertureModal,
-      onOpenDecenterModal,
-      onOpenDiffractionGratingModal,
+      onOpenPropertyModal,
       onAddRowAfter,
       onDeleteRow,
     ],

@@ -48,6 +48,8 @@ import {
   getMissingPrescriptionGlasses,
 } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type { OpenSurfacePropertyModal } from "@/shared/lib/lens-prescription-grid/SurfacePropertyModalHost";
+import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
 import type {
   OpticalModel,
   OpticalSpecs,
@@ -357,19 +359,15 @@ export function OptimizationPage({
     optimizationStore,
     (state) => state.decenterVarModal,
   );
-  const [mediumModalRow, setMediumModalRow] = useState<GridRow | undefined>();
-  const [asphericalModalRow, setAsphericalModalRow] = useState<
-    GridRow | undefined
+  /** Surface property whose read-only inspection modal is open, with its row. */
+  const [inspectedProperty, setInspectedProperty] = useState<
+    OpenSurfacePropertyModal | undefined
   >();
-  const [apertureModalRow, setApertureModalRow] = useState<
-    GridRow | undefined
-  >();
-  const [decenterModalRow, setDecenterModalRow] = useState<
-    GridRow | undefined
-  >();
-  const [diffractionGratingModalRow, setDiffractionGratingModalRow] = useState<
-    GridRow | undefined
-  >();
+  const openPropertyInspection = useCallback(
+    (key: SurfacePropertyUiKey, row: GridRow) =>
+      setInspectedProperty({ key, row }),
+    [],
+  );
   const [evaluationReport, setEvaluationReport] = useState<
     OptimizationReport | undefined
   >();
@@ -1316,13 +1314,9 @@ export function OptimizationPage({
     () => ({
       autoAperture: optimizationModel?.setAutoAperture === "autoAperture",
       rows: radiusRows,
-      onOpenMediumModal: setMediumModalRow,
-      onOpenAsphericalModal: setAsphericalModalRow,
-      onOpenApertureModal: setApertureModalRow,
-      onOpenDecenterModal: setDecenterModalRow,
-      onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
+      onOpenPropertyModal: openPropertyInspection,
     }),
-    [optimizationModel?.setAutoAperture, radiusRows],
+    [optimizationModel?.setAutoAperture, radiusRows, openPropertyInspection],
   );
 
   const bottomDrawerLayout = useMemo(
@@ -1448,18 +1442,8 @@ export function OptimizationPage({
       />
 
       <OptimizationInspectionModals
-        mediumModalRow={mediumModalRow}
-        asphericalModalRow={asphericalModalRow}
-        apertureModalRow={apertureModalRow}
-        decenterModalRow={decenterModalRow}
-        diffractionGratingModalRow={diffractionGratingModalRow}
-        onCloseMediumModal={() => setMediumModalRow(undefined)}
-        onCloseAsphericalModal={() => setAsphericalModalRow(undefined)}
-        onCloseApertureModal={() => setApertureModalRow(undefined)}
-        onCloseDecenterModal={() => setDecenterModalRow(undefined)}
-        onCloseDiffractionGratingModal={() =>
-          setDiffractionGratingModalRow(undefined)
-        }
+        inspected={inspectedProperty}
+        onClose={() => setInspectedProperty(undefined)}
       />
     </div>
   );

@@ -11,18 +11,15 @@ import type {
 } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {
-  createAsphericalColumn,
   createCommentColumn,
-  createApertureColumn,
-  createDecenterColumn,
-  createDiffractionGratingColumn,
-  createMediumColumn,
   createRadiusOfCurvatureColumn,
   createSemiDiameterColumn,
+  createSurfacePropertyColumn,
   createSurfaceColumn,
   createThicknessColumn,
   LensPrescriptionActionWrapper,
@@ -128,13 +125,13 @@ export interface OptimizationLensPrescriptionGridProps {
   readonly onOpenRadiusModal: (surfaceIndex: number) => void;
   readonly onOpenThicknessModal: (surfaceIndex: number) => void;
   readonly onOpenGlassModal?: (surfaceIndex: number) => void;
-  readonly onOpenMediumModal: (row: GridRow) => void;
-  readonly onOpenAsphericalModal: (row: GridRow) => void;
-  readonly onOpenApertureModal: (row: GridRow) => void;
+  /** Opens the read-only inspection modal of a modal-backed surface property for a row. */
+  readonly onOpenPropertyModal: (
+    key: SurfacePropertyUiKey,
+    row: GridRow,
+  ) => void;
   readonly onOpenAsphereVarModal: (surfaceIndex: number) => void;
-  readonly onOpenDecenterModal: (row: GridRow) => void;
   readonly onOpenTiltDecenterVarModal?: (surfaceIndex: number) => void;
-  readonly onOpenDiffractionGratingModal: (row: GridRow) => void;
   readonly onCellEditingStarted?: () => void;
   readonly onCellEditingStopped?: () => void;
 }
@@ -152,7 +149,7 @@ export interface OptimizationLensPrescriptionGridProps {
  * - Uses `EditableAgGridReact`, matching the other editable AG Grid surfaces so any future editable prescription cells commit pending edits when editing stops.
  * - Accepts optional AG Grid cell edit lifecycle callbacks and forwards them to `EditableAgGridReact`, even though current prescription cells are read-only, so the page-level Optimize gate remains wired if prescription cells become editable later.
  * - Composes common prescription columns from `shared/lib/lens-prescription-grid` with `getGridRow: (data) => data.row`; optimization-only columns remain local.
- * - Passes optimization-specific tooltip copy for the read-only `Medium`, `Asph.`, and `Diffraction Grating` inspection cells so they say `Click to view ...` without changing the editor page grid.
+ * - Builds the read-only `Medium`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` inspection columns with `createSurfacePropertyColumn(key, { propertyTooltip: "view" })`, so their cells say `Click to view ...` and open `onOpenPropertyModal(key, row)`.
  * - Prepends an `Index` column before `Surface`; it is blank for `Object` and `Image`, shows `1..N` for real surface rows using the existing optimization surface numbering, and uses the shared lens prescription grid `Index` config so it has the shared initial width and is pinned left.
  * - The `Index`, `Surface`, `Comment`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`. Comment is displayed for physical surfaces but remains entirely read-only because Optimization supplies no change callback; Object and Image stay blank.
  * - The radius and thickness `Var.` cells use the same `ActionWrapper` plus Tooltip-wrapped native `<button>` pattern as `Medium`; clicking either the button or the surrounding cell body opens the corresponding optimization modal for the surface. Their Tooltip trigger fills the cell action wrapper so hovering anywhere in the cell action area displays the tooltip. The buttons show the saved optimization mode as `C` for missing or `constant` modes, `V` for `variable`, and `P` for `pickup`.
@@ -173,13 +170,9 @@ export function OptimizationLensPrescriptionGrid({
   onOpenRadiusModal,
   onOpenThicknessModal,
   onOpenGlassModal,
-  onOpenMediumModal,
-  onOpenAsphericalModal,
-  onOpenApertureModal,
+  onOpenPropertyModal,
   onOpenAsphereVarModal,
-  onOpenDecenterModal,
   onOpenTiltDecenterVarModal = () => undefined,
-  onOpenDiffractionGratingModal,
   onCellEditingStarted,
   onCellEditingStopped,
 }: OptimizationLensPrescriptionGridProps) {
@@ -270,10 +263,10 @@ export function OptimizationLensPrescriptionGrid({
           );
         },
       },
-      createMediumColumn<RadiusRow>({
+      createSurfacePropertyColumn<RadiusRow>("medium", {
         getGridRow: (data) => data.row,
-        onOpenMediumModal,
-        tooltipText: "Click to view medium or glass",
+        onOpenPropertyModal,
+        propertyTooltip: "view",
       }),
       ...(canOptimizeGlass
         ? [
@@ -321,15 +314,15 @@ export function OptimizationLensPrescriptionGrid({
         getGridRow: (data) => data.row,
         semiDiameterReadonly: autoAperture,
       }),
-      createApertureColumn<RadiusRow>({
+      createSurfacePropertyColumn<RadiusRow>("aperture", {
         getGridRow: (data) => data.row,
-        onOpenApertureModal,
-        tooltipText: "Click to view aperture",
+        onOpenPropertyModal,
+        propertyTooltip: "view",
       }),
-      createAsphericalColumn<RadiusRow>({
+      createSurfacePropertyColumn<RadiusRow>("aspherical", {
         getGridRow: (data) => data.row,
-        onOpenAsphericalModal,
-        tooltipText: "Click to view aspherical parameters",
+        onOpenPropertyModal,
+        propertyTooltip: "view",
       }),
       {
         headerName: "Var.",
@@ -368,9 +361,10 @@ export function OptimizationLensPrescriptionGrid({
           );
         },
       },
-      createDecenterColumn<RadiusRow>({
+      createSurfacePropertyColumn<RadiusRow>("decenter", {
         getGridRow: (data) => data.row,
-        onOpenDecenterModal,
+        onOpenPropertyModal,
+        propertyTooltip: "view",
       }),
       {
         headerName: "Var.",
@@ -403,10 +397,10 @@ export function OptimizationLensPrescriptionGrid({
           );
         },
       },
-      createDiffractionGratingColumn<RadiusRow>({
+      createSurfacePropertyColumn<RadiusRow>("diffractiveElement", {
         getGridRow: (data) => data.row,
-        onOpenDiffractionGratingModal,
-        tooltipText: "Click to view diffraction grating",
+        onOpenPropertyModal,
+        propertyTooltip: "view",
       }),
     ],
     [
@@ -415,13 +409,9 @@ export function OptimizationLensPrescriptionGrid({
       decenterStates,
       canOptimizeGlass,
       glassModes,
-      onOpenAsphericalModal,
-      onOpenApertureModal,
+      onOpenPropertyModal,
       onOpenAsphereVarModal,
-      onOpenDecenterModal,
       onOpenTiltDecenterVarModal,
-      onOpenDiffractionGratingModal,
-      onOpenMediumModal,
       onOpenGlassModal,
       onOpenRadiusModal,
       onOpenThicknessModal,

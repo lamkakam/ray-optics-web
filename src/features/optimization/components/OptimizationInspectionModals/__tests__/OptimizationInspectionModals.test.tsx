@@ -92,16 +92,8 @@ describe("OptimizationInspectionModals", () => {
     };
 
     const { rerender } = renderInspectionModals({
-      mediumModalRow: undefined,
-      asphericalModalRow: conicRow,
-      apertureModalRow: undefined,
-      decenterModalRow: undefined,
-      diffractionGratingModalRow: undefined,
-      onCloseMediumModal: jest.fn(),
-      onCloseAsphericalModal: jest.fn(),
-      onCloseApertureModal: jest.fn(),
-      onCloseDecenterModal: jest.fn(),
-      onCloseDiffractionGratingModal: jest.fn(),
+      inspected: { key: "aspherical", row: conicRow },
+      onClose: jest.fn(),
     });
 
     expect(screen.getByLabelText("Type")).toHaveValue("Conic");
@@ -112,16 +104,8 @@ describe("OptimizationInspectionModals", () => {
     rerender(
       <GlassCatalogContext.Provider value={glassCatalogValue}>
         <OptimizationInspectionModals
-          mediumModalRow={undefined}
-          asphericalModalRow={evenAsphereRow}
-          apertureModalRow={undefined}
-          decenterModalRow={undefined}
-          diffractionGratingModalRow={undefined}
-          onCloseMediumModal={jest.fn()}
-          onCloseAsphericalModal={jest.fn()}
-          onCloseApertureModal={jest.fn()}
-          onCloseDecenterModal={jest.fn()}
-          onCloseDiffractionGratingModal={jest.fn()}
+          inspected={{ key: "aspherical", row: evenAsphereRow }}
+          onClose={jest.fn()}
         />
       </GlassCatalogContext.Provider>,
     );
@@ -154,16 +138,8 @@ describe("OptimizationInspectionModals", () => {
     };
 
     const { rerender } = renderInspectionModals({
-      mediumModalRow: firstMediumRow,
-      asphericalModalRow: undefined,
-      apertureModalRow: undefined,
-      decenterModalRow: undefined,
-      diffractionGratingModalRow: undefined,
-      onCloseMediumModal: jest.fn(),
-      onCloseAsphericalModal: jest.fn(),
-      onCloseApertureModal: jest.fn(),
-      onCloseDecenterModal: jest.fn(),
-      onCloseDiffractionGratingModal: jest.fn(),
+      inspected: { key: "medium", row: firstMediumRow },
+      onClose: jest.fn(),
     });
 
     expect(screen.getByLabelText("Catalog")).toHaveValue("Schott");
@@ -172,16 +148,8 @@ describe("OptimizationInspectionModals", () => {
     rerender(
       <GlassCatalogContext.Provider value={glassCatalogValue}>
         <OptimizationInspectionModals
-          mediumModalRow={secondMediumRow}
-          asphericalModalRow={undefined}
-          apertureModalRow={undefined}
-          decenterModalRow={undefined}
-          diffractionGratingModalRow={undefined}
-          onCloseMediumModal={jest.fn()}
-          onCloseAsphericalModal={jest.fn()}
-          onCloseApertureModal={jest.fn()}
-          onCloseDecenterModal={jest.fn()}
-          onCloseDiffractionGratingModal={jest.fn()}
+          inspected={{ key: "medium", row: secondMediumRow }}
+          onClose={jest.fn()}
         />
       </GlassCatalogContext.Provider>,
     );
@@ -200,16 +168,8 @@ describe("OptimizationInspectionModals", () => {
     };
 
     renderInspectionModals({
-      mediumModalRow: objectRow,
-      asphericalModalRow: undefined,
-      apertureModalRow: undefined,
-      decenterModalRow: undefined,
-      diffractionGratingModalRow: undefined,
-      onCloseMediumModal: jest.fn(),
-      onCloseAsphericalModal: jest.fn(),
-      onCloseApertureModal: jest.fn(),
-      onCloseDecenterModal: jest.fn(),
-      onCloseDiffractionGratingModal: jest.fn(),
+      inspected: { key: "medium", row: objectRow },
+      onClose: jest.fn(),
     });
 
     expect(screen.getByLabelText("Catalog")).toHaveValue("Special");
@@ -235,16 +195,8 @@ describe("OptimizationInspectionModals", () => {
       edge_aperture: { shape: "circular", radius: 6, offsetX: 3, offsetY: -4 },
     };
     renderInspectionModals({
-      mediumModalRow: undefined,
-      asphericalModalRow: undefined,
-      apertureModalRow: row,
-      decenterModalRow: undefined,
-      diffractionGratingModalRow: undefined,
-      onCloseMediumModal: jest.fn(),
-      onCloseAsphericalModal: jest.fn(),
-      onCloseApertureModal: jest.fn(),
-      onCloseDecenterModal: jest.fn(),
-      onCloseDiffractionGratingModal: jest.fn(),
+      inspected: { key: "aperture", row: row },
+      onClose: jest.fn(),
     });
 
     expect(screen.getByLabelText("Clear Aperture Shape")).toBeDisabled();
@@ -289,16 +241,8 @@ describe("OptimizationInspectionModals", () => {
     };
 
     renderInspectionModals({
-      mediumModalRow: undefined,
-      asphericalModalRow: undefined,
-      apertureModalRow: undefined,
-      decenterModalRow: row,
-      diffractionGratingModalRow: undefined,
-      onCloseMediumModal: jest.fn(),
-      onCloseAsphericalModal: jest.fn(),
-      onCloseApertureModal: jest.fn(),
-      onCloseDecenterModal: jest.fn(),
-      onCloseDiffractionGratingModal: jest.fn(),
+      inspected: { key: "decenter", row: row },
+      onClose: jest.fn(),
     });
 
     expect(
@@ -343,16 +287,8 @@ describe("OptimizationInspectionModals", () => {
       diffractiveElement: { diffractionGrating: { lpmm: 1200, order: -1 } },
     };
     renderInspectionModals({
-      mediumModalRow: undefined,
-      asphericalModalRow: undefined,
-      apertureModalRow: undefined,
-      decenterModalRow: undefined,
-      diffractionGratingModalRow: row,
-      onCloseMediumModal: jest.fn(),
-      onCloseAsphericalModal: jest.fn(),
-      onCloseApertureModal: jest.fn(),
-      onCloseDecenterModal: jest.fn(),
-      onCloseDiffractionGratingModal: jest.fn(),
+      inspected: { key: "diffractiveElement", row: row },
+      onClose: jest.fn(),
     });
 
     expect(screen.getByRole("textbox", { name: "lp/mm" })).toHaveValue("1200");

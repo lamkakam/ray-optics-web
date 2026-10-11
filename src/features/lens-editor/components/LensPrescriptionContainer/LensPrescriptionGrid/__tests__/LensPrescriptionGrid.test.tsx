@@ -61,11 +61,7 @@ describe("LensPrescriptionGrid", () => {
   const defaultProps = {
     rows: testRows,
     onRowChange: jest.fn(),
-    onOpenMediumModal: jest.fn(),
-    onOpenAsphericalModal: jest.fn(),
-    onOpenDecenterModal: jest.fn(),
-    onOpenDiffractionGratingModal: jest.fn(),
-    onOpenApertureModal: jest.fn(),
+    onOpenPropertyModal: jest.fn(),
     onAddRowAfter: jest.fn(),
     onDeleteRow: jest.fn(),
   };
@@ -283,12 +279,12 @@ describe("LensPrescriptionGrid", () => {
     expect(mediumButtons).toHaveLength(3); // object row + two surface rows
   });
 
-  it("calls onOpenMediumModal when medium button is clicked", async () => {
+  it("opens the medium property modal when medium button is clicked", async () => {
     const onOpenMediumModal = jest.fn();
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenMediumModal={onOpenMediumModal}
+        onOpenPropertyModal={onOpenMediumModal}
       />,
     );
     const mediumButtons = screen.getAllByRole("button", {
@@ -297,7 +293,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(mediumButtons[0]);
 
-    expect(onOpenMediumModal).toHaveBeenCalledWith(OBJECT_ROW_ID);
+    expect(onOpenMediumModal).toHaveBeenCalledWith("medium", OBJECT_ROW_ID);
   });
 
   it("renders the object row medium value in the Medium column", () => {
@@ -310,7 +306,7 @@ describe("LensPrescriptionGrid", () => {
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenMediumModal={onOpenMediumModal}
+        onOpenPropertyModal={onOpenMediumModal}
       />,
     );
     const mediumButtons = screen.getAllByRole("button", {
@@ -319,7 +315,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(mediumButtons[1]);
 
-    expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
+    expect(onOpenMediumModal).toHaveBeenCalledWith("medium", "s1");
   });
 
   // --- Aspherical column ---
@@ -353,12 +349,12 @@ describe("LensPrescriptionGrid", () => {
     ).toEqual(["Conic", "None", "None"]);
   });
 
-  it("calls onOpenAsphericalModal when aspherical button is clicked", async () => {
+  it("opens the aspherical property modal when aspherical button is clicked", async () => {
     const onOpenAsphericalModal = jest.fn();
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenAsphericalModal={onOpenAsphericalModal}
+        onOpenPropertyModal={onOpenAsphericalModal}
       />,
     );
     const buttons = screen.getAllByRole("button", {
@@ -367,7 +363,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(buttons[1]); // s2 has aspherical
 
-    expect(onOpenAsphericalModal).toHaveBeenCalledWith("s2");
+    expect(onOpenAsphericalModal).toHaveBeenCalledWith("aspherical", "s2");
   });
 
   // --- Numeric columns (Radius, Thickness, Semi-diam.) ---
@@ -404,7 +400,7 @@ describe("LensPrescriptionGrid", () => {
       <LensPrescriptionGrid
         {...defaultProps}
         onRowChange={onRowChange}
-        onOpenMediumModal={onOpenMediumModal}
+        onOpenPropertyModal={onOpenMediumModal}
       />,
     );
     const inputs = screen.getAllByRole("textbox");
@@ -414,7 +410,7 @@ describe("LensPrescriptionGrid", () => {
     await user.click(screen.getAllByRole("button", { name: "Edit medium" })[1]);
 
     expect(onRowChange).toHaveBeenCalledWith("s1", { curvatureRadius: 125 });
-    expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
+    expect(onOpenMediumModal).toHaveBeenCalledWith("medium", "s1");
   });
 
   // --- Object row thickness (object distance) ---
@@ -447,7 +443,7 @@ describe("LensPrescriptionGrid", () => {
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenMediumModal={onOpenMediumModal}
+        onOpenPropertyModal={onOpenMediumModal}
       />,
     );
     const mediumButtons = screen.getAllByRole("button", {
@@ -457,7 +453,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(cellWrapper);
 
-    expect(onOpenMediumModal).toHaveBeenCalledWith(OBJECT_ROW_ID);
+    expect(onOpenMediumModal).toHaveBeenCalledWith("medium", OBJECT_ROW_ID);
   });
 
   it("opens aspherical modal when clicking cell area around the aspherical button", async () => {
@@ -465,7 +461,7 @@ describe("LensPrescriptionGrid", () => {
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenAsphericalModal={onOpenAsphericalModal}
+        onOpenPropertyModal={onOpenAsphericalModal}
       />,
     );
     const buttons = screen.getAllByRole("button", {
@@ -475,7 +471,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(cellWrapper);
 
-    expect(onOpenAsphericalModal).toHaveBeenCalledWith("s1");
+    expect(onOpenAsphericalModal).toHaveBeenCalledWith("aspherical", "s1");
   });
 
   it("opens aperture modal when clicking the aperture button and surrounding cell area", async () => {
@@ -483,17 +479,17 @@ describe("LensPrescriptionGrid", () => {
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenApertureModal={onOpenApertureModal}
+        onOpenPropertyModal={onOpenApertureModal}
       />,
     );
     const buttons = screen.getAllByRole("button", { name: "Edit aperture" });
 
     await userEvent.click(buttons[0]);
-    expect(onOpenApertureModal).toHaveBeenCalledWith("s1");
+    expect(onOpenApertureModal).toHaveBeenCalledWith("aperture", "s1");
 
     const cellWrapper = buttons[1].closest("[data-cell-wrapper]")!;
     await userEvent.click(cellWrapper);
-    expect(onOpenApertureModal).toHaveBeenCalledWith("s2");
+    expect(onOpenApertureModal).toHaveBeenCalledWith("aperture", "s2");
   });
 
   // --- Add/Delete row buttons ---
@@ -556,12 +552,12 @@ describe("LensPrescriptionGrid", () => {
     expect(decenterButtons).toHaveLength(3); // two surface rows + image row
   });
 
-  it("calls onOpenDecenterModal when decenter button is clicked on a surface row", async () => {
+  it("opens the decenter property modal when decenter button is clicked on a surface row", async () => {
     const onOpenDecenterModal = jest.fn();
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenDecenterModal={onOpenDecenterModal}
+        onOpenPropertyModal={onOpenDecenterModal}
       />,
     );
     const decenterButtons = screen.getAllByRole("button", {
@@ -570,15 +566,15 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(decenterButtons[0]);
 
-    expect(onOpenDecenterModal).toHaveBeenCalledWith("s1");
+    expect(onOpenDecenterModal).toHaveBeenCalledWith("decenter", "s1");
   });
 
-  it("calls onOpenDecenterModal when decenter button is clicked on image row", async () => {
+  it("opens the decenter property modal when decenter button is clicked on image row", async () => {
     const onOpenDecenterModal = jest.fn();
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenDecenterModal={onOpenDecenterModal}
+        onOpenPropertyModal={onOpenDecenterModal}
       />,
     );
     const decenterButtons = screen.getAllByRole("button", {
@@ -587,7 +583,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(decenterButtons[2]); // last button is image row
 
-    expect(onOpenDecenterModal).toHaveBeenCalledWith(IMAGE_ROW_ID);
+    expect(onOpenDecenterModal).toHaveBeenCalledWith("decenter", IMAGE_ROW_ID);
   });
 
   it("opens decenter modal when clicking cell area around the decenter button", async () => {
@@ -595,7 +591,7 @@ describe("LensPrescriptionGrid", () => {
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenDecenterModal={onOpenDecenterModal}
+        onOpenPropertyModal={onOpenDecenterModal}
       />,
     );
     const decenterButtons = screen.getAllByRole("button", {
@@ -605,7 +601,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(cellWrapper);
 
-    expect(onOpenDecenterModal).toHaveBeenCalledWith("s1");
+    expect(onOpenDecenterModal).toHaveBeenCalledWith("decenter", "s1");
   });
 
   it("opens decenter modal when clicking cell area around the image row decenter button", async () => {
@@ -613,7 +609,7 @@ describe("LensPrescriptionGrid", () => {
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenDecenterModal={onOpenDecenterModal}
+        onOpenPropertyModal={onOpenDecenterModal}
       />,
     );
     const decenterButtons = screen.getAllByRole("button", {
@@ -623,7 +619,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(cellWrapper);
 
-    expect(onOpenDecenterModal).toHaveBeenCalledWith(IMAGE_ROW_ID);
+    expect(onOpenDecenterModal).toHaveBeenCalledWith("decenter", IMAGE_ROW_ID);
   });
 
   // --- Diffraction Grating column ---
@@ -635,12 +631,12 @@ describe("LensPrescriptionGrid", () => {
     expect(gratingButtons).toHaveLength(2);
   });
 
-  it("calls onOpenDiffractionGratingModal when grating button is clicked", async () => {
+  it("opens the diffractiveElement property modal when grating button is clicked", async () => {
     const onOpenDiffractionGratingModal = jest.fn();
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
+        onOpenPropertyModal={onOpenDiffractionGratingModal}
       />,
     );
     const gratingButtons = screen.getAllByRole("button", {
@@ -649,7 +645,10 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(gratingButtons[0]);
 
-    expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith("s1");
+    expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith(
+      "diffractiveElement",
+      "s1",
+    );
   });
 
   it("opens diffraction grating modal when clicking cell area around the grating button", async () => {
@@ -657,7 +656,7 @@ describe("LensPrescriptionGrid", () => {
     render(
       <LensPrescriptionGrid
         {...defaultProps}
-        onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
+        onOpenPropertyModal={onOpenDiffractionGratingModal}
       />,
     );
     const gratingButtons = screen.getAllByRole("button", {
@@ -667,7 +666,10 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(cellWrapper);
 
-    expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith("s1");
+    expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith(
+      "diffractiveElement",
+      "s1",
+    );
   });
 
   // --- semiDiameterReadonly prop ---

@@ -5,34 +5,14 @@
  * @remarks
  * ## Behavior
  *
- * - All tooltips use `portal` and `noTouch` for AG Grid compatibility.
- * - Medium, aspherical, decenter, and diffraction grating tooltip-backed action cells do not apply `touch-action: none`, so native touch scrolling can start over those controls in iOS Safari.
- * - Medium, aspherical, decenter, and diffraction grating cells use `triggerClassName="flex h-full w-full"` so the tooltip trigger fills the cell action area.
- * - Medium, aperture, aspherical, decenter, and diffraction grating action cell text renders on a single line and uses an ellipsis when it exceeds the available cell width.
- * - Empty aspherical, decenter, and diffraction grating values display `None`.
- * - Aperture values are formatted from both `clear_aperture` and `edge_aperture`: missing clear aperture and centered circular clear aperture display `Default` when edge aperture is missing/default; circular clear aperture with nonzero offset displays `Cir offset (<x>, <y>)`; annular clear aperture displays `Annu obs <radius>`; Ronchi clear aperture displays `Ronchi <lpmm> lp/mm`; transform suffixes include nonzero rotation and offsets; explicit circular edge aperture appends `; Edge Cir <radius>` with an optional offset suffix.
- * - Aspherical values display the shared asphere type label (`Conic`, `Even Aspherical`, `Radial Polynomial`, `X Toroid`, `Y Toroid`).
- * - Decenter values display `coordinateSystemStrategy` directly.
- * - Diffraction grating values display `${lpmm} lp/mm`.
- * - Default tooltip copy preserves the Lens Editor wording.
- * - Optimization passes view-oriented tooltip copy through the shared column builders.
+ * - `SurfacePropertyCell` renders every modal-backed surface property (medium, aperture, asphere, tilt and decenter, diffraction grating). Its label, accessible name, and tooltip come from the property's UI descriptor, so a new property needs no new cell component.
+ * - Tooltips use `portal` and `noTouch` for AG Grid compatibility, and their trigger fills the cell action area (`triggerClassName="flex h-full w-full"`).
+ * - Action cells do not apply `touch-action: none`, so native touch scrolling can start over them in iOS Safari.
+ * - Action cell text renders on a single line and uses an ellipsis when it exceeds the available cell width.
  */
 
 import type React from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
-import {
-  formatAsphericalLabel,
-  formatApertureLabel,
-  formatDecenterLabel,
-  formatDiffractionGratingLabel,
-} from "@/shared/lib/lens-prescription-grid/displayLabels";
-import type {
-  ClearAperture,
-  DecenterConfig,
-  DiffractionGrating,
-  EdgeAperture,
-  Surface,
-} from "@/shared/lib/optical-model/model/opticalModel";
 
 interface ActionWrapperProps {
   readonly children: React.ReactNode;
@@ -67,38 +47,6 @@ export function LensPrescriptionActionWrapper({
   );
 }
 
-interface MediumCellProps {
-  readonly medium: string;
-  readonly onOpenModal: () => void;
-  readonly tooltipText?: string;
-}
-
-/** Renders the medium cell and opens its selector action. */
-export function MediumCell({
-  medium,
-  onOpenModal,
-  tooltipText = "Click to set medium or glass",
-}: MediumCellProps) {
-  return (
-    <Tooltip
-      text={tooltipText}
-      position="top"
-      portal
-      noTouch
-      triggerClassName="flex h-full w-full"
-    >
-      <button
-        type="button"
-        aria-label="Edit medium"
-        className="w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-left"
-        onClick={onOpenModal}
-      >
-        {medium}
-      </button>
-    </Tooltip>
-  );
-}
-
 interface TextActionButtonProps {
   readonly ariaLabel: string;
   readonly children: React.ReactNode;
@@ -122,18 +70,22 @@ function TextActionButton({
   );
 }
 
-interface AsphericalCellProps {
-  readonly aspherical: Surface["aspherical"] | undefined;
+interface SurfacePropertyCellProps {
+  /** Text shown in the cell, already formatted by the property's UI descriptor. */
+  readonly label: string;
+  /** Accessible name of the action button. */
+  readonly ariaLabel: string;
+  readonly tooltipText: string;
   readonly onOpenModal: () => void;
-  readonly tooltipText?: string;
 }
 
-/** Renders the asphere summary and opens its editor action. */
-export function AsphericalCell({
-  aspherical,
+/** Renders a modal-backed surface-property summary and opens its modal. */
+export function SurfacePropertyCell({
+  label,
+  ariaLabel,
+  tooltipText,
   onOpenModal,
-  tooltipText = "Click to set aspherical parameters",
-}: AsphericalCellProps) {
+}: SurfacePropertyCellProps) {
   return (
     <Tooltip
       text={tooltipText}
@@ -142,100 +94,8 @@ export function AsphericalCell({
       noTouch
       triggerClassName="flex h-full w-full"
     >
-      <TextActionButton
-        ariaLabel="Edit aspherical parameters"
-        onClick={onOpenModal}
-      >
-        {formatAsphericalLabel(aspherical)}
-      </TextActionButton>
-    </Tooltip>
-  );
-}
-
-interface ApertureCellProps {
-  readonly clearAperture: ClearAperture | undefined;
-  readonly edgeAperture: EdgeAperture | undefined;
-  readonly onOpenModal: () => void;
-  readonly tooltipText?: string;
-}
-
-/** Renders the aperture summary and opens its editor action. */
-export function ApertureCell({
-  clearAperture,
-  edgeAperture,
-  onOpenModal,
-  tooltipText = "Click to set aperture",
-}: ApertureCellProps) {
-  return (
-    <Tooltip
-      text={tooltipText}
-      position="top"
-      portal
-      noTouch
-      triggerClassName="flex h-full w-full"
-    >
-      <TextActionButton ariaLabel="Edit aperture" onClick={onOpenModal}>
-        {formatApertureLabel(clearAperture, edgeAperture)}
-      </TextActionButton>
-    </Tooltip>
-  );
-}
-
-interface DecenterCellProps {
-  readonly decenter: DecenterConfig | undefined;
-  readonly onOpenModal: () => void;
-  readonly tooltipText?: string;
-}
-
-/** Renders the decenter summary and opens its editor action. */
-export function DecenterCell({
-  decenter,
-  onOpenModal,
-  tooltipText = "Click to open settings for Tilt and Decenter",
-}: DecenterCellProps) {
-  return (
-    <Tooltip
-      text={tooltipText}
-      position="top"
-      portal
-      noTouch
-      triggerClassName="flex h-full w-full"
-    >
-      <TextActionButton
-        ariaLabel="Edit decenter and tilt"
-        onClick={onOpenModal}
-      >
-        {formatDecenterLabel(decenter)}
-      </TextActionButton>
-    </Tooltip>
-  );
-}
-
-interface DiffractionGratingCellProps {
-  readonly diffractionGrating: DiffractionGrating | undefined;
-  readonly onOpenModal: () => void;
-  readonly tooltipText?: string;
-}
-
-/** Renders the grating summary and opens its editor action. */
-export function DiffractionGratingCell({
-  diffractionGrating,
-  onOpenModal,
-  tooltipText = "Click to set diffraction grating",
-}: DiffractionGratingCellProps) {
-  return (
-    <Tooltip
-      text={tooltipText}
-      position="top"
-      portal
-      noTouch
-      triggerClassName="flex h-full w-full"
-    >
-      <TextActionButton
-        ariaLabel="Edit diffraction grating"
-        onClick={onOpenModal}
-      >
-        {formatDiffractionGratingLabel(diffractionGrating)}
+      <TextActionButton ariaLabel={ariaLabel} onClick={onOpenModal}>
+        {label}
       </TextActionButton>
     </Tooltip>
   );

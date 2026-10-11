@@ -1,153 +1,34 @@
 "use client";
 
-import { ApertureModal } from "@/shared/lib/optical-model/surface-properties/aperture/ApertureModal";
-import { AsphericalModal } from "@/shared/lib/optical-model/surface-properties/aspherical/AsphericalModal";
-import { DecenterModal } from "@/shared/lib/optical-model/surface-properties/decenter/DecenterModal";
-import { DiffractionGratingModal } from "@/shared/lib/optical-model/surface-properties/diffractive-element/DiffractionGratingModal";
-import { MediumSelectorModal } from "@/shared/lib/optical-model/surface-properties/medium/MediumSelectorModal";
-import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import {
+  SurfacePropertyModalHost,
+  type OpenSurfacePropertyModal,
+} from "@/shared/lib/lens-prescription-grid/SurfacePropertyModalHost";
 
 interface OptimizationInspectionModalsProps {
-  readonly mediumModalRow: GridRow | undefined;
-  readonly asphericalModalRow: GridRow | undefined;
-  readonly apertureModalRow: GridRow | undefined;
-  readonly decenterModalRow: GridRow | undefined;
-  readonly diffractionGratingModalRow: GridRow | undefined;
-  readonly onCloseMediumModal: () => void;
-  readonly onCloseAsphericalModal: () => void;
-  readonly onCloseApertureModal: () => void;
-  readonly onCloseDecenterModal: () => void;
-  readonly onCloseDiffractionGratingModal: () => void;
+  /** Surface property being inspected with its row, or `undefined` when no inspection modal is open. */
+  readonly inspected: OpenSurfacePropertyModal | undefined;
+  readonly onClose: () => void;
 }
 
 /**
- * Wraps the read-only medium, aperture, aspherical, decenter, and diffraction grating modals reused from the lens editor.
+ * Read-only inspection of the modal-backed surface properties (medium, aperture, aspherical, tilt and decenter, diffraction grating) shown in the Optimization prescription grid.
  *
  * @remarks
- * - Imports the reused modals from the `LensPrescriptionContainer` barrel, which is the public export boundary for lens prescription inspection components.
- * - Remounts each reused modal with a row-based `key` so the modal-local draft state is reset whenever the selected optimization row changes.
- * - Mirrors the lens editor container's reset behavior for read-only inspection flows, preventing stale values from a previously opened row.
- * - Passes the inspected surface `semiDiameter` into the reused aperture modal so read-only annular and Ronchi clear aperture controls render with the same outer-radius context as the lens editor.
- * - Reads diffraction-grating inspection values from the nested `diffractiveElement.diffractionGrating` surface contract.
+ * - Renders the shared `SurfacePropertyModalHost` with `readOnly`, so every property's own modal adapter seeds its controls from the inspected row (including the surface `semiDiameter` that annular and Ronchi aperture controls need) and shows a Close-only footer.
+ * - Each adapter remounts when the inspected row changes, so no draft from a previously inspected row is shown.
+ * - Confirm and remove are unreachable in read-only mode, so the host's `onApply` is a no-op.
  */
 export function OptimizationInspectionModals({
-  mediumModalRow,
-  asphericalModalRow,
-  apertureModalRow,
-  decenterModalRow,
-  diffractionGratingModalRow,
-  onCloseMediumModal,
-  onCloseAsphericalModal,
-  onCloseApertureModal,
-  onCloseDecenterModal,
-  onCloseDiffractionGratingModal,
+  inspected,
+  onClose,
 }: OptimizationInspectionModalsProps) {
   return (
-    <>
-      <MediumSelectorModal
-        key={mediumModalRow?.id ?? "medium-closed"}
-        isOpen={mediumModalRow !== undefined}
-        initialMedium={
-          mediumModalRow?.kind === "surface" ||
-          mediumModalRow?.kind === "object"
-            ? mediumModalRow.medium
-            : "air"
-        }
-        initialManufacturer={
-          mediumModalRow?.kind === "surface" ||
-          mediumModalRow?.kind === "object"
-            ? mediumModalRow.manufacturer
-            : ""
-        }
-        allowReflective={mediumModalRow?.kind !== "object"}
-        readOnly
-        onConfirm={() => undefined}
-        onClose={onCloseMediumModal}
-      />
-
-      <AsphericalModal
-        key={asphericalModalRow?.id ?? "aspherical-closed"}
-        isOpen={asphericalModalRow?.kind === "surface"}
-        readOnly
-        initialConicConstant={
-          asphericalModalRow?.kind === "surface"
-            ? (asphericalModalRow.aspherical?.conicConstant ?? 0)
-            : 0
-        }
-        initialType={
-          asphericalModalRow?.kind === "surface"
-            ? (asphericalModalRow.aspherical?.kind ?? "Conic")
-            : "Conic"
-        }
-        initialCoefficients={
-          asphericalModalRow?.kind === "surface" &&
-          asphericalModalRow.aspherical !== undefined &&
-          "polynomialCoefficients" in asphericalModalRow.aspherical
-            ? asphericalModalRow.aspherical.polynomialCoefficients
-            : []
-        }
-        initialToricSweepRadiusOfCurvature={
-          asphericalModalRow?.kind === "surface" &&
-          asphericalModalRow.aspherical !== undefined &&
-          "toricSweepRadiusOfCurvature" in asphericalModalRow.aspherical
-            ? asphericalModalRow.aspherical.toricSweepRadiusOfCurvature
-            : 0
-        }
-        onConfirm={() => undefined}
-        onClose={onCloseAsphericalModal}
-        onRemove={() => undefined}
-      />
-
-      <ApertureModal
-        key={apertureModalRow?.id ?? "aperture-closed"}
-        isOpen={apertureModalRow?.kind === "surface"}
-        readOnly
-        semiDiameter={
-          apertureModalRow?.kind === "surface"
-            ? apertureModalRow.semiDiameter
-            : 1
-        }
-        initialClearAperture={
-          apertureModalRow?.kind === "surface"
-            ? apertureModalRow.clear_aperture
-            : undefined
-        }
-        initialEdgeAperture={
-          apertureModalRow?.kind === "surface"
-            ? apertureModalRow.edge_aperture
-            : undefined
-        }
-        onConfirm={() => undefined}
-        onClose={onCloseApertureModal}
-      />
-
-      <DecenterModal
-        key={decenterModalRow?.id ?? "decenter-closed"}
-        isOpen={decenterModalRow !== undefined}
-        readOnly
-        initialDecenter={
-          decenterModalRow?.kind !== "object"
-            ? decenterModalRow?.decenter
-            : undefined
-        }
-        onConfirm={() => undefined}
-        onClose={onCloseDecenterModal}
-        onRemove={() => undefined}
-      />
-
-      <DiffractionGratingModal
-        key={diffractionGratingModalRow?.id ?? "diffraction-grating-closed"}
-        isOpen={diffractionGratingModalRow?.kind === "surface"}
-        readOnly
-        initialDiffractionGrating={
-          diffractionGratingModalRow?.kind === "surface"
-            ? diffractionGratingModalRow.diffractiveElement?.diffractionGrating
-            : undefined
-        }
-        onConfirm={() => undefined}
-        onClose={onCloseDiffractionGratingModal}
-        onRemove={() => undefined}
-      />
-    </>
+    <SurfacePropertyModalHost
+      open={inspected}
+      readOnly
+      onApply={() => undefined}
+      onClose={onClose}
+    />
   );
 }

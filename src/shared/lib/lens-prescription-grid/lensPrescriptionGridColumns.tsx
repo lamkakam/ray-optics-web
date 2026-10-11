@@ -9,47 +9,36 @@
  *
  * Builders accept `getGridRow(data)` so feature grids can adapt their own row model to `GridRow` without coupling `shared/` to feature state. Modal and edit behavior is injected through optional callbacks. When edit callbacks are omitted, numeric and select columns remain read-only.
  *
- * `LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` is the shared source for the `Surface`, `Comment`, `Index`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths used by Lens Editor and Optimization. `lensPrescriptionGridIndexColumnDef` applies the `index` width and pins the `Index` column to the left; feature grids spread it into their local read-only `Index` column before adding their feature-specific value getter. `createSurfaceColumn` applies `surface`, `createCommentColumn` applies `comment`, `createRadiusOfCurvatureColumn` applies `radiusOfCurvature`, `createThicknessColumn` applies `thickness`, `createMediumColumn` applies `medium`, `createSemiDiameterColumn` applies `semiDiameter`, `createApertureColumn` applies `aperture`, `createAsphericalColumn` applies `aspherical`, `createDecenterColumn` applies `decenter`, and `createDiffractionGratingColumn` reads `diffractiveElement.diffractionGrating`.
+ * `LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` (defined in `columnWidths.ts` and re-exported here) is the shared source for the `Surface`, `Comment`, `Index`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths used by Lens Editor and Optimization. `lensPrescriptionGridIndexColumnDef` applies the `index` width and pins the `Index` column to the left; feature grids spread it into their local read-only `Index` column before adding their feature-specific value getter. The inline columns apply their own widths; each modal-backed property column takes its width from its UI descriptor.
  *
- * `createLensPrescriptionCommonColumns` returns the common column order used by the Lens Editor. Optimization uses the individual builders so its local `Var.` columns can stay interleaved after Radius, Thickness, and Asph.
+ * `createLensPrescriptionCommonColumns` returns the common column order used by the Lens Editor: Surface, Comment, Radius, Thickness, Medium, Semi-diam., then the remaining modal-backed property columns in registry order. Optimization uses the individual builders so its local `Var.` columns can stay interleaved after Radius, Thickness, Asph., and Tilt & Decenter.
  *
- * The modal-backed `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` builders apply shared initial widths and pass the row's actual optional config into the shared text action cells. `createApertureColumn` passes both `clear_aperture` and `edge_aperture` into `ApertureCell`, and its value getter returns the same formatted aperture label shown by the renderer. Aperture labels display `Default` only for default/omitted edge aperture plus omitted or centered circular clear aperture; otherwise they show compact clear aperture details, including Ronchi density/transform information, and append explicit circular edge aperture details. The other cells display `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while keeping the existing modal callbacks.
+ * Modal-backed surface properties (`Medium`, `Aperture`, `Asph.`, `Tilt & Decenter`, `Diffraction Grating`) are built by `createSurfacePropertyColumn(key, options)` from their UI descriptors in `SURFACE_PROPERTY_UIS`: header, width, value getter, the shared `SurfacePropertyCell` label and accessible name, and the editing (default) or inspection (`propertyTooltip: "view"`) tooltip. Rows a property does not apply to stay blank, and the action cell is rendered only when `onOpenPropertyModal(key, row)` is supplied. Aperture labels display `Default` only for default/omitted edge aperture plus omitted or centered circular clear aperture; otherwise they show compact clear aperture details, including Ronchi density/transform information, and append explicit circular edge aperture details. The other cells display the medium name, `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels.
  *
  * `createSemiDiameterColumn` renders a blank value and is non-editable for surface rows whose clear aperture is rectangular, because rectangular clear apertures carry their own half-length and half-width instead of using `semiDiameter`.
  */
 
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import { LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS } from "@/shared/lib/lens-prescription-grid/columnWidths";
 import {
-  AsphericalCell,
-  ApertureCell,
-  DecenterCell,
-  DiffractionGratingCell,
   LensPrescriptionActionWrapper,
-  MediumCell,
+  SurfacePropertyCell,
 } from "@/shared/lib/lens-prescription-grid/LensPrescriptionGridCells";
-import { formatApertureLabel } from "@/shared/lib/lens-prescription-grid/displayLabels";
+import {
+  SURFACE_PROPERTY_UI_KEYS,
+  SURFACE_PROPERTY_UIS,
+  type SurfacePropertyUiKey,
+} from "@/shared/lib/optical-model/surface-properties/registry.ui";
+import type { SurfacePropertyUi } from "@/shared/lib/optical-model/surface-properties/uiDescriptor";
+
+export { LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS };
 
 /** Shared resizable, non-sortable prescription grid defaults. */
 export const lensPrescriptionGridDefaultColDef = {
   sortable: false,
   suppressMovable: true,
 } satisfies ColDef;
-
-/** Canonical widths for prescription-grid columns. */
-export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
-  surface: 85,
-  comment: 200,
-  index: 80,
-  radiusOfCurvature: 170,
-  thickness: 130,
-  medium: 115,
-  semiDiameter: 115,
-  aperture: 115,
-  aspherical: 140,
-  decenter: 135,
-  diffractionGrating: 165,
-} as const;
 
 /** Pinned row-index column shared by prescription grids. */
 export const lensPrescriptionGridIndexColumnDef = {
@@ -72,7 +61,6 @@ export function numberValueParser(params: {
 }
 
 type GridRowAccessor<TData> = (data: TData) => GridRow;
-type GridRowModalCallback = (row: GridRow) => void;
 
 interface BaseColumnOptions<TData> {
   readonly getGridRow: GridRowAccessor<TData>;
@@ -97,36 +85,23 @@ interface ThicknessColumnOptions<TData> extends BaseColumnOptions<TData> {
   readonly onThicknessChange?: (row: GridRow, thickness: number) => void;
 }
 
-interface MediumColumnOptions<TData> extends BaseColumnOptions<TData> {
-  readonly onOpenMediumModal?: GridRowModalCallback;
-  readonly tooltipText?: string;
-}
-
 interface SemiDiameterColumnOptions<TData> extends BaseColumnOptions<TData> {
   readonly semiDiameterReadonly?: boolean;
   readonly computedSemiDiameters?: Readonly<Record<string, number>>;
   readonly onSemiDiameterChange?: (row: GridRow, semiDiameter: number) => void;
 }
 
-interface ApertureColumnOptions<TData> extends BaseColumnOptions<TData> {
-  readonly onOpenApertureModal?: GridRowModalCallback;
-  readonly tooltipText?: string;
-}
+/** Opens the modal of one modal-backed surface property for a row. */
+type SurfacePropertyModalCallback = (
+  key: SurfacePropertyUiKey,
+  row: GridRow,
+) => void;
 
-interface AsphericalColumnOptions<TData> extends BaseColumnOptions<TData> {
-  readonly onOpenAsphericalModal?: GridRowModalCallback;
-  readonly tooltipText?: string;
-}
-
-interface DecenterColumnOptions<TData> extends BaseColumnOptions<TData> {
-  readonly onOpenDecenterModal?: GridRowModalCallback;
-  readonly tooltipText?: string;
-}
-
-interface DiffractionGratingColumnOptions<TData>
-  extends BaseColumnOptions<TData> {
-  readonly onOpenDiffractionGratingModal?: GridRowModalCallback;
-  readonly tooltipText?: string;
+interface SurfacePropertyColumnOptions<TData> extends BaseColumnOptions<TData> {
+  /** Opens the property's modal; when omitted the column shows no action cell. */
+  readonly onOpenPropertyModal?: SurfacePropertyModalCallback;
+  /** Chooses the descriptor's editing (default) or inspection tooltip. */
+  readonly propertyTooltip?: "edit" | "view";
 }
 
 /** Creates the shared surface-label column. */
@@ -252,39 +227,6 @@ export function createThicknessColumn<TData>({
   };
 }
 
-/** Creates the medium display/action column. */
-export function createMediumColumn<TData>({
-  getGridRow,
-  onOpenMediumModal,
-  tooltipText,
-}: MediumColumnOptions<TData>): ColDef<TData> {
-  return {
-    headerName: "Medium",
-    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.medium,
-    valueGetter: (params) => {
-      if (params.data === undefined) return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind === "image") return undefined;
-      return row.medium;
-    },
-    cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenMediumModal === undefined)
-        return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind === "image") return undefined;
-      return (
-        <LensPrescriptionActionWrapper onAction={() => onOpenMediumModal(row)}>
-          <MediumCell
-            medium={row.medium}
-            onOpenModal={() => onOpenMediumModal(row)}
-            tooltipText={tooltipText}
-          />
-        </LensPrescriptionActionWrapper>
-      );
-    },
-  };
-}
-
 /** Creates the semi-diameter column with auto-aperture presentation. */
 export function createSemiDiameterColumn<TData>({
   getGridRow,
@@ -336,143 +278,43 @@ export function createSemiDiameterColumn<TData>({
   };
 }
 
-/** Creates the clear/edge aperture display/action column. */
-export function createApertureColumn<TData>({
-  getGridRow,
-  onOpenApertureModal,
-  tooltipText,
-}: ApertureColumnOptions<TData>): ColDef<TData> {
+/**
+ * Creates the display/action column of one modal-backed surface property from
+ * its UI descriptor: header, width, value getter, label, accessible name, and
+ * tooltip. Rows the property does not apply to stay blank.
+ */
+export function createSurfacePropertyColumn<TData>(
+  key: SurfacePropertyUiKey,
+  {
+    getGridRow,
+    onOpenPropertyModal,
+    propertyTooltip = "edit",
+  }: SurfacePropertyColumnOptions<TData>,
+): ColDef<TData> {
+  const ui: SurfacePropertyUi = SURFACE_PROPERTY_UIS[key];
   return {
-    headerName: "Aperture",
-    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aperture,
+    headerName: ui.headerName,
+    width: ui.width,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
-      if (row.kind !== "surface") return undefined;
-      return formatApertureLabel(row.clear_aperture, row.edge_aperture);
+      return ui.appliesTo(row) ? ui.cellValue(row) : undefined;
     },
     cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenApertureModal === undefined)
+      if (params.data === undefined || onOpenPropertyModal === undefined)
         return undefined;
       const row = getGridRow(params.data);
-      if (row.kind !== "surface") return undefined;
+      if (!ui.appliesTo(row)) return undefined;
+      const openModal = () => onOpenPropertyModal(key, row);
       return (
-        <LensPrescriptionActionWrapper
-          onAction={() => onOpenApertureModal(row)}
-        >
-          <ApertureCell
-            clearAperture={row.clear_aperture}
-            edgeAperture={row.edge_aperture}
-            onOpenModal={() => onOpenApertureModal(row)}
-            tooltipText={tooltipText}
-          />
-        </LensPrescriptionActionWrapper>
-      );
-    },
-  };
-}
-
-/** Creates the asphere display/action column. */
-export function createAsphericalColumn<TData>({
-  getGridRow,
-  onOpenAsphericalModal,
-  tooltipText,
-}: AsphericalColumnOptions<TData>): ColDef<TData> {
-  return {
-    headerName: "Asph.",
-    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aspherical,
-    valueGetter: (params) => {
-      if (params.data === undefined) return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind !== "surface") return undefined;
-      return row.aspherical;
-    },
-    cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenAsphericalModal === undefined)
-        return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind !== "surface") return undefined;
-      return (
-        <LensPrescriptionActionWrapper
-          onAction={() => onOpenAsphericalModal(row)}
-        >
-          <AsphericalCell
-            aspherical={row.aspherical}
-            onOpenModal={() => onOpenAsphericalModal(row)}
-            tooltipText={tooltipText}
-          />
-        </LensPrescriptionActionWrapper>
-      );
-    },
-  };
-}
-
-/** Creates the decenter display/action column. */
-export function createDecenterColumn<TData>({
-  getGridRow,
-  onOpenDecenterModal,
-  tooltipText,
-}: DecenterColumnOptions<TData>): ColDef<TData> {
-  return {
-    headerName: "Tilt & Decenter",
-    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.decenter,
-    valueGetter: (params) => {
-      if (params.data === undefined) return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind === "object") return undefined;
-      return row.decenter;
-    },
-    cellRenderer: (params: { readonly data?: TData }) => {
-      if (params.data === undefined || onOpenDecenterModal === undefined)
-        return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind === "object") return undefined;
-      return (
-        <LensPrescriptionActionWrapper
-          onAction={() => onOpenDecenterModal(row)}
-        >
-          <DecenterCell
-            decenter={row.decenter}
-            onOpenModal={() => onOpenDecenterModal(row)}
-            tooltipText={tooltipText}
-          />
-        </LensPrescriptionActionWrapper>
-      );
-    },
-  };
-}
-
-/** Creates the diffraction-grating display/action column. */
-export function createDiffractionGratingColumn<TData>({
-  getGridRow,
-  onOpenDiffractionGratingModal,
-  tooltipText,
-}: DiffractionGratingColumnOptions<TData>): ColDef<TData> {
-  return {
-    headerName: "Diffraction Grating",
-    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.diffractionGrating,
-    valueGetter: (params) => {
-      if (params.data === undefined) return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind !== "surface") return undefined;
-      return row.diffractiveElement?.diffractionGrating;
-    },
-    cellRenderer: (params: { readonly data?: TData }) => {
-      if (
-        params.data === undefined ||
-        onOpenDiffractionGratingModal === undefined
-      )
-        return undefined;
-      const row = getGridRow(params.data);
-      if (row.kind !== "surface") return undefined;
-      return (
-        <LensPrescriptionActionWrapper
-          onAction={() => onOpenDiffractionGratingModal(row)}
-        >
-          <DiffractionGratingCell
-            diffractionGrating={row.diffractiveElement?.diffractionGrating}
-            onOpenModal={() => onOpenDiffractionGratingModal(row)}
-            tooltipText={tooltipText}
+        <LensPrescriptionActionWrapper onAction={openModal}>
+          <SurfacePropertyCell
+            label={ui.formatLabel(row)}
+            ariaLabel={ui.ariaLabel}
+            tooltipText={
+              propertyTooltip === "view" ? ui.viewTooltip : ui.editTooltip
+            }
+            onOpenModal={openModal}
           />
         </LensPrescriptionActionWrapper>
       );
@@ -485,14 +327,14 @@ interface CommonColumnOptions<TData>
     CommentColumnOptions<TData>,
     RadiusColumnOptions<TData>,
     ThicknessColumnOptions<TData>,
-    MediumColumnOptions<TData>,
     SemiDiameterColumnOptions<TData>,
-    ApertureColumnOptions<TData>,
-    AsphericalColumnOptions<TData>,
-    DecenterColumnOptions<TData>,
-    DiffractionGratingColumnOptions<TData> {}
+    SurfacePropertyColumnOptions<TData> {}
 
-/** Creates the complete shared prescription-column set for a grid consumer. */
+/**
+ * Creates the complete shared prescription-column set for a grid consumer:
+ * Surface, Comment, Radius, Thickness, Medium, Semi-diam., then every other
+ * modal-backed surface property in `SURFACE_PROPERTY_UIS` order.
+ */
 export function createLensPrescriptionCommonColumns<TData>(
   options: CommonColumnOptions<TData>,
 ): ColDef<TData>[] {
@@ -501,11 +343,10 @@ export function createLensPrescriptionCommonColumns<TData>(
     createCommentColumn(options),
     createRadiusOfCurvatureColumn(options),
     createThicknessColumn(options),
-    createMediumColumn(options),
+    createSurfacePropertyColumn("medium", options),
     createSemiDiameterColumn(options),
-    createApertureColumn(options),
-    createAsphericalColumn(options),
-    createDecenterColumn(options),
-    createDiffractionGratingColumn(options),
+    ...SURFACE_PROPERTY_UI_KEYS.filter((key) => key !== "medium").map((key) =>
+      createSurfacePropertyColumn(key, options),
+    ),
   ];
 }

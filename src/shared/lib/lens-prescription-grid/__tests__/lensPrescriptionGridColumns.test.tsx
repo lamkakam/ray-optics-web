@@ -1,14 +1,10 @@
 import {
-  createApertureColumn,
-  createAsphericalColumn,
   createCommentColumn,
-  createDecenterColumn,
-  createDiffractionGratingColumn,
   createLensPrescriptionCommonColumns,
-  createMediumColumn,
   createRadiusOfCurvatureColumn,
   createSemiDiameterColumn,
   createSurfaceColumn,
+  createSurfacePropertyColumn,
   createThicknessColumn,
   lensPrescriptionGridIndexColumnDef,
   lensPrescriptionGridDefaultColDef,
@@ -182,7 +178,7 @@ describe("lens prescription grid columns", () => {
         offsetY: -0.75,
       },
     };
-    const column = createApertureColumn({ getGridRow });
+    const column = createSurfacePropertyColumn("aperture", { getGridRow });
     const valueGetter = column.valueGetter;
 
     expect(typeof valueGetter).toBe("function");
@@ -394,15 +390,20 @@ describe("lens prescription grid columns", () => {
       value(createThicknessColumn({ getGridRow }), undefined),
     ).toBeUndefined();
 
-    expect(value(createMediumColumn({ getGridRow }), rows.object)).toBe("air");
     expect(
-      value(createMediumColumn({ getGridRow }), rows.image),
+      value(createSurfacePropertyColumn("medium", { getGridRow }), rows.object),
+    ).toBe("air");
+    expect(
+      value(createSurfacePropertyColumn("medium", { getGridRow }), rows.image),
     ).toBeUndefined();
-    expect(value(createMediumColumn({ getGridRow }), rows.surface)).toBe(
-      "N-BK7",
-    );
     expect(
-      value(createMediumColumn({ getGridRow }), undefined),
+      value(
+        createSurfacePropertyColumn("medium", { getGridRow }),
+        rows.surface,
+      ),
+    ).toBe("N-BK7");
+    expect(
+      value(createSurfacePropertyColumn("medium", { getGridRow }), undefined),
     ).toBeUndefined();
 
     const semiDiameter = createSemiDiameterColumn({ getGridRow });
@@ -412,49 +413,88 @@ describe("lens prescription grid columns", () => {
     expect(value(semiDiameter, undefined)).toBeUndefined();
 
     expect(
-      value(createApertureColumn({ getGridRow }), rows.object),
+      value(
+        createSurfacePropertyColumn("aperture", { getGridRow }),
+        rows.object,
+      ),
     ).toBeUndefined();
     expect(
-      value(createApertureColumn({ getGridRow }), rows.image),
+      value(
+        createSurfacePropertyColumn("aperture", { getGridRow }),
+        rows.image,
+      ),
     ).toBeUndefined();
     expect(
-      value(createApertureColumn({ getGridRow }), undefined),
+      value(createSurfacePropertyColumn("aperture", { getGridRow }), undefined),
     ).toBeUndefined();
     expect(
-      value(createAsphericalColumn({ getGridRow }), undefined),
+      value(
+        createSurfacePropertyColumn("aspherical", { getGridRow }),
+        undefined,
+      ),
     ).toBeUndefined();
     expect(
-      value(createAsphericalColumn({ getGridRow }), rows.object),
+      value(
+        createSurfacePropertyColumn("aspherical", { getGridRow }),
+        rows.object,
+      ),
     ).toBeUndefined();
     expect(
-      value(createAsphericalColumn({ getGridRow }), rows.image),
-    ).toBeUndefined();
-    expect(value(createAsphericalColumn({ getGridRow }), rows.surface)).toEqual(
-      rows.surface.aspherical,
-    );
-    expect(
-      value(createDecenterColumn({ getGridRow }), rows.object),
-    ).toBeUndefined();
-    expect(value(createDecenterColumn({ getGridRow }), rows.image)).toEqual(
-      rows.image.decenter,
-    );
-    expect(value(createDecenterColumn({ getGridRow }), rows.surface)).toEqual(
-      rows.surface.decenter,
-    );
-    expect(
-      value(createDecenterColumn({ getGridRow }), undefined),
+      value(
+        createSurfacePropertyColumn("aspherical", { getGridRow }),
+        rows.image,
+      ),
     ).toBeUndefined();
     expect(
-      value(createDiffractionGratingColumn({ getGridRow }), rows.object),
+      value(
+        createSurfacePropertyColumn("aspherical", { getGridRow }),
+        rows.surface,
+      ),
+    ).toEqual(rows.surface.aspherical);
+    expect(
+      value(
+        createSurfacePropertyColumn("decenter", { getGridRow }),
+        rows.object,
+      ),
     ).toBeUndefined();
     expect(
-      value(createDiffractionGratingColumn({ getGridRow }), rows.image),
+      value(
+        createSurfacePropertyColumn("decenter", { getGridRow }),
+        rows.image,
+      ),
+    ).toEqual(rows.image.decenter);
+    expect(
+      value(
+        createSurfacePropertyColumn("decenter", { getGridRow }),
+        rows.surface,
+      ),
+    ).toEqual(rows.surface.decenter);
+    expect(
+      value(createSurfacePropertyColumn("decenter", { getGridRow }), undefined),
     ).toBeUndefined();
     expect(
-      value(createDiffractionGratingColumn({ getGridRow }), rows.surface),
+      value(
+        createSurfacePropertyColumn("diffractiveElement", { getGridRow }),
+        rows.object,
+      ),
+    ).toBeUndefined();
+    expect(
+      value(
+        createSurfacePropertyColumn("diffractiveElement", { getGridRow }),
+        rows.image,
+      ),
+    ).toBeUndefined();
+    expect(
+      value(
+        createSurfacePropertyColumn("diffractiveElement", { getGridRow }),
+        rows.surface,
+      ),
     ).toEqual(rows.surface.diffractiveElement?.diffractionGrating);
     expect(
-      value(createDiffractionGratingColumn({ getGridRow }), undefined),
+      value(
+        createSurfacePropertyColumn("diffractiveElement", { getGridRow }),
+        undefined,
+      ),
     ).toBeUndefined();
 
     const surfaceWithoutGrating = {
@@ -463,7 +503,7 @@ describe("lens prescription grid columns", () => {
     } satisfies GridRow;
     expect(
       value(
-        createDiffractionGratingColumn({ getGridRow }),
+        createSurfacePropertyColumn("diffractiveElement", { getGridRow }),
         surfaceWithoutGrating,
       ),
     ).toBeUndefined();
@@ -722,74 +762,63 @@ describe("lens prescription grid columns", () => {
     ).toBeUndefined();
   });
 
-  it("renders action cells only for supported rows and invokes each modal callback", () => {
-    const actions = [
-      {
-        create: createMediumColumn,
-        callback: "onOpenMediumModal" as const,
-        name: "Edit medium",
-        options: { getGridRow, tooltipText: "Medium help" },
-        row: rows.surface,
-        unsupported: rows.image,
-      },
-      {
-        create: createApertureColumn,
-        callback: "onOpenApertureModal" as const,
-        name: "Edit aperture",
-        options: { getGridRow, tooltipText: "Aperture help" },
-        row: rows.surface,
-        unsupported: rows.object,
-      },
-      {
-        create: createAsphericalColumn,
-        callback: "onOpenAsphericalModal" as const,
-        name: "Edit aspherical parameters",
-        options: { getGridRow, tooltipText: "Asphere help" },
-        row: rows.surface,
-        unsupported: rows.object,
-      },
-      {
-        create: createDecenterColumn,
-        callback: "onOpenDecenterModal" as const,
-        name: "Edit decenter and tilt",
-        options: { getGridRow, tooltipText: "Decenter help" },
-        row: rows.image,
-        unsupported: rows.object,
-      },
-      {
-        create: createDiffractionGratingColumn,
-        callback: "onOpenDiffractionGratingModal" as const,
-        name: "Edit diffraction grating",
-        options: { getGridRow, tooltipText: "Grating help" },
-        row: rows.surface,
-        unsupported: rows.object,
-      },
-    ] as const;
-
-    for (const action of actions) {
-      const callback = jest.fn();
-      const column = action.create({
-        ...action.options,
-        [action.callback]: callback,
-      } as never);
+  it.each([
+    ["medium", "Edit medium", rows.surface, rows.image],
+    ["aperture", "Edit aperture", rows.surface, rows.object],
+    ["aspherical", "Edit aspherical parameters", rows.surface, rows.object],
+    ["decenter", "Edit decenter and tilt", rows.image, rows.object],
+    [
+      "diffractiveElement",
+      "Edit diffraction grating",
+      rows.surface,
+      rows.object,
+    ],
+  ] as const)(
+    "renders the %s action cell only for supported rows and opens its modal",
+    (key, name, row, unsupported) => {
+      const onOpenPropertyModal = jest.fn();
+      const column = createSurfacePropertyColumn(key, {
+        getGridRow,
+        onOpenPropertyModal,
+      });
       expect(
         column.cellRenderer?.({ data: undefined } as never),
       ).toBeUndefined();
       expect(
-        column.cellRenderer?.({ data: action.unsupported } as never),
+        column.cellRenderer?.({ data: unsupported } as never),
       ).toBeUndefined();
       expect(
-        action
-          .create(action.options as never)
-          .cellRenderer?.({ data: action.row } as never),
+        createSurfacePropertyColumn(key, { getGridRow }).cellRenderer?.({
+          data: row,
+        } as never),
       ).toBeUndefined();
-      const element = column.cellRenderer?.({ data: action.row } as never);
+      const element = column.cellRenderer?.({ data: row } as never);
       expect(element).toBeDefined();
       const { container } = render(element as React.ReactElement);
       fireEvent.click(container.querySelector("[data-cell-wrapper]")!);
-      fireEvent.click(screen.getByRole("button", { name: action.name }));
-      expect(callback).toHaveBeenCalledWith(action.row);
-      expect(callback).toHaveBeenCalledTimes(2);
-    }
+      fireEvent.click(screen.getByRole("button", { name }));
+      expect(onOpenPropertyModal).toHaveBeenCalledWith(key, row);
+      expect(onOpenPropertyModal).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("shows the inspection tooltip when a column is built for viewing", () => {
+    const column = createSurfacePropertyColumn("decenter", {
+      getGridRow,
+      onOpenPropertyModal: () => undefined,
+      propertyTooltip: "view",
+    });
+    render(
+      column.cellRenderer?.({
+        data: rows.surface,
+      } as never) as React.ReactElement,
+    );
+    fireEvent.mouseEnter(
+      screen.getByRole("button", { name: "Edit decenter and tilt" })
+        .parentElement!,
+    );
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "Click to view tilt and decenter",
+    );
   });
 });
