@@ -43,6 +43,10 @@ import {
   type GlassCatalogContextValue,
 } from "@/shared/components/providers/GlassCatalogProvider";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
+import {
+  asphereViews,
+  singleModes,
+} from "@/features/optimization/testing/parameterStateViews";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
@@ -473,12 +477,12 @@ describe("OptimizationPage", () => {
     const user = userEvent.setup();
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
       });
-      optimizationStore.getState().setThicknessMode(2, {
+      optimizationStore.getState().setParameterMode("thickness", 2, "value", {
         mode: "variable",
         min: "10",
         max: "30",
@@ -501,12 +505,12 @@ describe("OptimizationPage", () => {
     const user = userEvent.setup();
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
       });
-      optimizationStore.getState().setThicknessMode(2, {
+      optimizationStore.getState().setParameterMode("thickness", 2, "value", {
         mode: "variable",
         min: "10",
         max: "30",
@@ -972,7 +976,7 @@ describe("OptimizationPage", () => {
     const { optimizationStore } = renderOptimizationPage(proxy);
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "60",
         max: "40",
@@ -1137,12 +1141,13 @@ describe("OptimizationPage", () => {
     await user.click(
       screen.getByRole("button", { name: "Radius mode for surface 1" }),
     );
-    expect(optimizationStore.getState().radiusModal).toEqual({
+    expect(optimizationStore.getState().parameterModal).toEqual({
       open: true,
+      group: "radius",
       surfaceIndex: 1,
     });
     await user.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(optimizationStore.getState().radiusModal.open).toBe(false);
+    expect(optimizationStore.getState().parameterModal.open).toBe(false);
 
     await user.click(
       screen.getByRole("button", { name: "Thickness mode for surface 1" }),
@@ -1162,7 +1167,9 @@ describe("OptimizationPage", () => {
       "1",
     );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
-    expect(optimizationStore.getState().thicknessModes[0]).toMatchObject({
+    expect(
+      singleModes(optimizationStore.getState().parameterStates.thickness)[0],
+    ).toMatchObject({
       surfaceIndex: 1,
       mode: "variable",
       min: "-1",
@@ -1195,7 +1202,9 @@ describe("OptimizationPage", () => {
       "1",
     );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
-    expect(optimizationStore.getState().asphereStates[0]).toMatchObject({
+    expect(
+      asphereViews(optimizationStore.getState().parameterStates.aspherical)[0],
+    ).toMatchObject({
       surfaceIndex: 1,
       type: "Conic",
       conic: { mode: "variable", min: "-1", max: "1" },
@@ -1479,7 +1488,7 @@ describe("OptimizationPage", () => {
     expect(await screen.findByText("98.500000")).toBeInTheDocument();
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "60",
         max: "70",
@@ -1498,7 +1507,7 @@ describe("OptimizationPage", () => {
     expect(proxy.optimizeGlasses).not.toHaveBeenCalled();
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
@@ -1613,7 +1622,7 @@ describe("OptimizationPage", () => {
     );
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
@@ -2071,7 +2080,7 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Add operand" }));
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "10",
         max: "10",
@@ -2779,7 +2788,7 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
@@ -2809,7 +2818,9 @@ describe("OptimizationPage", () => {
       ),
     );
     await waitFor(() => {
-      expect(optimizationStore.getState().radiusModes[0]).toMatchObject({
+      expect(
+        singleModes(optimizationStore.getState().parameterStates.radius)[0],
+      ).toMatchObject({
         mode: "variable",
       });
     });
@@ -2836,7 +2847,7 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
@@ -2876,7 +2887,9 @@ describe("OptimizationPage", () => {
     expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(
       false,
     );
-    expect(optimizationStore.getState().radiusModes[0]).toMatchObject({
+    expect(
+      singleModes(optimizationStore.getState().parameterStates.radius)[0],
+    ).toMatchObject({
       mode: "variable",
     });
     expect(lensStore.getState().rows).toBe(editorRowsBeforeRun);
@@ -2909,7 +2922,7 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
@@ -2957,7 +2970,7 @@ describe("OptimizationPage", () => {
     );
 
     act(() => {
-      optimizationStore.getState().setRadiusMode(1, {
+      optimizationStore.getState().setParameterMode("radius", 1, "value", {
         mode: "variable",
         min: "40",
         max: "60",
@@ -2976,7 +2989,9 @@ describe("OptimizationPage", () => {
           .curvatureRadius,
       ).toBe(88),
     );
-    expect(optimizationStore.getState().radiusModes[0]).toEqual({
+    expect(
+      singleModes(optimizationStore.getState().parameterStates.radius)[0],
+    ).toEqual({
       surfaceIndex: 1,
       mode: "constant",
     });
@@ -3072,11 +3087,18 @@ describe("OptimizationPage", () => {
     optimizationStore.setState({
       fieldWeights: [1, 1, 1],
       wavelengthWeights: [1, 1, 1],
-      radiusModes: [
-        { surfaceIndex: 1, mode: "variable", min: "40", max: "60" },
-        { surfaceIndex: 2, mode: "constant" },
-        { surfaceIndex: 3, mode: "constant" },
-      ],
+      parameterStates: {
+        ...optimizationStore.getState().parameterStates,
+        radius: [1, 2, 3].map((surfaceIndex) => ({
+          surfaceIndex,
+          qualifier: undefined,
+          lockedQualifier: false,
+          modes:
+            surfaceIndex === 1
+              ? { value: { mode: "variable", min: "40", max: "60" } }
+              : {},
+        })),
+      },
       operands: [
         {
           id: "existing-operand",
@@ -3133,7 +3155,9 @@ describe("OptimizationPage", () => {
       expect(optimizationStore.getState().fieldWeights).toEqual([1, 1, 1]);
       expect(optimizationStore.getState().wavelengthWeights).toEqual([1, 1, 1]);
     });
-    expect(optimizationStore.getState().radiusModes[0]).toMatchObject({
+    expect(
+      singleModes(optimizationStore.getState().parameterStates.radius)[0],
+    ).toMatchObject({
       mode: "variable",
     });
     expect(optimizationStore.getState().operands).toHaveLength(1);

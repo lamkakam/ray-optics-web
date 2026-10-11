@@ -5,11 +5,11 @@ import {
   IMAGE_ROW_ID,
   type GridRow,
 } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type {
-  RadiusMode,
-  AsphereOptimizationState,
-  GlassMode,
-} from "@/features/optimization/stores/optimizationStore";
+import type { GlassMode } from "@/features/optimization/stores/optimizationStore";
+import {
+  asphereStateFrom,
+  singleStatesFrom,
+} from "@/features/optimization/testing/parameterStateViews";
 import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -43,19 +43,14 @@ const imageRow: GridRow = {
 };
 
 function makeAsphereState(
-  overrides: Partial<AsphereOptimizationState> = {},
-): AsphereOptimizationState {
-  return {
+  overrides: Partial<Parameters<typeof asphereStateFrom>[0]> = {},
+) {
+  return asphereStateFrom({
     surfaceIndex: 1,
     type: undefined,
     lockedType: false,
-    conic: { mode: "constant" },
-    toricSweep: { mode: "constant" },
-    coefficients: Array.from({ length: 10 }, () => ({
-      mode: "constant" as const,
-    })),
     ...overrides,
-  };
+  });
 }
 
 describe("OptimizationLensPrescriptionGrid", () => {
@@ -74,9 +69,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
       },
     };
     const commonProps = {
-      radiusModes: [] as RadiusMode[],
-      thicknessModes: [] as RadiusMode[],
-      asphereStates: [] as AsphereOptimizationState[],
+      radiusModes: [],
+      thicknessModes: [],
+      asphereStates: [],
       onOpenRadiusModal: jest.fn(),
       onOpenThicknessModal: jest.fn(),
       onOpenPropertyModal: jest.fn(),
@@ -178,8 +173,10 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const onOpenPropertyModal = jest.fn();
     const onOpenAsphereVarModalMock = jest.fn();
     const onOpenTiltDecenterVarModal = jest.fn();
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
-    const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
+    const asphereStates = [makeAsphereState()];
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -300,14 +297,14 @@ describe("OptimizationLensPrescriptionGrid", () => {
   });
 
   it("shows surface indices only for real surface rows", () => {
-    const radiusModes: RadiusMode[] = [
+    const radiusModes = singleStatesFrom([
       { surfaceIndex: 1, mode: "constant" },
       { surfaceIndex: 2, mode: "constant" },
-    ];
-    const thicknessModes: RadiusMode[] = [
+    ]);
+    const thicknessModes = singleStatesFrom([
       { surfaceIndex: 1, mode: "constant" },
-    ];
-    const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
+    ]);
+    const asphereStates = [makeAsphereState()];
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -421,7 +418,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
       },
       diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
     };
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -455,10 +454,10 @@ describe("OptimizationLensPrescriptionGrid", () => {
   });
 
   it("shows saved variable mode labels in optimization Var. cells", () => {
-    const radiusModes: RadiusMode[] = [
+    const radiusModes = singleStatesFrom([
       { surfaceIndex: 1, mode: "variable", min: "40", max: "60" },
-    ];
-    const thicknessModes: RadiusMode[] = [
+    ]);
+    const thicknessModes = singleStatesFrom([
       {
         surfaceIndex: 1,
         mode: "pickup",
@@ -466,8 +465,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
         scale: "1",
         offset: "0",
       },
-    ];
-    const asphereStates: AsphereOptimizationState[] = [
+    ]);
+    const asphereStates = [
       makeAsphereState({
         type: "EvenAspherical",
         conic: { mode: "variable", min: "-1", max: "1" },
@@ -510,7 +509,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
   });
 
   it("shows C for saved constant radius and thickness modes", () => {
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -570,7 +571,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
   });
 
   it("shows C for missing asphere optimization state", () => {
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -598,7 +601,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
   });
 
   it("shows C when all asphere modes are constant", () => {
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -630,7 +635,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const onOpenRadiusModal = jest.fn();
     const onOpenThicknessModal = jest.fn();
     const onOpenAsphereVarModal = jest.fn();
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -669,8 +676,10 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
   it("uses view-oriented tooltip copy for optimization-only inspection cells", async () => {
     const user = userEvent.setup();
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
-    const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
+    const asphereStates = [makeAsphereState()];
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -724,7 +733,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
   it("shows optimization variable tooltip copy for Var. cell buttons", async () => {
     const user = userEvent.setup();
-    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const constantModes = singleStatesFrom([
+      { surfaceIndex: 1, mode: "constant" },
+    ]);
 
     render(
       <OptimizationLensPrescriptionGrid

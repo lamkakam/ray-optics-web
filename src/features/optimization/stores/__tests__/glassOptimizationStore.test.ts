@@ -174,12 +174,16 @@ describe("glass optimization store", () => {
         { catalog: "Schott", name: "BK7" },
       ],
     });
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store
-      .getState()
-      .setThicknessMode(2, { mode: "variable", min: "10", max: "30" });
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setParameterMode("thickness", 2, "value", {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
 
     expect(store.getState().buildOptimizationConfig(catalogs)).toEqual({
       glass_optimizer: {
@@ -231,12 +235,16 @@ describe("glass optimization store", () => {
   it("allows continuous-only Glass Expert runs and does not impose the lm residual dimension rule", () => {
     const store = createInitializedStore();
     store.getState().setOptimizerKind("glass_expert");
-    store
-      .getState()
-      .setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
-    store
-      .getState()
-      .setThicknessMode(2, { mode: "variable", min: "10", max: "30" });
+    store.getState().setParameterMode("radius", 1, "value", {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setParameterMode("thickness", 2, "value", {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
 
     expect(store.getState().buildOptimizationConfig(catalogs)).toMatchObject({
       glass_variables: [],

@@ -1,10 +1,11 @@
 import type React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type {
-  AsphereOptimizationState,
-  AsphereMode,
-} from "@/features/optimization/stores/optimizationStore";
+import type { ParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
+import {
+  asphereStateFrom,
+  asphereView,
+} from "@/features/optimization/testing/parameterStateViews";
 import { AsphereVarModal } from "../AsphereVarModal";
 import type {
   OpticalModel,
@@ -20,7 +21,7 @@ jest.mock("better-react-mathjax", () => ({
   ),
 }));
 
-const constantMode: AsphereMode = { mode: "constant" };
+const constantMode: ParameterMode = { mode: "constant" };
 
 const defaultSurface: Surface = {
   label: "Default",
@@ -77,10 +78,8 @@ function makeModelWithSurfaceAspheres(
   };
 }
 
-function makeState(
-  overrides: Partial<AsphereOptimizationState>,
-): AsphereOptimizationState {
-  return {
+function makeState(overrides: Partial<Parameters<typeof asphereStateFrom>[0]>) {
+  return asphereStateFrom({
     surfaceIndex: 1,
     type: undefined,
     lockedType: false,
@@ -88,7 +87,12 @@ function makeState(
     toricSweep: constantMode,
     coefficients: Array.from({ length: 10 }, () => constantMode),
     ...overrides,
-  };
+  });
+}
+
+/** Compact view of the asphere state passed to the most recent `onSave` call. */
+function lastSavedView(onSave: jest.Mock) {
+  return asphereView(onSave.mock.calls.at(-1)?.[1]);
 }
 
 const defaultProps = {
@@ -296,8 +300,8 @@ describe("AsphereVarModal", () => {
       .setup()
       .click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         conic: { mode: "variable", min: "-2.5", max: "3.5" },
       }),
@@ -484,8 +488,8 @@ describe("AsphereVarModal", () => {
     await user.selectOptions(screen.getAllByRole("combobox")[1], "pickup");
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         conic: expect.objectContaining({
           mode: "pickup",
@@ -563,8 +567,8 @@ describe("AsphereVarModal", () => {
     });
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         coefficients: expect.arrayContaining([
           expect.objectContaining({
@@ -604,8 +608,8 @@ describe("AsphereVarModal", () => {
     });
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         coefficients: expect.arrayContaining([
           expect.objectContaining({
@@ -649,8 +653,8 @@ describe("AsphereVarModal", () => {
     );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         coefficients: expect.arrayContaining([
           expect.objectContaining({ sourceTermKey: "coefficient:9" }),
@@ -689,8 +693,8 @@ describe("AsphereVarModal", () => {
     });
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         coefficients: expect.arrayContaining([
           expect.objectContaining({ sourceTermKey: "coefficient:0" }),
@@ -734,8 +738,8 @@ describe("AsphereVarModal", () => {
     );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         conic: {
           mode: "pickup",
@@ -833,8 +837,8 @@ describe("AsphereVarModal", () => {
     expect(screen.getByText("Source coefficient")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         conic: { mode: "variable", min: "-1", max: "1" },
         coefficients: expect.arrayContaining([
@@ -921,8 +925,8 @@ describe("AsphereVarModal", () => {
     await user.selectOptions(sourceCoefficient, "9");
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         coefficients: expect.arrayContaining([
           expect.objectContaining({
@@ -1136,8 +1140,8 @@ describe("AsphereVarModal", () => {
     );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onSave).toHaveBeenCalledTimes(1);
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({ surfaceIndex: 1 }),
     );
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -1335,8 +1339,8 @@ describe("AsphereVarModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         toricSweep: { mode: "variable", min: "-10000", max: "-10" },
       }),
@@ -1349,7 +1353,7 @@ describe("AsphereVarModal", () => {
     const onSave = jest.fn();
     const coefficients = Array.from(
       { length: 10 },
-      (_, i): AsphereMode =>
+      (_, i): ParameterMode =>
         i === 0
           ? { mode: "variable", min: "-1", max: "1" }
           : { mode: "constant" },
@@ -1373,8 +1377,8 @@ describe("AsphereVarModal", () => {
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({
         type: "Conic",
         conic: { mode: "constant" },
@@ -1412,8 +1416,8 @@ describe("AsphereVarModal", () => {
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(onSave).toHaveBeenCalledWith(
-      1,
+    expect(onSave.mock.calls.at(-1)?.[0]).toBe(1);
+    expect(lastSavedView(onSave)).toEqual(
       expect.objectContaining({ conic: { mode: "constant" } }),
     );
   });

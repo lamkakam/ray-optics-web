@@ -185,14 +185,16 @@ describe("BottomDrawerContainer", () => {
     expect(store.getState().wavelengthWeights[1]).toBe(7);
 
     await user.click(screen.getByRole("button", { name: "Open Radius" }));
-    expect(store.getState().radiusModal).toMatchObject({
+    expect(store.getState().parameterModal).toMatchObject({
       open: true,
+      group: "radius",
       surfaceIndex: 1,
     });
 
     await user.click(screen.getByRole("button", { name: "Open Thickness" }));
-    expect(store.getState().thicknessModal).toMatchObject({
+    expect(store.getState().parameterModal).toMatchObject({
       open: true,
+      group: "thickness",
       surfaceIndex: 2,
     });
 

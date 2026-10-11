@@ -1,8 +1,5 @@
 /** Pure draft, validation, and source-option helpers shared by optimization variable and pickup modals. */
-import type {
-  RadiusMode,
-  RadiusModeDraft,
-} from "@/features/optimization/stores/optimizationStore";
+import type { ParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
 import type { SourceSurfaceSelectOption } from "@/features/optimization/types/optimizationModalTypes";
 
 /** Ordered constant, variable, and pickup choices used by optimization mode controls. */
@@ -92,7 +89,7 @@ export function validateVariableBounds(
 }
 
 /** Creates a variable-mode draft initialized to one numeric value. */
-export function createVariableDraft(value: number): RadiusModeDraft {
+export function createVariableDraft(value: number): ParameterMode {
   return {
     mode: "variable",
     min: String(value),
@@ -101,7 +98,7 @@ export function createVariableDraft(value: number): RadiusModeDraft {
 }
 
 /** Creates the default pickup-mode draft. */
-export function createPickupDraft(): RadiusModeDraft {
+export function createPickupDraft(): ParameterMode {
   return {
     mode: "pickup",
     sourceSurfaceIndex: "1",
@@ -139,8 +136,8 @@ export function getThicknessPickupSourceSurfaceOptions(
   }).filter((option) => option.value !== targetSurfaceIndex);
 }
 
-/** Converts a committed radius mode into editable string-valued modal state. */
-export function toRadiusModeDraft(mode: RadiusMode): RadiusModeDraft {
+/** Converts a committed single-component mode into editable string-valued modal state. */
+export function toParameterModeDraft(mode: ParameterMode): ParameterMode {
   switch (mode.mode) {
     case "constant":
       return { mode: "constant" };
@@ -160,8 +157,8 @@ export function toRadiusModeDraft(mode: RadiusMode): RadiusModeDraft {
   }
 }
 
-/** Creates a stable serialized representation of a committed radius mode. */
-export function serializeRadiusMode(mode: RadiusMode): string {
+/** Creates a stable serialized representation of a committed single-component mode. */
+export function serializeParameterMode(mode: ParameterMode): string {
   switch (mode.mode) {
     case "constant":
       return "constant";

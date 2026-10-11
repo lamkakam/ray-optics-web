@@ -6,11 +6,15 @@ import type {
   AsphericalType,
   OpticalModel,
 } from "@/shared/lib/optical-model/model/opticalModel";
-import type {
-  AsphereOptimizationState,
-  AsphereMode,
-  AsphereTermKey,
-} from "@/features/optimization/stores/optimizationStore";
+import {
+  getParameterMode,
+  withParameterMode,
+  type ParameterGroupState,
+  type ParameterMode,
+} from "@/features/optimization/lib/parameters/parameterStates";
+
+type AsphereOptimizationState = ParameterGroupState<"aspherical">;
+type AsphereMode = ParameterMode;
 import { ModeSelectField } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields";
 import {
@@ -104,21 +108,19 @@ function getTermRows(
   return [conicRow];
 }
 
+/** Component key of a term within the asphere parameter group. */
+function getTermKey(term: TermDescriptor): string {
+  if (term.kind === "conic" || term.kind === "toricSweep") {
+    return term.kind;
+  }
+  return `coefficient:${(term.kind as { coefficientIndex: number }).coefficientIndex}`;
+}
+
 function getTermMode(
   state: AsphereOptimizationState,
   term: TermDescriptor,
 ): AsphereMode {
-  if (term.kind === "conic") {
-    return state.conic;
-  }
-  if (term.kind === "toricSweep") {
-    return state.toricSweep;
-  }
-  return (
-    state.coefficients[
-      (term.kind as { coefficientIndex: number }).coefficientIndex
-    ] ?? { mode: "constant" }
-  );
+  return getParameterMode(state, getTermKey(term));
 }
 
 function setTermMode(
@@ -126,17 +128,7 @@ function setTermMode(
   term: TermDescriptor,
   mode: AsphereMode,
 ): AsphereOptimizationState {
-  if (term.kind === "conic") {
-    return { ...state, conic: mode };
-  }
-  if (term.kind === "toricSweep") {
-    return { ...state, toricSweep: mode };
-  }
-  const idx = (term.kind as { coefficientIndex: number }).coefficientIndex;
-  return {
-    ...state,
-    coefficients: state.coefficients.map((c, i) => (i === idx ? mode : c)),
-  };
+  return withParameterMode(state, getTermKey(term), mode);
 }
 
 function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
@@ -203,7 +195,7 @@ interface AsphereVarModalProps {
  * - Seeds draft from `asphereState` when the modal editor mounts, and resets that draft by remounting a keyed inner editor whenever the committed target surface or asphere state changes.
  * - Reuses shared bounded variable validation helpers, shared curvature-radius guidance text, and shared zero-crossing error formatting from `features/optimization/lib/modalHelpers.ts` for term validation copy when `canUseBounds === true`.
  * - Reuses the `ModeSelectField` and `PickupModeFields` nested directory barrels under `features/optimization/components/LensPrescriptionGrid/`, plus the boolean-driven renderer helper in `features/optimization/lib/variableModeFields.tsx`, for the shared term-row mode selector and common variable/pickup field groups, while keeping asphere-specific type switching, term mapping, coefficient pickup wiring, and toroid validation in this modal.
- * - **Type selector**: dropdown with Conic / Even Aspheric / Radial Polynomial / X Toroid / Y Toroid. Disabled when `asphereState.lockedType === true` (surface already has an aspheric configuration from the Editor). Changing the type (when unlocked) resets all term modes to `constant`.
+ * - **Type selector**: dropdown with Conic / Even Aspheric / Radial Polynomial / X Toroid / Y Toroid. Disabled when `asphereState.lockedQualifier === true` (surface already has an aspheric configuration from the Editor). Changing the type (when unlocked) resets all term modes to `constant`.
  * - **Term rows** rendered based on selected type:
  * - `Conic`: Conic Constant only
  * - `EvenAspherical`: Conic Constant + a_2, a_4, ..., a_20 (10 coefficients, even-indexed)
@@ -303,7 +295,7 @@ function AsphereVarModalEditor({
     [optimizationModel.surfaces.length, surfaceIndex],
   );
 
-  const termRows = getTermRows(draft.type);
+  const termRows = getTermRows(draft.qualifier);
   const isDoneDisabled = termRows.some((term) => {
     const mode = getTermMode(draft, term);
     return (
@@ -312,14 +304,7 @@ function AsphereVarModalEditor({
   });
 
   const handleTypeChange = (type: AsphericalType) => {
-    const constant: AsphereMode = { mode: "constant" };
-    setDraft({
-      ...draft,
-      type,
-      conic: constant,
-      toricSweep: constant,
-      coefficients: Array.from({ length: 10 }, () => constant),
-    });
+    setDraft({ ...draft, qualifier: type, modes: {} });
   };
 
   const handleTermModeChange = (term: TermDescriptor, modeStr: string) => {
@@ -349,7 +334,7 @@ function AsphereVarModalEditor({
             sourceTermKey:
               current.mode === "pickup"
                 ? (current.sourceTermKey ?? "coefficient:0")
-                : ("coefficient:0" as AsphereTermKey),
+                : "coefficient:0",
           }
         : {};
       setDraft(
@@ -397,7 +382,7 @@ function AsphereVarModalEditor({
       setDraft(
         setTermMode(draft, term, {
           ...current,
-          sourceTermKey: `coefficient:${value}` as AsphereTermKey,
+          sourceTermKey: `coefficient:${value}`,
         }),
       );
       return;
@@ -439,8 +424,8 @@ function AsphereVarModalEditor({
           <Select
             id="asphere-type"
             aria-label="Asphere type"
-            value={draft.type ?? ""}
-            disabled={draft.lockedType}
+            value={draft.qualifier ?? ""}
+            disabled={draft.lockedQualifier}
             options={ASPHERE_TYPE_OPTIONS}
             placeholder="—"
             onChange={(e) => handleTypeChange(e.target.value as AsphericalType)}
@@ -579,10 +564,13 @@ function serializeAsphereMode(mode: AsphereMode): string {
 function serializeAsphereState(state: AsphereOptimizationState): string {
   return [
     state.surfaceIndex,
-    state.type ?? "",
-    String(state.lockedType),
-    serializeAsphereMode(state.conic),
-    serializeAsphereMode(state.toricSweep),
-    state.coefficients.map(serializeAsphereMode).join("|"),
+    state.qualifier ?? "",
+    String(state.lockedQualifier),
+    Object.entries(state.modes)
+      .map(
+        ([key, mode]) =>
+          `${key}=${serializeAsphereMode(mode ?? { mode: "constant" })}`,
+      )
+      .join("|"),
   ].join(":");
 }

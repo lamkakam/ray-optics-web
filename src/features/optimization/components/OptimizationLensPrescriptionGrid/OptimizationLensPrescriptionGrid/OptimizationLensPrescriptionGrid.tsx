@@ -3,12 +3,11 @@
 import { useMemo } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
-import type {
-  RadiusMode,
-  AsphereOptimizationState,
-  DecenterOptimizationState,
-  GlassMode,
-} from "@/features/optimization/stores/optimizationStore";
+import type { GlassMode } from "@/features/optimization/stores/optimizationStore";
+import {
+  summarizeParameterState,
+  type ParameterGroupState,
+} from "@/features/optimization/lib/parameters/parameterStates";
 import type { RadiusRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
@@ -29,16 +28,6 @@ import {
 
 const OPTIMIZATION_VAR_COLUMN_WIDTH = 60;
 
-function getSurfaceModeLabel(mode: RadiusMode["mode"] | undefined): string {
-  if (mode === "variable") {
-    return "V";
-  }
-  if (mode === "pickup") {
-    return "P";
-  }
-  return "C";
-}
-
 function getGlassModeLabel(mode: GlassMode["mode"] | undefined): string {
   return mode === "variable" ? "V" : "C";
 }
@@ -51,42 +40,6 @@ function getGlassSurfaceIndex(row: RadiusRow): number | undefined {
     return row.thicknessSurfaceIndex ?? row.radiusSurfaceIndex;
   }
   return undefined;
-}
-
-function getAsphereModeLabel(
-  asphereState: AsphereOptimizationState | undefined,
-): string {
-  if (asphereState === undefined) {
-    return "C";
-  }
-
-  const modes = [
-    asphereState.conic,
-    asphereState.toricSweep,
-    ...asphereState.coefficients,
-  ];
-  const labels: string[] = [];
-
-  if (modes.some((mode) => mode.mode === "variable")) {
-    labels.push("V");
-  }
-  if (modes.some((mode) => mode.mode === "pickup")) {
-    labels.push("P");
-  }
-
-  return labels.length > 0 ? labels.join(",") : "C";
-}
-
-function getDecenterModeLabel(
-  state: DecenterOptimizationState | undefined,
-): string {
-  if (state === undefined) return "C";
-  const modes = [state.alpha, state.beta, state.gamma, state.x, state.y];
-  const labels = [
-    modes.some(({ mode }) => mode === "variable") ? "V" : undefined,
-    modes.some(({ mode }) => mode === "pickup") ? "P" : undefined,
-  ].filter((value): value is string => value !== undefined);
-  return labels.length === 0 ? "C" : labels.join(",");
 }
 
 function OptimizationVariableModeCell({
@@ -114,14 +67,14 @@ function OptimizationVariableModeCell({
 export interface OptimizationLensPrescriptionGridProps {
   readonly autoAperture?: boolean;
   readonly rows: ReadonlyArray<RadiusRow>;
-  readonly radiusModes: ReadonlyArray<RadiusMode>;
-  readonly thicknessModes: ReadonlyArray<RadiusMode>;
+  readonly radiusModes: ReadonlyArray<ParameterGroupState<"radius">>;
+  readonly thicknessModes: ReadonlyArray<ParameterGroupState<"thickness">>;
   /** Whether the selected optimizer exposes categorical glass modes. */
   readonly canOptimizeGlass?: boolean;
   /** Constant or explicit-pool mode for Object gap 0 and physical gaps 1..N. */
   readonly glassModes?: ReadonlyArray<GlassMode>;
-  readonly asphereStates: ReadonlyArray<AsphereOptimizationState>;
-  readonly decenterStates?: ReadonlyArray<DecenterOptimizationState>;
+  readonly asphereStates: ReadonlyArray<ParameterGroupState<"aspherical">>;
+  readonly decenterStates?: ReadonlyArray<ParameterGroupState<"decenter">>;
   readonly onOpenRadiusModal: (surfaceIndex: number) => void;
   readonly onOpenThicknessModal: (surfaceIndex: number) => void;
   readonly onOpenGlassModal?: (surfaceIndex: number) => void;
@@ -153,7 +106,7 @@ export interface OptimizationLensPrescriptionGridProps {
  * - Prepends an `Index` column before `Surface`; it is blank for `Object` and `Image`, shows `1..N` for real surface rows using the existing optimization surface numbering, and uses the shared lens prescription grid `Index` config so it has the shared initial width and is pinned left.
  * - The `Index`, `Surface`, `Comment`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`. Comment is displayed for physical surfaces but remains entirely read-only because Optimization supplies no change callback; Object and Image stay blank.
  * - The radius and thickness `Var.` cells use the same `ActionWrapper` plus Tooltip-wrapped native `<button>` pattern as `Medium`; clicking either the button or the surrounding cell body opens the corresponding optimization modal for the surface. Their Tooltip trigger fills the cell action wrapper so hovering anywhere in the cell action area displays the tooltip. The buttons show the saved optimization mode as `C` for missing or `constant` modes, `V` for `variable`, and `P` for `pickup`.
- * - Adds a `Var.` column after `Asph.` for configuring asphere variable/pickup optimization targets; shown only for real surface rows. The button summarizes all saved asphere term modes as `C` when the asphere state is missing or every term is `constant`, `V` when any term is variable-only, `P` when any term is pickup-only, and `V,P` when variable and pickup terms are both present. Requires `asphereStates` and `onOpenAsphereVarModal` props.
+ * - Adds a `Var.` column after `Asph.` for configuring asphere variable/pickup optimization targets; shown only for real surface rows. The button summarizes all saved asphere term modes as `C` when the asphere state is missing or every term is `constant`, `V` when any term is variable-only, `P` when any term is pickup-only, and `V,P` when variable and pickup terms are both present. Requires `asphereStates` (aspherical `ParameterGroupState`s) and `onOpenAsphereVarModal` props. Every `Var.` label is `summarizeParameterState(state)`.
  * - When `canOptimizeGlass` is true, inserts a fourth `Var.` column immediately after `Medium`. It renders `C`/`V` controls for Object gap `0` and every physical surface gap `1..N`; Image is blank. The column is omitted entirely for existing optimizers.
  * - Sets all optimization `Var.` columns to a narrow `60px` initial width sized for the `Var.` header text, while leaving them otherwise resizable by AG Grid defaults.
  * - Adds an always-visible `Var.` column immediately after `Tilt & Decenter`. Object is blank; numbered surfaces and Image summarize their five independent modes as `C`, `V`, `P`, or `V,P` and open the tilt/decenter optimization modal.
@@ -220,7 +173,7 @@ export function OptimizationLensPrescriptionGrid({
                 triggerClassName="flex h-full w-full"
               >
                 <OptimizationVariableModeCell
-                  label={getSurfaceModeLabel(mode?.mode)}
+                  label={summarizeParameterState(mode)}
                   ariaLabel={`Radius mode for surface ${surfaceIndex}`}
                   onOpenModal={() => onOpenRadiusModal(surfaceIndex)}
                 />
@@ -254,7 +207,7 @@ export function OptimizationLensPrescriptionGrid({
                 triggerClassName="flex h-full w-full"
               >
                 <OptimizationVariableModeCell
-                  label={getSurfaceModeLabel(mode?.mode)}
+                  label={summarizeParameterState(mode)}
                   ariaLabel={`Thickness mode for surface ${surfaceIndex}`}
                   onOpenModal={() => onOpenThicknessModal(surfaceIndex)}
                 />
@@ -352,7 +305,7 @@ export function OptimizationLensPrescriptionGrid({
                 triggerClassName="flex h-full w-full"
               >
                 <OptimizationVariableModeCell
-                  label={getAsphereModeLabel(asphereState)}
+                  label={summarizeParameterState(asphereState)}
                   ariaLabel={`Asphere mode for surface ${surfaceIndex}`}
                   onOpenModal={() => onOpenAsphereVarModal(surfaceIndex)}
                 />
@@ -388,7 +341,7 @@ export function OptimizationLensPrescriptionGrid({
                 triggerClassName="flex h-full w-full"
               >
                 <OptimizationVariableModeCell
-                  label={getDecenterModeLabel(state)}
+                  label={summarizeParameterState(state)}
                   ariaLabel={`Tilt and decenter mode for surface ${surfaceIndex}`}
                   onOpenModal={() => onOpenTiltDecenterVarModal(surfaceIndex)}
                 />
