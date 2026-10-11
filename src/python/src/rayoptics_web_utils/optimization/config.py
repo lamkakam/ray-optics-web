@@ -4,10 +4,10 @@ Least-squares supports ``trf`` and ``lm``; differential evolution has its own
 methodless option set. Bounded solvers require finite bounds, while ``lm`` permits
 fully unbounded variables and requires at least as many nominal residuals as
 variables and a ``max_nfev`` of at least 2. A differential-evolution ``max_nfev``
-budget must cover at least one full SciPy population. Validation also enforces unique mutable targets, acyclic pickups, and
+budget must cover at least one full SciPy population. Validation also enforces unique constructional parameters, acyclic pickups, and
 stable option-driven residual counts after field/wavelength expansion. Tilt and
-decenter targets validate their interface and coordinate strategy, materialize
-missing target data, and leave missing pickup sources unconfigured. Operand
+decenter parameters validate their interface and coordinate strategy, materialize
+missing decenter data, and leave missing pickup sources unconfigured. Operand
 normalization enforces the kind's target mode and scope (surface-scoped kinds
 require a 1-based ``surface_index`` that excludes the object and image surfaces;
 system kinds reject it), requires positive bounds for positive-range kinds
@@ -35,7 +35,7 @@ from .operands import (
     operand_goal,
     operand_scope,
 )
-from .targets import (
+from .parameters import (
     DECENTER_KINDS,
     DECENTER_TYPES,
     ensure_asphere_profile,
@@ -43,13 +43,13 @@ from .targets import (
     is_toroid,
     supports_polynomials,
     surface_profile,
-    target_key,
+    parameter_key,
     validate_surface_index,
 )
 from ._types import (
     MeritFunctionConfig,
     MeritFunctionConfigInput,
-    MutableTarget,
+    MutableParameter,
     NormalizedDifferentialEvolutionOptimizerConfig,
     NormalizedLeastSquaresOptimizerConfig,
     NormalizedOptimizationConfig,
@@ -59,7 +59,7 @@ from ._types import (
     OptimizationConfig,
     PickupConfig,
     PickupConfigInput,
-    TargetKey,
+    ParameterKey,
     VariableConfig,
     VariableConfigInput,
     has_finite_variable_bounds,
@@ -127,7 +127,7 @@ def normalize_variables(
     optimizer: NormalizedOptimizerConfig,
 ) -> list[VariableConfig]:
     normalized: list[VariableConfig] = []
-    seen_targets: set[TargetKey] = set()
+    seen_targets: set[ParameterKey] = set()
     for entry in variables:
         kind = entry.get("kind")
         if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius", *DECENTER_KINDS}:
@@ -145,7 +145,7 @@ def normalize_variables(
             normalized_entry["coefficient_index"] = entry.get("coefficient_index")
         variable = cast("VariableConfig", normalized_entry)
         validate_target_for_kind(opm, variable)
-        key = target_key(variable)
+        key = parameter_key(variable)
         if key in seen_targets:
             raise ValueError(f"Duplicate variable target: {key}")
         has_min = "min" in entry
@@ -170,10 +170,10 @@ def normalize_variables(
 def normalize_pickups(
     opm: OpticalModel,
     pickups: list[PickupConfigInput],
-    variable_targets: set[TargetKey],
+    variable_targets: set[ParameterKey],
 ) -> list[PickupConfig]:
     normalized: list[PickupConfig] = []
-    seen_targets: set[TargetKey] = set()
+    seen_targets: set[ParameterKey] = set()
     for entry in pickups:
         kind = entry.get("kind")
         if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius", *DECENTER_KINDS}:
@@ -206,7 +206,7 @@ def normalize_pickups(
             }),
             "source_surface_index",
         )
-        key = target_key(pickup)
+        key = parameter_key(pickup)
         if key in variable_targets:
             raise ValueError(f"Target {key} cannot be both variable and pickup target")
         if key in seen_targets:
@@ -252,13 +252,13 @@ def validate_target_for_kind(opm: OpticalModel, entry: VariableConfig | PickupCo
 
 
 def validate_pickup_graph(pickups: list[PickupConfig]) -> None:
-    graph: dict[TargetKey, set[TargetKey]] = {}
-    indegree: dict[TargetKey, int] = {}
+    graph: dict[ParameterKey, set[ParameterKey]] = {}
+    indegree: dict[ParameterKey, int] = {}
     for pickup in pickups:
-        target = target_key(pickup)
-        # target_key reads only the identity fields of the pickup source.
-        source = target_key(
-            cast("MutableTarget", {
+        target = parameter_key(pickup)
+        # parameter_key reads only the identity fields of the pickup source.
+        source = parameter_key(
+            cast("MutableParameter", {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
                 **(
@@ -295,13 +295,13 @@ def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
     Returns:
         Pickups in dependency order after cycle validation.
     """
-    by_target = {target_key(pickup): pickup for pickup in pickups}
-    graph: dict[TargetKey, set[TargetKey]] = {}
-    indegree: dict[TargetKey, int] = {}
+    by_target = {parameter_key(pickup): pickup for pickup in pickups}
+    graph: dict[ParameterKey, set[ParameterKey]] = {}
+    indegree: dict[ParameterKey, int] = {}
     for target, pickup in by_target.items():
-        # target_key reads only the identity fields of the pickup source.
-        source = target_key(
-            cast("MutableTarget", {
+        # parameter_key reads only the identity fields of the pickup source.
+        source = parameter_key(
+            cast("MutableParameter", {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
                 **(
@@ -316,7 +316,7 @@ def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
         indegree.setdefault(source, 0)
         indegree[target] = indegree.get(target, 0) + 1
     queue = deque([node for node, degree in indegree.items() if degree == 0])
-    ordered_targets: list[TargetKey] = []
+    ordered_targets: list[ParameterKey] = []
     while queue:
         node = queue.popleft()
         if node in by_target:
@@ -586,7 +586,7 @@ def validate_optimizer_dimensions(
 def normalize_config(opm: OpticalModel, config: OptimizationConfig) -> NormalizedOptimizationConfig:
     optimizer = normalize_optimizer_config(config)
     variables = normalize_variables(opm, deepcopy(config.get("variables") or []), optimizer)
-    variable_targets = {target_key(variable) for variable in variables}
+    variable_targets = {parameter_key(variable) for variable in variables}
     pickups = normalize_pickups(opm, deepcopy(config.get("pickups") or []), variable_targets)
     merit_function = normalize_merit_function(opm, deepcopy(config.get("merit_function") or {}))
     validate_optimizer_dimensions(optimizer, variables, merit_function)

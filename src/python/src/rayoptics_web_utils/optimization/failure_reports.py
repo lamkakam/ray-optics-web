@@ -24,12 +24,12 @@ from ._types import (
     PickupReportEntry,
     SnapshotEntry,
     SolverResult,
-    TargetKey,
+    ParameterKey,
     VariableStateEntry,
 )
 from .operands import PENALTY_RESIDUAL
 from .solvers.lbfgsb import GLASS_OBJECTIVE_PENALTY
-from .targets import target_key
+from .parameters import parameter_key
 
 if TYPE_CHECKING:
     from .glass_optimizer import GlassExpertOptimizer
@@ -64,7 +64,7 @@ def _progress_for_problem(
 def _restored_problem_state(
     problem: OptimizationProblem | None,
     initial_values: list[VariableStateEntry] | None,
-    snapshot: dict[TargetKey, SnapshotEntry] | None,
+    snapshot: dict[ParameterKey, SnapshotEntry] | None,
 ) -> tuple[
     list[VariableStateEntry],
     list[VariableStateEntry],
@@ -77,7 +77,7 @@ def _restored_problem_state(
     restored_values = deepcopy(initial_values)
     pickups: list[PickupReportEntry] = []
     for pickup in problem.pickups:
-        snapshot_entry = snapshot.get(target_key(pickup))
+        snapshot_entry = snapshot.get(parameter_key(pickup))
         if snapshot_entry is None:
             continue
         pickups.append(
@@ -135,7 +135,7 @@ def build_optimization_failure_report(
     *,
     problem: OptimizationProblem | None = None,
     initial_values: list[VariableStateEntry] | None = None,
-    snapshot: dict[TargetKey, SnapshotEntry] | None = None,
+    snapshot: dict[ParameterKey, SnapshotEntry] | None = None,
     solver_result: SolverResult | None = None,
 ) -> OptimizationReport:
     """Build a complete continuous-optimization failure report without evaluation.

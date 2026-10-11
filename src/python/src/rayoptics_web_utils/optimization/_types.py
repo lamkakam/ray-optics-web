@@ -1,16 +1,19 @@
 """Define the optimization package's shared static contracts.
 
 Input and normalized configs remain distinct. Solver options are discriminated by
-kind, mutable targets by target kind, and result mappings allow solver-specific
-metadata. Glass-expert inputs keep categorical candidates ordered separately from
-continuous targets. Returned statuses distinguish successful evaluation/stop states,
+kind, and result mappings allow solver-specific metadata. Constructional
+parameters are addressed by ``ParameterRef`` TypedDicts (one per
+``ConstructionalParameterKind`` family, mirroring the TypeScript parameter
+shapes); variables and pickups compose a reference with ``VariableBounds`` or
+``PickupTransform``. Glass-expert inputs keep categorical candidates ordered
+separately from continuous parameters. Returned statuses distinguish successful evaluation/stop states,
 numeric solver statuses, and ordinary Python ``"error"`` reports. Operand configs,
 normalized samples, and residual entries are discriminated by kind into
 adjustable-target, fixed-target, and range modes, each in a system scope and a
 surface scope; surface-scoped operands additionally carry a 1-based
 ``surface_index`` that excludes the object and image surfaces. Operand evaluators may return scalars or residual
 vectors and receive the image-point convention explicitly; surface evaluators also
-receive the surface index. Snapshot entries retain the complete target descriptor so rollback
+receive the surface index. Snapshot entries retain the complete parameter descriptor so rollback
 preserves asphere kinds and tilt/decenter coordinate strategies.
 """
 
@@ -28,7 +31,7 @@ if TYPE_CHECKING:
 
 
 type FloatArray = NDArray[np.float64]
-type TargetKind = Literal[
+type ConstructionalParameterKind = Literal[
     "radius",
     "thickness",
     "asphere_conic_constant",
@@ -40,13 +43,14 @@ type TargetKind = Literal[
     "decenter_x",
     "decenter_y",
 ]
+"""Every optimizable constructional parameter kind; ``PARAMETER_ACCESSORS`` owns one accessor per kind."""
 type OptimizerKind = Literal["least_squares", "differential_evolution", "glass_expert"]
 type LeastSquaresMethod = Literal["trf", "lm"]
 type GlassOptimizationPhase = Literal["global", "local", "polish"]
 type AsphereKind = Literal["Conic", "EvenAspherical", "RadialPolynomial", "XToroid", "YToroid"]
-type BaseTargetKey = tuple[TargetKind, int]
-type PolynomialTargetKey = tuple[Literal["asphere_polynomial_coefficient"], int, int]
-type TargetKey = BaseTargetKey | PolynomialTargetKey
+type BaseParameterKey = tuple[ConstructionalParameterKind, int]
+type PolynomialParameterKey = tuple[Literal["asphere_polynomial_coefficient"], int, int]
+type ParameterKey = BaseParameterKey | PolynomialParameterKey
 type OptimizationStatus = int | Literal["evaluated", "optimized", "no_variables", "stopped", "error"]
 
 
@@ -150,44 +154,91 @@ class PolynomialVariableConfigInput(AsphereVariableConfigInput, total=False):
 type VariableConfigInput = BaseVariableConfigInput | AsphereVariableConfigInput | PolynomialVariableConfigInput
 
 
-class VariableBounds(TypedDict, total=False):
-    min: float
-    max: float
+class RadiusRef(TypedDict):
+    """Curvature radius of physical surface ``surface_index`` or of the image plane (``surfaces + 1``)."""
 
-
-class RadiusVariable(VariableBounds):
     kind: Literal["radius"]
     surface_index: int
 
 
-class ThicknessVariable(VariableBounds):
+class ThicknessRef(TypedDict):
+    """Thickness of the gap after physical surface ``surface_index``."""
+
     kind: Literal["thickness"]
     surface_index: int
 
 
-class AsphereConicVariable(VariableBounds):
+class AsphereConicRef(TypedDict):
+    """Conic constant of an ``asphere_kind`` asphere on ``surface_index``."""
+
     kind: Literal["asphere_conic_constant"]
     surface_index: int
     asphere_kind: AsphereKind
 
 
-class AsphereToricSweepVariable(VariableBounds):
+class AsphereToricSweepRef(TypedDict):
+    """Toric sweep radius (RayOptics ``rR``) of an XToroid or YToroid on ``surface_index``."""
+
     kind: Literal["asphere_toric_sweep_radius"]
     surface_index: int
     asphere_kind: AsphereKind
 
 
-class AspherePolynomialVariable(VariableBounds):
+class AspherePolynomialRef(TypedDict):
+    """Zero-based polynomial coefficient of a coefficient-bearing asphere on ``surface_index``."""
+
     kind: Literal["asphere_polynomial_coefficient"]
     surface_index: int
     asphere_kind: AsphereKind
     coefficient_index: int
 
 
-class DecenterVariable(VariableBounds):
+class DecenterRef(TypedDict):
+    """One tilt or decenter component of ``surface_index`` under coordinate strategy ``decenter_type``."""
+
     kind: Literal["decenter_alpha", "decenter_beta", "decenter_gamma", "decenter_x", "decenter_y"]
     surface_index: int
     decenter_type: Literal["bend", "dec and return", "decenter", "reverse"]
+
+
+type ParameterRef = (
+    RadiusRef
+    | ThicknessRef
+    | AsphereConicRef
+    | AsphereToricSweepRef
+    | AspherePolynomialRef
+    | DecenterRef
+)
+"""Reference to one optimizable constructional parameter; mirrors the TypeScript parameter shapes."""
+
+
+class VariableBounds(TypedDict, total=False):
+    min: float
+    max: float
+
+
+class RadiusVariable(RadiusRef, VariableBounds):
+    """Radius optimized independently, optionally bounded."""
+
+
+class ThicknessVariable(ThicknessRef, VariableBounds):
+    """Thickness optimized independently, optionally bounded."""
+
+
+class AsphereConicVariable(AsphereConicRef, VariableBounds):
+    """Conic constant optimized independently, optionally bounded."""
+
+
+class AsphereToricSweepVariable(AsphereToricSweepRef, VariableBounds):
+    """Toric sweep radius optimized independently, optionally bounded."""
+
+
+class AspherePolynomialVariable(AspherePolynomialRef, VariableBounds):
+    """Polynomial coefficient optimized independently, optionally bounded."""
+
+
+class DecenterVariable(DecenterRef, VariableBounds):
+    """Tilt or decenter component optimized independently, optionally bounded."""
 
 
 type VariableConfig = (
@@ -200,59 +251,14 @@ type VariableConfig = (
 )
 
 
-class RadiusTarget(TypedDict):
-    kind: Literal["radius"]
-    surface_index: int
-
-
-class ThicknessTarget(TypedDict):
-    kind: Literal["thickness"]
-    surface_index: int
-
-
-class AsphereConicTarget(TypedDict):
-    kind: Literal["asphere_conic_constant"]
-    surface_index: int
-    asphere_kind: AsphereKind
-
-
-class AsphereToricSweepTarget(TypedDict):
-    kind: Literal["asphere_toric_sweep_radius"]
-    surface_index: int
-    asphere_kind: AsphereKind
-
-
-class AspherePolynomialTarget(TypedDict):
-    kind: Literal["asphere_polynomial_coefficient"]
-    surface_index: int
-    asphere_kind: AsphereKind
-    coefficient_index: int
-
-
-class DecenterTarget(TypedDict):
-    kind: Literal["decenter_alpha", "decenter_beta", "decenter_gamma", "decenter_x", "decenter_y"]
-    surface_index: int
-    decenter_type: Literal["bend", "dec and return", "decenter", "reverse"]
-
-
-type TargetConfig = (
-    RadiusTarget
-    | ThicknessTarget
-    | AsphereConicTarget
-    | AsphereToricSweepTarget
-    | AspherePolynomialTarget
-    | DecenterTarget
-)
-
-
-class TargetIdentity(TypedDict):
+class ParameterIdentity(TypedDict):
     """Target kind and surface, plus the coefficient index of polynomial targets.
 
-    Carries only the fields encoded in a ``TargetKey``; asphere and decenter
+    Carries only the fields encoded in a ``ParameterKey``; asphere and decenter
     descriptors are not recoverable from a key.
     """
 
-    kind: TargetKind
+    kind: ConstructionalParameterKind
     surface_index: int
     coefficient_index: NotRequired[int]
 
@@ -278,58 +284,38 @@ class PolynomialPickupConfigInput(AspherePickupConfigInput, total=False):
 type PickupConfigInput = BasePickupConfigInput | AspherePickupConfigInput | PolynomialPickupConfigInput
 
 
-class RadiusPickup(TypedDict):
-    kind: Literal["radius"]
-    surface_index: int
+class PickupTransform(TypedDict):
+    """Linear pickup ``value = scale * source + offset`` from surface ``source_surface_index``."""
+
     source_surface_index: int
     scale: float
     offset: float
 
 
-class ThicknessPickup(TypedDict):
-    kind: Literal["thickness"]
-    surface_index: int
-    source_surface_index: int
-    scale: float
-    offset: float
+class RadiusPickup(RadiusRef, PickupTransform):
+    """Radius derived from another surface's radius."""
 
 
-class AsphereConicPickup(TypedDict):
-    kind: Literal["asphere_conic_constant"]
-    surface_index: int
-    source_surface_index: int
-    asphere_kind: AsphereKind
-    scale: float
-    offset: float
+class ThicknessPickup(ThicknessRef, PickupTransform):
+    """Thickness derived from another surface's thickness."""
 
 
-class AsphereToricSweepPickup(TypedDict):
-    kind: Literal["asphere_toric_sweep_radius"]
-    surface_index: int
-    source_surface_index: int
-    asphere_kind: AsphereKind
-    scale: float
-    offset: float
+class AsphereConicPickup(AsphereConicRef, PickupTransform):
+    """Conic constant derived from another surface's conic constant."""
 
 
-class AspherePolynomialPickup(TypedDict):
-    kind: Literal["asphere_polynomial_coefficient"]
-    surface_index: int
-    source_surface_index: int
-    asphere_kind: AsphereKind
-    coefficient_index: int
+class AsphereToricSweepPickup(AsphereToricSweepRef, PickupTransform):
+    """Toric sweep radius derived from another surface's toric sweep radius."""
+
+
+class AspherePolynomialPickup(AspherePolynomialRef, PickupTransform):
+    """Polynomial coefficient derived from coefficient ``source_coefficient_index`` of the source surface."""
+
     source_coefficient_index: int
-    scale: float
-    offset: float
 
 
-class DecenterPickup(TypedDict):
-    kind: Literal["decenter_alpha", "decenter_beta", "decenter_gamma", "decenter_x", "decenter_y"]
-    surface_index: int
-    source_surface_index: int
-    decenter_type: Literal["bend", "dec and return", "decenter", "reverse"]
-    scale: float
-    offset: float
+class DecenterPickup(DecenterRef, PickupTransform):
+    """Tilt or decenter component derived from the same component of another surface."""
 
 
 type PickupConfig = (
@@ -514,11 +500,11 @@ class NormalizedOptimizationConfig(TypedDict):
     merit_function: MeritFunctionConfig
 
 
-type MutableTarget = TargetConfig | VariableConfig | PickupConfig
+type MutableParameter = ParameterRef | VariableConfig | PickupConfig
 
 
 class VariableStateEntry(TypedDict):
-    kind: TargetKind
+    kind: ConstructionalParameterKind
     surface_index: int
     value: float
     min: NotRequired[float]
@@ -529,7 +515,7 @@ class VariableStateEntry(TypedDict):
 
 
 class PickupReportEntry(TypedDict):
-    kind: TargetKind
+    kind: ConstructionalParameterKind
     surface_index: int
     source_surface_index: int
     scale: float
@@ -541,7 +527,7 @@ class PickupReportEntry(TypedDict):
 
 
 class SnapshotEntry(TypedDict):
-    entry: MutableTarget
+    entry: MutableParameter
     value: float
 
 

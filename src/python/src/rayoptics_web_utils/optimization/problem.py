@@ -11,7 +11,7 @@ from scipy.optimize._numdiff import approx_derivative
 from .config import normalize_config, pickup_order
 from ._types import (
     FloatArray,
-    MutableTarget,
+    MutableParameter,
     NormalizedOptimizationConfig,
     OptimizationConfig,
     OptimizerSummary,
@@ -29,11 +29,11 @@ from .operands import (
     operand_goal_residual,
 )
 from .progress import OptimizationProgress
-from .targets import (
+from .parameters import (
     curvature_to_radius,
     radius_to_curvature,
-    read_target_value,
-    write_target_value,
+    read_parameter_value,
+    write_parameter_value,
 )
 
 if TYPE_CHECKING:
@@ -114,7 +114,7 @@ class OptimizationProblem:
 
     def current_vector(self) -> FloatArray:
         return np.array(
-            [self._to_internal_value(variable, read_target_value(self.opm, variable)) for variable in self.variables],
+            [self._to_internal_value(variable, read_parameter_value(self.opm, variable)) for variable in self.variables],
             dtype=float,
         )
 
@@ -142,12 +142,12 @@ class OptimizationProblem:
 
     def apply_vector(self, values: FloatArray | list[float]) -> list[PickupReportEntry]:
         for value, variable in zip(values, self.variables):
-            write_target_value(self.opm, variable, self._from_internal_value(variable, float(value)))
+            write_parameter_value(self.opm, variable, self._from_internal_value(variable, float(value)))
         pickup_reports: list[PickupReportEntry] = []
         for pickup in self.ordered_pickups:
             # The source shares the pickup's kind; only the identity and
-            # descriptor keys that read_target_value consults are copied.
-            source_target = cast("MutableTarget", {
+            # descriptor keys that read_parameter_value consults are copied.
+            source_target = cast("MutableParameter", {
                 "kind": pickup["kind"],
                 "surface_index": pickup["source_surface_index"],
                 **({"decenter_type": pickup["decenter_type"], "materialize": False} if "decenter_type" in pickup else {}),
@@ -158,9 +158,9 @@ class OptimizationProblem:
                     else {}
                 ),
             })
-            source_value = read_target_value(self.opm, source_target)
+            source_value = read_parameter_value(self.opm, source_target)
             value = pickup["scale"] * source_value + pickup["offset"]
-            write_target_value(self.opm, pickup, value)
+            write_parameter_value(self.opm, pickup, value)
             pickup_reports.append(cast("PickupReportEntry", {**pickup, "value": float(value)}))
         self.opm.update_model()
         return pickup_reports
@@ -222,7 +222,7 @@ class OptimizationProblem:
                 **({"asphere_kind": variable["asphere_kind"]} if "asphere_kind" in variable else {}),
                 **({"decenter_type": variable["decenter_type"]} if "decenter_type" in variable else {}),
                 **({"coefficient_index": variable["coefficient_index"]} if "coefficient_index" in variable else {}),
-                "value": float(read_target_value(self.opm, variable)),
+                "value": float(read_parameter_value(self.opm, variable)),
                 **({"min": variable["min"]} if "min" in variable else {}),
                 **({"max": variable["max"]} if "max" in variable else {}),
             }

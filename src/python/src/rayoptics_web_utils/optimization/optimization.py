@@ -37,7 +37,7 @@ from rayoptics_web_utils.optimization._types import (
     ProgressReporter,
     SnapshotEntry,
     SolverResult,
-    TargetKey,
+    ParameterKey,
     VariableStateEntry,
 )
 from rayoptics_web_utils.optimization.failure_reports import (
@@ -49,8 +49,8 @@ from rayoptics_web_utils.optimization.operands import (
 from rayoptics_web_utils.optimization.problem import OptimizationProblem
 from rayoptics_web_utils.optimization.solvers import DifferentialEvolutionSolver, LeastSquaresSolver
 from rayoptics_web_utils.optimization.solvers.least_squares import build_least_squares_kwargs
-from rayoptics_web_utils.optimization.targets import restore_state as _restore_state
-from rayoptics_web_utils.optimization.targets import snapshot_state as _snapshot_state
+from rayoptics_web_utils.optimization.parameters import restore_state as _restore_state
+from rayoptics_web_utils.optimization.parameters import snapshot_state as _snapshot_state
 
 if TYPE_CHECKING:
     from rayoptics.optical.opticalmodel import OpticalModel
@@ -175,7 +175,7 @@ def _build_stopped_report(
     return report
 
 
-def _restore_failure_snapshot(opm: OpticalModel, snapshot: dict[TargetKey, SnapshotEntry]) -> None:
+def _restore_failure_snapshot(opm: OpticalModel, snapshot: dict[ParameterKey, SnapshotEntry]) -> None:
     """Best-effort restore all captured targets before returning an error report."""
     try:
         _restore_state(opm, snapshot)

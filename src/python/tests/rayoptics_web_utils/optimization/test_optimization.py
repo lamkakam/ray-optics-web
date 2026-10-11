@@ -1038,7 +1038,7 @@ class TestEvaluateOptimizationProblem:
         assert second[-4:].tolist() == pytest.approx([1e6, 1e6, 1e6, 1e6])
 
     def test_restore_state_preserves_asphere_kind_information(self, fresh_cooke_triplet):
-        from rayoptics_web_utils.optimization.targets import restore_state, snapshot_state
+        from rayoptics_web_utils.optimization.parameters import restore_state, snapshot_state
 
         variable = {
             "kind": "asphere_conic_constant",

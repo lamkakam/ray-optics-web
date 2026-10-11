@@ -43,7 +43,7 @@ from ._types import (
     SurfaceOperandEvaluator,
     SurfaceRangeOperandKind,
 )
-from .targets import validate_surface_index
+from .parameters import validate_surface_index
 
 if TYPE_CHECKING:
     from rayoptics.optical.opticalmodel import OpticalModel
