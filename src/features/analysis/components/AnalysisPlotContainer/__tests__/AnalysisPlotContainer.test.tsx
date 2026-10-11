@@ -350,7 +350,7 @@ const seidelData: SeidelData = {
     ],
   },
   transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
-  wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
+  wavefront: { aberrTypes: ["W040"], surfaceLabels: ["sum"], data: [[0.1]] },
   curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
 };
 
@@ -835,7 +835,7 @@ describe("AnalysisPlotContainer", () => {
         surfaceLabels: ["New front", "New rear", "sum"],
       },
       transverse: { TSA: 20 },
-      wavefront: { W040: 30 },
+      wavefront: { aberrTypes: ["W040"], surfaceLabels: ["sum"], data: [[30]] },
       curvature: { TCV: 40 },
     };
     const proxy = makeMockProxy({

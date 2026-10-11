@@ -123,6 +123,16 @@ class TestAnalysisConcreteModuleExports:
         assert top_level_package.get_3rd_order_seidel_data is concrete_export
         assert package_export is concrete_export
 
+    def test_seidel_wavefront_converter_export_matches_package_exports(self):
+        import rayoptics_web_utils as top_level_package
+        from rayoptics_web_utils.analysis import seidel_to_surface_by_surface_wavefront as package_export
+        from rayoptics_web_utils.analysis.seidel import (
+            seidel_to_surface_by_surface_wavefront as concrete_export,
+        )
+
+        assert top_level_package.seidel_to_surface_by_surface_wavefront is concrete_export
+        assert package_export is concrete_export
+
     @pytest.mark.parametrize(
         ("module_name", "getter_name"),
         [
@@ -474,7 +484,11 @@ class TestGet3rdOrderSeidelData:
         assert na_sbs["aberrTypes"] == epd_sbs["aberrTypes"]
         assert na_sbs["surfaceLabels"] == epd_sbs["surfaceLabels"]
         np.testing.assert_allclose(na_sbs["data"], epd_sbs["data"], rtol=1e-9, atol=1e-12)
-        for key in ("transverse", "wavefront", "curvature"):
+        assert na_result["wavefront"]["aberrTypes"] == epd_result["wavefront"]["aberrTypes"]
+        np.testing.assert_allclose(
+            na_result["wavefront"]["data"], epd_result["wavefront"]["data"], rtol=1e-9, atol=1e-12
+        )
+        for key in ("transverse", "curvature"):
             assert na_result[key] == pytest.approx(epd_result[key], rel=1e-9, abs=1e-12)
 
     def test_returns_dict_with_expected_keys(self, cooke_triplet):
@@ -511,58 +525,96 @@ class TestGet3rdOrderSeidelData:
         assert sbs['data'][5][-1] == pytest.approx(0.0010709, rel=1e-4)
         assert sbs['data'][6][-1] == pytest.approx(-0.00034360, rel=1e-4)
 
-    def test_wavefront_adds_primary_color_terms(self, cooke_triplet):
-        """W020 = C-I / 2 and W111 = C-II, in waves of the central wavelength."""
+    def test_surface_by_surface_wavefront_converter(self, cooke_triplet):
+        """Each wavefront column follows its Seidel or colour term, in central waves."""
         from rayoptics.parax.thirdorder import compute_third_order_and_color
+        from rayoptics_web_utils.analysis import seidel_to_surface_by_surface_wavefront
+
+        to_pkg = compute_third_order_and_color(cooke_triplet)
+        central_wvl = 5.87562e-4
+        wavefront = seidel_to_surface_by_surface_wavefront(to_pkg, central_wvl)
+
+        assert wavefront.columns.tolist() == [
+            'W040', 'W131', 'W222', 'W220P', 'W220', 'W311', 'W020', 'W111'
+        ]
+        assert wavefront.index.tolist() == to_pkg.index.tolist()
+        expected = {
+            'W040': to_pkg['S-I'] / 8,
+            'W131': to_pkg['S-II'] / 2,
+            'W222': to_pkg['S-III'] / 2,
+            'W220P': to_pkg['S-IV'] / 4,
+            'W220': (to_pkg['S-III'] + to_pkg['S-IV']) / 4,
+            'W311': to_pkg['S-V'] / 2,
+            'W020': to_pkg['C-I'] / 2,
+            'W111': to_pkg['C-II'],
+        }
+        for key, column in expected.items():
+            np.testing.assert_allclose(wavefront[key], column / central_wvl, rtol=1e-12)
+
+    def test_wavefront_is_surface_by_surface(self, cooke_triplet):
+        """Wavefront shares surface labels and its sum row matches the Seidel aggregate."""
+        from rayoptics.parax.thirdorder import compute_third_order, seidel_to_wavefront
         from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
 
-        wavefront = get_3rd_order_seidel_data(cooke_triplet)['wavefront']
-        color_sum = compute_third_order_and_color(cooke_triplet).loc['sum']
+        result = get_3rd_order_seidel_data(cooke_triplet)
+        wavefront = result['wavefront']
         central_wvl = cooke_triplet.nm_to_sys_units(cooke_triplet['optical_spec']['wvls'].central_wvl)
+        seidel_sum = compute_third_order(cooke_triplet).loc['sum']
 
-        assert list(wavefront) == ['W040', 'W131', 'W222', 'W220', 'W311', 'W020', 'W111']
-        assert wavefront['W020'] == pytest.approx(0.5 * color_sum['C-I'] / central_wvl, rel=1e-12)
-        assert wavefront['W111'] == pytest.approx(color_sum['C-II'] / central_wvl, rel=1e-12)
-        assert wavefront['W020'] == pytest.approx(0.91133, rel=1e-4)
-        assert wavefront['W111'] == pytest.approx(-0.58479, rel=1e-4)
+        assert wavefront['aberrTypes'] == [
+            'W040', 'W131', 'W222', 'W220P', 'W220', 'W311', 'W020', 'W111'
+        ]
+        assert wavefront['surfaceLabels'] == result['surfaceBySurface']['surfaceLabels']
+        assert len(wavefront['data']) == len(wavefront['aberrTypes'])
+        assert all(len(row) == len(wavefront['surfaceLabels']) for row in wavefront['data'])
+        total = {key: row[-1] for key, row in zip(wavefront['aberrTypes'], wavefront['data'])}
+        expected_sum = seidel_to_wavefront(seidel_sum, central_wvl).to_dict()
+        assert {key: total[key] for key in expected_sum} == pytest.approx(expected_sum, rel=1e-12)
+        assert total['W220P'] == pytest.approx(0.25 * seidel_sum['S-IV'] / central_wvl, rel=1e-12)
+        assert total['W020'] == pytest.approx(0.91133, rel=1e-4)
+        assert total['W111'] == pytest.approx(-0.58479, rel=1e-4)
+        json.dumps(result)
 
     def test_seidel_aggregates_use_only_seidel_sums(self, cooke_triplet):
-        """Transverse, wavefront and curvature values keep their Seidel-only meaning."""
+        """Transverse and curvature values keep their Seidel-only meaning."""
         from rayoptics.parax.thirdorder import (
             compute_third_order,
             seidel_to_field_curv,
             seidel_to_transverse_aberration,
-            seidel_to_wavefront,
         )
         from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
 
         result = get_3rd_order_seidel_data(cooke_triplet)
         seidel_sum = compute_third_order(cooke_triplet).loc['sum']
         fod = cooke_triplet['analysis_results']['parax_data'].fod
-        central_wvl = cooke_triplet.nm_to_sys_units(cooke_triplet['optical_spec']['wvls'].central_wvl)
 
-        expected_wavefront = seidel_to_wavefront(seidel_sum, central_wvl).to_dict()
         assert result['transverse'] == pytest.approx(
             seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na).to_dict(), rel=1e-12
         )
         assert result['curvature'] == pytest.approx(
             seidel_to_field_curv(seidel_sum, fod.n_img, fod.opt_inv).to_dict(), rel=1e-12
         )
-        assert {key: result['wavefront'][key] for key in expected_wavefront} == pytest.approx(
-            expected_wavefront, rel=1e-12
-        )
 
-    def test_aspheric_surface_has_seidel_row_without_color(self, make_cooke_triplet):
-        """An aspheric surface no longer fails and adds no primary colour."""
+    def test_aspheric_contribution_is_merged_into_its_surface(self, make_cooke_triplet):
+        """An aspheric surface's `.asp` row is added into the surface row, with no colour."""
+        from rayoptics_web_utils._third_order_color_asphere_workaround import (
+            compute_third_order_and_color_with_aspheres,
+        )
         from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
 
-        result = get_3rd_order_seidel_data(make_cooke_triplet(asphere=True))
+        opm = make_cooke_triplet(asphere=True)
+        result = get_3rd_order_seidel_data(opm)
+        raw = compute_third_order_and_color_with_aspheres(opm)
         sbs = result['surfaceBySurface']
-        asp_col = sbs['surfaceLabels'].index('1.asp')
+        assert raw.loc['1.asp', 'S-I'] != 0.0
 
-        assert sbs['data'][0][asp_col] != 0.0
-        assert sbs['data'][5][asp_col] == 0.0
-        assert sbs['data'][6][asp_col] == 0.0
+        assert sbs['surfaceLabels'] == ['1', '2', '3', '4', '5', '6', 'sum']
+        assert result['wavefront']['surfaceLabels'] == sbs['surfaceLabels']
+        data = np.array(sbs['data'])
+        np.testing.assert_allclose(data[:, 0], raw.loc['1'] + raw.loc['1.asp'], rtol=1e-12)
+        np.testing.assert_allclose(data[5:, 0], raw.loc['1', ['C-I', 'C-II']], rtol=1e-12)
+        np.testing.assert_allclose(data[:, -1], raw.loc['sum'], rtol=1e-12)
+        np.testing.assert_allclose(data[:, :-1].sum(axis=1), data[:, -1], rtol=1e-9, atol=1e-15)
         json.dumps(result)
 
 

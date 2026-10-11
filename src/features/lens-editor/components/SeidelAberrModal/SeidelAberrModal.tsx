@@ -7,6 +7,7 @@ import { Tabs } from "@/shared/components/primitives/Tabs";
 import type { TabItem } from "@/shared/components/primitives/Tabs";
 import type {
   SeidelData,
+  SeidelSurfaceBySurfaceData,
   AberrationTypeToLabel,
 } from "@/features/lens-editor/types/seidelData";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
@@ -32,6 +33,7 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
   W040: "Spherical Aberration",
   W131: "Coma",
   W222: "Astigmatism",
+  W220P: "Petzval Curvature",
   W220: "Field Curvature",
   W311: "Distortion",
   W020: "Primary Axial Chromatic Aberr.",
@@ -41,18 +43,39 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
   PCV: "Petzval Curvature (PCV)",
 };
 
+/** Scroll container for a tab's table; it fills the fixed-height panel so both scrollbars stay inside the visible panel. */
+const TAB_CONTENT_CLASS_NAME = "h-full overflow-auto pt-2";
+
+/** Builds surface-by-surface table headers and rows, one row per surface label with one column per aberration type. */
+function buildSurfaceBySurfaceTable(
+  { aberrTypes, surfaceLabels, data }: SeidelSurfaceBySurfaceData,
+  headerLabel: (aberrType: string) => string = (aberrType) => aberrType,
+) {
+  return {
+    headers: ["Surface", ...aberrTypes.map(headerLabel)],
+    rows: surfaceLabels.map((label, colIdx) => [
+      label,
+      ...aberrTypes.map((_, rowIdx) =>
+        commonValueFormatter(data[rowIdx][colIdx]),
+      ),
+    ]),
+  };
+}
+
 /**
- * Modal that displays third-order Seidel and primary chromatic aberration data in a four-tab layout: Surface by Surface, Transverse, Wavefront, and Field Curvature. Uses MathJax for a disclaimer about the approximation's scope.
+ * Modal that displays third-order Seidel and primary chromatic aberration data in a four-tab layout: Seidel (surface by surface), Wavefront (surface by surface), Transverse, and Field Curvature. Uses MathJax for a disclaimer about the approximation's scope.
  *
  * @remarks
  * ## Key Behaviors
  *
  * - Table data for all four tabs is derived with `useMemo` to avoid recomputing on unrelated renders.
- * - Surface by Surface columns follow `surfaceBySurface.aberrTypes`, so the primary chromatic coefficients `C-I` and `C-II` appear after `S-I`..`S-V`.
- * - Wavefront rows include the primary chromatic terms `W020` ("Primary Axial Chromatic Aberr.") and `W111` ("Primary Lateral Chromatic Aberr.") after the Seidel terms.
+ * - Both surface-by-surface tabs show one row per surface label (aspheric contributions already merged into their surface) plus `sum`.
+ * - Seidel (surface by surface) columns follow `surfaceBySurface.aberrTypes`, so the primary chromatic coefficients `C-I` and `C-II` appear after `S-I`..`S-V`.
+ * - Wavefront (surface by surface) columns follow `wavefront.aberrTypes`, labelled via `ABERRATION_TYPE_TO_LABEL`: Spherical Aberration, Coma, Astigmatism, Petzval Curvature (`W220P`), Field Curvature (`W220`), Distortion, then the primary chromatic terms `W020` ("Primary Axial Chromatic Aberr.") and `W111` ("Primary Lateral Chromatic Aberr.").
  * - A note explains that the chromatic terms use the first and last wavelengths and need at least 3 wavelengths.
  * - Aberration type keys (e.g. `"TSA"`, `"W040"`) are mapped to human-readable labels via `ABERRATION_TYPE_TO_LABEL`.
  * - Field Curvature tab includes a Curvature Radius column (reciprocal of value; `"Infinite"` when value is 0).
+ * - Each tab's table sits in a scroll container that fills the fixed-height tab panel, so the horizontal scrollbar of a wide table stays visible at the bottom of the panel.
  * - Uses `<MathJax inline>` for LaTeX rendering; `MathJaxContext` is provided by the ancestor (`page.tsx`).
  *
  *
@@ -68,20 +91,18 @@ export function SeidelAberrModal({
 }: SeidelAberrModalProps) {
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 
-  const surfaceHeaders = useMemo(
-    () => ["Surface", ...surfaceBySurface.aberrTypes],
-    [surfaceBySurface.aberrTypes],
+  const seidelTable = useMemo(
+    () => buildSurfaceBySurfaceTable(surfaceBySurface),
+    [surfaceBySurface],
   );
 
-  const surfaceRows = useMemo(
+  const wavefrontTable = useMemo(
     () =>
-      surfaceBySurface.surfaceLabels.map((label, colIdx) => [
-        label,
-        ...surfaceBySurface.aberrTypes.map((_, rowIdx) =>
-          commonValueFormatter(surfaceBySurface.data[rowIdx][colIdx]),
-        ),
-      ]),
-    [surfaceBySurface],
+      buildSurfaceBySurfaceTable(
+        wavefront,
+        (aberrType) => ABERRATION_TYPE_TO_LABEL[aberrType] ?? aberrType,
+      ),
+    [wavefront],
   );
 
   const transverseRows = useMemo(
@@ -91,15 +112,6 @@ export function SeidelAberrModal({
         val.toFixed(6),
       ]),
     [transverse],
-  );
-
-  const wavefrontRows = useMemo(
-    () =>
-      Object.entries(wavefront).map(([key, val]) => [
-        ABERRATION_TYPE_TO_LABEL[key],
-        val.toFixed(6),
-      ]),
-    [wavefront],
   );
 
   const curvatureRows = useMemo(
@@ -116,10 +128,22 @@ export function SeidelAberrModal({
     () => [
       {
         id: "surfaceBySurface",
-        label: "Surface by Surface",
+        label: "Seidel (surface by surface)",
         content: (
-          <div className="pt-2 overflow-x-auto">
-            <Table headers={surfaceHeaders} rows={surfaceRows} />
+          <div className={TAB_CONTENT_CLASS_NAME}>
+            <Table headers={seidelTable.headers} rows={seidelTable.rows} />
+          </div>
+        ),
+      },
+      {
+        id: "wavefront",
+        label: "Wavefront (surface by surface)",
+        content: (
+          <div className={TAB_CONTENT_CLASS_NAME}>
+            <Table
+              headers={wavefrontTable.headers}
+              rows={wavefrontTable.rows}
+            />
           </div>
         ),
       },
@@ -127,17 +151,8 @@ export function SeidelAberrModal({
         id: "transverse",
         label: "Transverse",
         content: (
-          <div className="pt-2 overflow-x-auto">
+          <div className={TAB_CONTENT_CLASS_NAME}>
             <Table headers={["Aberration", "Value"]} rows={transverseRows} />
-          </div>
-        ),
-      },
-      {
-        id: "wavefront",
-        label: "Wavefront",
-        content: (
-          <div className="pt-2 overflow-x-auto">
-            <Table headers={["Aberration", "Value"]} rows={wavefrontRows} />
           </div>
         ),
       },
@@ -145,7 +160,7 @@ export function SeidelAberrModal({
         id: "curvature",
         label: "Field Curvature",
         content: (
-          <div className="pt-2 overflow-x-auto">
+          <div className={TAB_CONTENT_CLASS_NAME}>
             <Table
               headers={["Aberration", "Value", "Curvature Radius"]}
               rows={curvatureRows}
@@ -154,7 +169,7 @@ export function SeidelAberrModal({
         ),
       },
     ],
-    [surfaceHeaders, surfaceRows, transverseRows, wavefrontRows, curvatureRows],
+    [seidelTable, wavefrontTable, transverseRows, curvatureRows],
   );
 
   return (
@@ -186,7 +201,7 @@ export function SeidelAberrModal({
         difference between the first and last wavelengths in the list, and are
         zero unless at least 3 wavelengths are defined.
       </Paragraph>
-      <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
+      <Tabs tabs={tabs} panelClassName="h-72" />
     </Modal>
   );
 }

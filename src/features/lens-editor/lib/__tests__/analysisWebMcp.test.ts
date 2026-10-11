@@ -65,7 +65,7 @@ const seidel: SeidelData = {
     ],
   },
   transverse: { TSA: 1, TCO: 2, TAS: 3, SAS: 4, PTB: 5, DST: 6 },
-  wavefront: { W040: 7, W131: 8, W222: 9, W220: 10, W311: 11 },
+  wavefront: { aberrTypes: ["W040"], surfaceLabels: ["sum"], data: [[7]] },
   curvature: { TCV: 12, SCV: 13, PCV: 14 },
 };
 
