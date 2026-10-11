@@ -1,5 +1,5 @@
-import { BoundedVariableModeFields } from "@/features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields";
-import { UnboundedVariableModeFields } from "@/features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/ParameterModeModal/fields/BoundedVariableModeFields/BoundedVariableModeFields";
+import { UnboundedVariableModeFields } from "@/features/optimization/components/ParameterModeModal/fields/UnboundedVariableModeFields/UnboundedVariableModeFields";
 import type { VariableModeFieldsRenderer } from "@/features/optimization/types/optimizationVariableFieldTypes";
 
 const BOUNDED_VARIABLE_MODE_FIELDS_RENDERER: VariableModeFieldsRenderer = {

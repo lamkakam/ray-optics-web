@@ -7,7 +7,16 @@ import type { GlassMode } from "@/features/optimization/stores/optimizationStore
 import {
   summarizeParameterState,
   type ParameterGroupState,
+  type ParameterStates,
 } from "@/features/optimization/lib/parameters/parameterStates";
+import {
+  PARAMETER_GROUP_KEYS,
+  type ParameterGroupKey,
+} from "@/features/optimization/lib/parameters/parameterGroups";
+import {
+  PARAMETER_MODE_UI,
+  type VarColumnAnchor,
+} from "@/features/optimization/components/ParameterModeModal/parameterModeUi";
 import type { RadiusRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { SurfacePropertyUiKey } from "@/shared/lib/optical-model/surface-properties/registry.ui";
@@ -67,24 +76,23 @@ function OptimizationVariableModeCell({
 export interface OptimizationLensPrescriptionGridProps {
   readonly autoAperture?: boolean;
   readonly rows: ReadonlyArray<RadiusRow>;
-  readonly radiusModes: ReadonlyArray<ParameterGroupState<"radius">>;
-  readonly thicknessModes: ReadonlyArray<ParameterGroupState<"thickness">>;
+  /** Constant/variable/pickup states of every constructional-parameter group. */
+  readonly parameterStates: ParameterStates;
   /** Whether the selected optimizer exposes categorical glass modes. */
   readonly canOptimizeGlass?: boolean;
   /** Constant or explicit-pool mode for Object gap 0 and physical gaps 1..N. */
   readonly glassModes?: ReadonlyArray<GlassMode>;
-  readonly asphereStates: ReadonlyArray<ParameterGroupState<"aspherical">>;
-  readonly decenterStates?: ReadonlyArray<ParameterGroupState<"decenter">>;
-  readonly onOpenRadiusModal: (surfaceIndex: number) => void;
-  readonly onOpenThicknessModal: (surfaceIndex: number) => void;
+  /** Opens a parameter group's variable/pickup modal for a surface. */
+  readonly onOpenParameterModal: (
+    group: ParameterGroupKey,
+    surfaceIndex: number,
+  ) => void;
   readonly onOpenGlassModal?: (surfaceIndex: number) => void;
   /** Opens the read-only inspection modal of a modal-backed surface property for a row. */
   readonly onOpenPropertyModal: (
     key: SurfacePropertyUiKey,
     row: GridRow,
   ) => void;
-  readonly onOpenAsphereVarModal: (surfaceIndex: number) => void;
-  readonly onOpenTiltDecenterVarModal?: (surfaceIndex: number) => void;
   readonly onCellEditingStarted?: () => void;
   readonly onCellEditingStopped?: () => void;
 }
@@ -105,35 +113,66 @@ export interface OptimizationLensPrescriptionGridProps {
  * - Builds the read-only `Medium`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` inspection columns with `createSurfacePropertyColumn(key, { propertyTooltip: "view" })`, so their cells say `Click to view ...` and open `onOpenPropertyModal(key, row)`.
  * - Prepends an `Index` column before `Surface`; it is blank for `Object` and `Image`, shows `1..N` for real surface rows using the existing optimization surface numbering, and uses the shared lens prescription grid `Index` config so it has the shared initial width and is pinned left.
  * - The `Index`, `Surface`, `Comment`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`. Comment is displayed for physical surfaces but remains entirely read-only because Optimization supplies no change callback; Object and Image stay blank.
- * - The radius and thickness `Var.` cells use the same `ActionWrapper` plus Tooltip-wrapped native `<button>` pattern as `Medium`; clicking either the button or the surrounding cell body opens the corresponding optimization modal for the surface. Their Tooltip trigger fills the cell action wrapper so hovering anywhere in the cell action area displays the tooltip. The buttons show the saved optimization mode as `C` for missing or `constant` modes, `V` for `variable`, and `P` for `pickup`.
- * - Adds a `Var.` column after `Asph.` for configuring asphere variable/pickup optimization targets; shown only for real surface rows. The button summarizes all saved asphere term modes as `C` when the asphere state is missing or every term is `constant`, `V` when any term is variable-only, `P` when any term is pickup-only, and `V,P` when variable and pickup terms are both present. Requires `asphereStates` (aspherical `ParameterGroupState`s) and `onOpenAsphereVarModal` props. Every `Var.` label is `summarizeParameterState(state)`.
+ * - Generates one `Var.` column per parameter group from `PARAMETER_MODE_UI`, placed after the group's anchor column: radius after `Radius of Curvature`, thickness after `Thickness`, asphere after `Asph.` (real surface rows only), and tilt/decenter after `Tilt & Decenter` (numbered surfaces and Image). Each cell uses the same `ActionWrapper` plus Tooltip-wrapped native `<button>` pattern as `Medium`; clicking the button or the cell body calls `onOpenParameterModal(group, surfaceIndex)`. The Tooltip trigger fills the cell action area. The accessible name is `<noun> mode for surface <n>`, and the label is `summarizeParameterState(state)`: `C` when no stored mode is variable or pickup, otherwise `V`, `P`, or `V,P`.
  * - When `canOptimizeGlass` is true, inserts a fourth `Var.` column immediately after `Medium`. It renders `C`/`V` controls for Object gap `0` and every physical surface gap `1..N`; Image is blank. The column is omitted entirely for existing optimizers.
  * - Sets all optimization `Var.` columns to a narrow `60px` initial width sized for the `Var.` header text, while leaving them otherwise resizable by AG Grid defaults.
- * - Adds an always-visible `Var.` column immediately after `Tilt & Decenter`. Object is blank; numbered surfaces and Image summarize their five independent modes as `C`, `V`, `P`, or `V,P` and open the tilt/decenter optimization modal.
  */
 export function OptimizationLensPrescriptionGrid({
   autoAperture = false,
   rows,
-  radiusModes,
-  thicknessModes,
+  parameterStates,
   canOptimizeGlass = false,
   glassModes = [],
-  asphereStates,
-  decenterStates = [],
-  onOpenRadiusModal,
-  onOpenThicknessModal,
+  onOpenParameterModal,
   onOpenGlassModal,
   onOpenPropertyModal,
-  onOpenAsphereVarModal,
-  onOpenTiltDecenterVarModal = () => undefined,
   onCellEditingStarted,
   onCellEditingStopped,
 }: OptimizationLensPrescriptionGridProps) {
   const gridTheme = useAgGridTheme();
   const rowData = useMemo(() => [...rows], [rows]);
 
-  const lensColumns = useMemo<ColDef<RadiusRow>[]>(
-    () => [
+  const lensColumns = useMemo<ColDef<RadiusRow>[]>(() => {
+    /** `Var.` columns of every parameter group placed after `anchor`. */
+    const varColumnsAfter = (anchor: VarColumnAnchor): ColDef<RadiusRow>[] =>
+      PARAMETER_GROUP_KEYS.filter(
+        (group) => PARAMETER_MODE_UI[group].varColumn.after === anchor,
+      ).map((group) => {
+        const { varColumn } = PARAMETER_MODE_UI[group];
+        return {
+          headerName: "Var.",
+          width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+          cellRenderer: (params: { data: RadiusRow }) => {
+            const surfaceIndex = varColumn.surfaceIndexOf(params.data);
+            if (surfaceIndex === undefined) {
+              return undefined;
+            }
+            const state = (
+              parameterStates[group] as ReadonlyArray<ParameterGroupState>
+            ).find((entry) => entry.surfaceIndex === surfaceIndex);
+            const openModal = () => onOpenParameterModal(group, surfaceIndex);
+            return (
+              <LensPrescriptionActionWrapper onAction={openModal}>
+                <Tooltip
+                  text={varColumn.tooltip}
+                  position="top"
+                  portal
+                  noTouch
+                  triggerClassName="flex h-full w-full"
+                >
+                  <OptimizationVariableModeCell
+                    label={summarizeParameterState(state)}
+                    ariaLabel={`${varColumn.ariaNoun} mode for surface ${surfaceIndex}`}
+                    onOpenModal={openModal}
+                  />
+                </Tooltip>
+              </LensPrescriptionActionWrapper>
+            );
+          },
+        } satisfies ColDef<RadiusRow>;
+      });
+
+    return [
       {
         ...lensPrescriptionGridIndexColumnDef,
         valueGetter: (params) => {
@@ -149,73 +188,9 @@ export function OptimizationLensPrescriptionGrid({
       createRadiusOfCurvatureColumn<RadiusRow>({
         getGridRow: (data) => data.row,
       }),
-      {
-        headerName: "Var.",
-        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-        cellRenderer: (params: { data: RadiusRow }) => {
-          if (params.data.radiusSurfaceIndex === undefined) {
-            return undefined;
-          }
-
-          const mode = radiusModes.find(
-            (entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex,
-          );
-          const surfaceIndex = params.data.radiusSurfaceIndex;
-          return (
-            <LensPrescriptionActionWrapper
-              onAction={() => onOpenRadiusModal(surfaceIndex)}
-            >
-              <Tooltip
-                text="Click to configure radius variable or pickup"
-                position="top"
-                portal
-                noTouch
-                triggerClassName="flex h-full w-full"
-              >
-                <OptimizationVariableModeCell
-                  label={summarizeParameterState(mode)}
-                  ariaLabel={`Radius mode for surface ${surfaceIndex}`}
-                  onOpenModal={() => onOpenRadiusModal(surfaceIndex)}
-                />
-              </Tooltip>
-            </LensPrescriptionActionWrapper>
-          );
-        },
-      },
+      ...varColumnsAfter("radiusOfCurvature"),
       createThicknessColumn<RadiusRow>({ getGridRow: (data) => data.row }),
-      {
-        headerName: "Var.",
-        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-        cellRenderer: (params: { data: RadiusRow }) => {
-          if (params.data.thicknessSurfaceIndex === undefined) {
-            return undefined;
-          }
-
-          const mode = thicknessModes.find(
-            (entry) => entry.surfaceIndex === params.data.thicknessSurfaceIndex,
-          );
-          const surfaceIndex = params.data.thicknessSurfaceIndex;
-          return (
-            <LensPrescriptionActionWrapper
-              onAction={() => onOpenThicknessModal(surfaceIndex)}
-            >
-              <Tooltip
-                text="Click to configure thickness variable or pickup"
-                position="top"
-                portal
-                noTouch
-                triggerClassName="flex h-full w-full"
-              >
-                <OptimizationVariableModeCell
-                  label={summarizeParameterState(mode)}
-                  ariaLabel={`Thickness mode for surface ${surfaceIndex}`}
-                  onOpenModal={() => onOpenThicknessModal(surfaceIndex)}
-                />
-              </Tooltip>
-            </LensPrescriptionActionWrapper>
-          );
-        },
-      },
+      ...varColumnsAfter("thickness"),
       createSurfacePropertyColumn<RadiusRow>("medium", {
         getGridRow: (data) => data.row,
         onOpenPropertyModal,
@@ -277,101 +252,28 @@ export function OptimizationLensPrescriptionGrid({
         onOpenPropertyModal,
         propertyTooltip: "view",
       }),
-      {
-        headerName: "Var.",
-        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-        cellRenderer: (params: { data: RadiusRow }) => {
-          if (
-            params.data.row.kind !== "surface" ||
-            params.data.radiusSurfaceIndex === undefined
-          ) {
-            return undefined;
-          }
-
-          const asphereState = asphereStates.find(
-            (entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex,
-          );
-          const surfaceIndex = params.data.radiusSurfaceIndex;
-
-          return (
-            <LensPrescriptionActionWrapper
-              onAction={() => onOpenAsphereVarModal(surfaceIndex)}
-            >
-              <Tooltip
-                text="Click to configure asphere variable or pickup"
-                position="top"
-                portal
-                noTouch
-                triggerClassName="flex h-full w-full"
-              >
-                <OptimizationVariableModeCell
-                  label={summarizeParameterState(asphereState)}
-                  ariaLabel={`Asphere mode for surface ${surfaceIndex}`}
-                  onOpenModal={() => onOpenAsphereVarModal(surfaceIndex)}
-                />
-              </Tooltip>
-            </LensPrescriptionActionWrapper>
-          );
-        },
-      },
+      ...varColumnsAfter("aspherical"),
       createSurfacePropertyColumn<RadiusRow>("decenter", {
         getGridRow: (data) => data.row,
         onOpenPropertyModal,
         propertyTooltip: "view",
       }),
-      {
-        headerName: "Var.",
-        width: OPTIMIZATION_VAR_COLUMN_WIDTH,
-        cellRenderer: (params: { data: RadiusRow }) => {
-          const surfaceIndex = params.data.radiusSurfaceIndex;
-          if (surfaceIndex === undefined || params.data.row.kind === "object")
-            return undefined;
-          const state = decenterStates.find(
-            (entry) => entry.surfaceIndex === surfaceIndex,
-          );
-          return (
-            <LensPrescriptionActionWrapper
-              onAction={() => onOpenTiltDecenterVarModal(surfaceIndex)}
-            >
-              <Tooltip
-                text="Click to configure tilt and decenter variable or pickup"
-                position="top"
-                portal
-                noTouch
-                triggerClassName="flex h-full w-full"
-              >
-                <OptimizationVariableModeCell
-                  label={summarizeParameterState(state)}
-                  ariaLabel={`Tilt and decenter mode for surface ${surfaceIndex}`}
-                  onOpenModal={() => onOpenTiltDecenterVarModal(surfaceIndex)}
-                />
-              </Tooltip>
-            </LensPrescriptionActionWrapper>
-          );
-        },
-      },
+      ...varColumnsAfter("decenter"),
       createSurfacePropertyColumn<RadiusRow>("diffractiveElement", {
         getGridRow: (data) => data.row,
         onOpenPropertyModal,
         propertyTooltip: "view",
       }),
-    ],
-    [
-      autoAperture,
-      asphereStates,
-      decenterStates,
-      canOptimizeGlass,
-      glassModes,
-      onOpenPropertyModal,
-      onOpenAsphereVarModal,
-      onOpenTiltDecenterVarModal,
-      onOpenGlassModal,
-      onOpenRadiusModal,
-      onOpenThicknessModal,
-      radiusModes,
-      thicknessModes,
-    ],
-  );
+    ];
+  }, [
+    autoAperture,
+    canOptimizeGlass,
+    glassModes,
+    onOpenGlassModal,
+    onOpenParameterModal,
+    onOpenPropertyModal,
+    parameterStates,
+  ]);
 
   return (
     <div

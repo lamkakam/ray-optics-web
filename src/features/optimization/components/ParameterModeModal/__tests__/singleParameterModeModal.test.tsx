@@ -3,8 +3,53 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OpticalModel } from "@/shared/lib/optical-model/model/opticalModel";
 import type { ParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
-import { RadiusModeModal } from "../RadiusModeModal";
-import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal/ThicknessModeModal";
+import { ParameterModeModal } from "../ParameterModeModal";
+import { getParameterMode } from "@/features/optimization/lib/parameters/parameterStates";
+
+interface SingleModalProps {
+  readonly isOpen: boolean;
+  readonly optimizationModel: OpticalModel | undefined;
+  readonly surfaceIndex: number | undefined;
+  readonly selectedMode: ParameterMode | undefined;
+  readonly canUseBounds?: boolean;
+  readonly onSetMode: (surfaceIndex: number, mode: ParameterMode) => void;
+  readonly onClose: () => void;
+}
+
+/** Renders the single-component `group` modal with one committed mode, reporting the confirmed mode. */
+function renderSingle(
+  group: "radius" | "thickness",
+  { selectedMode, onSetMode, surfaceIndex, ...props }: SingleModalProps,
+) {
+  return (
+    <ParameterModeModal
+      {...props}
+      group={group}
+      surfaceIndex={surfaceIndex}
+      state={
+        selectedMode === undefined
+          ? undefined
+          : {
+              surfaceIndex: surfaceIndex ?? 0,
+              qualifier: undefined,
+              lockedQualifier: false,
+              modes: { value: selectedMode },
+            }
+      }
+      onSave={(_group, index, state) =>
+        onSetMode(index, getParameterMode(state, "value"))
+      }
+    />
+  );
+}
+
+function RadiusModeModal(props: SingleModalProps) {
+  return renderSingle("radius", props);
+}
+
+function ThicknessModeModal(props: SingleModalProps) {
+  return renderSingle("thickness", props);
+}
 
 const model: OpticalModel = {
   setAutoAperture: "manualAperture",

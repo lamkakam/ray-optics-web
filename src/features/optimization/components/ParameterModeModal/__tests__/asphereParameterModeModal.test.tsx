@@ -6,7 +6,37 @@ import {
   asphereStateFrom,
   asphereView,
 } from "@/features/optimization/testing/parameterStateViews";
-import { AsphereVarModal } from "../AsphereVarModal";
+import { ParameterModeModal } from "../ParameterModeModal";
+import type { ParameterGroupState } from "@/features/optimization/lib/parameters/parameterStates";
+
+/** Renders the asphere group's modal with the props the asphere tests use. */
+function AsphereVarModal({
+  asphereState,
+  onSave,
+  ...props
+}: {
+  readonly isOpen: boolean;
+  readonly optimizationModel: OpticalModel | undefined;
+  readonly surfaceIndex: number | undefined;
+  readonly asphereState: ParameterGroupState<"aspherical"> | undefined;
+  readonly canUseBounds?: boolean;
+  readonly onSave: (
+    surfaceIndex: number,
+    state: ParameterGroupState<"aspherical">,
+  ) => void;
+  readonly onClose: () => void;
+}) {
+  return (
+    <ParameterModeModal
+      {...props}
+      group="aspherical"
+      state={asphereState}
+      onSave={(_group, surfaceIndex, state) =>
+        onSave(surfaceIndex, state as ParameterGroupState<"aspherical">)
+      }
+    />
+  );
+}
 import type {
   OpticalModel,
   Surface,

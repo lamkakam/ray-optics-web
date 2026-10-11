@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ModeSelectField } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/ModeSelectField/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields/PickupModeFields";
-import { BoundedVariableModeFields } from "@/features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/ParameterModeModal/fields/BoundedVariableModeFields/BoundedVariableModeFields";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 describe("OptimizationModeFields", () => {

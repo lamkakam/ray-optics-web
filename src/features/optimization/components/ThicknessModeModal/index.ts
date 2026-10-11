@@ -1,1 +1,0 @@
-export { ThicknessModeModal } from "./ThicknessModeModal";
