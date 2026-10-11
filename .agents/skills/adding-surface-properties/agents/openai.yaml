@@ -1,0 +1,4 @@
+interface:
+  display_name: "Adding Surface Properties"
+  short_description: "Add a surface property or variant end to end through the registries"
+  default_prompt: "Use $adding-surface-properties to add this surface property end to end."
