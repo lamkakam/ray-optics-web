@@ -10,7 +10,7 @@
  * - Edge aperture assignments are omitted when `edge_aperture` is unset, which represents the default/follow-clear behavior. Centered edge apertures use `Circular`; nonzero-offset edge apertures use `OffsetCircular`; rectangular edge apertures use `OffsetRotatedRectangular`.
  * - Exported `OffsetRotatedRectangular.set_dimension(x, y)` matches the worker helper: non-equal values directly set explicit half widths, while equal values are interpreted as RayOptics auto-aperture radius targets and uniformly scale the existing rectangle so the farthest rotated, offset corner reaches `abs(x)` without changing offsets or rotation.
  * - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
- * - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
+ * - Toroidal kinds additionally emit `rR=toricSweepRadiusOfCurvature` (the sweep radius; RayOptics' `cR` keyword is the sweep curvature).
  * - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
  * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`. Worker computations use the user-defined material table initialized by Pyodide; standalone exports initialize their table from the editable version-1.0 `custom-glass.json` path in the `userDefinedMaterials` export section.
  * - Wide-angle Object Angle, Object Height, and Image Height models use `ExactOpticalModel`. Object Height uses `ExactObjectHeightFieldSpec`, Image Height uses `ExactImageHeightFieldSpec`, and Object Angle retains `FieldSpec`. False or omitted flags use RayOptics `OpticalModel` and `FieldSpec`.
@@ -249,8 +249,8 @@ d263teco = create_glass(d263teco_url, "rindexinfo")`;
  * - If `aspherical.kind === "Conic"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...)`.
  * - If `aspherical.kind === "EvenAspherical"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=..., coefs=[...])`.
  * - If `aspherical.kind === "RadialPolynomial"`, emits `sm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=..., cc=..., coefs=[...])`.
- * - If `aspherical.kind === "XToroid"`, emits `sm.ifcs[sm.cur_surface].profile = XToroid(r=..., cc=..., cr=..., coefs=[...])`.
- * - If `aspherical.kind === "YToroid"`, emits `sm.ifcs[sm.cur_surface].profile = YToroid(r=..., cc=..., cr=..., coefs=[...])`.
+ * - If `aspherical.kind === "XToroid"`, emits `sm.ifcs[sm.cur_surface].profile = XToroid(r=..., cc=..., rR=..., coefs=[...])`.
+ * - If `aspherical.kind === "YToroid"`, emits `sm.ifcs[sm.cur_surface].profile = YToroid(r=..., cc=..., rR=..., coefs=[...])`.
  * - If `decenter` is set, emits `sm.ifcs[sm.cur_surface].decenter = DecenterData(...)`.
  * - If `diffractiveElement.diffractionGrating` is set, emits `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)`.
  * - If `label === "Stop"`, emits `sm.set_stop()`.

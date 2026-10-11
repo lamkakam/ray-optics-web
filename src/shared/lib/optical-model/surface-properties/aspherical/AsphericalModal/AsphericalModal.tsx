@@ -165,7 +165,7 @@ const contentMap: {
       <>
         <Paragraph>
           <MathJax>
-            {"\\(z = f(x) - \\frac{1}{2}\\textbf{cR}[y^{2}+z^{2}-f^{2}(x)]\\)"}
+            {"\\(z = f(x) - \\frac{1}{2\\textbf{R}}[y^{2}+z^{2}-f^{2}(x)]\\)"}
           </MathJax>
         </Paragraph>
         <Paragraph>
@@ -177,8 +177,8 @@ const contentMap: {
           </MathJax>
         </Paragraph>
         <Paragraph>
-          <MathJax inline>{"\\(\\textbf{cR}\\)"}</MathJax>
-          {" is the toric sweep radius of curvature, "}
+          <MathJax inline>{"\\(\\textbf{R}\\)"}</MathJax>
+          {" is the toric sweep radius of curvature (0 means a flat sweep), "}
           <MathJax inline>{"\\(\\textbf{cc}\\)"}</MathJax>
           {" is the conic constant, "}
           <MathJax inline>{"\\(c\\)"}</MathJax>
@@ -206,7 +206,7 @@ const contentMap: {
       <>
         <Paragraph>
           <MathJax>
-            {"\\(z = f(y) - \\frac{1}{2}\\textbf{cR}[x^{2}+z^{2}-f^{2}(y)]\\)"}
+            {"\\(z = f(y) - \\frac{1}{2\\textbf{R}}[x^{2}+z^{2}-f^{2}(y)]\\)"}
           </MathJax>
         </Paragraph>
         <Paragraph>
@@ -218,8 +218,8 @@ const contentMap: {
           </MathJax>
         </Paragraph>
         <Paragraph>
-          <MathJax inline>{"\\(\\textbf{cR}\\)"}</MathJax>
-          {" is the toric sweep radius of curvature, "}
+          <MathJax inline>{"\\(\\textbf{R}\\)"}</MathJax>
+          {" is the toric sweep radius of curvature (0 means a flat sweep), "}
           <MathJax inline>{"\\(\\textbf{cc}\\)"}</MathJax>
           {" is the conic constant, "}
           <MathJax inline>{"\\(c\\)"}</MathJax>

@@ -469,7 +469,7 @@ describe("buildOpticalModelScript", () => {
     };
     const script = buildOpticalModelScript(model);
     expect(script).toContain(
-      "sm.ifcs[sm.cur_surface].profile = XToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])",
+      "sm.ifcs[sm.cur_surface].profile = XToroid(r=23.713, cc=0.1, rR=40, coefs=[0,0.02])",
     );
   });
 
@@ -493,7 +493,7 @@ describe("buildOpticalModelScript", () => {
     };
     const script = buildOpticalModelScript(model);
     expect(script).toContain(
-      "sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])",
+      "sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, rR=40, coefs=[0,0.02])",
     );
   });
 

@@ -1,8 +1,9 @@
 """Read, write, snapshot, and transform mutable optimization targets.
 
-Public radius values are preserved while optimizer vectors use curvature. Snapshot
-entries retain full asphere and decenter descriptors so restoration can recover
-materialized targets safely.
+Public radius values are preserved while optimizer vectors use curvature. Toroid
+sweep targets read and write the sweep radius (RayOptics ``rR``), never the sweep
+curvature ``cR``. Snapshot entries retain full asphere and decenter descriptors so
+restoration can recover materialized targets safely.
 """
 
 from __future__ import annotations
@@ -161,10 +162,10 @@ def ensure_asphere_profile(opm: OpticalModel, entry: MutableTarget) -> None:
     elif asphere_kind == "RadialPolynomial":
         ifc.profile = RadialPolynomial(r=radius, cc=0.0, coefs=[])
     elif asphere_kind == "XToroid":
-        # RayOptics' ``cR=0`` default makes Pyright infer ``int`` for the radius.
-        ifc.profile = XToroid(r=radius, cc=0.0, cR=radius, coefs=[])  # pyright: ignore[reportArgumentType]
+        # ``rR`` is the toric sweep radius; RayOptics' ``cR`` keyword is its curvature.
+        ifc.profile = XToroid(r=radius, cc=0.0, rR=radius, coefs=[])
     else:
-        ifc.profile = YToroid(r=radius, cc=0.0, cR=radius, coefs=[])  # pyright: ignore[reportArgumentType]
+        ifc.profile = YToroid(r=radius, cc=0.0, rR=radius, coefs=[])
 
 
 def ensure_decenter_data(opm: OpticalModel, entry: MutableTarget, *, materialize: bool = True) -> DecenterData | None:
@@ -218,7 +219,7 @@ def read_target_value(opm: OpticalModel, entry: MutableTarget) -> float:
     if kind == "asphere_toric_sweep_radius":
         if not is_toroid(profile):
             raise ValueError("Toroid sweep radius target requires an XToroid or YToroid surface")
-        return float(profile.cR)
+        return float(profile.rR)
     raise ValueError(f"Unknown variable kind: {kind}")
 
 
@@ -256,6 +257,6 @@ def write_target_value(opm: OpticalModel, entry: MutableTarget, value: float) ->
     if kind == "asphere_toric_sweep_radius":
         if not is_toroid(profile):
             raise ValueError("Toroid sweep radius target requires an XToroid or YToroid surface")
-        profile.cR = float(value)
+        profile.rR = float(value)
         return
     raise ValueError(f"Unknown variable kind: {kind}")

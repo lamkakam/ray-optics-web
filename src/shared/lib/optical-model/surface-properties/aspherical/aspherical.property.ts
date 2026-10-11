@@ -65,8 +65,9 @@ function reverseAspherical(aspherical: AsphericalConfig): AsphericalConfig {
 }
 
 /**
- * Formats `<target>.profile = <Class>(r=<curvatureRadius>, cc=..., [cR=...,] [coefs=[...]])`;
- * `r` repeats the surface curvature radius.
+ * Formats `<target>.profile = <Class>(r=<curvatureRadius>, cc=..., [rR=...,] [coefs=[...]])`;
+ * `r` repeats the surface curvature radius. Toroids pass the sweep radius as
+ * RayOptics' `rR`; its `cR` keyword is the sweep curvature (`rR = 1/cR`).
  */
 function formatAsphereAssignment(
   targetExpr: string,
@@ -76,7 +77,7 @@ function formatAsphereAssignment(
   const profileClass = ASPHERE_VARIANTS[aspherical.kind].pythonClass;
   const toricSweep =
     aspherical.kind === "XToroid" || aspherical.kind === "YToroid"
-      ? `, cR=${aspherical.toricSweepRadiusOfCurvature}`
+      ? `, rR=${aspherical.toricSweepRadiusOfCurvature}`
       : "";
   const coefficients =
     aspherical.kind === "Conic"
