@@ -213,7 +213,7 @@ export function createOptimizationWebMcpTools(
     setOptimizationConfig: {
       name: "set_optimization_config",
       description:
-        "Replace the complete Optimization configuration using the worker-facing OptimizationRunConfig contract.",
+        "Replace the complete Optimization configuration using the worker-facing OptimizationRunConfig contract. Third-order aberration operands (third_order_* and primary_*_chromatic_aberration) evaluate the system sum when surface_index is omitted and one surface's contribution when it is supplied.",
       inputSchema: optimizationRunConfigSchema,
       annotations: { readOnlyHint: false, untrustedContentHint: false },
       execute: async (input, { signal }) => {
