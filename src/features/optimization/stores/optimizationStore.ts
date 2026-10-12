@@ -19,7 +19,7 @@
  * - For Differential Evolution, `tol` must be a positive non-zero number and `atol` must be a non-negative number.
  * - Operand `weight` must be a positive non-zero number.
  * - Range operands need at least one non-blank bound (a blank `min` / `max` means unbounded on that side) and `min <= max`; positive-bound kinds such as Edge Thickness also require every supplied bound to be a positive number. Range error messages are prefixed with the operand label, e.g. `Edge Thickness: Min must be a positive number.`
- * - Surface-scoped operands such as Edge Thickness require an integer `surfaceIndex` from `1` to the model's real surface count (object and image excluded): `Edge Thickness: Surface Index is required.` / `Edge Thickness: Surface Index must be an integer from 1 to N.`
+ * - Surface-only operands such as Edge Thickness require an integer `surfaceIndex` from `1` to the model's real surface count (object and image excluded): `Edge Thickness: Surface Index is required.` / `Edge Thickness: Surface Index must be an integer from 1 to N.` System-or-surface operands (the third-order aberrations) treat an undefined `surfaceIndex` as the System scope and validate a supplied one the same way, e.g. `3rd-Order Coma (W131): Surface Index must be an integer from 1 to N.`
  * - For bounded optimizers such as `trf`, `differential_evolution`, and `glass_expert`, variable `min` and `max` must be numeric, and `min < max`.
  * - For least-squares `lm`, the built config must provide at least as many non-zero-weight residual samples as optimization variables; otherwise `buildOptimizationConfig()` throws before the page tries to evaluate or optimize.
  * - For least-squares `lm` with at least one variable, `max_nfev` must be at least 2, because MINPACK always evaluates one trial step after the initial point; otherwise `buildOptimizationConfig()` throws before the worker is called.
@@ -45,12 +45,12 @@
  * - `syncFromOpticalModel()` resets radius, thickness, glass, and asphere variable/pickup modes to constants when the computational editor prescription changed with the default `"resetOptimizationModes"` policy. Surface comments are excluded from that fingerprint, so comment-only edits merge into any unapplied local optimized model without replacing its computational values, resetting modes, or clearing result state.
  * - `syncFromOpticalModel()` updates `optimizationModel` and the baseline without clearing prescription modes when the editor prescription changed with `"preserveOptimizationModes"`.
  * - Algorithm settings and operand rows are never reset by editor sync.
- * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight. Any kind change resets `target` to the new kind's default target and `min` / `max` to its default range, leaving them `undefined` when the new kind has none, and clears `surfaceIndex` unless the same patch supplies one, so a row switched to Edge Thickness starts with `min: "3"`, no `max`, and no surface index. A patch without a kind change may set or clear (`undefined`) `surfaceIndex`.
+ * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight. Any kind change resets `target` to the new kind's default target and `min` / `max` to its default range, leaving them `undefined` when the new kind has none, and clears `surfaceIndex` unless the same patch supplies one, so a row switched to Edge Thickness starts with `min: "3"`, no `max`, and no surface index, and a row switched to a third-order aberration kind starts with target `"0"` at the System scope. A patch without a kind change may set or clear (`undefined`) `surfaceIndex`.
  * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius, thickness, glass, asphere, and tilt/decenter modes by index so model-shape-compatible modes survive while new targets receive default constant modes.
  * - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
  * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, `differential_evolution`, and `glass_expert`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
  * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, target mode (`goal`) with its default target or default range, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
- * - `buildOptimizationConfig()` narrows each row by kind group: adjustable-target kinds emit a parsed `target`; fixed-target operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal` omit their implicit zero target; range kinds emit the non-blank `min` / `max` bounds and reject rows with no bound or `min > max`; surface-range kinds such as `edge_thickness` additionally emit their validated `surface_index` and, because they do not expand by field or wavelength, no `fields` / `wavelengths`. The exhaustive fallback fails compilation if a new target mode is added without a builder branch.
+ * - `buildOptimizationConfig()` narrows each row by kind group: adjustable-target kinds emit a parsed `target`; fixed-target operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal` omit their implicit zero target; range kinds emit the non-blank `min` / `max` bounds and reject rows with no bound or `min > max`; surface-range kinds such as `edge_thickness` additionally emit their validated `surface_index` and, because they do not expand by field or wavelength, no `fields` / `wavelengths`; system-or-surface adjustable-target kinds such as `third_order_coma` emit a validated `surface_index` only when the row selects a surface, and none at the System scope. The exhaustive fallback fails compilation if a new target mode is added without a builder branch.
  * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count after combinations with an exactly zero operand, field, or wavelength weight are excluded. `ray_fan` contributes `num_rays * 2` residuals per retained field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
  * - `setOptimizationConfig()` atomically adapts a strict worker config into the string-backed form state, normalizes shared field/wavelength vectors, preserves operand options, and leaves the page-local model, sync baseline, prior report, and unapplied-result marker untouched.
  * - `applyOptimizationResult()` writes every final value and then every pickup value through `applyParameterValue` (the owning constructional-parameter shape), which can create or update `surface.aspherical` and surface/Image `decenter` while preserving untouched tilt/decenter components; it then applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`.
@@ -111,6 +111,7 @@ import {
   isOptimizationFixedTargetOperandKind,
   isOptimizationRangeOperandKind,
   isOptimizationSurfaceRangeOperandKind,
+  isOptimizationSystemOrSurfaceOperandKind,
 } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import {
@@ -178,7 +179,7 @@ export interface OptimizationOperandRow {
   readonly min?: string;
   /** Inclusive upper bound text for range kinds; blank or absent means unbounded above. */
   readonly max?: string;
-  /** 1-based surface index (object and image excluded); set only for surface-scoped kinds. */
+  /** 1-based surface index (object and image excluded); used only by kinds accepting a surface, where `undefined` means the System scope for system-or-surface kinds and unset for surface-only kinds. */
   readonly surfaceIndex?: number;
   readonly weight: string;
   /** Optional public worker sampling settings, including non-default Ray Fan counts. */
@@ -435,8 +436,9 @@ function parseOperandRange(
 }
 
 /**
- * Validates a surface-scoped row's 1-based surface index against the model's
- * real surfaces (`1 … surfaceCount`; object and image excluded).
+ * Validates a row's 1-based surface index against the model's real surfaces
+ * (`1 … surfaceCount`; object and image excluded). Called for surface-only rows
+ * and for system-or-surface rows that select a surface.
  *
  * @throws If the index is missing, not an integer, or out of range.
  */
@@ -656,11 +658,23 @@ function buildMeritFunctionOperands(
           };
 
       if (isOptimizationAdjustableTargetOperandKind(kind)) {
-        return {
-          ...base,
-          kind,
-          target: parseFloatValue(operand.target ?? "", "Target"),
-        };
+        const target = parseFloatValue(operand.target ?? "", "Target");
+        if (
+          isOptimizationSystemOrSurfaceOperandKind(kind) &&
+          operand.surfaceIndex !== undefined
+        ) {
+          return {
+            ...base,
+            kind,
+            target,
+            surface_index: parseOperandSurfaceIndex(
+              operand.surfaceIndex,
+              metadata.label,
+              surfaceCount,
+            ),
+          };
+        }
+        return { ...base, kind, target };
       }
       if (isOptimizationFixedTargetOperandKind(kind)) {
         return { ...base, kind };

@@ -24,6 +24,13 @@ const edgeThicknessRow: OptimizationOperandRow = {
   weight: "1",
 };
 
+const thirdOrderRow: OptimizationOperandRow = {
+  id: "operand-3",
+  kind: "third_order_coma",
+  target: "0",
+  weight: "1",
+};
+
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
 }));
@@ -262,6 +269,7 @@ describe("OptimizationOperandsTab", () => {
     const cell = getCell(0, "Surface Index");
     expect(cell).toHaveTextContent("N/A");
     expect(cell.querySelector("input")).toBeNull();
+    expect(cell.querySelector("select")).toBeNull();
   });
 
   it("edits Edge Thickness bounds through two inputs in the Target cell", async () => {
@@ -353,7 +361,7 @@ describe("OptimizationOperandsTab", () => {
     expect(upper).toHaveValue("8");
   });
 
-  it("edits the Edge Thickness Surface Index within the real surfaces only", async () => {
+  it("edits the Edge Thickness Surface Index with a select of the real surfaces only", async () => {
     const user = userEvent.setup();
     const onUpdateOperand = jest.fn();
     render(
@@ -362,53 +370,99 @@ describe("OptimizationOperandsTab", () => {
         onAddOperand={jest.fn()}
         onDeleteOperand={jest.fn()}
         onUpdateOperand={onUpdateOperand}
+        surfaceCount={3}
+      />,
+    );
+
+    const select = screen.getByRole("combobox", { name: "Surface Index" });
+    expect(
+      Array.from(
+        (select as HTMLSelectElement).options,
+        (option) => option.textContent,
+      ),
+    ).toEqual(["1", "2", "3"]);
+    expect(select).toHaveValue("1");
+
+    await user.selectOptions(select, "3");
+    expect(onUpdateOperand).toHaveBeenLastCalledWith("operand-2", {
+      surfaceIndex: 3,
+    });
+  });
+
+  it("offers System and every real surface for a third-order operand, showing System when unset", async () => {
+    const user = userEvent.setup();
+    const onUpdateOperand = jest.fn();
+    const { rerender } = render(
+      <OptimizationOperandsTab
+        operands={[thirdOrderRow]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={onUpdateOperand}
         surfaceCount={2}
       />,
     );
 
-    const input = getCell(0, "Surface Index").querySelector(
-      "input",
-    ) as HTMLInputElement;
-    expect(input).toHaveValue("1");
+    const select = screen.getByRole("combobox", { name: "Surface Index" });
+    expect(
+      Array.from(
+        (select as HTMLSelectElement).options,
+        (option) => option.textContent,
+      ),
+    ).toEqual(["System", "1", "2"]);
+    expect(select).toHaveValue("System");
 
-    const commit = async (text: string) => {
-      await user.click(input);
-      await user.clear(input);
-      await user.type(input, `${text}{Enter}`);
-      await user.tab();
-    };
-
-    for (const rejected of ["3", "0", "1.5"]) {
-      await commit(rejected);
-    }
-    expect(onUpdateOperand).not.toHaveBeenCalled();
-
-    await commit("2");
-    expect(onUpdateOperand).toHaveBeenLastCalledWith("operand-2", {
+    await user.selectOptions(select, "2");
+    expect(onUpdateOperand).toHaveBeenLastCalledWith("operand-3", {
       surfaceIndex: 2,
     });
 
-    await commit("");
-    expect(onUpdateOperand).toHaveBeenLastCalledWith("operand-2", {
+    rerender(
+      <OptimizationOperandsTab
+        operands={[{ ...thirdOrderRow, surfaceIndex: 2 }]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={onUpdateOperand}
+        surfaceCount={2}
+      />,
+    );
+    const updated = screen.getByRole("combobox", { name: "Surface Index" });
+    expect(updated).toHaveValue("2");
+
+    await user.selectOptions(updated, "System");
+    expect(onUpdateOperand).toHaveBeenLastCalledWith("operand-3", {
       surfaceIndex: undefined,
     });
   });
 
-  it("configures AG Grid's number editor with the real surface range", () => {
+  it("lists the third-order operands right after Paraxial f/# in the Operand Kind selector", () => {
     render(
       <OptimizationOperandsTab
-        operands={[edgeThicknessRow]}
+        operands={[thirdOrderRow]}
         onAddOperand={jest.fn()}
         onDeleteOperand={jest.fn()}
         onUpdateOperand={jest.fn()}
-        surfaceCount={5}
+        surfaceCount={2}
       />,
     );
 
-    const header = screen.getByRole("columnheader", { name: "Surface Index" });
-    expect(header).toHaveAttribute("data-cell-editor", "agNumberCellEditor");
-    expect(
-      JSON.parse(header.getAttribute("data-cell-editor-params") ?? "{}"),
-    ).toEqual({ min: 1, max: 5, precision: 0, step: 1 });
+    const options = Array.from(
+      (
+        screen.getByRole("combobox", {
+          name: "Operand Kind",
+        }) as HTMLSelectElement
+      ).options,
+      (option) => option.textContent,
+    );
+    expect(options.slice(1, 10)).toEqual([
+      "Paraxial f/#",
+      "3rd-Order Spherical Aberr. (W040)",
+      "3rd-Order Coma (W131)",
+      "3rd-Order Astigmatism (W222)",
+      "3rd-Order Petzval Curvature (W220P)",
+      "3rd-Order Field Curvature (W220)",
+      "3rd-Order Distortion (W311)",
+      "Primary Axial Chromatic Aberr. (W020)",
+      "Primary Lateral Chromatic Aberr. (W111)",
+    ]);
   });
 });

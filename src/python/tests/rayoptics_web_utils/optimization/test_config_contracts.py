@@ -674,6 +674,77 @@ def test_edge_thickness_rejects_invalid_configs(operand, error, message):
     assert exc_info.value.args == (message,)
 
 
+THIRD_ORDER_OPERAND_KINDS = (
+    "third_order_spherical_aberration",
+    "third_order_coma",
+    "third_order_astigmatism",
+    "third_order_petzval_curvature",
+    "third_order_field_curvature",
+    "third_order_distortion",
+    "primary_axial_chromatic_aberration",
+    "primary_lateral_chromatic_aberration",
+)
+
+
+@pytest.mark.parametrize("kind", THIRD_ORDER_OPERAND_KINDS)
+@pytest.mark.parametrize("surface_fields", [{}, {"surface_index": 1}, {"surface_index": 2}])
+def test_third_order_operand_normalizes_to_one_unexpanded_system_or_surface_sample(kind, surface_fields):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    samples = normalize_operand_samples(
+        _FakeOpticalModel(),
+        {"kind": kind, "target": -0.5, "weight": 2.0, **surface_fields},
+    )
+
+    assert samples == [
+        {
+            "kind": kind,
+            "weight": 2.0,
+            "options": {},
+            "target": -0.5,
+            **surface_fields,
+            "field_index": None,
+            "field_weight": 1.0,
+            "wavelength_index": None,
+            "wavelength_weight": 1.0,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "operand, error, message",
+    [
+        ({"surface_index": 0}, IndexError, "Operand third_order_coma surface_index 0 is out of range"),
+        ({"surface_index": 3}, IndexError, "Operand third_order_coma surface_index 3 is out of range"),
+        ({"surface_index": None}, ValueError, "Operand third_order_coma requires an integer surface_index"),
+        ({"surface_index": True}, ValueError, "Operand third_order_coma requires an integer surface_index"),
+        ({"surface_index": 1.0}, ValueError, "Operand third_order_coma requires an integer surface_index"),
+    ],
+)
+def test_third_order_operand_validates_a_supplied_surface_index(operand, error, message):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(error) as exc_info:
+        normalize_operand_samples(_FakeOpticalModel(), {"kind": "third_order_coma", "target": 0.0, **operand})
+    assert exc_info.value.args == (message,)
+
+
+@pytest.mark.parametrize(
+    "operand, message",
+    [
+        ({}, "Operand third_order_distortion requires a finite target"),
+        ({"surface_index": 1}, "Operand third_order_distortion requires a finite target"),
+        ({"target": 0.0, "min": 1.0}, "Operand third_order_distortion does not accept range bounds"),
+    ],
+)
+def test_third_order_operand_requires_a_target_in_either_scope(operand, message):
+    from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+    with pytest.raises(ValueError) as exc_info:
+        normalize_operand_samples(_FakeOpticalModel(), {"kind": "third_order_distortion", **operand})
+    assert exc_info.value.args == (message,)
+
+
 def test_operand_default_field_and_wavelength_weights_are_one():
     from rayoptics_web_utils.optimization.config import normalize_operand_samples
 

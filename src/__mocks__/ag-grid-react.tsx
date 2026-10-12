@@ -2,7 +2,7 @@
  * Jest mock for AG Grid React.
  *
  * @remarks
- * - Renders grid data as an HTML table with headers, rows, text inputs for editable text cells, and native selects for `agSelectCellEditor`.
+ * - Renders grid data as an HTML table with headers, rows, text inputs for editable text cells, and native selects for `agSelectCellEditor`. A per-row `cellEditorSelector` result `{ component, params }` overrides the column's `cellEditor` and `cellEditorParams` for that row, so `{ component: "agSelectCellEditor", params: { values } }` renders a native select of those values.
  * - Renders `cellRenderer` for every row of its column, and `cellRendererSelector` per row: a returned `{ component, params }` renders that component with `{ data, value, ...params }`, while `undefined` falls back to the default editable or text cell.
  * - Text inputs for `agNumberCellEditor` columns commit like AG Grid's number editor: blank text becomes `null` and other text becomes `Number(text)` before `valueParser` / `valueSetter` run.
  * - Exposes theme, layout, default column, column width, effective per-header sortable/filter flags, unsorted sort-icon flags, per-header `cellEditor` and JSON `cellEditorParams`, `stopEditingWhenCellsLoseFocus`, `suppressTouch`, and edit lifecycle callback presence as `data-*` attributes for component tests.
@@ -22,6 +22,10 @@ interface ColDef {
   editable?: boolean | ((params: { data: Record<string, unknown> }) => boolean);
   cellEditor?: string;
   cellEditorParams?: { values?: unknown[] };
+  cellEditorSelector?: (params: {
+    data: Record<string, unknown>;
+    value: unknown;
+  }) => { component: string; params?: { values?: unknown[] } } | undefined;
   cellRenderer?: (params: {
     data: Record<string, unknown>;
     value: unknown;
@@ -241,6 +245,7 @@ function SelectCell({
   col,
   row,
   value,
+  values,
   headerName,
   onCellEditingStarted,
   onCellEditingStopped,
@@ -248,11 +253,11 @@ function SelectCell({
   col: ColDef;
   row: Record<string, unknown>;
   value: unknown;
+  values: ReadonlyArray<unknown>;
   headerName: string;
   onCellEditingStarted?: (event: unknown) => void;
   onCellEditingStopped?: (event: unknown) => void;
 }) {
-  const values = col.cellEditorParams?.values ?? [];
   const isEditingRef = useRef(false);
 
   const startEditing = () => {
@@ -634,7 +639,17 @@ export function AgGridReact({
                     ? col.editable({ data: row })
                     : col.editable === true;
 
-                const isSelectEditor = col.cellEditor === "agSelectCellEditor";
+                const selectedEditor = col.cellEditorSelector?.({
+                  data: row,
+                  value,
+                });
+                const editorParams =
+                  selectedEditor === undefined
+                    ? col.cellEditorParams
+                    : selectedEditor.params;
+                const isSelectEditor =
+                  (selectedEditor?.component ?? col.cellEditor) ===
+                  "agSelectCellEditor";
                 const selectedRenderer = col.cellRendererSelector?.({
                   data: row,
                   value,
@@ -656,6 +671,7 @@ export function AgGridReact({
                         col={col}
                         row={row}
                         value={value}
+                        values={editorParams?.values ?? []}
                         headerName={col.headerName ?? col.field ?? ""}
                         onCellEditingStarted={onCellEditingStarted}
                         onCellEditingStopped={onCellEditingStopped}

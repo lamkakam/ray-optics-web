@@ -11,11 +11,15 @@ import {
   getOptimizationOperandMetadata,
   isOptimizationAdjustableTargetOperandKind,
   isOptimizationSurfaceOperandKind,
+  isOptimizationSystemOrSurfaceOperandKind,
 } from "@/features/optimization/lib/operandMetadata";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { NumericRangeInput } from "@/shared/components/NumericRangeInput";
 import { Button } from "@/shared/components/primitives/Button";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
+
+/** Surface Index option and display value for the whole-system scope of system-or-surface operands. */
+const SYSTEM_SCOPE_OPTION = "System";
 
 type OperandRowUpdater = (
   id: string,
@@ -79,7 +83,7 @@ interface OptimizationOperandsTabProps {
  * - Keeps the content-sized Add Operand button above the grid. The grid wrapper uses `min-h-0 flex-1`, so it occupies the concrete remaining height after the button and gap, while the tab retains horizontal overflow and relies on parent layout padding instead of adding its own outer `p-4`.
  * - Uses AG Grid's normal layout so the grid owns vertical scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
  * - Applies `defaultColDef={{ sortable: false, suppressMovable: true }}` so users cannot reorder operand-table columns.
- * - Orders the columns Operand Kind, Target, Weight, Surface Index, and the delete/action column, with fixed AG Grid widths of `215`, `190`, `90`, `110`, and `90`.
+ * - Orders the columns Operand Kind, Target, Weight, Surface Index, and the delete/action column, with fixed AG Grid widths of `290`, `190`, `90`, `110`, and `90`.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending operand edits commit when editing stops.
  * - Accepts optional AG Grid cell edit lifecycle callbacks and forwards them to `EditableAgGridReact` so the page can disable Optimize while operand edits and their post-edit evaluation refreshes are pending.
  * - Provides AG Grid `getRowId` from each operand `id` so live Operand Evaluation rerenders and replacement row objects do not interrupt the active operand editor or discard uncommitted typed text.
@@ -87,7 +91,7 @@ interface OptimizationOperandsTabProps {
  * - Imports operand kind types from `features/optimization/types/optimizationWorkerTypes.ts`.
  * - Edits adjustable targets in the `Target` column with AG Grid's text editor, and shows `N/A` without editing for fixed-target operands such as combined and axis-specific Ray Fan operands (implicit zero target).
  * - For range operands in either scope (such as Edge Thickness), a `cellRendererSelector` renders the shared `NumericRangeInput` in the `Target` cell: two always-visible lower/upper bound inputs labelled `Lower bound for operand <id>` / `Upper bound for operand <id>` that send a `{ min }` or `{ max }` patch on every keystroke. A blank bound means unbounded on that side; non-positive bounds are flagged invalid when the kind's metadata sets `requiresPositiveBounds`. `suppressKeyboardEvent` keeps AG Grid navigation from capturing typing, Tab, or arrow keys in those inputs. The column is not editable for range rows, so these edits do not emit AG Grid cell-editing lifecycle callbacks; each keystroke commits to the store directly.
- * - The `Surface Index` column shows `N/A` and is not editable for system-scoped operands. For surface-scoped operands it uses AG Grid's `agNumberCellEditor` with `{ min: 1, max: surfaceCount, precision: 0, step: 1 }`, shows the row's 1-based `surfaceIndex` (empty when unset), and sends `{ surfaceIndex }` only for integers in `[1, surfaceCount]`; a cleared editor sends `{ surfaceIndex: undefined }`, and any other value is rejected without a patch. `cellDataType: false` stops AG Grid inferring a type from the mixed `N/A` / number values.
+ * - The `Surface Index` column shows `N/A` and is not editable for system-only operands. For operands that accept a surface it uses AG Grid's `agSelectCellEditor` through a per-row `cellEditorSelector`: surface-only operands (Edge Thickness) offer the real surfaces `1 … surfaceCount` and show the row's 1-based `surfaceIndex` (empty when unset); system-or-surface operands (the third-order aberrations) offer `System` followed by `1 … surfaceCount` and show `System` while `surfaceIndex` is unset. Choosing a surface sends `{ surfaceIndex }` only for integers in `[1, surfaceCount]`, choosing `System` sends `{ surfaceIndex: undefined }` for system-or-surface operands only, and any other value is rejected without a patch. `cellDataType: false` stops AG Grid inferring a type from the mixed `N/A` / `System` / number values.
  */
 export function OptimizationOperandsTab({
   operands,
@@ -104,7 +108,7 @@ export function OptimizationOperandsTab({
     () => [
       {
         headerName: "Operand Kind",
-        width: 215,
+        width: 290,
         editable: true,
         cellEditor: "agSelectCellEditor",
         cellEditorParams: {
@@ -180,15 +184,36 @@ export function OptimizationOperandsTab({
         editable: (params) =>
           params.data !== undefined &&
           isOptimizationSurfaceOperandKind(params.data.kind),
-        cellEditor: "agNumberCellEditor",
-        cellEditorParams: { min: 1, max: surfaceCount, precision: 0, step: 1 },
+        cellEditorSelector: (params) => {
+          const surfaceIndices = Array.from(
+            { length: surfaceCount },
+            (_, index) => index + 1,
+          );
+          return {
+            component: "agSelectCellEditor",
+            params: {
+              values:
+                params.data !== undefined &&
+                isOptimizationSystemOrSurfaceOperandKind(params.data.kind)
+                  ? [SYSTEM_SCOPE_OPTION, ...surfaceIndices]
+                  : surfaceIndices,
+            },
+          };
+        },
         valueGetter: (params) => {
           if (params.data === undefined) {
             return undefined;
           }
-          return isOptimizationSurfaceOperandKind(params.data.kind)
-            ? params.data.surfaceIndex
-            : "N/A";
+          if (!isOptimizationSurfaceOperandKind(params.data.kind)) {
+            return "N/A";
+          }
+          if (
+            params.data.surfaceIndex === undefined &&
+            isOptimizationSystemOrSurfaceOperandKind(params.data.kind)
+          ) {
+            return SYSTEM_SCOPE_OPTION;
+          }
+          return params.data.surfaceIndex;
         },
         valueSetter: (params) => {
           if (
@@ -199,11 +224,10 @@ export function OptimizationOperandsTab({
           }
 
           const { newValue } = params;
-          if (
-            newValue === null ||
-            newValue === undefined ||
-            String(newValue).trim() === ""
-          ) {
+          if (newValue === SYSTEM_SCOPE_OPTION) {
+            if (!isOptimizationSystemOrSurfaceOperandKind(params.data.kind)) {
+              return false;
+            }
             onUpdateOperand(params.data.id, { surfaceIndex: undefined });
             return true;
           }

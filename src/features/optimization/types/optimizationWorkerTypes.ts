@@ -32,10 +32,28 @@ export type GlassCatalogName =
   | "Sumita"
   | "Special"
   | "Custom";
-/** Operand kinds driven toward one user-supplied scalar `target`. */
+/**
+ * Third-order surface-by-surface wavefront coefficients in waves of the central
+ * wavelength (`W040`, `W131`, `W222`, `W220P`, `W220`, `W311`, `W020`, `W111`),
+ * computed from the paraxial Seidel and primary chromatic package rather than a
+ * real-ray wavefront. Each kind is in both the system and the surface
+ * adjustable-target groups: without `surface_index` it evaluates the system sum,
+ * with one it evaluates that surface's contribution.
+ */
+export type OptimizationThirdOrderAberrationOperandKind =
+  | "third_order_spherical_aberration"
+  | "third_order_coma"
+  | "third_order_astigmatism"
+  | "third_order_petzval_curvature"
+  | "third_order_field_curvature"
+  | "third_order_distortion"
+  | "primary_axial_chromatic_aberration"
+  | "primary_lateral_chromatic_aberration";
+/** System-scoped operand kinds driven toward one user-supplied scalar `target`. */
 export type OptimizationAdjustableTargetOperandKind =
   | "focal_length"
   | "f_number"
+  | OptimizationThirdOrderAberrationOperandKind
   | "opd_difference"
   | "opd_difference_tangential"
   | "opd_difference_sagittal"
@@ -58,9 +76,10 @@ export type OptimizationFixedTargetOperandKind =
 export type OptimizationRangeOperandKind = never;
 /**
  * Surface-scoped operand kinds driven toward a user-supplied `target` at one
- * `surface_index`. No kind uses this group yet.
+ * `surface_index`: the third-order aberration kinds, which are also system-scoped.
  */
-export type OptimizationSurfaceAdjustableTargetOperandKind = never;
+export type OptimizationSurfaceAdjustableTargetOperandKind =
+  OptimizationThirdOrderAberrationOperandKind;
 /**
  * Surface-scoped operand kinds driven toward an implicit zero target at one
  * `surface_index`. No kind uses this group yet.
@@ -74,19 +93,33 @@ export type OptimizationSurfaceFixedTargetOperandKind = never;
  */
 export type OptimizationSurfaceRangeOperandKind = "edge_thickness";
 /**
- * Operand kinds whose target or range applies to one optical surface. Surface
+ * Operand kinds whose target or range can apply to one optical surface. Surface
  * scope is orthogonal to the target mode: each group shares the goal semantics
  * of its system-scope counterpart and additionally requires `surface_index`.
+ * A kind may also belong to a system group (see `OptimizationSystemOrSurfaceOperandKind`).
  */
 export type OptimizationSurfaceOperandKind =
   | OptimizationSurfaceAdjustableTargetOperandKind
   | OptimizationSurfaceFixedTargetOperandKind
   | OptimizationSurfaceRangeOperandKind;
-/** Worker-supported merit operand discriminators. */
-export type OptimizationOperandKind =
+/** Operand kinds that evaluate the whole optical system (configs without `surface_index`). */
+export type OptimizationSystemOperandKind =
   | OptimizationAdjustableTargetOperandKind
   | OptimizationFixedTargetOperandKind
-  | OptimizationRangeOperandKind
+  | OptimizationRangeOperandKind;
+/**
+ * Operand kinds that accept both scopes because they are listed in a system group
+ * and in the surface group of the same target mode. A config omits `surface_index`
+ * for the system value and supplies one for a single surface's value, so it
+ * matches the system or the surface config variant of that mode.
+ */
+export type OptimizationSystemOrSurfaceOperandKind = Extract<
+  OptimizationSystemOperandKind,
+  OptimizationSurfaceOperandKind
+>;
+/** Worker-supported merit operand discriminators. */
+export type OptimizationOperandKind =
+  | OptimizationSystemOperandKind
   | OptimizationSurfaceOperandKind;
 
 /**

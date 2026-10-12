@@ -18,6 +18,8 @@ from rayoptics_web_utils._third_order_color_asphere_workaround import (
 if TYPE_CHECKING:
     from rayoptics.optical.opticalmodel import OpticalModel
 
+    from rayoptics_web_utils._finite_opd import FirstOrderDataModelView
+
 key_of_3rd_order_seidel_data = Literal["surfaceBySurface", "transverse", "wavefront", "curvature"]
 
 SEIDEL_TYPES = ["S-I", "S-II", "S-III", "S-IV", "S-V"]
@@ -101,6 +103,58 @@ def _to_surface_by_surface_payload(frame: pd.DataFrame) -> dict:
     }
 
 
+def _compute_merged_third_order(opm: OpticalModel) -> tuple[pd.DataFrame, FirstOrderDataModelView]:
+    """Return the merged third-order package and the paraxial model it came from.
+
+    Uses `corrected_parax_model_view`, so an NA-specified pupil uses the
+    paraxial axial ray whose NA equals the spec rather than RayOptics 0.9.10's
+    index-doubled one, and `compute_third_order_and_color_with_aspheres`, so
+    aspheric surfaces contribute their Seidel terms with zero colour terms.
+    RayOptics' separate `"<surface>.asp"` rows are added into their surface row.
+
+    Args:
+        opm: RayOptics optical model.
+
+    Returns:
+        The package with one row per surface (`"1"`..`"n"`) plus `"sum"` and
+        columns `S-I`..`S-V`, `C-I` and `C-II`, and the paraxial model view.
+    """
+    # WORKAROUND(rayoptics 0.9.10 NA bug): use `opm` and its cached `fod`
+    # directly again once
+    # tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py fails.
+    paraxial_model = corrected_parax_model_view(opm)
+    # WORKAROUND(rayoptics 0.9.10 third-order colour asphere bug): call
+    # `compute_third_order_and_color` directly again once
+    # tests/rayoptics_web_utils/test_rayoptics_third_order_color_bugs.py::test_aspheric_surface_raises_length_mismatch fails.
+    to_pkg = _merge_aspheric_rows(compute_third_order_and_color_with_aspheres(paraxial_model))
+    return to_pkg, paraxial_model
+
+
+def _central_wavelength(opm: OpticalModel) -> float:
+    """Return the central wavelength of `opm` in system length units."""
+    return opm.nm_to_sys_units(opm["optical_spec"]["wvls"].central_wvl)
+
+
+def get_surface_by_surface_wavefront(opm: OpticalModel) -> pd.DataFrame:
+    """Return third-order surface-by-surface wavefront coefficients in waves.
+
+    The frame is `seidel_to_surface_by_surface_wavefront` applied to the
+    merged third-order package of `_compute_merged_third_order`, so it equals
+    the `wavefront` payload of `get_3rd_order_seidel_data`. Rows are the
+    1-based real surfaces as strings (`"1"`..`"n"`) and then `"sum"`;
+    columns are `W040`, `W131`, `W222`, `W220P`, `W220`, `W311`, `W020` and
+    `W111`, in waves of the central wavelength.
+
+    Args:
+        opm: RayOptics optical model.
+
+    Returns:
+        Wavefront coefficients with one row per surface plus `"sum"`.
+    """
+    to_pkg, _ = _compute_merged_third_order(opm)
+    return seidel_to_surface_by_surface_wavefront(to_pkg, _central_wavelength(opm))
+
+
 def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel_data, dict]:
     """Return third-order Seidel and primary colour data from an `OpticalModel`.
 
@@ -125,11 +179,9 @@ def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel
     curvature use only the `"sum"` row's `S-I`..`S-V`. All returned dict/list
     values are JSON serialisable.
 
-    Coefficients and aggregates use `corrected_parax_model_view`, so an
-    NA-specified pupil uses the paraxial axial ray whose NA equals the spec
-    rather than RayOptics 0.9.10's index-doubled one. Aspheric surfaces use
-    `compute_third_order_and_color_with_aspheres`, so their aspheric Seidel
-    terms are included with zero colour terms.
+    Coefficients and aggregates come from `_compute_merged_third_order`, so an
+    NA-specified pupil uses the paraxial axial ray whose NA equals the spec and
+    aspheric surfaces include their aspheric Seidel terms with zero colour terms.
 
     Args:
         opm: RayOptics optical model.
@@ -137,23 +189,16 @@ def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel
     Returns:
         Third-order Seidel and primary colour data from a RayOptics `OpticalModel`.
     """
-    # WORKAROUND(rayoptics 0.9.10 NA bug): use `opm` and its cached `fod`
-    # directly again once
-    # tests/rayoptics_web_utils/test_rayoptics_paraxial_na_bug.py fails.
-    paraxial_model = corrected_parax_model_view(opm)
-    # WORKAROUND(rayoptics 0.9.10 third-order colour asphere bug): call
-    # `compute_third_order_and_color` directly again once
-    # tests/rayoptics_web_utils/test_rayoptics_third_order_color_bugs.py::test_aspheric_surface_raises_length_mismatch fails.
-    to_pkg = _merge_aspheric_rows(compute_third_order_and_color_with_aspheres(paraxial_model))
+    to_pkg, paraxial_model = _compute_merged_third_order(opm)
     fod = paraxial_model["analysis_results"]["parax_data"].fod
-    wvls = opm["optical_spec"]["wvls"]
-    central_wvl = opm.nm_to_sys_units(wvls.central_wvl)
     seidel_sum = to_pkg.loc["sum"][SEIDEL_TYPES]
     transverse = seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na)
     curvature = seidel_to_field_curv(seidel_sum, fod.n_img, fod.opt_inv)
     return {
         "surfaceBySurface": _to_surface_by_surface_payload(to_pkg),
         "transverse": transverse.to_dict(),
-        "wavefront": _to_surface_by_surface_payload(seidel_to_surface_by_surface_wavefront(to_pkg, central_wvl)),
+        "wavefront": _to_surface_by_surface_payload(
+            seidel_to_surface_by_surface_wavefront(to_pkg, _central_wavelength(opm))
+        ),
         "curvature": curvature.to_dict(),
     }
