@@ -10,6 +10,7 @@
  * - Blurs the active mocked grid editor when `columnDefs` identity changes, matching AG Grid editor recreation closely enough for tests to catch focus-loss regressions caused by prop churn.
  * - Models pending text edits with a single-commit lifecycle: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter commits and stops editing, or an active input blur commits when `stopEditingWhenCellsLoseFocus` is `true` and then stops editing; a later blur of an already-finished editor is ignored.
  * - Select editors emit edit-start on focus, commit and emit edit-stop on change, and also emit edit-stop on blur when still editing.
+ * - Select option labels follow AG Grid's `agSelectCellEditor`: the column `valueFormatter` result, falling back to the raw option value. A truthy non-string label (such as a bare number without a formatter) throws `TypeError("children is not iterable")` as real AG Grid does.
  * - Idle text editors synchronize their displayed value during the backing-row render, avoiding a follow-up passive-effect update after a value setter refreshes row data.
  */
 import type React from "react";
@@ -241,6 +242,20 @@ function EditableCell({
   );
 }
 
+/**
+ * Returns a select-editor option label the way AG Grid's `agSelectCellEditor` does: the column `valueFormatter` result, or the raw option value when there is no formatter or it returns `null` / `undefined`.
+ *
+ * @remarks
+ * - Throws `TypeError("children is not iterable")` for a truthy non-string label, matching AG Grid's list item, which iterates any non-string label as element children.
+ */
+function getSelectOptionLabel(col: ColDef, value: unknown): string {
+  const label = col.valueFormatter?.({ value }) ?? value;
+  if (label && typeof label !== "string") {
+    throw new TypeError("children is not iterable");
+  }
+  return String(label ?? "");
+}
+
 function SelectCell({
   col,
   row,
@@ -295,7 +310,7 @@ function SelectCell({
     >
       {values.map((v) => (
         <option key={String(v)} value={String(v)}>
-          {col.valueFormatter ? col.valueFormatter({ value: v }) : String(v)}
+          {getSelectOptionLabel(col, v)}
         </option>
       ))}
     </select>

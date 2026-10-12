@@ -91,7 +91,7 @@ interface OptimizationOperandsTabProps {
  * - Imports operand kind types from `features/optimization/types/optimizationWorkerTypes.ts`.
  * - Edits adjustable targets in the `Target` column with AG Grid's text editor, and shows `N/A` without editing for fixed-target operands such as combined and axis-specific Ray Fan operands (implicit zero target).
  * - For range operands in either scope (such as Edge Thickness), a `cellRendererSelector` renders the shared `NumericRangeInput` in the `Target` cell: two always-visible lower/upper bound inputs labelled `Lower bound for operand <id>` / `Upper bound for operand <id>` that send a `{ min }` or `{ max }` patch on every keystroke. A blank bound means unbounded on that side; non-positive bounds are flagged invalid when the kind's metadata sets `requiresPositiveBounds`. `suppressKeyboardEvent` keeps AG Grid navigation from capturing typing, Tab, or arrow keys in those inputs. The column is not editable for range rows, so these edits do not emit AG Grid cell-editing lifecycle callbacks; each keystroke commits to the store directly.
- * - The `Surface Index` column shows `N/A` and is not editable for system-only operands. For operands that accept a surface it uses AG Grid's `agSelectCellEditor` through a per-row `cellEditorSelector`: surface-only operands (Edge Thickness) offer the real surfaces `1 … surfaceCount` and show the row's 1-based `surfaceIndex` (empty when unset); system-or-surface operands (the third-order aberrations) offer `System` followed by `1 … surfaceCount` and show `System` while `surfaceIndex` is unset. Choosing a surface sends `{ surfaceIndex }` only for integers in `[1, surfaceCount]`, choosing `System` sends `{ surfaceIndex: undefined }` for system-or-surface operands only, and any other value is rejected without a patch. `cellDataType: false` stops AG Grid inferring a type from the mixed `N/A` / `System` / number values.
+ * - The `Surface Index` column shows `N/A` and is not editable for system-only operands. For operands that accept a surface it uses AG Grid's `agSelectCellEditor` through a per-row `cellEditorSelector`: surface-only operands (Edge Thickness) offer the real surfaces `1 … surfaceCount` and show the row's 1-based `surfaceIndex` (empty when unset); system-or-surface operands (the third-order aberrations) offer `System` followed by `1 … surfaceCount` and show `System` while `surfaceIndex` is unset. Choosing a surface sends `{ surfaceIndex }` only for integers in `[1, surfaceCount]`, choosing `System` sends `{ surfaceIndex: undefined }` for system-or-surface operands only, and any other value is rejected without a patch. `cellDataType: false` stops AG Grid inferring a type from the mixed `N/A` / `System` / number values. A `valueFormatter` renders every value, including the numeric surface options in the select list, as a string; AG Grid's select editor otherwise uses each raw option value as its label and throws `children is not iterable` for numbers. The options themselves stay numbers so the editor still preselects the row's numeric `surfaceIndex` by strict equality.
  */
 export function OptimizationOperandsTab({
   operands,
@@ -215,6 +215,10 @@ export function OptimizationOperandsTab({
           }
           return params.data.surfaceIndex;
         },
+        valueFormatter: (params) =>
+          params.value === undefined || params.value === null
+            ? ""
+            : String(params.value),
         valueSetter: (params) => {
           if (
             params.data === undefined ||
