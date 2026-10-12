@@ -2,7 +2,7 @@
  * Jest mock for AG Grid React.
  *
  * @remarks
- * - Renders grid data as an HTML table with headers, rows, text inputs for editable text cells, and native selects for `agSelectCellEditor`.
+ * - Renders grid data as an HTML table with headers, rows, text inputs for editable text cells, and native selects for `agSelectCellEditor`. A per-row `cellEditorSelector` result `{ component, params }` overrides the column's `cellEditor` and `cellEditorParams` for that row, so `{ component: "agSelectCellEditor", params: { values } }` renders a native select of those values.
  * - Renders `cellRenderer` for every row of its column, and `cellRendererSelector` per row: a returned `{ component, params }` renders that component with `{ data, value, ...params }`, while `undefined` falls back to the default editable or text cell.
  * - Text inputs for `agNumberCellEditor` columns commit like AG Grid's number editor: blank text becomes `null` and other text becomes `Number(text)` before `valueParser` / `valueSetter` run.
  * - Exposes theme, layout, default column, column width, effective per-header sortable/filter flags, unsorted sort-icon flags, per-header `cellEditor` and JSON `cellEditorParams`, `stopEditingWhenCellsLoseFocus`, `suppressTouch`, and edit lifecycle callback presence as `data-*` attributes for component tests.
@@ -10,6 +10,7 @@
  * - Blurs the active mocked grid editor when `columnDefs` identity changes, matching AG Grid editor recreation closely enough for tests to catch focus-loss regressions caused by prop churn.
  * - Models pending text edits with a single-commit lifecycle: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter commits and stops editing, or an active input blur commits when `stopEditingWhenCellsLoseFocus` is `true` and then stops editing; a later blur of an already-finished editor is ignored.
  * - Select editors emit edit-start on focus, commit and emit edit-stop on change, and also emit edit-stop on blur when still editing.
+ * - Select option labels follow AG Grid's `agSelectCellEditor`: the column `valueFormatter` result, falling back to the raw option value. A truthy non-string label (such as a bare number without a formatter) throws `TypeError("children is not iterable")` as real AG Grid does.
  * - Idle text editors synchronize their displayed value during the backing-row render, avoiding a follow-up passive-effect update after a value setter refreshes row data.
  */
 import type React from "react";
@@ -22,6 +23,10 @@ interface ColDef {
   editable?: boolean | ((params: { data: Record<string, unknown> }) => boolean);
   cellEditor?: string;
   cellEditorParams?: { values?: unknown[] };
+  cellEditorSelector?: (params: {
+    data: Record<string, unknown>;
+    value: unknown;
+  }) => { component: string; params?: { values?: unknown[] } } | undefined;
   cellRenderer?: (params: {
     data: Record<string, unknown>;
     value: unknown;
@@ -237,10 +242,25 @@ function EditableCell({
   );
 }
 
+/**
+ * Returns a select-editor option label the way AG Grid's `agSelectCellEditor` does: the column `valueFormatter` result, or the raw option value when there is no formatter or it returns `null` / `undefined`.
+ *
+ * @remarks
+ * - Throws `TypeError("children is not iterable")` for a truthy non-string label, matching AG Grid's list item, which iterates any non-string label as element children.
+ */
+function getSelectOptionLabel(col: ColDef, value: unknown): string {
+  const label = col.valueFormatter?.({ value }) ?? value;
+  if (label && typeof label !== "string") {
+    throw new TypeError("children is not iterable");
+  }
+  return String(label ?? "");
+}
+
 function SelectCell({
   col,
   row,
   value,
+  values,
   headerName,
   onCellEditingStarted,
   onCellEditingStopped,
@@ -248,11 +268,11 @@ function SelectCell({
   col: ColDef;
   row: Record<string, unknown>;
   value: unknown;
+  values: ReadonlyArray<unknown>;
   headerName: string;
   onCellEditingStarted?: (event: unknown) => void;
   onCellEditingStopped?: (event: unknown) => void;
 }) {
-  const values = col.cellEditorParams?.values ?? [];
   const isEditingRef = useRef(false);
 
   const startEditing = () => {
@@ -290,7 +310,7 @@ function SelectCell({
     >
       {values.map((v) => (
         <option key={String(v)} value={String(v)}>
-          {col.valueFormatter ? col.valueFormatter({ value: v }) : String(v)}
+          {getSelectOptionLabel(col, v)}
         </option>
       ))}
     </select>
@@ -634,7 +654,17 @@ export function AgGridReact({
                     ? col.editable({ data: row })
                     : col.editable === true;
 
-                const isSelectEditor = col.cellEditor === "agSelectCellEditor";
+                const selectedEditor = col.cellEditorSelector?.({
+                  data: row,
+                  value,
+                });
+                const editorParams =
+                  selectedEditor === undefined
+                    ? col.cellEditorParams
+                    : selectedEditor.params;
+                const isSelectEditor =
+                  (selectedEditor?.component ?? col.cellEditor) ===
+                  "agSelectCellEditor";
                 const selectedRenderer = col.cellRendererSelector?.({
                   data: row,
                   value,
@@ -656,6 +686,7 @@ export function AgGridReact({
                         col={col}
                         row={row}
                         value={value}
+                        values={editorParams?.values ?? []}
                         headerName={col.headerName ?? col.field ?? ""}
                         onCellEditingStarted={onCellEditingStarted}
                         onCellEditingStopped={onCellEditingStopped}

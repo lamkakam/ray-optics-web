@@ -11,7 +11,9 @@ numeric solver statuses, and ordinary Python ``"error"`` reports. Operand config
 normalized samples, and residual entries are discriminated by kind into
 adjustable-target, fixed-target, and range modes, each in a system scope and a
 surface scope; surface-scoped operands additionally carry a 1-based
-``surface_index`` that excludes the object and image surfaces. Operand evaluators may return scalars or residual
+``surface_index`` that excludes the object and image surfaces. A kind listed in
+both scopes, such as the third-order aberration kinds, is a system operand
+without ``surface_index`` and a surface operand with one. Operand evaluators may return scalars or residual
 vectors and receive the image-point convention explicitly; surface evaluators also
 receive the surface index. Snapshot entries retain the complete parameter descriptor so rollback
 preserves asphere kinds and tilt/decenter coordinate strategies.
@@ -54,22 +56,40 @@ type ParameterKey = BaseParameterKey | PolynomialParameterKey
 type OptimizationStatus = int | Literal["evaluated", "optimized", "no_variables", "stopped", "error"]
 
 
-type AdjustableTargetOperandKind = Literal[
-    "focal_length",
-    "f_number",
-    "opd_difference",
-    "opd_difference_tangential",
-    "opd_difference_sagittal",
-    "rms_spot_size",
-    "rms_wavefront_error",
+type ThirdOrderAberrationOperandKind = Literal[
+    "third_order_spherical_aberration",
+    "third_order_coma",
+    "third_order_astigmatism",
+    "third_order_petzval_curvature",
+    "third_order_field_curvature",
+    "third_order_distortion",
+    "primary_axial_chromatic_aberration",
+    "primary_lateral_chromatic_aberration",
 ]
-"""Operand kinds driven toward one user-supplied scalar ``target``."""
+"""Third-order surface-by-surface wavefront coefficients in central waves (``W040``, ``W131``, ``W222``, ``W220P``, ``W220``, ``W311``, ``W020``, ``W111``).
+
+Each kind is in both the system and the surface adjustable-target groups: without
+``surface_index`` it reads the system ``"sum"`` row, with one it reads that surface's row.
+"""
+type AdjustableTargetOperandKind = (
+    Literal[
+        "focal_length",
+        "f_number",
+        "opd_difference",
+        "opd_difference_tangential",
+        "opd_difference_sagittal",
+        "rms_spot_size",
+        "rms_wavefront_error",
+    ]
+    | ThirdOrderAberrationOperandKind
+)
+"""System-scoped operand kinds driven toward one user-supplied scalar ``target``."""
 type FixedTargetOperandKind = Literal["ray_fan", "ray_fan_tangential", "ray_fan_sagittal"]
 """Operand kinds with an implicit, non-configurable zero target; their (possibly vector) values are driven toward zero and configs carry no ``target``."""
 type RangeOperandKind = Never
 """Operand kinds bounded by ``min``/``max``; reserved, no kind uses range mode yet."""
-type SurfaceAdjustableTargetOperandKind = Never
-"""Surface-scoped kinds driven toward a user-supplied ``target`` at one ``surface_index``; reserved, no kind uses it yet."""
+type SurfaceAdjustableTargetOperandKind = ThirdOrderAberrationOperandKind
+"""Surface-scoped kinds driven toward a user-supplied ``target`` at one ``surface_index``."""
 type SurfaceFixedTargetOperandKind = Never
 """Surface-scoped kinds driven toward an implicit zero target at one ``surface_index``; reserved, no kind uses it yet."""
 type SurfaceRangeOperandKind = Literal["edge_thickness"]
@@ -79,8 +99,12 @@ type SurfaceOperandKind = SurfaceAdjustableTargetOperandKind | SurfaceFixedTarge
 type OperandKind = AdjustableTargetOperandKind | FixedTargetOperandKind | RangeOperandKind | SurfaceOperandKind
 type OperandGoal = Literal["adjustable_target", "fixed_target", "range"]
 """Target mode shared by every operand of one kind group."""
-type OperandScope = Literal["system", "surface"]
-"""Whether an operand kind evaluates the whole system or one 1-based ``surface_index``.
+type OperandScope = Literal["system", "surface", "system_or_surface"]
+"""Whether an operand kind evaluates the whole system, one 1-based ``surface_index``, or either.
+
+A ``"system_or_surface"`` kind is listed in both a system group and the surface
+group of the same target mode; its config omits ``surface_index`` for the system
+value and supplies one for a single surface's value.
 
 Surface indices match the GUI and ``seq_model.ifcs``: ``1`` is the first real
 surface, and the object (``0``) and image (last) surfaces are excluded.

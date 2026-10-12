@@ -3410,6 +3410,40 @@ class TestOptimizationProgressBudget:
         assert report["optimization_progress"] == []
 
 
+class TestThirdOrderOperands:
+    def test_evaluation_reports_system_and_surface_residuals(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.analysis import get_surface_by_surface_wavefront
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {"kind": "third_order_coma", "target": 0.5, "weight": 2.0},
+                        {"kind": "third_order_coma", "target": 0.0, "surface_index": 3, "weight": 1.0},
+                    ]
+                },
+            },
+        )
+
+        residuals = problem.evaluate()["residuals"]
+        frame = get_surface_by_surface_wavefront(fresh_cooke_triplet)
+
+        assert [residual["kind"] for residual in residuals] == ["third_order_coma", "third_order_coma"]
+        assert "surface_index" not in residuals[0]
+        assert residuals[1]["surface_index"] == 3
+        assert [residual["field_index"] for residual in residuals] == [None, None]
+        assert [residual["wavelength_index"] for residual in residuals] == [None, None]
+        assert residuals[0]["value"] == pytest.approx(frame.loc["sum", "W131"])
+        assert residuals[0]["weighted_residual"] == pytest.approx(2.0 * (frame.loc["sum", "W131"] - 0.5))
+        assert residuals[1]["value"] == pytest.approx(frame.loc["3", "W131"])
+        assert residuals[1]["weighted_residual"] == pytest.approx(frame.loc["3", "W131"])
+
+
 class TestEdgeThicknessOperand:
     def test_evaluation_reports_one_surface_scoped_range_residual(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization.operands import compute_edge_thickness

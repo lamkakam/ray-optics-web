@@ -1329,19 +1329,10 @@ describe("OptimizationPage", () => {
 
     const lowerBound = screen.getByRole("textbox", { name: /^Lower bound/ });
     expect(lowerBound).toHaveValue("3");
-    const surfaceIndexInput = screen
-      .getAllByRole("textbox")
-      .find(
-        (input) =>
-          input.closest("td")?.cellIndex ===
-          Array.from(
-            screen.getByTestId("ag-grid-mock").querySelectorAll("th"),
-            (header) => header.textContent,
-          ).indexOf("Surface Index"),
-      ) as HTMLElement;
-    await user.click(surfaceIndexInput);
-    await user.type(surfaceIndexInput, "1{Enter}");
-    await user.tab();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Surface Index" }),
+      "1",
+    );
 
     await waitFor(() =>
       expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2),

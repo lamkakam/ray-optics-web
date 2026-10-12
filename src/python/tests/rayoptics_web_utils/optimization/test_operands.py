@@ -10,6 +10,17 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+THIRD_ORDER_WAVEFRONT_COLUMNS = {
+    "third_order_spherical_aberration": "W040",
+    "third_order_coma": "W131",
+    "third_order_astigmatism": "W222",
+    "third_order_petzval_curvature": "W220P",
+    "third_order_field_curvature": "W220",
+    "third_order_distortion": "W311",
+    "primary_axial_chromatic_aberration": "W020",
+    "primary_lateral_chromatic_aberration": "W111",
+}
+
 
 def test_operand_ray_counts_and_nominal_residual_dimensions_cover_scalar_and_fans():
     from rayoptics_web_utils.optimization.operands import (
@@ -48,6 +59,7 @@ def test_operand_registry_is_partitioned_by_target_mode():
         "opd_difference_sagittal",
         "rms_spot_size",
         "rms_wavefront_error",
+        *THIRD_ORDER_WAVEFRONT_COLUMNS,
     }
     assert FIXED_TARGET_OPERAND_KINDS == {"ray_fan", "ray_fan_tangential", "ray_fan_sagittal"}
     assert RANGE_OPERAND_KINDS == frozenset()
@@ -93,7 +105,7 @@ def test_operand_goal_residual_follows_the_sample_target_mode(monkeypatch, sampl
     assert operands_module.operand_goal_residual(sample, actual) == pytest.approx(expected)
 
 
-def test_surface_operand_groups_register_edge_thickness_as_the_only_surface_kind():
+def test_surface_operand_groups_register_edge_thickness_and_the_third_order_kinds():
     from rayoptics_web_utils.optimization.operands import (
         OPERAND_REGISTRY,
         POSITIVE_RANGE_OPERAND_KINDS,
@@ -106,14 +118,93 @@ def test_surface_operand_groups_register_edge_thickness_as_the_only_surface_kind
         operand_scope,
     )
 
-    assert SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS == frozenset()
+    assert SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS == set(THIRD_ORDER_WAVEFRONT_COLUMNS)
     assert SURFACE_FIXED_TARGET_OPERAND_KINDS == frozenset()
     assert SURFACE_RANGE_OPERAND_KINDS == {"edge_thickness"}
-    assert SURFACE_OPERAND_REGISTRY == {"edge_thickness": compute_edge_thickness}
+    assert set(SURFACE_OPERAND_REGISTRY) == {"edge_thickness", *THIRD_ORDER_WAVEFRONT_COLUMNS}
+    assert SURFACE_OPERAND_REGISTRY["edge_thickness"] is compute_edge_thickness
     assert POSITIVE_RANGE_OPERAND_KINDS == {"edge_thickness"}
     assert operand_goal("edge_thickness") == "range"
     assert operand_scope("edge_thickness") == "surface"
-    assert {operand_scope(kind) for kind in OPERAND_REGISTRY} == {"system"}
+    assert {operand_scope(kind) for kind in THIRD_ORDER_WAVEFRONT_COLUMNS} == {"system_or_surface"}
+    assert {operand_goal(kind) for kind in THIRD_ORDER_WAVEFRONT_COLUMNS} == {"adjustable_target"}
+    assert {operand_scope(kind) for kind in set(OPERAND_REGISTRY) - set(THIRD_ORDER_WAVEFRONT_COLUMNS)} == {"system"}
+
+
+def test_third_order_kinds_are_unexpanded_and_map_to_wavefront_columns():
+    from rayoptics_web_utils.optimization.operands import (
+        THIRD_ORDER_WAVEFRONT_COLUMNS as columns,
+        UNEXPANDED_OPERAND_KINDS,
+    )
+
+    assert columns == THIRD_ORDER_WAVEFRONT_COLUMNS
+    assert UNEXPANDED_OPERAND_KINDS >= set(THIRD_ORDER_WAVEFRONT_COLUMNS)
+
+
+@pytest.mark.parametrize("asphere", [False, True])
+@pytest.mark.parametrize(("kind", "column"), THIRD_ORDER_WAVEFRONT_COLUMNS.items())
+def test_third_order_operands_read_the_system_sum_or_one_surface_row(make_cooke_triplet, asphere, kind, column):
+    from rayoptics_web_utils.analysis import get_surface_by_surface_wavefront
+    from rayoptics_web_utils.optimization.operands import OPERAND_REGISTRY, SURFACE_OPERAND_REGISTRY
+
+    opm = make_cooke_triplet(asphere=asphere)
+    frame = get_surface_by_surface_wavefront(opm)
+
+    assert OPERAND_REGISTRY[kind](opm, None, None, None, "chief_ray") == pytest.approx(frame.loc["sum", column])
+    for surface_index in (1, 4, 6):
+        assert SURFACE_OPERAND_REGISTRY[kind](opm, surface_index, None, None, None, "chief_ray") == pytest.approx(
+            frame.loc[str(surface_index), column]
+        )
+
+
+def test_third_order_surface_operand_includes_the_merged_aspheric_contribution(make_cooke_triplet):
+    from rayoptics_web_utils.optimization.operands import SURFACE_OPERAND_REGISTRY
+
+    spherical = SURFACE_OPERAND_REGISTRY["third_order_spherical_aberration"]
+
+    assert spherical(make_cooke_triplet(asphere=True), 1, None, None, None, "chief_ray") != pytest.approx(
+        spherical(make_cooke_triplet(), 1, None, None, None, "chief_ray")
+    )
+
+
+@pytest.mark.parametrize(
+    ("surface_fields", "expected_registry"),
+    [({}, "system"), ({"surface_index": 3}, "surface")],
+)
+def test_evaluate_operand_sample_dispatches_system_or_surface_kinds_by_surface_index(
+    monkeypatch, surface_fields, expected_registry
+):
+    import rayoptics_web_utils.optimization.operands as operands_module
+
+    calls = []
+    opm = object()
+    monkeypatch.setitem(
+        operands_module.OPERAND_REGISTRY, "third_order_coma", lambda *args: calls.append(("system", args)) or 1.0
+    )
+    monkeypatch.setitem(
+        operands_module.SURFACE_OPERAND_REGISTRY,
+        "third_order_coma",
+        lambda *args: calls.append(("surface", args)) or 2.0,
+    )
+
+    operands_module.evaluate_operand_sample(
+        opm,
+        {
+            "kind": "third_order_coma",
+            "target": 0.0,
+            **surface_fields,
+            "weight": 1.0,
+            "field_index": None,
+            "field_weight": 1.0,
+            "wavelength_index": None,
+            "wavelength_weight": 1.0,
+            "options": {},
+        },
+        "chief_ray",
+    )
+
+    expected_args = (opm, *surface_fields.values(), None, None, {}, "chief_ray")
+    assert calls == [(expected_registry, expected_args)]
 
 
 @pytest.fixture

@@ -359,6 +359,73 @@ describe("optimization WebMCP tools", () => {
     });
   });
 
+  it("accepts third-order aberration operands at system and surface scope", async () => {
+    const setOptimizationConfig = jest.fn();
+    const buildOptimizationConfig = jest.fn().mockReturnValue(config);
+    const store = {
+      getState: () => ({
+        isOptimizing: false,
+        setOptimizationConfig,
+        buildOptimizationConfig,
+      }),
+    } as unknown as StoreApi<OptimizationState>;
+    const tools = createOptimizationWebMcpTools({
+      optimizationStore: store,
+      catalogs: undefined,
+      evaluate: jest.fn(),
+      execute: jest.fn(),
+      apply: jest.fn(),
+      discard: jest.fn(),
+      dismissProgress: jest.fn(),
+      stop: jest.fn(),
+      readProgress: jest.fn(),
+    });
+    const signal = new AbortController().signal;
+    const thirdOrderConfig: OptimizationConfig = {
+      ...config,
+      merit_function: {
+        operands: [
+          { kind: "third_order_spherical_aberration", target: 0, weight: 1 },
+          {
+            kind: "third_order_coma",
+            target: 0,
+            weight: 1,
+            surface_index: 1,
+          },
+        ],
+      },
+    };
+
+    expect(tools.setOptimizationConfig.description).toContain("surface_index");
+    await expect(
+      tools.setOptimizationConfig.execute({ ...thirdOrderConfig }, { signal }),
+    ).resolves.toBeDefined();
+    expect(setOptimizationConfig).toHaveBeenCalledWith(
+      thirdOrderConfig,
+      undefined,
+    );
+
+    await expect(
+      tools.setOptimizationConfig.execute(
+        {
+          ...config,
+          merit_function: {
+            operands: [
+              {
+                kind: "third_order_coma",
+                target: 0,
+                weight: 1,
+                surface_index: 0,
+              },
+            ],
+          },
+        },
+        { signal },
+      ),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+    expect(setOptimizationConfig).toHaveBeenCalledTimes(1);
+  });
+
   it("returns the discard operation error to the caller while optimization is running", async () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     const tools = createOptimizationWebMcpTools({

@@ -133,6 +133,14 @@ class TestAnalysisConcreteModuleExports:
         assert top_level_package.seidel_to_surface_by_surface_wavefront is concrete_export
         assert package_export is concrete_export
 
+    def test_surface_by_surface_wavefront_getter_export_matches_package_exports(self):
+        import rayoptics_web_utils as top_level_package
+        from rayoptics_web_utils.analysis import get_surface_by_surface_wavefront as package_export
+        from rayoptics_web_utils.analysis.seidel import get_surface_by_surface_wavefront as concrete_export
+
+        assert top_level_package.get_surface_by_surface_wavefront is concrete_export
+        assert package_export is concrete_export
+
     @pytest.mark.parametrize(
         ("module_name", "getter_name"),
         [
@@ -616,6 +624,19 @@ class TestGet3rdOrderSeidelData:
         np.testing.assert_allclose(data[:, -1], raw.loc['sum'], rtol=1e-12)
         np.testing.assert_allclose(data[:, :-1].sum(axis=1), data[:, -1], rtol=1e-9, atol=1e-15)
         json.dumps(result)
+
+    @pytest.mark.parametrize("asphere", [False, True])
+    def test_surface_by_surface_wavefront_frame_matches_the_wavefront_payload(self, make_cooke_triplet, asphere):
+        """The frame holds the same merged per-surface and sum wavefront rows as the payload."""
+        from rayoptics_web_utils.analysis import get_3rd_order_seidel_data, get_surface_by_surface_wavefront
+
+        opm = make_cooke_triplet(asphere=asphere)
+        frame = get_surface_by_surface_wavefront(opm)
+        payload = get_3rd_order_seidel_data(opm)['wavefront']
+
+        assert frame.columns.tolist() == payload['aberrTypes']
+        assert frame.index.tolist() == payload['surfaceLabels']
+        np.testing.assert_allclose(frame.T.values, payload['data'], rtol=1e-12, atol=1e-15)
 
 
 class TestGetRayFanData:

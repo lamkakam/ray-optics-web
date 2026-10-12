@@ -10,11 +10,13 @@ decenter parameters validate their interface and coordinate strategy, materializ
 missing decenter data, and leave missing pickup sources unconfigured. Operand
 normalization enforces the kind's target mode and scope (surface-scoped kinds
 require a 1-based ``surface_index`` that excludes the object and image surfaces;
-system kinds reject it), requires positive bounds for positive-range kinds
+system kinds reject it; system-or-surface kinds such as the third-order
+aberrations accept either), requires positive bounds for positive-range kinds
 such as ``edge_thickness``, validates every supplied field and
 wavelength index, preserves sample order, and then removes combinations with an
 exactly zero operand, field, or wavelength weight. Kinds in
-``UNEXPANDED_OPERAND_KINDS`` (focal length, f-number, and edge thickness) produce
+``UNEXPANDED_OPERAND_KINDS`` (focal length, f-number, edge thickness, and the
+third-order aberrations) produce
 a single sample without field or wavelength indices.
 """
 
@@ -337,7 +339,8 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
     target. Adjustable-target kinds require a finite ``target``; fixed-target kinds
     accept neither ``target`` nor range bounds; range kinds require at least one
     finite bound with ``min <= max`` and keep only the supplied bounds.
-    Surface-scoped kinds of each mode additionally keep their ``surface_index``.
+    Surface-scoped kinds of each mode, and system-or-surface kinds that supply
+    one, additionally keep their ``surface_index``.
 
     Args:
         opm: RayOptics optical model.
@@ -453,18 +456,25 @@ def normalize_operand_scope_fields(opm: OpticalModel, kind: str, operand: Operan
         kind: Registered operand kind.
         operand: Unnormalized operand configuration.
 
+    System-or-surface kinds may omit ``surface_index`` to evaluate the whole
+    system; a supplied index is validated like a surface kind's.
+
     Returns:
-        ``{"surface_index": ...}`` for surface-scoped kinds, or an empty mapping
-        for system kinds.
+        ``{"surface_index": ...}`` for surface-scoped kinds and for
+        system-or-surface kinds that supply one, or an empty mapping for system
+        kinds and system-or-surface kinds without one.
 
     Raises:
-        ValueError: If a system kind supplies ``surface_index`` or a surface kind
-            omits it or supplies a non-integer.
-        IndexError: If a surface kind's ``surface_index`` is not a real surface.
+        ValueError: If a system kind supplies ``surface_index``, a surface kind
+            omits it, or either surface-capable scope supplies a non-integer.
+        IndexError: If a supplied ``surface_index`` is not a real surface.
     """
-    if operand_scope(kind) == "system":
+    scope = operand_scope(kind)
+    if scope == "system":
         if "surface_index" in operand:
             raise ValueError(f"Operand {kind} does not accept a surface_index")
+        return {}
+    if scope == "system_or_surface" and "surface_index" not in operand:
         return {}
     surface_index = operand.get("surface_index")
     if not isinstance(surface_index, int) or isinstance(surface_index, bool):

@@ -177,11 +177,15 @@ function createRangeOperandBranches(
 /**
  * Operand schema with one branch per target mode and scope, whose kind enums
  * come from the shared operand metadata. System-scoped branches reject
- * `surface_index`; surface-scoped branches require it. The range and every
- * surface-scoped branch are included only while at least one kind of that group
- * is registered; range groups are further split into positive-bound and
- * finite-bound branches. Today this means one surface-range branch accepting
- * `edge_thickness` with a positive-integer `surface_index` and positive bounds.
+ * `surface_index`; surface-scoped branches require it. A system-or-surface kind
+ * (the third-order aberrations) is in both enums of its mode, so it matches the
+ * system branch without `surface_index` and the surface branch with one. The
+ * range and every surface-scoped branch are included only while at least one
+ * kind of that group is registered; range groups are further split into
+ * positive-bound and finite-bound branches. Today this means a surface
+ * adjustable-target branch accepting the third-order kinds and one surface-range
+ * branch accepting `edge_thickness` with a positive-integer `surface_index` and
+ * positive bounds.
  */
 const optimizationOperandSchema = {
   oneOf: [

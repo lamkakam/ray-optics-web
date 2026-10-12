@@ -292,8 +292,10 @@ function formatOptionalBound(value: number | undefined): string | undefined {
 
 /**
  * Validates operand configs and converts them into string-backed GUI rows.
- * Surface-scoped operands must reference a real surface (`1 … surfaceCount`, with
- * object and image excluded) and keep it as `surfaceIndex`; system-scoped
+ * Surface-only operands must reference a real surface (`1 … surfaceCount`, with
+ * object and image excluded) and keep it as `surfaceIndex`; system-or-surface
+ * operands (the third-order aberrations) may omit `surface_index` for the System
+ * scope or supply one that is validated and kept the same way; system-only
  * operands must not carry `surface_index`.
  */
 function createOperandRows(
@@ -351,7 +353,11 @@ function createOperandRows(
     } else if (operand.min !== undefined || operand.max !== undefined) {
       throw new Error(`${operand.kind} does not accept range bounds.`);
     }
-    if (metadata.scope === "surface") {
+    const keepsSurfaceIndex =
+      metadata.scope === "surface" ||
+      (metadata.scope === "system_or_surface" &&
+        operand.surface_index !== undefined);
+    if (keepsSurfaceIndex) {
       assertIntegerInRange(
         operand.surface_index,
         1,
@@ -389,9 +395,7 @@ function createOperandRows(
           }
         : {}),
       weight: String(operand.weight),
-      ...(metadata.scope === "surface"
-        ? { surfaceIndex: operand.surface_index }
-        : {}),
+      ...(keepsSurfaceIndex ? { surfaceIndex: operand.surface_index } : {}),
       ...(operand.options === undefined
         ? {}
         : { options: { ...operand.options } }),

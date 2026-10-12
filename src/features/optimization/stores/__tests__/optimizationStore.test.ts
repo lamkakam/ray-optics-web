@@ -2993,3 +2993,64 @@ describe("edge thickness operand rows", () => {
     expect(() => store.getState().buildOptimizationConfig()).toThrow(message);
   });
 });
+
+describe("third-order aberration operand rows", () => {
+  function createThirdOrderStore(
+    row: Partial<OptimizationState["operands"][number]> = {},
+  ) {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "third_order_coma",
+        target: "0.25",
+        weight: "2",
+        ...row,
+      },
+    ]);
+    return store;
+  }
+
+  it("starts at the System scope with a zero target when a row switches to a third-order kind", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().addOperand();
+    const id = store.getState().operands[0].id;
+
+    store.getState().updateOperand(id, { kind: "third_order_distortion" });
+
+    const row = store.getState().operands[0];
+    expect(row).toMatchObject({ kind: "third_order_distortion", target: "0" });
+    expect(row.surfaceIndex).toBeUndefined();
+  });
+
+  it("emits an unexpanded system operand without surface_index while the scope is System", () => {
+    const store = createThirdOrderStore();
+
+    expect(
+      store.getState().buildOptimizationConfig().merit_function.operands,
+    ).toEqual([{ kind: "third_order_coma", target: 0.25, weight: 2 }]);
+  });
+
+  it("emits the selected surface_index while the scope is one surface", () => {
+    const store = createThirdOrderStore({ surfaceIndex: 2 });
+
+    expect(
+      store.getState().buildOptimizationConfig().merit_function.operands,
+    ).toEqual([
+      { kind: "third_order_coma", target: 0.25, surface_index: 2, weight: 2 },
+    ]);
+  });
+
+  it.each([0, 3, 1.5])(
+    "rejects the out-of-range surface index %s with a labelled message",
+    (surfaceIndex) => {
+      const store = createThirdOrderStore({ surfaceIndex });
+
+      expect(() => store.getState().buildOptimizationConfig()).toThrow(
+        "3rd-Order Coma (W131): Surface Index must be an integer from 1 to 2.",
+      );
+    },
+  );
+});

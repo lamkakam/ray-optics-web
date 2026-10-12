@@ -62,7 +62,7 @@ jest.mock("@/features/optimization/lib/operandMetadata", () => {
   };
 });
 
-/** No production kind is surface-scoped yet, so fake kinds are typed as the empty surface kinds. */
+/** Fake kinds are not production literals, so they are typed as `never` to pass through kind-typed helpers. */
 const FAKE_SURFACE_KINDS = [
   "fake_surface_target",
   "fake_surface_fixed",
@@ -132,6 +132,14 @@ function configWith(
 describe("surface operand metadata registry", () => {
   it("lists surface kinds only in their surface groups", () => {
     expect(OPTIMIZATION_SURFACE_ADJUSTABLE_TARGET_OPERAND_KINDS).toEqual([
+      "third_order_spherical_aberration",
+      "third_order_coma",
+      "third_order_astigmatism",
+      "third_order_petzval_curvature",
+      "third_order_field_curvature",
+      "third_order_distortion",
+      "primary_axial_chromatic_aberration",
+      "primary_lateral_chromatic_aberration",
       "fake_surface_target",
     ]);
     expect(OPTIMIZATION_SURFACE_FIXED_TARGET_OPERAND_KINDS).toEqual([
