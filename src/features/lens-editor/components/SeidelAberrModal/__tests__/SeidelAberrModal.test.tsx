@@ -33,13 +33,27 @@ const mockData: SeidelData = {
   },
   transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
   wavefront: {
-    W040: 0.1,
-    W131: 0.2,
-    W222: 0.3,
-    W220: 0.4,
-    W311: 0.5,
-    W020: 0.91,
-    W111: -0.58,
+    aberrTypes: [
+      "W040",
+      "W131",
+      "W222",
+      "W220P",
+      "W220",
+      "W311",
+      "W020",
+      "W111",
+    ],
+    surfaceLabels: ["S1", "S2", "sum"],
+    data: [
+      [0.01, 0.09, 0.1],
+      [0.12, 0.08, 0.2],
+      [0.13, 0.17, 0.3],
+      [0.05, 0.1, 0.15],
+      [0.14, 0.26, 0.4],
+      [0.15, 0.35, 0.5],
+      [0.4, 0.51, 0.91],
+      [-0.25, -0.33, -0.58],
+    ],
   },
   curvature: { TCV: 0.1, SCV: 0.2, PCV: 0 },
 };
@@ -72,19 +86,19 @@ describe("SeidelAberrModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders 4 tabs with correct labels", () => {
+  it("renders 4 tabs with surface-by-surface tabs first", () => {
     render(<SeidelAberrModal {...defaultProps} />);
     expect(
-      screen.getByRole("tab", { name: "Surface by Surface" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Transverse" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Wavefront" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("tab", { name: "Field Curvature" }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("tab").map((tab) => tab.getAttribute("aria-label")),
+    ).toEqual([
+      "Seidel (surface by surface)",
+      "Wavefront (surface by surface)",
+      "Transverse",
+      "Field Curvature",
+    ]);
   });
 
-  it("default tab (Surface by Surface) shows a table", () => {
+  it("default tab (Seidel surface by surface) shows a table", () => {
     render(<SeidelAberrModal {...defaultProps} />);
     expect(screen.getByRole("table")).toBeInTheDocument();
   });
@@ -148,28 +162,58 @@ describe("SeidelAberrModal", () => {
     expect(screen.getByText("Distortion (DST)")).toBeInTheDocument();
   });
 
-  it("clicking Wavefront tab shows wavefront aberration labels", async () => {
+  it("clicking Wavefront tab shows surface-by-surface columns with Petzval Curvature before Field Curvature", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    await userEvent.click(screen.getByRole("tab", { name: "Wavefront" }));
-    expect(screen.getByText("Spherical Aberration")).toBeInTheDocument();
-    expect(screen.getByText("Coma")).toBeInTheDocument();
-    expect(screen.getByText("Astigmatism")).toBeInTheDocument();
-    // "Field Curvature" also appears as a tab label, so use getAllByText
+    await userEvent.click(
+      screen.getByRole("tab", { name: "Wavefront (surface by surface)" }),
+    );
     expect(
-      screen.getAllByText("Field Curvature").length,
-    ).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Distortion")).toBeInTheDocument();
+      screen.getAllByRole("columnheader").map((header) => header.textContent),
+    ).toEqual([
+      "Surface",
+      "Spherical Aberration",
+      "Coma",
+      "Astigmatism",
+      "Petzval Curvature",
+      "Field Curvature",
+      "Distortion",
+      "Primary Axial Chromatic Aberr.",
+      "Primary Lateral Chromatic Aberr.",
+    ]);
   });
 
-  it("clicking Wavefront tab shows primary chromatic wavefront rows", async () => {
+  it("clicking Wavefront tab shows one row per surface plus the sum", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    await userEvent.click(screen.getByRole("tab", { name: "Wavefront" }));
-    expect(
-      screen.getByRole("row", { name: /Primary Axial Chromatic Aberr\./ }),
-    ).toHaveTextContent("0.910000");
-    expect(
-      screen.getByRole("row", { name: /Primary Lateral Chromatic Aberr\./ }),
-    ).toHaveTextContent("-0.580000");
+    await userEvent.click(
+      screen.getByRole("tab", { name: "Wavefront (surface by surface)" }),
+    );
+    const cellsOf = (label: string) =>
+      Array.from(
+        screen.getByRole("cell", { name: label }).closest("tr")!.cells,
+        (cell) => cell.textContent,
+      );
+    expect(cellsOf("S1")).toEqual([
+      "S1",
+      "0.010000",
+      "0.120000",
+      "0.130000",
+      "0.050000",
+      "0.140000",
+      "0.150000",
+      "0.400000",
+      "-0.250000",
+    ]);
+    expect(cellsOf("sum")).toEqual([
+      "sum",
+      "0.100000",
+      "0.200000",
+      "0.300000",
+      "0.150000",
+      "0.400000",
+      "0.500000",
+      "0.910000",
+      "-0.580000",
+    ]);
   });
 
   it("explains how the primary chromatic terms depend on the wavelengths", () => {

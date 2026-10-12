@@ -75,7 +75,7 @@ const mockSeidelData: SeidelData = {
     ],
   },
   transverse: { TSA: 0, TCO: 0, TAS: 0, SAS: 0, PTB: 0, DST: 0 },
-  wavefront: { W040: 0, W131: 0, W222: 0, W220: 0, W311: 0 },
+  wavefront: { aberrTypes: ["W040"], surfaceLabels: ["sum"], data: [[0]] },
   curvature: { TCV: 0, SCV: 0, PCV: 0 },
 };
 
