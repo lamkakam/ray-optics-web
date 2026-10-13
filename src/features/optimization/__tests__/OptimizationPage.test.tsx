@@ -69,10 +69,6 @@ jest.mock("echarts/core", () => ({
   })),
 }));
 
-let resizeObserverCallback: ResizeObserverCallback | undefined;
-let mockResizeObserverObserve: jest.Mock;
-let mockResizeObserverDisconnect: jest.Mock;
-
 const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
   object: { distance: 1e10, medium: "air", manufacturer: "" },
@@ -219,13 +215,6 @@ function makeWebMcpOptimizationConfig(): OptimizationConfig {
   };
 }
 
-function mockPointerCapture(element: HTMLElement) {
-  Object.defineProperty(element, "setPointerCapture", {
-    configurable: true,
-    value: jest.fn(),
-  });
-}
-
 async function clickOptimizeAfterEvaluation(
   user: ReturnType<typeof userEvent.setup>,
 ) {
@@ -305,22 +294,15 @@ function renderOptimizationPage(
 describe("OptimizationPage", () => {
   beforeEach(() => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
-    mockResizeObserverObserve = jest.fn();
-    mockResizeObserverDisconnect = jest.fn();
-    resizeObserverCallback = undefined;
     Object.defineProperty(window, "PointerEvent", {
       configurable: true,
       writable: true,
       value: MouseEvent,
     });
     class MockResizeObserver implements ResizeObserver {
-      observe = mockResizeObserverObserve;
+      observe = jest.fn();
       unobserve = jest.fn();
-      disconnect = mockResizeObserverDisconnect;
-
-      constructor(callback: ResizeObserverCallback) {
-        resizeObserverCallback = callback;
-      }
+      disconnect = jest.fn();
     }
     Object.defineProperty(window, "ResizeObserver", {
       configurable: true,
@@ -1003,75 +985,6 @@ describe("OptimizationPage", () => {
     expect(
       screen.queryByTestId("optimization-evaluation-scroll"),
     ).not.toBeInTheDocument();
-  });
-
-  it("on large screens, grows and shrinks the evaluation table when the drawer is resized", async () => {
-    const proxy = makeProxy();
-    const { container } = renderOptimizationPage(proxy);
-    const user = userEvent.setup();
-
-    const pageShell = container.firstElementChild as HTMLElement;
-    Object.defineProperty(pageShell, "getBoundingClientRect", {
-      configurable: true,
-      value: () => ({
-        width: 1200,
-        height: 900,
-        top: 0,
-        left: 0,
-        bottom: 900,
-        right: 1200,
-        x: 0,
-        y: 0,
-        toJSON: () => undefined,
-      }),
-    });
-
-    await user.click(screen.getByRole("tab", { name: "Operands" }));
-    await user.click(screen.getByRole("button", { name: "Add operand" }));
-
-    await waitFor(() =>
-      expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled(),
-    );
-    await waitFor(() => expect(mockResizeObserverObserve).toHaveBeenCalled());
-
-    act(() => {
-      resizeObserverCallback?.(
-        [
-          {
-            target: pageShell,
-            contentRect: {
-              width: 1200,
-              height: 900,
-              top: 0,
-              left: 0,
-              bottom: 900,
-              right: 1200,
-              x: 0,
-              y: 0,
-              toJSON: () => undefined,
-            } as DOMRectReadOnly,
-          },
-        ] as unknown as ResizeObserverEntry[],
-        {} as ResizeObserver,
-      );
-    });
-
-    const evaluationScroll = screen.getByTestId(
-      "optimization-evaluation-scroll",
-    );
-    expect(evaluationScroll).toHaveStyle({ maxHeight: "260px" });
-
-    const handle = screen.getByRole("separator", { name: "Resize drawer" });
-    mockPointerCapture(handle);
-
-    fireEvent.pointerDown(handle, { clientY: 700, pointerId: 1 });
-    fireEvent.pointerMove(handle, { clientY: 820, pointerId: 1 });
-    expect(evaluationScroll).toHaveStyle({ maxHeight: "380px" });
-
-    fireEvent.pointerMove(handle, { clientY: 560, pointerId: 1 });
-    expect(evaluationScroll).toHaveStyle({ maxHeight: "120px" });
-
-    fireEvent.pointerUp(handle, { pointerId: 1 });
   });
 
   it("shows radius and thickness variable columns plus the read-only modal-backed columns in Lens Prescription", async () => {

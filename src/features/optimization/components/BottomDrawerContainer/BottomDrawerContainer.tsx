@@ -52,8 +52,6 @@ export interface BottomDrawerContainerProps {
   readonly layout: {
     /** Switches between draggable large-screen rendering and non-draggable small-screen rendering. */
     readonly isLG: boolean;
-    /** Receives live drawer height changes when provided. */
-    readonly onHeightChange?: (height: number) => void;
   };
   /** Provides derived field weight rows. */
   readonly fields: Readonly<FieldsProps>;
@@ -78,7 +76,7 @@ export interface BottomDrawerContainerProps {
  *
  * - Builds the drawer tabs in the fixed order `Algorithm`, `Half-Fields`, `Wavelengths`, `Lens Prescription`, and `Operands`.
  * - Keeps `data-testid="optimization-bottom-drawer-wrapper"` on the wrapper for existing page tests.
- * - Uses `mt-auto pb-4` on large screens and `pb-4` on smaller screens.
+ * - Uses `mt-auto shrink-0 pb-4` on large screens, so the wrapper keeps the drawer's full height when the page's evaluation section is tall, and `pb-4` on smaller screens.
  * - Passes `panelClassName="p-0"` so tab contents keep their own gutter.
  * - Sets `draggable` from `layout.isLG`.
  * - Reads the optimization store for active tab state, optimizer state, radius/thickness/glass/asphere modes, operands, and all store-backed drawer callbacks.
@@ -322,7 +320,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   return (
     <div
       data-testid="optimization-bottom-drawer-wrapper"
-      className={layout.isLG ? "mt-auto pb-4" : "pb-4"}
+      className={layout.isLG ? "mt-auto shrink-0 pb-4" : "pb-4"}
     >
       <BottomDrawer
         tabs={tabs}
@@ -330,7 +328,6 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
         panelClassName="p-0"
         activeTabId={activeTabId}
         onTabChange={handleTabChange}
-        onHeightChange={layout.onHeightChange}
       />
     </div>
   );
