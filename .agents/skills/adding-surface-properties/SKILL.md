@@ -163,6 +163,13 @@ and use `from __future__ import annotations`.
    ParameterAccessor(kinds=..., read=..., write=...)`.
    - `write` materializes missing RayOptics structures.
    - A pickup source read with `materialize: False` must not mutate the model.
+   - Pass `natural_unit=...` when the parameter shapes the sag and its useful
+     range is far from 1. It returns the step, in optimizer units (curvature
+     for radius), that moves the edge sag by about one model unit (for an rᵖ
+     term: `edge_sag_unit(opm, surface_index, p)`). Least squares divides
+     unbounded variables by this unit; without it, SciPy's finite-difference
+     step and `xtol` test can't move tiny coefficients. It must not mutate the
+     model. Other properties keep the default `1.0`.
    - Register the accessor in the tuple that builds `PARAMETER_ACCESSORS` in
      `parameters/__init__.py`.
 3. **Kind-specific code that is not registry-driven yet** (update it when the

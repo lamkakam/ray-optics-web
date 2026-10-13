@@ -340,6 +340,77 @@ def test_parameter_snapshots_deduplicate_keys_and_restore_values_before_update()
     assert opm.update_count == 1
 
 
+class _ApertureModel:
+    def __init__(self, semi_diameter):
+        self.profile = SimpleNamespace(r=10.0)
+        self.seq_model = SimpleNamespace(
+            ifcs=[
+                SimpleNamespace(profile=SimpleNamespace(r=0.0), surface_od=lambda: 0.0),
+                SimpleNamespace(profile=self.profile, surface_od=lambda: semi_diameter),
+            ],
+        )
+
+    def __getitem__(self, key):
+        if key == "seq_model":
+            return self.seq_model
+        raise KeyError(key)
+
+
+@pytest.mark.parametrize(
+    ("entry", "expected"),
+    [
+        ({"kind": "radius", "surface_index": 1}, 1e-2),
+        (
+            {"kind": "asphere_polynomial_coefficient", "surface_index": 1, "asphere_kind": "EvenAspherical", "coefficient_index": 0},
+            1e-2,
+        ),
+        (
+            {"kind": "asphere_polynomial_coefficient", "surface_index": 1, "asphere_kind": "EvenAspherical", "coefficient_index": 2},
+            1e-6,
+        ),
+        (
+            {"kind": "asphere_polynomial_coefficient", "surface_index": 1, "asphere_kind": "XToroid", "coefficient_index": 1},
+            1e-4,
+        ),
+        (
+            {"kind": "asphere_polynomial_coefficient", "surface_index": 1, "asphere_kind": "YToroid", "coefficient_index": 3},
+            1e-8,
+        ),
+        (
+            {"kind": "asphere_polynomial_coefficient", "surface_index": 1, "asphere_kind": "RadialPolynomial", "coefficient_index": 2},
+            1e-3,
+        ),
+        ({"kind": "asphere_conic_constant", "surface_index": 1, "asphere_kind": "EvenAspherical"}, 1.0),
+        ({"kind": "asphere_toric_sweep_radius", "surface_index": 1, "asphere_kind": "XToroid"}, 1.0),
+        ({"kind": "thickness", "surface_index": 1}, 1.0),
+        ({"kind": "decenter_alpha", "surface_index": 1, "decenter_type": "bend"}, 1.0),
+    ],
+)
+def test_parameter_natural_unit_is_one_edge_sag_unit_in_optimizer_space(entry, expected):
+    from rayoptics_web_utils.optimization.parameters import parameter_natural_unit
+
+    opm = _ApertureModel(semi_diameter=10.0)
+
+    assert parameter_natural_unit(opm, entry) == pytest.approx(expected, rel=1e-12)
+    assert opm.seq_model.ifcs[1].profile is opm.profile
+
+
+@pytest.mark.parametrize("semi_diameter", [0.0, -1.0, float("nan"), float("inf")])
+def test_parameter_natural_unit_falls_back_to_one_without_a_usable_semi_diameter(semi_diameter):
+    from rayoptics_web_utils.optimization.parameters import parameter_natural_unit
+
+    opm = _ApertureModel(semi_diameter=semi_diameter)
+
+    assert parameter_natural_unit(opm, {"kind": "radius", "surface_index": 1}) == 1.0
+    assert (
+        parameter_natural_unit(
+            opm,
+            {"kind": "asphere_polynomial_coefficient", "surface_index": 1, "asphere_kind": "EvenAspherical", "coefficient_index": 2},
+        )
+        == 1.0
+    )
+
+
 MANIFEST_PATH = Path(__file__).resolve().parents[2] / "fixtures" / "constructional_parameters.json"
 PICKUP_TRANSFORM_FIELDS = {"source_surface_index", "scale", "offset"}
 

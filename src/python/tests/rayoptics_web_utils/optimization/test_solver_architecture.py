@@ -189,10 +189,11 @@ def test_least_squares_adapter_calls_scipy_with_problem_interfaces(monkeypatch, 
     result = LeastSquaresSolver(problem).solve()
 
     assert result["success"] is True
-    assert captured["func"] == problem.residual_objective
     assert captured["method"] == "trf"
     assert captured["max_nfev"] == 5
-    assert "bounds" in captured
+    np.testing.assert_array_equal(captured["bounds"][0], [0.0])
+    np.testing.assert_array_equal(captured["bounds"][1], [1.0])
+    np.testing.assert_allclose(captured["x0"], (problem.current_vector() - 35.0) / 15.0)
     assert captured["jac"](captured["x0"]).shape == (1, 1)
     assert problem.optimization_progress == []
 
@@ -234,7 +235,7 @@ def test_least_squares_adapter_omits_bounds_for_lm(monkeypatch, cooke_triplet, o
     result = LeastSquaresSolver(problem).solve()
 
     assert result["success"] is True
-    assert captured["func"] == problem.residual_objective
+    np.testing.assert_allclose(captured["x0"], problem.current_vector())
     assert captured["method"] == "lm"
     assert "bounds" not in captured["kwargs"]
     assert callable(captured["kwargs"]["jac"])
@@ -599,6 +600,8 @@ def test_least_squares_adapter_normalizes_missing_njev_and_clears_reporter(
 
     problem = SimpleNamespace(
         optimizer={"method": "lm"},
+        variables=[{"kind": "thickness", "surface_index": 1}],
+        natural_units=lambda: np.array([1.0]),
         current_vector=lambda: np.array([2.0]),
         residual_objective=lambda vector: np.array([vector[0]]),
         _progress_reporter=None,
@@ -631,7 +634,7 @@ def test_least_squares_adapter_normalizes_missing_njev_and_clears_reporter(
 
     result = LeastSquaresSolver(problem).solve(reporter)
 
-    assert captured["function"] == problem.residual_objective
+    assert captured["function"](np.array([5.0])).tolist() == [5.0]
     assert captured["initial"].tolist() == [2.0]
     assert captured["reporter_during_call"] is reporter
     assert "bounds" not in captured["kwargs"]
@@ -653,6 +656,8 @@ def test_least_squares_adapter_forwards_exact_default_options_and_normalizes_res
 
     problem = SimpleNamespace(
         optimizer={"method": "lm"},
+        variables=[{"kind": "thickness", "surface_index": 1}],
+        natural_units=lambda: np.array([1.0]),
         current_vector=lambda: np.array([2.0]),
         residual_objective=lambda vector: np.array([vector[0]]),
         _progress_reporter=None,
@@ -679,7 +684,7 @@ def test_least_squares_adapter_forwards_exact_default_options_and_normalizes_res
 
     result = LeastSquaresSolver(problem).solve()
 
-    assert captured["function"] == problem.residual_objective
+    assert captured["function"](np.array([5.0])).tolist() == [5.0]
     assert captured["initial"].tolist() == [2.0]
     assert callable(captured["kwargs"].pop("jac"))
     assert captured["kwargs"] == {
@@ -713,6 +718,8 @@ def test_least_squares_adapter_forwards_explicit_tolerance_options(monkeypatch):
             "gtol": 4e-7,
             "max_nfev": 19,
         },
+        variables=[{"kind": "thickness", "surface_index": 1}],
+        natural_units=lambda: np.array([1.0]),
         current_vector=lambda: np.array([2.0]),
         residual_objective=lambda vector: np.array([vector[0]]),
         _progress_reporter=None,
@@ -834,3 +841,96 @@ def test_lbfgsb_objective_returns_penalty_for_exception_and_nonfinite_merit():
     assert LBFGSBSolver(FakeProblem(RuntimeError("bad")), 3, 1e-3).objective(vector) == GLASS_OBJECTIVE_PENALTY
     assert LBFGSBSolver(FakeProblem(float("inf")), 3, 1e-3).objective(vector) == GLASS_OBJECTIVE_PENALTY
     assert LBFGSBSolver(FakeProblem(4.5), 3, 1e-3).objective(vector) == pytest.approx(4.5)
+
+
+def _scaling_problem(method, natural_units, lower=None, upper=None, x0=None):
+    size = len(natural_units)
+    lower = np.full(size, -np.inf) if lower is None else np.array(lower, dtype=float)
+    upper = np.full(size, np.inf) if upper is None else np.array(upper, dtype=float)
+    return SimpleNamespace(
+        optimizer={"method": method},
+        variables=[{"kind": "thickness", "surface_index": 1}] * size,
+        bounds=lambda: (lower, upper),
+        natural_units=lambda: np.array(natural_units, dtype=float),
+        current_vector=lambda: np.zeros(size) if x0 is None else np.array(x0, dtype=float),
+        _progress_reporter=None,
+    )
+
+
+def test_variable_scaling_normalizes_bounded_trf_variables_to_the_unit_interval():
+    from rayoptics_web_utils.optimization.solvers.least_squares import VariableScaling
+
+    scaling = VariableScaling.for_problem(
+        _scaling_problem("trf", [1e-6, 1e-2], lower=[-1e-12, 0.01], upper=[1e-12, 0.05])
+    )
+
+    np.testing.assert_allclose(scaling.to_solver(np.array([-1e-12, 0.01])), [0.0, 0.0], atol=1e-15)
+    np.testing.assert_allclose(scaling.to_solver(np.array([1e-12, 0.05])), [1.0, 1.0])
+    np.testing.assert_allclose(scaling.to_problem(np.array([0.5, 0.25])), [0.0, 0.02], atol=1e-25)
+    lower, upper = scaling.solver_bounds()
+    np.testing.assert_array_equal(lower, [0.0, 0.0])
+    np.testing.assert_array_equal(upper, [1.0, 1.0])
+    x = np.array([3e-13, 0.037])
+    np.testing.assert_allclose(scaling.to_problem(scaling.to_solver(x)), x, rtol=1e-12)
+
+
+def test_variable_scaling_keeps_vectors_on_a_bound_within_both_spaces():
+    from rayoptics_web_utils.optimization.solvers.least_squares import VariableScaling
+
+    scaling = VariableScaling.for_problem(_scaling_problem("trf", [1.0], lower=[0.1], upper=[0.3]))
+
+    assert scaling.to_solver(np.array([0.3 + 1e-17]))[0] <= 1.0
+    assert scaling.to_solver(np.array([0.1 - 1e-17]))[0] >= 0.0
+    assert scaling.to_problem(np.array([1.0]))[0] <= 0.3
+    assert scaling.to_problem(np.array([0.0]))[0] >= 0.1
+
+
+def test_variable_scaling_uses_natural_units_without_finite_bounds():
+    from rayoptics_web_utils.optimization.solvers.least_squares import VariableScaling
+
+    trf = VariableScaling.for_problem(
+        _scaling_problem("trf", [1e-6, 2.0], lower=[-np.inf, 1.0], upper=[np.inf, 3.0])
+    )
+    lm = VariableScaling.for_problem(_scaling_problem("lm", [1e-6, 1.0]))
+
+    np.testing.assert_allclose(trf.to_solver(np.array([3e-6, 2.0])), [3.0, 0.5])
+    np.testing.assert_allclose(trf.to_problem(np.array([3.0, 0.5])), [3e-6, 2.0])
+    np.testing.assert_array_equal(trf.solver_bounds()[0], [-np.inf, 0.0])
+    np.testing.assert_array_equal(trf.solver_bounds()[1], [np.inf, 1.0])
+    np.testing.assert_allclose(lm.to_solver(np.array([3e-6, 5.0])), [3.0, 5.0])
+    np.testing.assert_allclose(lm.to_problem(np.array([3.0, 5.0])), [3e-6, 5.0])
+
+
+def test_least_squares_adapter_solves_in_scaled_space_and_returns_problem_values(monkeypatch):
+    from rayoptics_web_utils.optimization.solvers.least_squares import LeastSquaresSolver
+
+    evaluated = []
+    problem = _scaling_problem("lm", [1e-6], x0=[2e-6])
+    problem.residual_objective = lambda vector: evaluated.append(np.array(vector)) or np.array([vector[0]])
+    captured = {}
+
+    def fake_least_squares(function, initial, **kwargs):
+        captured.update(initial=initial, kwargs=kwargs)
+        function(np.array([4.0]))
+        return SimpleNamespace(
+            x=np.array([3.0]),
+            success=True,
+            status=1,
+            message="ok",
+            nfev=1,
+            njev=1,
+            cost=0.0,
+            optimality=0.0,
+        )
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.least_squares.least_squares",
+        fake_least_squares,
+    )
+
+    result = LeastSquaresSolver(problem).solve()
+
+    np.testing.assert_allclose(captured["initial"], [2.0])
+    np.testing.assert_allclose(evaluated[0], [4e-6])
+    np.testing.assert_allclose(result["x"], [3e-6])
+    assert "x_scale" not in captured["kwargs"]

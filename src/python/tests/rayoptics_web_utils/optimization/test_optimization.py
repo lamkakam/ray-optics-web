@@ -3197,7 +3197,9 @@ class TestOptimizationProgressBudget:
         assert report["status"] != "error"
         assert 1 < len(report["optimization_progress"]) <= 15
 
-    def test_trf_adapter_matches_scipy_default_finite_difference_result(self, fresh_cooke_triplet):
+    def test_trf_adapter_matches_scipy_default_finite_difference_result_on_bound_normalized_variables(
+        self, fresh_cooke_triplet
+    ):
         from scipy.optimize import least_squares
 
         from rayoptics_web_utils.optimization.problem import OptimizationProblem
@@ -3216,11 +3218,16 @@ class TestOptimizationProgressBudget:
             },
         )
         x0 = problem.current_vector()
+        lower, upper = problem.bounds()
+
+        def to_problem(vector):
+            return np.clip(lower + vector * (upper - lower), lower, upper)
+
         expected = least_squares(
-            problem.residual_objective,
-            x0,
+            lambda vector: problem.residual_objective(to_problem(vector)),
+            np.clip((x0 - lower) / (upper - lower), 0.0, 1.0),
             method="trf",
-            bounds=problem.bounds(),
+            bounds=(np.zeros(2), np.ones(2)),
             ftol=1e-8,
             xtol=1e-8,
             gtol=1e-8,
@@ -3231,7 +3238,7 @@ class TestOptimizationProgressBudget:
         result = LeastSquaresSolver(problem).solve()
 
         assert result["nfev"] == expected.nfev
-        assert np.asarray(result["x"]).tolist() == pytest.approx(expected.x.tolist(), rel=1e-12, abs=1e-15)
+        assert np.asarray(result["x"]).tolist() == pytest.approx(to_problem(expected.x).tolist(), rel=1e-12, abs=1e-15)
 
     def test_residual_jacobian_does_not_record_progress(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization.problem import OptimizationProblem
@@ -3494,3 +3501,92 @@ class TestEdgeThicknessOperand:
         assert report["success"] is True
         assert report["final_values"][0]["value"] > 4.831
         assert compute_edge_thickness(fresh_cooke_triplet, 1, None, None, None, "chief_ray") >= 3.0 - 1e-6
+
+
+def _high_order_asphere_config(method, coefficient_indices, bound=None):
+    bounds = {} if bound is None else {"min": -bound, "max": bound}
+    return {
+        "optimizer": {"kind": "least_squares", "method": method, "max_nfev": 60},
+        "variables": [
+            {
+                "kind": "asphere_polynomial_coefficient",
+                "surface_index": 1,
+                "asphere_kind": "EvenAspherical",
+                "coefficient_index": coefficient_index,
+                **bounds,
+            }
+            for coefficient_index in coefficient_indices
+        ],
+        "pickups": [],
+        "merit_function": {
+            "operands": [
+                {
+                    "kind": "rms_wavefront_error",
+                    "target": 0.0,
+                    "weight": 1.0,
+                    "fields": [{"index": 0, "weight": 1.0}, {"index": 2, "weight": 1.0}],
+                    "wavelengths": [{"index": 1, "weight": 1.0}],
+                }
+            ]
+        },
+    }
+
+
+@pytest.fixture
+def even_asphere_cooke_triplet(fresh_cooke_triplet):
+    from rayoptics.elem.profiles import EvenPolynomial
+
+    fresh_cooke_triplet["seq_model"].ifcs[1].profile = EvenPolynomial(r=23.713, cc=0.0, coefs=[0.0, 0.0, 0.0, 0.0])
+    fresh_cooke_triplet.update_model()
+    return fresh_cooke_triplet
+
+
+class TestLeastSquaresVariableScaling:
+    """Least squares moves variables whose useful range is far below one, such as high-order asphere terms."""
+
+    def test_trf_moves_an_r8_coefficient_bounded_far_below_one(self, even_asphere_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
+
+        config = _high_order_asphere_config("trf", [3], bound=1e-9)
+        initial = evaluate_optimization_problem(even_asphere_cooke_triplet, config)
+
+        report = optimize_opm(even_asphere_cooke_triplet, config)
+
+        assert initial["merit_function"]["sum_of_squares"] == pytest.approx(1.3646, rel=1e-3)
+        assert report["merit_function"]["sum_of_squares"] < 1.0
+        assert -1e-9 <= report["final_values"][0]["value"] <= 1e-9
+
+    def test_lm_moves_unbounded_r6_and_r8_coefficients_starting_at_zero(self, even_asphere_cooke_triplet):
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        report = optimize_opm(even_asphere_cooke_triplet, _high_order_asphere_config("lm", [2, 3]))
+
+        assert report["merit_function"]["sum_of_squares"] < 0.7
+
+    def test_scaled_jacobian_probes_a_fraction_of_the_bound_width(self, monkeypatch, even_asphere_cooke_triplet):
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+        from rayoptics_web_utils.optimization.solvers.least_squares import VariableScaling
+
+        problem = OptimizationProblem(even_asphere_cooke_triplet, _high_order_asphere_config("trf", [3], bound=1e-12))
+        scaling = VariableScaling.for_problem(problem)
+        x0 = problem.current_vector()
+        u0 = scaling.to_solver(x0)
+        problem.residual_objective(scaling.to_problem(u0))
+        probes = []
+        evaluate_residuals = problem._residuals_or_penalty
+
+        def record_probe(vector):
+            probes.append(np.array(vector, dtype=float, copy=True))
+            return evaluate_residuals(vector)
+
+        monkeypatch.setattr(problem, "_residuals_or_penalty", record_probe)
+
+        jacobian = problem.residual_jacobian(u0, scaling.solver_bounds(), scaling.to_problem)
+
+        assert len(probes) == 1
+        step = abs(float(probes[0][0] - x0[0]))
+        assert 0.0 < step < 1e-18
+        assert -1e-12 <= probes[0][0] <= 1e-12
+        assert jacobian.shape == (2, 1)
+        assert np.all(np.isfinite(jacobian))
+        assert np.any(jacobian != 0.0)
