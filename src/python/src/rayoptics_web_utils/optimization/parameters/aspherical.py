@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, TypeGuard, cast
 
 from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, SurfaceProfile, XToroid, YToroid
 
-from ._accessor import ParameterAccessor, surface_profile, validate_surface_index
+from ._accessor import ParameterAccessor, edge_sag_unit, surface_profile, validate_surface_index
 
 if TYPE_CHECKING:
     from rayoptics.optical.opticalmodel import OpticalModel
@@ -125,5 +125,29 @@ def _write(opm: OpticalModel, entry: MutableParameter, value: float) -> None:
     profile.rR = float(value)
 
 
-ASPHERICAL_ACCESSOR = ParameterAccessor(kinds=ASPHERE_PARAMETER_KINDS, read=_read, write=_write)
+def polynomial_term_power(asphere_kind: AsphereKind, coefficient_index: int) -> int:
+    """Returns the radial power multiplied by ``coefs[coefficient_index]``.
+
+    ``RadialPolynomial`` coefficients start at ``r``; even-polynomial and toroid
+    coefficients start at the quadratic ``r**2`` and step by even powers.
+    """
+    if asphere_kind == "RadialPolynomial":
+        return coefficient_index + 1
+    return 2 * coefficient_index + 2
+
+
+def _natural_unit(opm: OpticalModel, entry: MutableParameter) -> float:
+    """Polynomial coefficients use ``h**-power`` (one unit of edge sag); conic and sweep radius use ``1.0``.
+
+    Reads only the reference and the surface aperture, so it never installs a profile.
+    """
+    if entry["kind"] != "asphere_polynomial_coefficient":
+        return 1.0
+    power = polynomial_term_power(entry["asphere_kind"], entry["coefficient_index"])
+    return edge_sag_unit(opm, entry["surface_index"], power)
+
+
+ASPHERICAL_ACCESSOR = ParameterAccessor(
+    kinds=ASPHERE_PARAMETER_KINDS, read=_read, write=_write, natural_unit=_natural_unit
+)
 """Reads and writes asphere terms, installing the referenced profile when absent."""

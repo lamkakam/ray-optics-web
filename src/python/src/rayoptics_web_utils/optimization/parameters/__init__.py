@@ -4,7 +4,9 @@
 of the surface property that owns it (one module per property: ``radius``,
 ``thickness``, ``aspherical``, ``decenter``), mirroring the TypeScript parameter
 shapes; a parity test checks both against the shared manifest fixture. Public
-radius values are preserved while optimizer vectors use curvature. Snapshot
+radius values are preserved while optimizer vectors use curvature, and each
+accessor supplies the natural unit least squares scales its variables by (an
+edge-sag step for curvatures and polynomial asphere terms, ``1.0`` otherwise). Snapshot
 entries retain full asphere and decenter descriptors so restoration can recover
 materialized parameters safely.
 """
@@ -56,6 +58,7 @@ __all__ = [
     "entry_from_parameter_key",
     "is_toroid",
     "parameter_key",
+    "parameter_natural_unit",
     "radius_to_curvature",
     "read_parameter_value",
     "restore_state",
@@ -97,6 +100,18 @@ def write_parameter_value(opm: OpticalModel, entry: MutableParameter, value: flo
         ValueError: For an unknown kind or an incompatible asphere/decenter reference.
     """
     _accessor_for(entry).write(opm, entry, value)
+
+
+def parameter_natural_unit(opm: OpticalModel, entry: MutableParameter) -> float:
+    """Returns the referenced parameter's characteristic step in optimizer units (curvature for radius).
+
+    The value is positive and finite; a surface without a usable semi-diameter
+    yields ``1.0``. Reading it never mutates the model.
+
+    Raises:
+        ValueError: For an unknown kind.
+    """
+    return _accessor_for(entry).natural_unit(opm, entry)
 
 
 def snapshot_state(

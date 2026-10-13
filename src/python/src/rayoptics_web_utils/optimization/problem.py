@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Callable, Self, cast
 
 import numpy as np
 from scipy.optimize._numdiff import approx_derivative
@@ -31,6 +31,7 @@ from .operands import (
 from .progress import OptimizationProgress
 from .parameters import (
     curvature_to_radius,
+    parameter_natural_unit,
     radius_to_curvature,
     read_parameter_value,
     write_parameter_value,
@@ -62,7 +63,8 @@ class OptimizationProblem:
     - Weighted residuals are `total_weight * operands.operand_goal_residual(...)`: `actual - target` for adjustable-target operands, `sample_value` for fixed-target (implicit zero target) vector operands, and the dead-zone distance outside `[min, max]` for range operands. Each residual entry copies the sample's `target` or supplied `min`/`max`, plus `surface_index` whenever the sample has one (omitted for the system value of system-or-surface operands).
     - The penalty residual vector length matches the nominal non-zero-weight residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per retained field/wavelength sample; for axis-specific Ray Fan operands, that means `num_rays` entries.
     - Records progress only when the evaluated optimizer vector or glass-search context changes materially.
-    - `residual_jacobian(...)` reproduces SciPy's default 2-point finite-difference Jacobian (reusing the cached residuals of the last `residual_objective(...)` call as `f0`) without recording progress, so least-squares progress contains only the evaluations SciPy counts toward `max_nfev`.
+    - `residual_jacobian(...)` reproduces SciPy's default 2-point finite-difference Jacobian (reusing the cached residuals of the last `residual_objective(...)` call as `f0`) without recording progress, so least-squares progress contains only the evaluations SciPy counts toward `max_nfev`. An optional solver-to-problem vector map lets least squares differentiate in its scaled space.
+    - `natural_units()` returns each variable's characteristic step in optimizer units (curvature for radius) from `parameters.parameter_natural_unit(...)`, which least squares uses to scale variables that have no finite bounds.
     - `from_normalized_config(...)` lets the glass facade reuse the problem core after its distinct flat configuration has already been validated.
     - Converts optional bounds into SciPy-compatible `(None, None)` intervals for L-BFGS-B while preserving the existing array bounds used by current solvers.
     - Uses `OpticalModel` plus package-local typed config/report aliases for all internal mappings."""
@@ -124,6 +126,10 @@ class OptimizationProblem:
         lower = np.array([self._internal_lower_bound(variable) for variable in self.variables], dtype=float)
         upper = np.array([self._internal_upper_bound(variable) for variable in self.variables], dtype=float)
         return lower, upper
+
+    def natural_units(self) -> FloatArray:
+        """Return each variable's characteristic step in optimizer units (curvature for radius)."""
+        return np.array([parameter_natural_unit(self.opm, variable) for variable in self.variables], dtype=float)
 
     def scipy_bounds(self) -> list[tuple[float | None, float | None]]:
         """Return optional per-variable bounds accepted by SciPy minimize."""
@@ -265,6 +271,7 @@ class OptimizationProblem:
         self,
         vector: FloatArray,
         bounds: tuple[FloatArray | float, FloatArray | float],
+        to_problem_vector: Callable[[FloatArray], FloatArray] | None = None,
     ) -> FloatArray:
         """Estimate the residual Jacobian without recording progress.
 
@@ -276,19 +283,26 @@ class OptimizationProblem:
         is pinned by the Pyodide distribution.
 
         Args:
-            vector: Optimizer vector at which to differentiate.
-            bounds: Lower and upper optimizer-space bounds passed to SciPy.
+            vector: Solver vector at which to differentiate.
+            bounds: Lower and upper solver-space bounds passed to SciPy.
+            to_problem_vector: Maps a solver vector to the optimizer vector the
+                problem evaluates. When given, the Jacobian is taken with respect
+                to the solver vector, so finite-difference steps follow the
+                solver's scaling; the cached ``f0`` is reused when the mapped
+                vector matches the last ``residual_objective(...)`` call.
+                Defaults to the identity.
 
         Returns:
             Dense ``(residual_count, variable_count)`` Jacobian.
         """
+        to_problem = to_problem_vector if to_problem_vector is not None else (lambda values: values)
         x = np.asarray(vector, dtype=float)
         f0 = None
         cached = self._last_residual_evaluation
-        if cached is not None and np.array_equal(cached[0], x):
+        if cached is not None and np.array_equal(cached[0], to_problem(x)):
             f0 = cached[1]
         jacobian = approx_derivative(
-            lambda values: self._residuals_or_penalty(values)[0],
+            lambda values: self._residuals_or_penalty(to_problem(values))[0],
             x,
             method="2-point",
             rel_step=None,
