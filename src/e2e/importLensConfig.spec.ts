@@ -1,14 +1,15 @@
 /**
- * End-to-end coverage for importing `lens-config.json` through the `Load Config` button and verifying the imported specs, prescription grid, modals, and update flow.
+ * End-to-end coverage for importing `lens-config.json` through the `Load Config` button and verifying the imported specs, prescription grid, modals, and the automatic post-import update.
  *
  * @remarks
  * ## Flow
  *
  * 1. Dismiss any startup dialog, load the JSON fixture, and confirm the import.
- * 2. Verify imported system, aperture, Half-Field, and wavelength values through the Specs UI.
- * 3. Verify the Prescription grid values for key rows, including visible aspherical/decenter text labels (`Conic`, `None`, `bend`, `decenter`, `reverse`).
- * 4. Open the aspherical and decenter modals from prescription cells and verify the imported modal values.
- * 5. Update the system and verify output metrics appear.
+ * 2. Wait for the automatic post-import `Update System` computation to finish.
+ * 3. Verify imported system, aperture, Half-Field, and wavelength values through the Specs UI.
+ * 4. Verify the Prescription grid values for key rows, including visible aspherical/decenter text labels (`Conic`, `None`, `bend`, `decenter`, `reverse`). The fixture uses auto aperture, so the Stop semi-diameter is the worker-computed value compared to three decimal places.
+ * 5. Open the aspherical and decenter modals from prescription cells and verify the imported modal values.
+ * 6. Verify output metrics from the automatic computation are visible.
  *
  * Prescription assertions resolve surface rows by displayed `Index` values and resolve the `Object`/`Image` rows by their displayed labels. The helpers bridge from AG Grid's pinned `Index` row to the matching center-row container before reading non-index cells or clicking action buttons.
  */
@@ -41,6 +42,10 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await dialog.waitFor({ state: "visible", timeout: 5_000 });
   await dialog.getByRole("button", { name: "Load" }).click();
   await dialog.waitFor({ state: "hidden", timeout: 5_000 });
+
+  // Confirming the import starts Update System automatically
+  const updateBtn = page.locator('button[aria-label="Update System"]');
+  await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
 
   // 3. Verify System Specs tab
   await page.getByRole("tab", { name: "System Specs" }).click();
@@ -139,9 +144,13 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await expect(
     await getPrescriptionCell(page, prescGrid, 1, "Medium"),
   ).toContainText("REFL");
-  await expect(
-    await getPrescriptionCell(page, prescGrid, 1, "Semi-diam."),
-  ).toContainText("609.6");
+  // Auto aperture shows the semi-diameter computed by the post-import update
+  const stopSemiDiameter = Number.parseFloat(
+    await (
+      await getPrescriptionCell(page, prescGrid, 1, "Semi-diam.")
+    ).innerText(),
+  );
+  expect(stopSemiDiameter).toBeCloseTo(610.495, 3);
 
   const row1 = await getPrescriptionSurfaceRow(page, prescGrid, 1);
   await row1.hover();
@@ -325,11 +334,7 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await decModal.getByRole("button", { name: "Cancel" }).click();
   await decModal.waitFor({ state: "hidden", timeout: 5_000 });
 
-  // 11. Update System and verify output
-  const updateBtn = page.locator('button[aria-label="Update System"]');
-  await updateBtn.click();
-  await expect(updateBtn).toBeDisabled({ timeout: 5_000 });
-  await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
+  // 11. Verify output from the automatic post-import update
   await expect(page.locator("text=/EFL:/").first()).toBeVisible({
     timeout: 10_000,
   });
