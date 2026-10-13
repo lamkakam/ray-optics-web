@@ -26,9 +26,9 @@ interface LensEditorConfigToolbarProps {
   readonly getOpticalModel: () => OpticalModel;
   /** Applies a validated imported JSON config after user confirmation */
   readonly onImportJson: (data: OpticalModel) => void;
-  /** Triggers Lens Editor submit/compute */
+  /** Triggers Lens Editor submit/compute from `Update System` and after a confirmed import */
   readonly onUpdateSystem: () => void | Promise<void>;
-  /** Disables `Update System` while Pyodide is not ready or a compute is in progress */
+  /** Disables `Update System`, and skips the post-import compute, while Pyodide is not ready or a compute is in progress */
   readonly isUpdateSystemDisabled: boolean;
 }
 
@@ -41,7 +41,7 @@ interface LensEditorConfigToolbarProps {
  * - `Update System` calls `onUpdateSystem` and respects `isUpdateSystemDisabled`.
  * - `Load Config` opens the hidden JSON file input. File contents are structurally validated with `validateImportedLensData`, then every Object/surface medium is resolved through the live catalog maps before `ConfirmImportModal` opens. The pending model contains canonical medium/manufacturer values. Unknown media and unavailable catalogs open `ErrorModal` without mutating stores.
  * - `Import a file from Photons to Photos` opens the hidden TXT file input. Non-`.txt` filenames are rejected before reading. Prime TXT files are parsed with app-wide glass lookup maps when available, AJV-validated, and sent to `ConfirmImportModal`. Zoom TXT files first open `FocalLengthSelectionModal`; confirming the focal length resolves and validates that column before opening `ConfirmImportModal`.
- * - Confirming the import calls `onImportJson(pendingImportData)` and clears pending state. Canceling clears pending state without mutating stores.
+ * - Confirming the import calls `onImportJson(pendingImportData)`, then `onUpdateSystem()` unless `isUpdateSystemDisabled` (the import still loads without computing while Pyodide is not ready or a compute/focus is in progress), and clears pending state. Canceling clears pending state without mutating stores or computing.
  * - `Download Config` serializes `getOpticalModel()` as pretty JSON and downloads it as `lens-config.json`.
  * - Button size follows `useScreenBreakpoint`: `xs` on `screenSM`, `sm` otherwise.
  *
@@ -198,7 +198,10 @@ export function LensEditorConfigToolbar({
   };
 
   const handleConfirmImport = () => {
-    if (pendingImportData) onImportJson(pendingImportData);
+    if (pendingImportData) {
+      onImportJson(pendingImportData);
+      if (!isUpdateSystemDisabled) void onUpdateSystem();
+    }
     setPendingImportData(undefined);
   };
 

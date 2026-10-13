@@ -88,6 +88,7 @@ export interface LensEditorProps {
  * - `onError` delegates submit and imperative focus failures to `app/AppShell.tsx`, which owns the shared sanitized `ErrorModal`
  * - Missing prescription glasses from submit or imperative focus are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
  * - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
+ * - Confirmed `Load Config` and Photons to Photos imports load through `handleImportJson`, then the config toolbar immediately runs `handleSubmit` unless Update System is disabled.
  * - `handleSubmit` delegates to the throwing `computeOpticalSystem` core, so submit-time first-order, Seidel, plot, layout, selection, specs, model, and auto-aperture updates use one complete commit pipeline shared with WebMCP.
  * - `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because it derives from the same complete cached Seidel payload committed separately.
  * - Zernike modal requests cache the complete payload by model instance, aim point, field, wavelength, ordering, term count, and pupil space. The final physical surface's image-gap thickness determines whether Exit is available using RayOptics' `abs(thickness) > 1e8` infinite-conjugate rule.

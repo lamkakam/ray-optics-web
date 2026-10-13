@@ -1558,6 +1558,143 @@ describe("LensEditor", () => {
     expect(lensStore.getState().rows).toHaveLength(2);
   });
 
+  it("updates the system after confirming a Load Config import", async () => {
+    const { proxy, lensStore, onError } = renderLensEditor();
+    const imported: OpticalModel = {
+      ...testImportModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 50,
+          thickness: 5,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+        },
+      ],
+    };
+    const fileInput = document.querySelector(
+      'input[accept=".json"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File([JSON.stringify(imported)], "lens.json", {
+        type: "application/json",
+      }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    await waitFor(() =>
+      expect(lensStore.getState().committedOpticalModel).toMatchObject({
+        specs: { pupil: { value: 77 } },
+      }),
+    );
+    expect(proxy?.plotLensLayout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        specs: expect.objectContaining({
+          pupil: { space: "object", type: "epd", value: 77 },
+        }),
+      }),
+      false,
+    );
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("updates the system after confirming a prime Photons to Photos import", async () => {
+    const { proxy, lensStore } = renderLensEditor();
+    const fileInput = document.querySelector(
+      'input[accept=".txt"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File(
+        [readPhotonsFixture("prime-no-glass-type.txt")],
+        "prime-no-glass-type.txt",
+        { type: "text/plain" },
+      ),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    await waitFor(() =>
+      expect(lensStore.getState().committedOpticalModel).toMatchObject({
+        specs: { pupil: { type: "f/#", value: 4 } },
+      }),
+    );
+    expect(proxy?.plotLensLayout).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates the system after confirming a zoom Photons to Photos import", async () => {
+    const { proxy, lensStore } = renderLensEditor();
+    const fileInput = document.querySelector(
+      'input[accept=".txt"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File(
+        [readPhotonsFixture("zoom-wide-angle-aspherical-no-glass-type.txt")],
+        "zoom-wide-angle-aspherical-no-glass-type.txt",
+        { type: "text/plain" },
+      ),
+    );
+    const focalDialog = await screen.findByRole("dialog", {
+      name: "Select Focal Length",
+    });
+    await userEvent.click(
+      within(focalDialog).getByRole("radio", { name: "24.376 mm" }),
+    );
+    await userEvent.click(
+      within(focalDialog).getByRole("button", { name: "Confirm" }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    await waitFor(() =>
+      expect(lensStore.getState().committedOpticalModel).toMatchObject({
+        specs: { field: { maxField: 16.779 } },
+      }),
+    );
+    expect(proxy?.plotLensLayout).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not update the system when the import confirmation is canceled", async () => {
+    const { proxy, lensStore } = renderLensEditor();
+    const fileInput = document.querySelector(
+      'input[accept=".json"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File([JSON.stringify(testImportModel)], "lens.json", {
+        type: "application/json",
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Cancel" }),
+    );
+
+    expect(proxy?.plotLensLayout).not.toHaveBeenCalled();
+    expect(lensStore.getState().committedOpticalModel).toBeUndefined();
+  });
+
+  it("loads a confirmed import without updating the system while Pyodide is not ready", async () => {
+    const { lensStore, onError } = renderLensEditor({
+      proxy: undefined,
+      isReady: false,
+    });
+    const fileInput = document.querySelector(
+      'input[accept=".json"]',
+    ) as HTMLInputElement;
+    await userEvent.upload(
+      fileInput,
+      new File([JSON.stringify(testImportModel)], "lens.json", {
+        type: "application/json",
+      }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    expect(lensStore.getState().autoAperture).toBe(true);
+    expect(lensStore.getState().committedOpticalModel).toBeUndefined();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("shows an error dialog when Photons to Photos parsing fails", async () => {
     renderLensEditor();
     const file = new File(["[descriptive data]\ntitle\tBad"], "bad.txt", {
