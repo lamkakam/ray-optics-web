@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import clsx from "clsx";
 import { Input } from "@/shared/components/primitives/Input";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
@@ -17,6 +18,8 @@ interface NumericRangeInputProps {
   readonly maxAriaLabel: string;
   /** When `true`, a non-blank bound must be a number greater than zero. */
   readonly positive?: boolean;
+  /** Optional ref to the lower-bound input, e.g. so a cell editor can focus it on open. */
+  readonly minInputRef?: React.Ref<HTMLInputElement>;
 }
 
 /** Returns whether non-blank bound text is not a number, or not positive when `positive`. */
@@ -34,7 +37,7 @@ function isInvalidBound(value: string | undefined, positive: boolean): boolean {
  *
  * @remarks
  * - Renders two shared `Input` primitives side by side (lower bound first) with `Min` / `Max` placeholders and the
- *   caller's aria labels.
+ *   caller's aria labels, forwarding the optional `minInputRef` to the lower-bound input.
  * - Uses `type="text"` with `inputMode="decimal"` rather than `type="number"`, so partially typed or invalid text is
  *   preserved and reported verbatim instead of collapsing to an empty value that would silently drop a bound.
  * - Holds no local state: every keystroke calls `onMinChange` / `onMaxChange` with the raw text, and the displayed
@@ -51,6 +54,7 @@ export function NumericRangeInput({
   minAriaLabel,
   maxAriaLabel,
   positive = false,
+  minInputRef,
 }: NumericRangeInputProps) {
   const inputClassName = clsx(
     "min-w-0 flex-1",
@@ -59,6 +63,7 @@ export function NumericRangeInput({
   return (
     <div className="flex w-full items-center gap-1">
       <Input
+        ref={minInputRef}
         type="text"
         inputMode="decimal"
         placeholder="Min"
