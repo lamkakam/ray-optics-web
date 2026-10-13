@@ -110,7 +110,6 @@ describe("OptimizationEvaluationPanel", () => {
       <OptimizationEvaluationPanel
         isEvaluating
         rows={[["Paraxial focal length", "100", "1.000000", "98.500000"]]}
-        maxBodyHeight={320}
         allowBodyScroll
       />,
     );
@@ -121,9 +120,6 @@ describe("OptimizationEvaluationPanel", () => {
     expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass(
       "overflow-y-auto",
     );
-    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveStyle({
-      maxHeight: "320px",
-    });
     expect(screen.getByText("Paraxial focal length")).toBeInTheDocument();
     expect(screen.getByText("98.500000")).toBeInTheDocument();
   });
@@ -140,9 +136,6 @@ describe("OptimizationEvaluationPanel", () => {
     expect(
       screen.getByTestId("optimization-evaluation-scroll"),
     ).not.toHaveClass("overflow-y-auto");
-    expect(
-      screen.getByTestId("optimization-evaluation-scroll"),
-    ).not.toHaveStyle({ maxHeight: "320px" });
   });
 
   it("renders N/A targets for fixed-target residual rows", () => {

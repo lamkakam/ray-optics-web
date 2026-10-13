@@ -10,7 +10,6 @@ interface OptimizationEvaluationPanelProps {
   readonly isEvaluating: boolean;
   readonly invalidConfigMessage?: string;
   readonly warningMessage?: string;
-  readonly maxBodyHeight?: number;
   readonly allowBodyScroll?: boolean;
 }
 
@@ -25,8 +24,8 @@ interface OptimizationEvaluationPanelProps {
  * - The evaluation table right-aligns the `Target`, `Weight`, and `Value` header/body columns while keeping `Operand Type` left-aligned.
  * - When `rows` is empty, renders the static empty-state message with the `Paragraph` `placeholder` variant instead of the table. This includes cases where the worker returned residuals but all of them were filtered out upstream because their effective displayed weight is zero.
  * - When `rows` is present and a warning banner is provided, the banner appears before the scroll/table body without changing the table layout.
- * - When `rows` is present and `allowBodyScroll` is `true`, the table body keeps `overflow-y-auto` and applies the caller-provided `maxBodyHeight` inline so parent layouts can grow or shrink the visible table area dynamically.
- * - When `allowBodyScroll` is `false`, the table body drops the internal vertical scrollbar and height cap so the entire table contributes to page height.
+ * - When `allowBodyScroll` is `true`, the card is a shrinkable flex column (`min-h-0`) for use inside a height-constrained flex parent: it stays content-sized while the table fits, and once the parent runs out of height only the table body shrinks and scrolls internally (`overflow-y-auto`), while the header and warning banner keep their natural height. No height is measured or set inline.
+ * - When `allowBodyScroll` is `false`, the table body drops the internal vertical scrollbar so the entire table contributes to page height.
  * - Horizontal overflow remains enabled in both modes so wide tables still scroll sideways without clipping.
  * - The table accepts display rows whose target column is the literal string `N/A`, which is used for fixed-target residual entries such as Ray Fan variants, whose implicit zero target is not reported. Range residuals display their bounds in the same column.
  */
@@ -35,7 +34,6 @@ export function OptimizationEvaluationPanel({
   isEvaluating,
   invalidConfigMessage,
   warningMessage,
-  maxBodyHeight,
   allowBodyScroll = true,
 }: OptimizationEvaluationPanelProps) {
   const activeWarningMessage = invalidConfigMessage ?? warningMessage;
@@ -43,15 +41,20 @@ export function OptimizationEvaluationPanel({
     activeWarningMessage === undefined ? null : (
       <Paragraph
         variant="placeholder"
-        className={clsx(cx.text.color.errorTextColor, "px-4 pt-3")}
+        className={clsx(cx.text.color.errorTextColor, "shrink-0 px-4 pt-3")}
       >
         {activeWarningMessage}
       </Paragraph>
     );
 
   return (
-    <div className="mb-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+    <div
+      className={clsx(
+        "mb-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700",
+        allowBodyScroll && "flex min-h-0 flex-col",
+      )}
+    >
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
         <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">
           Operand Evaluation
         </h2>
@@ -70,13 +73,8 @@ export function OptimizationEvaluationPanel({
           data-testid="optimization-evaluation-scroll"
           className={clsx(
             "overflow-x-auto px-4 py-3",
-            allowBodyScroll ? "overflow-y-auto" : "overflow-y-visible",
+            allowBodyScroll ? "min-h-0 overflow-y-auto" : "overflow-y-visible",
           )}
-          style={
-            allowBodyScroll && maxBodyHeight !== undefined
-              ? { maxHeight: `${maxBodyHeight}px` }
-              : undefined
-          }
         >
           <Table
             headers={["Operand Type", "Target", "Weight", "Value"]}

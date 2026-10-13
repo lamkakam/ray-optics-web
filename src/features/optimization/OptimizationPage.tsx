@@ -4,14 +4,8 @@ import {
   OPTIMIZATION_DID_NOT_CONVERGE_MESSAGE,
 } from "@/shared/lib/pyodideErrors";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import clsx from "clsx";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -87,7 +81,6 @@ const ZERO_WEIGHT_WARNING_MESSAGE =
   "At least one effective optimization weight must be non-zero.";
 const INITIAL_GUESS_OUTSIDE_BOUNDS_MESSAGE =
   "Initial guess is outside of provided bounds";
-const LG_EVALUATION_RESERVED_HEIGHT_FALLBACK = 333;
 const PYODIDE_INTERRUPT_SIGNAL = 2;
 
 function buildCurrentEditorModel(
@@ -142,7 +135,7 @@ function buildCurrentEditorModel(
  * - `Operands`
  * - Matches the Lens Editor drawer pattern responsively:
  * - on `screenLG`, renders a draggable `BottomDrawer` anchored to the bottom of the page with `mt-auto` and keeps the page shell `overflow-hidden` so the drawer panel owns tab-content scrolling
- * - on `screenLG`, observes the page shell height and listens to `BottomDrawer.onHeightChange(...)` so the operand evaluation table grows when the drawer is dragged downward and shrinks when the drawer is dragged upward
+ * - on `screenLG`, the shared action/evaluation section is a shrinkable flex column that fills the height the fixed-height drawer leaves, so the operand evaluation table grows when the drawer is dragged downward, shrinks when the drawer is dragged upward, and can never push the drawer past the page shell regardless of row count or warning banners
  * - on smaller screens, renders the same `BottomDrawer` in non-draggable mode while the page continues to scroll vertically
  * - on smaller screens, disables the evaluation panel's internal vertical scrollbar so the page owns the only vertical scroll position
  * - the page shell itself does not own outer padding; instead, a descendant wrapper pads the shared action/evaluation/modal section and a separate drawer wrapper keeps only the drawer bottom spacing so the drawer still spans edge to edge
@@ -176,7 +169,7 @@ function buildCurrentEditorModel(
  * - Variable-bound affordances use optimizer-kind-aware capabilities, so bounded least-squares (`trf`), Differential Evolution, and Glass Expert use the min/max variable UI while `lm` remains unbounded.
  * - Invalid intermediate configs clear the evaluation table and show the current `buildOptimizationConfig()` error in Operand Evaluation.
  * - Missing-glass validation also clears the evaluation table; config-build errors take precedence when both a config error and a missing-glass error are present.
- * - Operand Evaluation loading and completion state updates must not re-render the bottom drawer grid subtree or reset active AG Grid editors; the page passes memoized drawer `layout`, `fields`, `wavelengths`, and `prescription` prop objects, with `onHeightChange` present only for large-screen drawer mode.
+ * - Operand Evaluation loading and completion state updates must not re-render the bottom drawer grid subtree or reset active AG Grid editors; the page passes memoized drawer `layout`, `fields`, `wavelengths`, and `prescription` prop objects.
  * - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
  * - `Optimize` is disabled when the current optimization model references glasses missing from the loaded glass catalog.
  * - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
@@ -216,7 +209,7 @@ function buildCurrentEditorModel(
  * - Editor-driven optical-model changes propagate into optimization automatically; field, wavelength, and prescription differences are synchronized independently so only affected optimization defaults reset.
  * - Auto-aperture semi-diameter cache updates follow the same prescription synchronization policy as other editor-driven surface changes; disabling auto aperture restores manual values without clearing the Lens Editor cache.
  * - The live evaluation table uses the residual `total_weight` reported by Python and hides rows whose effective weight is zero, so field/wavelength-expanded operands appear only for active contributions.
- * - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
+ * - Large-screen evaluation height is controlled purely by flex layout (no DOM measurement): the evaluation panel's table body is the only part of the shared section that shrinks, and it scrolls internally once the remaining height is exhausted.
  * - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
  * - `OptimizationPage` remains responsible for deriving row data, evaluation state, warning text, modal state, worker calls, and the page-level Apply to Editor confirmation. The editor mutation itself is factored into `features/optimization/lib/applyOptimizationModelToEditor.ts` so the app shell navigation warning can reuse the same apply path.
  * - `BottomDrawerContainer` owns the drawer wrapper, tab assembly, active-tab state binding, optimizer handlers, field/wavelength weight handlers, prescription variable-modal handlers, operand handlers, and AG Grid edit lifecycle callback forwarding by reading the optimization store directly and receiving page-level lifecycle callbacks.
@@ -233,8 +226,6 @@ export function OptimizationPage({
   onError,
   onApplyToEditor,
 }: OptimizationPageProps) {
-  const defaultLgDrawerHeight =
-    typeof window === "undefined" ? 300 : Math.round(window.innerHeight * 0.4);
   const screenSize = useScreenBreakpoint();
   const { imagePoint } = useImagePoint();
   const { catalogs, lookupMaps } = useGlassCatalogs();
@@ -371,13 +362,6 @@ export function OptimizationPage({
     useState(false);
   const [canStopOptimization, setCanStopOptimization] = useState(false);
   const [isStoppingOptimization, setIsStoppingOptimization] = useState(false);
-  const [liveDrawerHeight, setLiveDrawerHeight] = useState(
-    defaultLgDrawerHeight,
-  );
-  const [pageShellHeight, setPageShellHeight] = useState(0);
-  const pageShellRef = useRef<HTMLDivElement | null>(null);
-  const sharedContentRef = useRef<HTMLDivElement | null>(null);
-  const evaluationPanelRef = useRef<HTMLDivElement | null>(null);
   const evaluationRequestIdRef = useRef(0);
   const evaluatedOptimizationRunConfigSignatureRef = useRef<string | undefined>(
     undefined,
@@ -399,30 +383,6 @@ export function OptimizationPage({
   const optimizationStopPromiseRef = useRef<Promise<void> | undefined>(
     undefined,
   );
-
-  useLayoutEffect(() => {
-    if (!isLG) {
-      return;
-    }
-
-    const pageShell = pageShellRef.current;
-    if (pageShell === null) {
-      return;
-    }
-
-    const updatePageShellHeight = () => {
-      const nextHeight = Math.round(pageShell.getBoundingClientRect().height);
-      setPageShellHeight(nextHeight);
-    };
-
-    updatePageShellHeight();
-    const resizeObserver = new ResizeObserver(updatePageShellHeight);
-    resizeObserver.observe(pageShell);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [isLG]);
 
   useEffect(() => {
     const currentEditorModel = buildCurrentEditorModel(
@@ -623,38 +583,6 @@ export function OptimizationPage({
       ? { kind: optimizer.kind, method: optimizer.method }
       : { kind: optimizer.kind },
   );
-
-  const evaluationReservedHeight = !isLG
-    ? undefined
-    : (() => {
-        const sharedContentHeight =
-          sharedContentRef.current?.getBoundingClientRect().height ?? 0;
-        const evaluationPanelHeight =
-          evaluationPanelRef.current?.getBoundingClientRect().height ?? 0;
-        const measuredReservedHeight =
-          sharedContentHeight > 0 && evaluationPanelHeight > 0
-            ? Math.round(sharedContentHeight - evaluationPanelHeight)
-            : 0;
-
-        return measuredReservedHeight > 0
-          ? measuredReservedHeight
-          : LG_EVALUATION_RESERVED_HEIGHT_FALLBACK;
-      })();
-
-  const evaluationMaxBodyHeight = useMemo(() => {
-    if (
-      !isLG ||
-      pageShellHeight <= 0 ||
-      evaluationReservedHeight === undefined
-    ) {
-      return undefined;
-    }
-
-    return Math.max(
-      120,
-      pageShellHeight - liveDrawerHeight - evaluationReservedHeight,
-    );
-  }, [evaluationReservedHeight, isLG, liveDrawerHeight, pageShellHeight]);
 
   const evaluateOptimizationOperation = useCallback(
     async ({
@@ -1285,10 +1213,7 @@ export function OptimizationPage({
     [optimizationModel?.setAutoAperture, radiusRows, openPropertyInspection],
   );
 
-  const bottomDrawerLayout = useMemo(
-    () => (isLG ? { isLG, onHeightChange: setLiveDrawerHeight } : { isLG }),
-    [isLG],
-  );
+  const bottomDrawerLayout = useMemo(() => ({ isLG }), [isLG]);
 
   const gridEditLifecycle = useMemo(
     () => ({
@@ -1300,9 +1225,8 @@ export function OptimizationPage({
 
   const sharedContent = (
     <div
-      ref={sharedContentRef}
       data-testid="optimization-shared-content-wrapper"
-      className="p-4 pb-0"
+      className={clsx("p-4 pb-0", isLG && "flex min-h-0 flex-1 flex-col")}
     >
       <OptimizationProgressModal
         isOpen={optimizationProgressModalOpen}
@@ -1324,16 +1248,13 @@ export function OptimizationPage({
         onDiscard={() => optimizationStore.getState().openDiscardConfirm()}
       />
 
-      <div ref={evaluationPanelRef}>
-        <OptimizationEvaluationPanel
-          rows={evaluationTableRows}
-          isEvaluating={isEvaluating}
-          invalidConfigMessage={invalidConfigMessage}
-          warningMessage={evaluationWarningMessage}
-          maxBodyHeight={evaluationMaxBodyHeight}
-          allowBodyScroll={isLG}
-        />
-      </div>
+      <OptimizationEvaluationPanel
+        rows={evaluationTableRows}
+        isEvaluating={isEvaluating}
+        invalidConfigMessage={invalidConfigMessage}
+        warningMessage={evaluationWarningMessage}
+        allowBodyScroll={isLG}
+      />
 
       <ParameterModeModal
         isOpen={parameterModal.open}
@@ -1383,10 +1304,7 @@ export function OptimizationPage({
 
   if (isLG) {
     return (
-      <div
-        ref={pageShellRef}
-        className="relative flex flex-1 min-h-0 flex-col overflow-hidden"
-      >
+      <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
         {sharedContent}
         <BottomDrawerContainer
           fields={bottomDrawerFields}
