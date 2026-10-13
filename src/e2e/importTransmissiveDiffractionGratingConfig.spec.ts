@@ -6,13 +6,15 @@
  *
  * 1. Open the `Prescription` tab and import `src/e2e/jsons/transmissive-diffraction-grating.json`.
  * 2. Confirm the load dialog.
- * 3. Verify the imported prescription grid shows `600 lp/mm` in the expected diffraction grating row and `dec and return` in both tilt/decenter rows.
- * 4. Open the diffraction grating modal from the imported grating cell and verify `lp/mm = 600` and `order = 1`.
- * 5. Open the tilt/decenter modal for the first imported decenter row and verify `dec and return` with `alpha = 15` and zeroed remaining fields.
- * 6. Open the tilt/decenter modal for the second imported decenter row and verify `dec and return` with `alpha = -15` and zeroed remaining fields.
+ * 3. Wait for the automatic post-import `Update System` computation to finish.
+ * 4. Verify the imported prescription grid shows `600 lp/mm` in the expected diffraction grating row and `dec and return` in both tilt/decenter rows.
+ * 5. Open the diffraction grating modal from the imported grating cell and verify `lp/mm = 600` and `order = 1`.
+ * 6. Open the tilt/decenter modal for the first imported decenter row and verify `dec and return` with `alpha = 15` and zeroed remaining fields.
+ * 7. Open the tilt/decenter modal for the second imported decenter row and verify `dec and return` with `alpha = -15` and zeroed remaining fields.
  *
  * ## Notes
  *
+ * - Grid locators are resolved only after the automatic computation finishes: committing its results rebuilds the prescription grid column definitions, which regenerates the AG Grid `col-id` values of the surface-property columns and would leave earlier locators pointing at the wrong column.
  * - The assertions use the imported displayed surface indices from this JSON fixture: surface `4` and surface `9` for tilt/decenter, surface `6` for diffraction grating.
  * - The test validates the state displayed in the text action cells and the modals triggered from those cells, which is the acceptance target for this import path.
  * - The selectors scope each text action button to the specific AG Grid column cell after resolving the row through the pinned `Index` column, so duplicate pinned/center row containers do not cause Playwright strict-mode failures.
@@ -44,6 +46,13 @@ test("import transmissive diffraction grating config and verify grating plus til
   await importDialog.waitFor({ state: "visible", timeout: 5_000 });
   await importDialog.getByRole("button", { name: "Load" }).click();
   await importDialog.waitFor({ state: "hidden", timeout: 5_000 });
+
+  // Confirming the import starts Update System automatically
+  const updateBtn = page.locator('button[aria-label="Update System"]');
+  await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(page.locator("text=/EFL:/").first()).toBeVisible({
+    timeout: 10_000,
+  });
 
   const prescriptionGrid = '[aria-label="Lens prescription editor"]';
 
