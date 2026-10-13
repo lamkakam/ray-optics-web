@@ -1,6 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OptimizationOperandsTab } from "@/features/optimization/components/OptimizationOperandsTab/OptimizationOperandsTab";
+import {
+  OptimizationOperandsTab,
+  shouldSuppressOperandRangeEditorTab,
+} from "@/features/optimization/components/OptimizationOperandsTab/OptimizationOperandsTab";
 import type { OptimizationOperandRow } from "@/features/optimization/stores/optimizationStore";
 
 /** Returns the mocked grid cell for one row and header name. */
@@ -272,7 +275,75 @@ describe("OptimizationOperandsTab", () => {
     expect(cell.querySelector("select")).toBeNull();
   });
 
-  it("edits Edge Thickness bounds through two inputs in the Target cell", async () => {
+  it.each([
+    ["only a lower bound", "3", undefined, "≥ 3"],
+    ["only an upper bound", undefined, "8", "≤ 8"],
+    ["both bounds", "3", "8", "3 ≤ x ≤ 8"],
+    ["a blank upper bound", "3", "  ", "≥ 3"],
+    ["a blank lower bound", "", "8", "≤ 8"],
+  ])(
+    "shows a range with %s as read-only text while not editing",
+    (_, min, max, text) => {
+      render(
+        <OptimizationOperandsTab
+          operands={[{ ...edgeThicknessRow, min, max }]}
+          onAddOperand={jest.fn()}
+          onDeleteOperand={jest.fn()}
+          onUpdateOperand={jest.fn()}
+          surfaceCount={2}
+        />,
+      );
+
+      const targetCell = getCell(0, "Target");
+      expect(targetCell.textContent).toBe(text);
+      expect(targetCell.querySelector("input")).toBeNull();
+    },
+  );
+
+  it("edits Edge Thickness bounds in a cell editor and commits both bounds once", async () => {
+    const user = userEvent.setup();
+    const onUpdateOperand = jest.fn();
+    const onCellEditingStarted = jest.fn();
+    const onCellEditingStopped = jest.fn();
+    render(
+      <OptimizationOperandsTab
+        operands={[edgeThicknessRow]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={onUpdateOperand}
+        surfaceCount={2}
+        onCellEditingStarted={onCellEditingStarted}
+        onCellEditingStopped={onCellEditingStopped}
+      />,
+    );
+
+    const targetCell = getCell(0, "Target");
+    await user.dblClick(within(targetCell).getByText("≥ 3"));
+    expect(onCellEditingStarted).toHaveBeenCalledTimes(1);
+
+    const lower = screen.getByRole("textbox", {
+      name: "Lower bound for operand operand-2",
+    });
+    const upper = screen.getByRole("textbox", {
+      name: "Upper bound for operand operand-2",
+    });
+    expect(targetCell).toContainElement(lower);
+    expect(targetCell).toContainElement(upper);
+    expect(lower).toHaveValue("3");
+    expect(upper).toHaveValue("");
+    expect(lower).toHaveFocus();
+
+    await user.type(upper, "8{Enter}");
+
+    expect(onUpdateOperand).toHaveBeenCalledTimes(1);
+    expect(onUpdateOperand).toHaveBeenCalledWith("operand-2", {
+      min: "3",
+      max: "8",
+    });
+    expect(onCellEditingStopped).toHaveBeenCalledTimes(1);
+  });
+
+  it("discards range edits cancelled with Escape", async () => {
     const user = userEvent.setup();
     const onUpdateOperand = jest.fn();
     render(
@@ -285,29 +356,39 @@ describe("OptimizationOperandsTab", () => {
       />,
     );
 
-    const targetCell = getCell(0, "Target");
-    expect(targetCell).not.toHaveTextContent("N/A");
-    const lower = screen.getByRole("textbox", {
-      name: "Lower bound for operand operand-2",
-    });
-    const upper = screen.getByRole("textbox", {
-      name: "Upper bound for operand operand-2",
-    });
-    expect(targetCell).toContainElement(lower);
-    expect(targetCell).toContainElement(upper);
-    expect(lower).toHaveValue("3");
-    expect(upper).toHaveValue("");
+    await user.dblClick(within(getCell(0, "Target")).getByText("≥ 3"));
+    await user.type(
+      screen.getByRole("textbox", {
+        name: "Upper bound for operand operand-2",
+      }),
+      "8{Escape}",
+    );
 
-    await user.type(upper, "8");
-    expect(onUpdateOperand).toHaveBeenLastCalledWith("operand-2", {
-      max: "8",
-    });
-
-    await user.clear(lower);
-    expect(onUpdateOperand).toHaveBeenLastCalledWith("operand-2", { min: "" });
+    expect(onUpdateOperand).not.toHaveBeenCalled();
+    expect(getCell(0, "Target")).toHaveTextContent("≥ 3");
   });
 
-  it("flags non-positive Edge Thickness bounds as invalid", () => {
+  it("does not patch the row when a range edit commits unchanged bounds", async () => {
+    const user = userEvent.setup();
+    const onUpdateOperand = jest.fn();
+    render(
+      <OptimizationOperandsTab
+        operands={[edgeThicknessRow]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={onUpdateOperand}
+        surfaceCount={2}
+      />,
+    );
+
+    await user.dblClick(within(getCell(0, "Target")).getByText("≥ 3"));
+    await user.keyboard("{Enter}");
+
+    expect(onUpdateOperand).not.toHaveBeenCalled();
+  });
+
+  it("flags non-positive Edge Thickness bounds as invalid in the editor", async () => {
+    const user = userEvent.setup();
     render(
       <OptimizationOperandsTab
         operands={[{ ...edgeThicknessRow, min: "0", max: "5" }]}
@@ -317,6 +398,8 @@ describe("OptimizationOperandsTab", () => {
         surfaceCount={2}
       />,
     );
+
+    await user.dblClick(within(getCell(0, "Target")).getByText("0 ≤ x ≤ 5"));
 
     expect(
       screen.getByRole("textbox", {
@@ -330,7 +413,7 @@ describe("OptimizationOperandsTab", () => {
     ).toBeValid();
   });
 
-  it("keeps the focused bound input and its text when the parent rerenders with replacement rows", async () => {
+  it("keeps the active range editor and its text when the parent rerenders with replacement rows", async () => {
     const user = userEvent.setup();
     const onAddOperand = jest.fn();
     const onDeleteOperand = jest.fn();
@@ -346,19 +429,21 @@ describe("OptimizationOperandsTab", () => {
     );
     const { rerender } = render(renderTab([edgeThicknessRow]));
 
+    await user.dblClick(within(getCell(0, "Target")).getByText("≥ 3"));
     await user.type(
       screen.getByRole("textbox", {
         name: "Upper bound for operand operand-2",
       }),
       "8",
     );
-    rerender(renderTab([{ ...edgeThicknessRow, max: "8" }]));
+    rerender(renderTab([{ ...edgeThicknessRow }]));
 
     const upper = screen.getByRole("textbox", {
       name: "Upper bound for operand operand-2",
     });
     expect(upper).toHaveFocus();
     expect(upper).toHaveValue("8");
+    expect(onUpdateOperand).not.toHaveBeenCalled();
   });
 
   it("edits the Edge Thickness Surface Index with a select of the real surfaces only", async () => {
@@ -464,5 +549,51 @@ describe("OptimizationOperandsTab", () => {
       "Primary Axial Chromatic Aberr. (W020)",
       "Primary Lateral Chromatic Aberr. (W111)",
     ]);
+  });
+});
+
+describe("shouldSuppressOperandRangeEditorTab", () => {
+  /** Builds a range-editor wrapper with lower and upper inputs, as `OperandRangeCell` renders it. */
+  function createEditorInputs(): readonly [HTMLInputElement, HTMLInputElement] {
+    const editor = document.createElement("div");
+    editor.setAttribute("data-operand-range-editor", "");
+    const lower = document.createElement("input");
+    const upper = document.createElement("input");
+    editor.append(lower, upper);
+    return [lower, upper];
+  }
+
+  /** Returns a keydown event dispatched from `target`, so its `target` is set. */
+  function keydownFrom(
+    target: HTMLElement,
+    init: KeyboardEventInit,
+  ): KeyboardEvent {
+    const event = new KeyboardEvent("keydown", init);
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  it.each([
+    ["Tab on the lower bound", true, 0, { key: "Tab" }],
+    ["Shift+Tab on the lower bound", false, 0, { key: "Tab", shiftKey: true }],
+    ["Tab on the upper bound", false, 1, { key: "Tab" }],
+    ["Shift+Tab on the upper bound", true, 1, { key: "Tab", shiftKey: true }],
+    ["a non-Tab key", false, 0, { key: "ArrowRight" }],
+  ])("for %s returns %s", (_, expected, inputIndex, init) => {
+    const inputs = createEditorInputs();
+
+    expect(
+      shouldSuppressOperandRangeEditorTab(
+        keydownFrom(inputs[inputIndex], init),
+      ),
+    ).toBe(expected);
+  });
+
+  it("does not suppress Tab outside a range editor", () => {
+    const input = document.createElement("input");
+
+    expect(
+      shouldSuppressOperandRangeEditorTab(keydownFrom(input, { key: "Tab" })),
+    ).toBe(false);
   });
 });

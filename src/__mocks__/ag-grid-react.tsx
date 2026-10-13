@@ -10,6 +10,7 @@
  * - Blurs the active mocked grid editor when `columnDefs` identity changes, matching AG Grid editor recreation closely enough for tests to catch focus-loss regressions caused by prop churn.
  * - Models pending text edits with a single-commit lifecycle: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter commits and stops editing, or an active input blur commits when `stopEditingWhenCellsLoseFocus` is `true` and then stops editing; a later blur of an already-finished editor is ignored.
  * - Select editors emit edit-start on focus, commit and emit edit-stop on change, and also emit edit-stop on blur when still editing.
+ * - A React component resolved as the cell editor (from `cellEditor` or a per-row `cellEditorSelector`) models an AG Grid custom cell editor: the idle cell shows the `valueFormatter` text (or the raw value) in a button; double-click or Enter on it emits `onCellEditingStarted` and renders the component inside a `fieldset` with the editor params plus `data`, `value` (the pending value), `initialValue`, `onValueChange`, and `stopEditing`. Enter inside the editor commits the pending value through `valueSetter` and stops editing, Escape stops without committing, and focus leaving the editor commits only when `stopEditingWhenCellsLoseFocus` is `true`; every stop emits `onCellEditingStopped` once.
  * - Select option labels follow AG Grid's `agSelectCellEditor`: the column `valueFormatter` result, falling back to the raw option value. A truthy non-string label (such as a bare number without a formatter) throws `TypeError("children is not iterable")` as real AG Grid does.
  * - Idle text editors synchronize their displayed value during the backing-row render, avoiding a follow-up passive-effect update after a value setter refreshes row data.
  */
@@ -26,7 +27,12 @@ interface ColDef {
   cellEditorSelector?: (params: {
     data: Record<string, unknown>;
     value: unknown;
-  }) => { component: string; params?: { values?: unknown[] } } | undefined;
+  }) =>
+    | {
+        component: string | React.ComponentType<Record<string, unknown>>;
+        params?: { values?: unknown[]; [key: string]: unknown };
+      }
+    | undefined;
   cellRenderer?: (params: {
     data: Record<string, unknown>;
     value: unknown;
@@ -314,6 +320,115 @@ function SelectCell({
         </option>
       ))}
     </select>
+  );
+}
+
+function CustomEditorCell({
+  col,
+  row,
+  value,
+  Editor,
+  editorParams,
+  stopEditingWhenCellsLoseFocus,
+  onCellEditingStarted,
+  onCellEditingStopped,
+}: {
+  col: ColDef;
+  row: Record<string, unknown>;
+  value: unknown;
+  Editor: React.ComponentType<Record<string, unknown>>;
+  editorParams: Record<string, unknown> | undefined;
+  stopEditingWhenCellsLoseFocus: boolean;
+  onCellEditingStarted?: (event: unknown) => void;
+  onCellEditingStopped?: (event: unknown) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [pendingValue, setPendingValue] = useState<unknown>(undefined);
+  const isEditingRef = useRef(false);
+  const initialValueRef = useRef<unknown>(undefined);
+  const pendingValueRef = useRef<unknown>(undefined);
+
+  const startEditing = () => {
+    if (isEditingRef.current) {
+      return;
+    }
+    isEditingRef.current = true;
+    initialValueRef.current = value;
+    pendingValueRef.current = value;
+    setPendingValue(value);
+    setIsEditing(true);
+    onCellEditingStarted?.({ data: row, value, colDef: col });
+  };
+
+  const stopEditing = (cancel = false) => {
+    if (!isEditingRef.current) {
+      return;
+    }
+    isEditingRef.current = false;
+    setIsEditing(false);
+    if (!cancel) {
+      col.valueSetter?.({
+        data: row,
+        newValue: pendingValueRef.current,
+        oldValue: initialValueRef.current,
+      });
+    }
+    onCellEditingStopped?.({ data: row, value, colDef: col });
+  };
+
+  const handleValueChange = (nextValue: unknown) => {
+    pendingValueRef.current = nextValue;
+    setPendingValue(nextValue);
+  };
+
+  if (!isEditing) {
+    return (
+      <button
+        type="button"
+        onDoubleClick={startEditing}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            startEditing();
+          }
+        }}
+      >
+        {col.valueFormatter
+          ? col.valueFormatter({ value })
+          : String(value ?? "")}
+      </button>
+    );
+  }
+
+  return (
+    <fieldset
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          stopEditing();
+        } else if (event.key === "Escape") {
+          stopEditing(true);
+        }
+      }}
+      onBlur={(event) => {
+        if (
+          event.relatedTarget instanceof Node &&
+          event.currentTarget.contains(event.relatedTarget)
+        ) {
+          return;
+        }
+        if (stopEditingWhenCellsLoseFocus) {
+          stopEditing();
+        }
+      }}
+    >
+      <Editor
+        {...editorParams}
+        data={row}
+        value={pendingValue}
+        initialValue={initialValueRef.current}
+        onValueChange={handleValueChange}
+        stopEditing={(cancel?: boolean) => stopEditing(cancel === true)}
+      />
+    </fieldset>
   );
 }
 
@@ -662,9 +777,14 @@ export function AgGridReact({
                   selectedEditor === undefined
                     ? col.cellEditorParams
                     : selectedEditor.params;
-                const isSelectEditor =
-                  (selectedEditor?.component ?? col.cellEditor) ===
-                  "agSelectCellEditor";
+                const editorComponent =
+                  selectedEditor?.component ?? col.cellEditor;
+                const isSelectEditor = editorComponent === "agSelectCellEditor";
+                const CustomEditor =
+                  editorComponent === undefined ||
+                  typeof editorComponent === "string"
+                    ? undefined
+                    : editorComponent;
                 const selectedRenderer = col.cellRendererSelector?.({
                   data: row,
                   value,
@@ -680,6 +800,19 @@ export function AgGridReact({
                         data={row}
                         value={value}
                         {...selectedRenderer?.params}
+                      />
+                    ) : isEditable && CustomEditor !== undefined ? (
+                      <CustomEditorCell
+                        col={col}
+                        row={row}
+                        value={value}
+                        Editor={CustomEditor}
+                        editorParams={editorParams}
+                        stopEditingWhenCellsLoseFocus={
+                          stopEditingWhenCellsLoseFocus
+                        }
+                        onCellEditingStarted={onCellEditingStarted}
+                        onCellEditingStopped={onCellEditingStopped}
                       />
                     ) : isEditable && isSelectEditor ? (
                       <SelectCell

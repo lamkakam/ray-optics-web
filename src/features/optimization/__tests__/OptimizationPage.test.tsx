@@ -1240,8 +1240,7 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
     expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1);
 
-    const lowerBound = screen.getByRole("textbox", { name: /^Lower bound/ });
-    expect(lowerBound).toHaveValue("3");
+    expect(screen.getByText("≥ 3")).toBeInTheDocument();
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Surface Index" }),
       "1",
@@ -1267,8 +1266,15 @@ describe("OptimizationPage", () => {
       ),
     ).not.toBeInTheDocument();
 
-    await user.clear(lowerBound);
-    await user.type(lowerBound, "0");
+    /** Opens the range editor from its idle text and replaces the lower bound, committing with Enter. */
+    const replaceLowerBound = async (idleText: string, text: string) => {
+      await user.dblClick(screen.getByText(idleText));
+      const lowerBound = screen.getByRole("textbox", { name: /^Lower bound/ });
+      await user.clear(lowerBound);
+      await user.type(lowerBound, `${text}{Enter}`);
+    };
+
+    await replaceLowerBound("≥ 3", "0");
 
     expect(
       await within(evaluationPanel()).findByText(
@@ -1276,7 +1282,7 @@ describe("OptimizationPage", () => {
       ),
     ).toBeInTheDocument();
 
-    await user.clear(lowerBound);
+    await replaceLowerBound("≥ 0", "");
 
     expect(
       await within(evaluationPanel()).findByText(

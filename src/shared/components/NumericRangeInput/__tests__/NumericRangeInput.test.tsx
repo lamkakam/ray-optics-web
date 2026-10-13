@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NumericRangeInput } from "@/shared/components/NumericRangeInput";
@@ -47,6 +47,15 @@ describe("NumericRangeInput", () => {
     );
     expect(screen.getByRole("textbox", { name: "Upper bound" })).toHaveValue(
       "",
+    );
+  });
+
+  it("forwards minInputRef to the lower-bound input", () => {
+    const minInputRef = createRef<HTMLInputElement>();
+    renderRange({ minInputRef });
+
+    expect(minInputRef.current).toBe(
+      screen.getByRole("textbox", { name: "Lower bound" }),
     );
   });
 

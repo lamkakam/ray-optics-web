@@ -2,7 +2,7 @@
  * Exercises the range-operand paths before any production kind uses range mode by
  * registering one fake range kind through the operand metadata registry factory.
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { OptimizationOperandsTab } from "@/features/optimization/components/OptimizationOperandsTab/OptimizationOperandsTab";
@@ -257,7 +257,7 @@ describe("range operand store rows", () => {
 });
 
 describe("range operand grid", () => {
-  it("edits system range bounds through the Target cell's range inputs, without Min or Max columns", async () => {
+  it("edits system range bounds through the Target cell's range editor, without Min or Max columns", async () => {
     const user = userEvent.setup();
     const onUpdateOperand = jest.fn();
     render(
@@ -278,7 +278,11 @@ describe("range operand grid", () => {
       Array.from(grid.querySelectorAll("th"), (header) => header.textContent),
     ).toEqual(["Operand Kind", "Target", "Weight", "Surface Index", ""]);
     const [rangeRow, fanRow] = Array.from(grid.querySelectorAll("tbody tr"));
-    const targetCell = rangeRow.querySelectorAll("td")[1];
+    const targetCell = rangeRow.querySelectorAll("td")[1] as HTMLElement;
+    expect(targetCell.textContent).toBe("≥ 1");
+    expect(fanRow.querySelectorAll("input")).toHaveLength(1);
+
+    await user.dblClick(within(targetCell).getByText("≥ 1"));
     const minInput = screen.getByRole("textbox", {
       name: "Lower bound for operand range-1",
     });
@@ -287,16 +291,20 @@ describe("range operand grid", () => {
     });
     expect(targetCell).toContainElement(minInput);
     expect(targetCell).toContainElement(maxInput);
-    expect(fanRow.querySelectorAll("input")).toHaveLength(1);
 
     await user.type(maxInput, "4");
-    expect(onUpdateOperand).toHaveBeenLastCalledWith("range-1", { max: "4" });
-
     await user.clear(minInput);
-    expect(onUpdateOperand).toHaveBeenLastCalledWith("range-1", { min: "" });
+    expect(onUpdateOperand).not.toHaveBeenCalled();
+    await user.keyboard("{Enter}");
+    expect(onUpdateOperand).toHaveBeenCalledTimes(1);
+    expect(onUpdateOperand).toHaveBeenCalledWith("range-1", {
+      min: "",
+      max: "4",
+    });
   });
 
-  it("allows non-positive bounds for range kinds without the positive-bound requirement", () => {
+  it("allows non-positive bounds for range kinds without the positive-bound requirement", async () => {
+    const user = userEvent.setup();
     render(
       <OptimizationOperandsTab
         operands={[
@@ -308,6 +316,8 @@ describe("range operand grid", () => {
         surfaceCount={2}
       />,
     );
+
+    await user.dblClick(screen.getByText("-2 ≤ x ≤ 0"));
 
     expect(
       screen.getByRole("textbox", { name: "Lower bound for operand range-1" }),
