@@ -35,7 +35,7 @@ jobs:
           cache: 'npm'
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.14'
       - run: bash scripts/init-python-venv.sh
       - run: bash scripts/build-python-wheel.sh
       - run: npm ci

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rayoptics-web-utils"
-version = "0.44.1"
-requires-python = ">=3.12"
+version = "0.44.2"
+requires-python = "==3.14.*"
 dependencies = [
     "anytree==2.13.0",
     "transforms3d==0.4.2",
@@ -38,7 +38,7 @@ pytest_add_cli_args_test_selection = ["tests/"]
 include = ["src"]
 venvPath = "."
 venv = ".venv"
-pythonVersion = "3.12"
+pythonVersion = "3.14"
 typeCheckingMode = "basic"
 reportMissingTypeStubs = false
 reportMissingParameterType = "error"

@@ -55,7 +55,7 @@ ancestor. Tag rulesets take effect as soon as they are applied on GitHub.
 ## Release outputs
 
 The release workflow in `.github/workflows/release.yml` uses Node 24 and Python
-3.12, runs the same type-check, lint, format, unit-test, and static-build gates
+3.14, runs the same type-check, lint, format, unit-test, and static-build gates
 as CI, and creates a root-path static export. `npm run prepare:release` copies
 the export to a clean staging directory without tests, specification sidecars,
 or obsolete wheels. The workflow packages the staging directory's contents at

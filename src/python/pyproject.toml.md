@@ -7,8 +7,8 @@ Build metadata for the internal `rayoptics-web-utils` Python package that is com
 ## Project Metadata
 
 - Package name: `rayoptics-web-utils`
-- Current version: `0.44.1`
-- Requires Python `>=3.12`
+- Current version: `0.44.2`
+- Requires Python `==3.14.*`, the single Python line bundled by Pyodide 314.0.0 (Python 3.14)
 - Uses `setuptools.build_meta` with `setuptools>=68.0`
 
 ## Runtime Dependencies
@@ -47,7 +47,7 @@ The package includes YAML data files under `rayoptics_web_utils/data/*.yml`, whi
 
 ## Static Type Checking
 
-`[tool.pyright]` configures `npm run type-check:python` to check only `src/` (the package sources, not tests or the Mutmut `mutants/` copy) against the `.venv` interpreter environment, targeting Python 3.12 in Pyright's `basic` mode. Missing parameter annotations are errors. `rayoptics` and `opticalglass` ship partial inline annotations but no `py.typed` marker, so missing-stub reports are disabled and Pyright reads their sources for types. `tests/rayoptics_web_utils/test_type_annotations.py` additionally requires every package function to annotate its return.
+`[tool.pyright]` configures `npm run type-check:python` to check only `src/` (the package sources, not tests or the Mutmut `mutants/` copy) against the `.venv` interpreter environment, targeting Python 3.14 in Pyright's `basic` mode. Missing parameter annotations are errors. `rayoptics` and `opticalglass` ship partial inline annotations but no `py.typed` marker, so missing-stub reports are disabled and Pyright reads their sources for types. `tests/rayoptics_web_utils/test_type_annotations.py` additionally requires every package function to annotate its return.
 
 ## Mutation Testing
 
