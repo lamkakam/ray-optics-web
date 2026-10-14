@@ -189,8 +189,8 @@ and use `from __future__ import annotations`.
      `src/workers/pyodide.worker.ts`.
    - Before building a wheel locally, `rm -rf src/python/build`, so deleted
      modules don't linger in it.
-   - CI runs Python 3.12. Also run the suite under 3.12 if any module lacks the
-     `__future__` import.
+   - CI, the local venv, and Pyodide all run Python 3.14, so no separate
+     interpreter check is needed.
 
 ## Done when
 
