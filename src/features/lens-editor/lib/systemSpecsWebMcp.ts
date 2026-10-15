@@ -3,7 +3,8 @@
  * System Specs. These setters update only the draft specs form; recomputation is
  * deliberately owned by `recompute_optical_system`. The `set_half_field` setter
  * remains relative-only and populates the neutral field store with
- * `isRelative: true`. All descriptor executions use the shared WebMCP
+ * `isRelative: true`. Setter results list `systemUpdateRequired` before the
+ * staged spec payload. All descriptor executions use the shared WebMCP
  * validation and cancellation boundary helpers. A draft that fails the shared
  * OpticalSpecs schema makes `get_system_specs` throw an `invalid_state`
  * `WebMcpToolError` pointing at the invalid draft field.
@@ -110,8 +111,8 @@ export function createSystemSpecsTools(
           pupilValue: pupil.value,
         });
         return JSON.stringify({
-          pupil: store.getState().toOpticalSpecs().pupil,
           systemUpdateRequired: true,
+          pupil: store.getState().toOpticalSpecs().pupil,
         });
       },
     },
@@ -144,8 +145,8 @@ export function createSystemSpecsTools(
           isWideAngle: field.isWideAngle === true,
         });
         return JSON.stringify({
-          field,
           systemUpdateRequired: true,
+          field,
         });
       },
     },
@@ -161,8 +162,8 @@ export function createSystemSpecsTools(
         const wavelengths = input as OpticalSpecs["wavelengths"];
         store.getState().setWavelengths(wavelengths);
         return JSON.stringify({
-          wavelengths: store.getState().toOpticalSpecs().wavelengths,
           systemUpdateRequired: true,
+          wavelengths: store.getState().toOpticalSpecs().wavelengths,
         });
       },
     },

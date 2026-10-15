@@ -416,8 +416,8 @@ describe("custom-glass WebMCP tools", () => {
     ).resolves.toBe(
       JSON.stringify({
         name: "NEW",
-        glass,
         persistenceWarnings: ["storage failed"],
+        glass,
       }),
     );
     expect(deps.onPersistenceWarning).toHaveBeenCalledWith("storage failed");

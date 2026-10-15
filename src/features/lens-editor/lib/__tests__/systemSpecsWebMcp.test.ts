@@ -89,6 +89,7 @@ describe("System Specs WebMCP tools", () => {
       pupil: { space: "image", type: "f/#", value: 4 },
       systemUpdateRequired: true,
     });
+    expect(Object.keys(result)).toEqual(["systemUpdateRequired", "pupil"]);
     expect(JSON.parse(String(await execute("get_system_specs", {})))).toEqual(
       expect.objectContaining({ pupil: result.pupil }),
     );
@@ -113,15 +114,24 @@ describe("System Specs WebMCP tools", () => {
       referenceIndex: 1,
     };
 
-    expect(JSON.parse(String(await execute("set_half_field", field)))).toEqual({
-      field,
-      systemUpdateRequired: true,
-    });
+    const fieldResult = JSON.parse(
+      String(await execute("set_half_field", field)),
+    );
+    expect(fieldResult).toEqual({ field, systemUpdateRequired: true });
+    expect(Object.keys(fieldResult)).toEqual(["systemUpdateRequired", "field"]);
     expect(store.getState().fields).toEqual(field.fields);
     expect(store.getState().isRelative).toBe(true);
-    expect(
-      JSON.parse(String(await execute("set_wavelengths", wavelengths))),
-    ).toEqual({ wavelengths, systemUpdateRequired: true });
+    const wavelengthsResult = JSON.parse(
+      String(await execute("set_wavelengths", wavelengths)),
+    );
+    expect(wavelengthsResult).toEqual({
+      wavelengths,
+      systemUpdateRequired: true,
+    });
+    expect(Object.keys(wavelengthsResult)).toEqual([
+      "systemUpdateRequired",
+      "wavelengths",
+    ]);
   });
 
   it("preserves an omitted optional wide-angle flag in the setter result", async () => {

@@ -351,6 +351,14 @@ describe.each(cases)("$name", (testCase) => {
         ? { radii: { geoRadius: 10, rmsRadius: Math.sqrt(65), unit: "µm" } }
         : {}),
     });
+    expect(Object.keys(result)).toEqual([
+      ...selectors,
+      "imagePoint",
+      ...(configurable ? ["numRays"] : []),
+      ...(sampled ? ["wavelengthSamples"] : []),
+      ...(testCase.plotType === "spotDiagram" ? ["radii"] : []),
+      "data",
+    ]);
     expect(s.worker).toHaveBeenCalledWith(
       ...expectedArgs(testCase, 0, 1, defaultCount),
     );
