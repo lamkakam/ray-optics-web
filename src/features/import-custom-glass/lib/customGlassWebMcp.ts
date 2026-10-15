@@ -171,6 +171,7 @@ function requireGlass(
  * validates input and cancellation, then requires a hydrated catalog before lookups
  * or mutations. Only own catalog properties count as glass names, including labels
  * shared with Object.prototype. Stable descriptors observe hydration through source.
+ * Add and update results list labels and any persistenceWarnings before the glass.
  * Failures throw `WebMcpToolError`: an unhydrated catalog or missing worker is
  * `not_ready`, unknown or duplicate labels are `invalid_input` with a
  * corrective hint, and a missing worker result is `internal_error`.
@@ -226,10 +227,10 @@ export function createCustomGlassWebMcpTools(
         );
         return JSON.stringify({
           name: input.name,
-          glass: requireGlass(input.name, result.glass),
           ...(result.persistenceWarnings === undefined
             ? {}
             : { persistenceWarnings: result.persistenceWarnings }),
+          glass: requireGlass(input.name, result.glass),
         });
       },
     },
@@ -269,10 +270,10 @@ export function createCustomGlassWebMcpTools(
         return JSON.stringify({
           currentName: input.currentName,
           name: input.name,
-          glass: requireGlass(input.name, result.glass),
           ...(result.persistenceWarnings === undefined
             ? {}
             : { persistenceWarnings: result.persistenceWarnings }),
+          glass: requireGlass(input.name, result.glass),
         });
       },
     },

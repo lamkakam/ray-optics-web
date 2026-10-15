@@ -143,12 +143,18 @@ function externalRow(
   return row.kind === "image" ? prescription.image : prescription.surfaces[0];
 }
 
-function mutationResult(state: LensEditorState, extra: JsonRecord): string {
+/** Serializes mutation metadata and status before any row payload, which comes last. */
+function mutationResult(
+  state: LensEditorState,
+  metadata: JsonRecord,
+  payload: JsonRecord = {},
+): string {
   return JSON.stringify({
-    ...extra,
+    ...metadata,
     revision: state.prescriptionRevision,
     surfaceCount: state.rows.filter((row) => row.kind === "surface").length,
     systemUpdateRequired: true,
+    ...payload,
   });
 }
 
@@ -363,10 +369,11 @@ export function createLensPrescriptionTools(
             "internal_error",
             `Inserted surface ${insertedIndex} could not be found after insertion.`,
           );
-        return mutationResult(next, {
-          surface: insertedIndex,
-          row: externalRow(insertedRow),
-        });
+        return mutationResult(
+          next,
+          { surface: insertedIndex },
+          { row: externalRow(insertedRow) },
+        );
       },
     },
     updateLensRow: {
@@ -437,10 +444,11 @@ export function createLensPrescriptionTools(
             "internal_error",
             `Updated row ${String(selector)} could not be found after the update.`,
           );
-        return mutationResult(next, {
-          row: selector,
-          value: externalRow(updatedRow),
-        });
+        return mutationResult(
+          next,
+          { row: selector },
+          { value: externalRow(updatedRow) },
+        );
       },
     },
     deleteLensSurface: {

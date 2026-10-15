@@ -512,6 +512,19 @@ describe("analysis WebMCP tools", () => {
       imagePoint: "centroid",
       terms: expect.any(Array),
     });
+    const keys = Object.keys(result);
+    expect(keys.slice(0, 5)).toEqual([
+      "fieldIndex",
+      "wavelengthIndex",
+      "ordering",
+      "pupilSpace",
+      "imagePoint",
+    ]);
+    expect(keys.slice(-3)).toEqual([
+      "coefficients",
+      "rms_normalized_coefficients",
+      "terms",
+    ]);
     expect(result.terms).toHaveLength(37);
     expect(result.terms[0]).toEqual({
       j: 1,

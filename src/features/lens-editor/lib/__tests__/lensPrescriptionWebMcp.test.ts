@@ -491,6 +491,13 @@ describe("lens prescription WebMCP tools", () => {
     expect(result).toEqual(
       expect.objectContaining({ surface: 2, surfaceCount: 3 }),
     );
+    expect(Object.keys(result)).toEqual([
+      "surface",
+      "revision",
+      "surfaceCount",
+      "systemUpdateRequired",
+      "row",
+    ]);
     expect(
       store.getState().rows.filter((row) => row.kind === "surface")[1],
     ).toEqual(
@@ -534,6 +541,31 @@ describe("lens prescription WebMCP tools", () => {
         diffractiveElement: undefined,
       }),
     );
+  });
+
+  it("returns update metadata before the updated row value", async () => {
+    const { execute } = setup();
+    const result = JSON.parse(
+      String(
+        await execute("update_lens_row", {
+          row: 1,
+          values: { thickness: 6 },
+        }),
+      ),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        row: 1,
+        value: expect.objectContaining({ thickness: 6 }),
+      }),
+    );
+    expect(Object.keys(result)).toEqual([
+      "row",
+      "revision",
+      "surfaceCount",
+      "systemUpdateRequired",
+      "value",
+    ]);
   });
 
   it("updates object and image with only applicable values", async () => {

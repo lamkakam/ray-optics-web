@@ -225,7 +225,9 @@ interface PlotToolDefinition<K extends ToolPlotKind> {
  * and entrance pupil; Noll requests use 56 terms. Exit pupil is rejected when
  * the final surface's image gap has abs(thickness) > 1e8, matching the dialog.
  * Its JSON result preserves every worker field and adds resolved fieldIndex,
- * wavelengthIndex, ordering, pupilSpace, imagePoint, and terms. Each term has
+ * wavelengthIndex, ordering, pupilSpace, imagePoint, and terms. Keys are ordered
+ * resolved selectors and imagePoint first, then worker scalars, then the
+ * coefficient arrays and terms last. Each term has
  * one-based j, n, m, name, coefficient, and rmsNormalizedCoefficient without
  * rounding. Cancellation is checked before loading and after awaiting; it does
  * not interrupt computation shared with the dialog or another tool caller.
@@ -235,8 +237,9 @@ interface PlotToolDefinition<K extends ToolPlotKind> {
  * snapshots the committed model, app ray counts, and current image reference;
  * defaults are field 0 and the committed reference wavelength, never UI selection.
  * Only relevant selectors are accepted as nonnegative integers in committed bounds.
- * Results contain the complete unrounded worker `data`, applicable resolved
- * selectors, imagePoint, and numRays for configurable plots. Fans, spots, and LSA
+ * Results contain applicable resolved selectors, imagePoint, numRays for
+ * configurable plots, any wavelengthSamples and spot radii, and then the complete
+ * unrounded worker `data` as the last key. Fans, spots, and LSA
  * retain every wavelength. The y-ȳ tool accepts no selectors and returns paraxial
  * heights for the committed system. Strehl and chromatic focal shift use the app's wavelength sample count and echo
  * it as wavelengthSamples; chromatic focal shift also accepts an optional integer
@@ -338,10 +341,6 @@ export function createAnalysisTools({
             `No ${plotType} data returned for the committed optical system.`,
           );
         return JSON.stringify({
-          // The loader's discriminant is checked above before narrowing the generic result.
-          data: readData(
-            result as Extract<AnalysisPlotLoadResult, { kind: K }>,
-          ),
           ...(hasField ? { fieldIndex } : {}),
           ...(hasWavelength ? { wavelengthIndex } : {}),
           imagePoint,
@@ -355,6 +354,10 @@ export function createAnalysisTools({
                 ),
               }
             : {}),
+          // The loader's discriminant is checked above before narrowing the generic result.
+          data: readData(
+            result as Extract<AnalysisPlotLoadResult, { kind: K }>,
+          ),
         });
       },
     };
@@ -557,13 +560,16 @@ export function createAnalysisTools({
             rmsNormalizedCoefficient: data.rms_normalized_coefficients[i],
           }),
         );
+        const { coefficients, rms_normalized_coefficients, ...summary } = data;
         return JSON.stringify({
-          ...data,
           fieldIndex,
           wavelengthIndex,
           ordering,
           pupilSpace,
           imagePoint,
+          ...summary,
+          coefficients,
+          rms_normalized_coefficients,
           terms,
         });
       },
